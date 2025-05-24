@@ -179,3 +179,4 @@ publish/
 # *.swo
 
 # Add any API-specific ignores below
+appsettings.json
