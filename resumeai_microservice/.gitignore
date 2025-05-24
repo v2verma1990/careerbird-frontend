@@ -1,17 +1,17 @@
 # Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
+# __pycache__/
+# *.py[cod]
+# *$py.class
 
 # Caches
-cache_store/
+# cache_store/
 
 # Environment variables
 .env
 .env.*
 
 # Jupyter Notebook checkpoints
-.ipynb_checkpoints
+# .ipynb_checkpoints
 
 # VSCode
 .vscode/
@@ -34,3 +34,22 @@ venv/
 # Ignore requirements lock if generated
 poetry.lock
 Pipfile.lock
+
+# Python-specific ignores (already covered globally, but kept for clarity)
+# __pycache__/
+# *.py[cod]
+# .env
+# .venv/
+# venv/
+# cache_store/
+# .ipynb_checkpoints/
+# *.log
+# *.swp
+# *.swo
+# poetry.lock
+# Pipfile.lock
+# .vscode/
+# .DS_Store
+# Thumbs.db
+
+# Add any microservice-specific ignores below
