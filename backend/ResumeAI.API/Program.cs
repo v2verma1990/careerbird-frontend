@@ -1,0 +1,108 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using ResumeAI.API.Services;
+using System.Text;
+
+var builder = WebApplication.CreateBuilder(args);
+// Log the current working directory
+Console.WriteLine("Workspace Folder Path: " + Environment.CurrentDirectory);
+
+
+// Add services to the container.
+builder.Services.AddControllers();
+
+// Add CORS policy - FIXED to allow all origins in development
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.SetIsOriginAllowed(_ => true) // Allow any origin in development
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials(); // Allow credentials (cookies, auth headers)
+    });
+});
+
+// Add JWT authentication with relaxed validation for Supabase tokens
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = false,          // Don't validate issuer for Supabase compatibility
+        ValidateAudience = false,        // Don't validate audience for Supabase compatibility
+        ValidateLifetime = true,         // Validate token lifetime
+        ValidateIssuerSigningKey = true, // Validate signing key for Supabase tokens
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? "defaultSecretKeyForDevelopment"))
+    };
+    
+    // Don't throw exceptions on token validation failures
+    options.Events = new JwtBearerEvents
+    {
+        OnAuthenticationFailed = context =>
+        {
+            Console.WriteLine($"Authentication failed: {context.Exception.Message}");
+            return Task.CompletedTask;
+        },
+        OnMessageReceived = context =>
+        {
+            Console.WriteLine($"JWT Message received, token: {context.Token?.Substring(0, Math.Min(20, context.Token?.Length ?? 0))}...");
+            return Task.CompletedTask;
+        },
+        OnTokenValidated = context =>
+        {
+            Console.WriteLine("Token validated successfully");
+            return Task.CompletedTask;
+        }
+    };
+});
+
+// Register services
+builder.Services.AddHttpClient();
+builder.Services.AddSingleton<SupabaseHttpClientService>();
+builder.Services.AddSingleton<UserService>();
+builder.Services.AddSingleton<ResumeService>();
+builder.Services.AddSingleton<ActivityLogService>();
+builder.Services.AddSingleton<JobsService>();
+builder.Services.AddSingleton<AuthService>();
+builder.Services.AddSingleton<RecruiterSubscriptionService>();
+builder.Services.AddSingleton<CandidateSubscriptionService>();
+
+// Add health endpoint
+builder.Services.AddHealthChecks();
+
+// Add Swagger
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+// Add health check endpoint
+app.MapHealthChecks("/api/health");
+
+app.UseHttpsRedirection();
+
+// Add CORS middleware - must be before Authentication/Authorization
+app.UseCors();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllers();
+
+// Log startup
+Console.WriteLine("ResumeAI API starting up...");
+
+app.Run();

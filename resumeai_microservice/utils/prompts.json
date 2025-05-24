@@ -1,0 +1,46 @@
+{
+  "analyze_resume": {
+    "system": "You are an expert resume reviewer and job coach.",
+    "user": "Analyze the following resume for the given job description. Provide a JSON object with: MatchScore (0-100), KeywordMatchScore (0-100), FormatScore (0-100), MissingKeywords (list), Suggestions (list).\nResume:\n{resume_text}\nJob Description:\n{job_description}"
+  },
+  "optimize_resume": {
+    "system": "You are an expert in resume optimization for ATS systems and general best practices.",
+    "user": "Optimize the following resume for ATS and general best practices (no job description provided). Return a JSON object with: atsScore (0-100), optimizedContent (ATS-friendly resume), improvements (list of actionable suggestions), formattingScore (0-100), keywordAnalysis (object with foundKeywords, missingKeywords), atsTips (list), summary (string), sectionFeedback (object with section names as keys and feedback as values), resumeHighlights (list of objects with text and reason for highlight), and any other insights to improve the resume for general job applications.\nResume:\n{resume_text}"
+  },
+  "customize_resume": {
+    "system": "You are an expert in resume customization for job applications.",
+    "user": "Customize the following resume to best match the job description. Return a JSON object with: OriginalContent, OptimizedContent (customized for the job), Improvements (list), OverallScore (0-100).\nResume:\n{resume_text}\nJob Description:\n{job_description}"
+  },
+  "benchmark_resume": {
+    "system": "You are an expert in resume benchmarking and industry analysis.",
+    "user": "Benchmark the following resume for the given job description. Return a JSON object with: OverallScore (0-100), IndustryAverage (0-100), TopCandidateAverage (0-100), CategoryScores (object), IndustryRanking (percentile), Recommendations (list), Strengths (list), Weaknesses (list).\nResume:\n{resume_text}\nJob Description:\n{job_description}"
+  },
+  "ats_scan": {
+    "system": "You are an ATS (Applicant Tracking System) expert.",
+    "user": "Scan the following resume as an ATS would. Return a JSON object with: ATSScore (0-100), ParsedSections (object), ParsingIssues (list), OptimizationTips (list).\nResume:\n{resume_text}"
+  },
+  "optimize_job_description": {
+    "system": "You are an expert job description optimizer.",
+    "user": "Optimize the following job description for clarity, engagement, and candidate targeting. Return a JSON object with: OriginalContent, OptimizedContent, Insights (list).\nJob Description:\n{job_description}"
+  },
+  "find_best_candidates": {
+    "system": "You are an AI recruiter. Given a job description, return a JSON array of the top 5 candidate profiles. Each candidate should have: Id, Name, MatchScore, Experience, Skills (list), NoticePeriod, Education, Location.",
+    "user": "Find the best candidates for the following job description.\nJob Description:\n{job_description}"
+  },
+  "generate_interview_questions": {
+    "system": "You are an expert technical interviewer.",
+    "user": "Generate a JSON array of 10 interview questions for the job title '{job_title}'. Each question should have: Question, Category (technical, behavioral, situational, experience)."
+  },
+  "generate_cover_letter": {
+    "system": "You are an expert cover letter writer.",
+    "user": "Write a professional cover letter for the job title '{job_title}' at company '{company}', using the following job description. Return a JSON object with: JobTitle, Company, Content (the cover letter as a string).\nJob Description:\n{job_description}"
+  },
+  "optimize_resume_for_job": {
+    "system": "You are an expert in resume optimization for job applications.",
+    "user": "Optimize the following resume for the given job description. Return a JSON object with: Content (optimized resume), Improvements (list), OverallScore (0-100).\nResume:\n{resume_text}\nJob Description:\n{job_description}"
+  },
+  "jobscan_style_report": {
+    "system": "You are an expert resume reviewer and job coach. Analyze resumes and job descriptions to generate detailed, structured reports similar to Jobscan (https://app.jobscan.co/sample-report).",
+    "user": "Given the following resume and job description, generate a JSON object with these fields: matchRate (0-100), skillsMatch (object with matchedSkills, missingSkills), atsTips (list), keywordAnalysis (object with foundKeywords, missingKeywords), recommendations (list), summary (string), sectionFeedback (object with section names as keys and feedback as values), resumeHighlights (list of objects with text and reason for highlight), and any other insights that would help a candidate improve their resume for this job.\nResume:\n{resume_text}\nJob Description:\n{job_description}"
+  }
+}
