@@ -17,7 +17,7 @@ namespace ResumeAI.API.Services
         private readonly ActivityLogService _activityLogService;
         private readonly Random _random = new Random();
         private readonly HttpClient _httpClient;
-        private readonly string _pythonApiBaseUrl = "http://localhost:8000"; // Adjust if needed
+        private readonly string _pythonApiBaseUrl = "http://localhost:8000/candidate"; // Adjust if needed
 
         public ResumeService(ActivityLogService activityLogService)
         {

@@ -3,21 +3,12 @@ import json
 import logging
 import hashlib
 from pathlib import Path
-
-from dotenv import load_dotenv,find_dotenv
-
 from openai import OpenAI
 
-client = OpenAI(api_key=get_openai_api_key())
+from dotenv import load_dotenv, find_dotenv
 
-# Load prompts from prompts.json
-PROMPTS_PATH = os.path.join(os.path.dirname(__file__), "prompts.json")
-with open(PROMPTS_PATH, "r", encoding="utf-8") as f:
-    PROMPTS = json.load(f)
-
-dotenv_path = find_dotenv("C:\\Users\\visha\\Downloads\\Resume_temp_CB\\front-back-duo-dance\\resumeai_microservice\\.env")
+dotenv_path = find_dotenv()
 load_dotenv(dotenv_path=dotenv_path)
-
 
 def get_openai_api_key():
     key = os.getenv("OPENAI_API_KEY")
@@ -26,6 +17,21 @@ def get_openai_api_key():
         logging.error("OPENAI_API_KEY not found in environment. Please set it in your .env file.")
         raise RuntimeError("OPENAI_API_KEY not found in environment. Please set it in your .env file.")
     return key
+
+
+
+client = OpenAI(api_key=get_openai_api_key())
+
+# Load prompts from prompts.json
+PROMPTS_PATH = os.path.join(os.path.dirname(__file__), "prompts.json")
+with open(PROMPTS_PATH, "r", encoding="utf-8") as f:
+    PROMPTS = json.load(f)
+    
+
+
+# dotenv_path = find_dotenv("C:\\Users\\visha\\Downloads\\Resume_temp_CB\\front-back-duo-dance\\resumeai_microservice\\.env")
+load_dotenv()
+
 
 MODEL_MAP = {
     "free": "gpt-3.5-turbo",
@@ -47,19 +53,20 @@ logger = logging.getLogger("openai_utils")
 def call_openai(messages, plan="free", temperature=0.2, max_tokens=1024):
     logger.info(f"call_openai called with plan={plan}, model selection in progress")
     try:
-    except Exception as e:
-        logger.error(f"OpenAI API key error: {e}")
-        return json.dumps({"error": "OPENAI_API_KEY not found in environment. Please set it in your .env file."}), {"error": str(e)}, 0
-    model, cost_per_1k = get_model_and_cost(plan)
-    try:
+        model, cost_per_1k = get_model_and_cost(plan)
         logger.info(f"Calling OpenAI model: {model}")
-        response = client.chat.completions.create(model=model,
-        messages=messages,
-        temperature=temperature,
-        max_tokens=max_tokens)
+        response = client.chat.completions.create(
+            model=model,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_tokens
+        )
         content = response.choices[0].message.content
-        usage = response.usage if "usage" in response else {}
-        total_tokens = usage.get("total_tokens", 0)
+        usage = getattr(response, "usage", None)
+        if usage:
+            total_tokens = getattr(usage, "total_tokens", 0)
+        else:
+            total_tokens = 0
         estimated_cost = (total_tokens / 1000) * cost_per_1k
         logger.info(f"OpenAI call | model: {model} | tokens: {total_tokens} | est. cost: ${estimated_cost:.4f}")
         return content, usage, estimated_cost

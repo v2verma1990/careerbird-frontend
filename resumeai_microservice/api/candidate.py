@@ -1,5 +1,5 @@
 from fastapi import APIRouter, UploadFile, File, Form
-from resumeai_microservice.services.candidate_service import (
+from services.candidate_service import (
     analyze_resume_service, optimize_resume_service, customize_resume_service, benchmark_resume_service, ats_scan_service, generate_cover_letter_service
 )
 

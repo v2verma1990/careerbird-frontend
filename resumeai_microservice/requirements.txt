@@ -7,3 +7,5 @@ httpx
 python-multipart
 python-docx
 pdfplumber
+dotenv
+openai

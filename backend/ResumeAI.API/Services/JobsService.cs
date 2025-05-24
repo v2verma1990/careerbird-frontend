@@ -12,7 +12,7 @@ namespace ResumeAI.API.Services
     public class JobsService
     {
         private readonly HttpClient _httpClient;
-        private readonly string _pythonApiBaseUrl = "http://localhost:8000/candidate"; // Adjust if needed
+        private readonly string _pythonApiBaseUrl = "http://localhost:8000/recruiter"; // Adjust if needed
         private readonly ILogger<JobsService> _logger;
 
         public JobsService(ILogger<JobsService> logger)

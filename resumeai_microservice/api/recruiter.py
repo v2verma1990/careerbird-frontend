@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Form
-from resumeai_microservice.services.recruiter_service import (
+from services.recruiter_service import (
     optimize_job_description_service, find_best_candidates_service, generate_interview_questions_service, optimize_resume_for_job_service
 )
 

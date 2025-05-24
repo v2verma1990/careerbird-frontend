@@ -22,3 +22,11 @@ def set_cached_response(endpoint, cache_key, data):
     path = os.path.join(CACHE_DIR, f"{endpoint}_{cache_key}.json")
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f)
+
+def cache_if_successful(namespace, cache_key, result):
+    """
+    Cache the result only if it is not an error.
+    Assumes error responses are dicts with an 'error' key.
+    """
+    if not (isinstance(result, dict) and "error" in result):
+        set_cached_response(namespace, cache_key, result)
