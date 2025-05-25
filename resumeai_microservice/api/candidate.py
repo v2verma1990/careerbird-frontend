@@ -22,14 +22,10 @@ async def customize(
     job_description_file: Optional[UploadFile] = File(None),
     plan: str = Form("free")
 ):
-    jd_text = job_description
-    if job_description_file is not None:
-        jd_text = await extract_resume_text(job_description_file)
-    if not jd_text or not jd_text.strip():
-        from fastapi import HTTPException
-        raise HTTPException(status_code=400, detail="Job description is required (either as text or file).")
-    
-    result = await customize_resume_service(resume, jd_text, plan)
+    print("job_description_file:", job_description_file)
+    print("plan:", plan)
+    print("job_description:", job_description)     
+    result = await customize_resume_service(resume, job_description,job_description_file, plan)
     return result
 
 @router.post("/benchmark")

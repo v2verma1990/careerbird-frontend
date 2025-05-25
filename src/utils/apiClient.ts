@@ -70,20 +70,54 @@ async function apiCall<T>(
       return { data: null, error: `Request failed with status 401: Unauthorized access` };
     }
 
+    // if (!response.ok) {
+    //   // Try to parse error as JSON and extract detail
+    //   let errorMsg = `Request failed with status ${response.status}`;
+    //   try {
+    //     const errorJson = await response.json();
+    //     if (errorJson && errorJson.detail) {
+    //       errorMsg = errorJson.detail;
+    //     }
+    //   } catch {
+    //     // fallback to text if not JSON
+    //     const errorText = await response.text();
+    //     errorMsg = errorText;
+    //   }
+    //   return { data: null, error: errorMsg };
+    // }
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("API call failed:", errorText);
-      return { data: null, error: `Request failed with status ${response.status}: ${errorText}` };
+      let errorMsg = `Request failed with status ${response.status}`;
+      try {
+        const errorJson = await response.json();
+
+        // Extract deeply nested error messages
+        if (errorJson?.error) {
+          try {
+            const nestedError = JSON.parse(errorJson.error);
+            if (nestedError?.detail) {
+              errorMsg = nestedError.detail; // Extract actual error message from Python
+            }
+          } catch {
+            errorMsg = errorJson.error; // Fallback if nested parsing fails
+          }
+        } else if (errorJson?.detail) {
+          errorMsg = errorJson.detail;
+        }
+      } catch {
+        errorMsg = await response.text(); // Handle plain text responses
+      }
+
+      return { data: null, error: errorMsg };
     }
 
-    // Check for 204 No Content response
+    // Handle 204 No Content responses
     if (response.status === 204) {
       return { data: null, error: null };
     }
 
+    // Parse response correctly based on content type
     const contentType = response.headers.get("content-type");
     let data;
-    
     if (contentType && contentType.includes("application/json")) {
       data = await response.json();
     } else {
@@ -95,6 +129,7 @@ async function apiCall<T>(
     console.error("API call failed:", error);
     return { data: null, error: error instanceof Error ? error.message : "Unknown error" };
   }
+
 }
 
 // Create API client with methods for different endpoints

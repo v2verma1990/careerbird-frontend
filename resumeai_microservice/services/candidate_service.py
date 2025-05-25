@@ -1,6 +1,5 @@
 from fastapi import UploadFile, File, Form, HTTPException
-from fastapi.responses import JSONResponse
-from utils.cache import get_cached_response, set_cached_response, hash_inputs,cache_if_successful
+from utils.cache import get_cached_response, set_cached_response, hash_inputs, cache_if_successful
 from utils.openai_utils import (
     analyze_resume, optimize_resume, customize_resume, benchmark_resume, ats_scan, generate_cover_letter, jobscan_style_report
 )
@@ -37,11 +36,11 @@ async def analyze_resume_service(resume: UploadFile, job_description: str, plan:
     cached = get_cached_response("analyze", cache_key)
     if cached:
         logger.info("Cache hit for analyze_resume")
-        return JSONResponse(content=cached)
+        return cached
     result = analyze_resume(resume_text, job_description, plan=plan)
     cache_if_successful("analyze", cache_key, result)
     logger.info("Cache miss for analyze_resume, called OpenAI")
-    return JSONResponse(content=result)
+    return result
 
 async def optimize_resume_service(resume: UploadFile, job_description: str, plan: str = "free"):
     logger.info("optimize_resume_service called (Jobscan-style)")
@@ -50,20 +49,30 @@ async def optimize_resume_service(resume: UploadFile, job_description: str, plan
     cached = get_cached_response("optimize", cache_key)
     if cached:
         logger.info("Cache hit for optimize_resume (Jobscan-style)")
-        return JSONResponse(content=cached)
+        return cached
     from utils.openai_utils import optimize_resume_jobscan_style
     result = optimize_resume_jobscan_style(resume_text, plan=plan)
     cache_if_successful("optimize", cache_key, result)
     logger.info("Cache miss for optimize_resume, called OpenAI (Jobscan-style)")
-    return JSONResponse(content=result)
+    return result
 
-async def customize_resume_service(resume: UploadFile, job_description: str, plan: str = "free"):
+async def customize_resume_service(
+    resume: UploadFile,
+    job_description: str = None,
+    job_description_file: UploadFile = None,
+    plan: str = "free"
+):
     logger.info("customize_resume_service called (Jobscan-style)")
     try:
         resume_text = await extract_resume_text(resume)
+        # Handle both text and file for job description
+        if job_description_file is not None:
+            jd_text = await extract_resume_text(job_description_file)
+        else:
+            jd_text = job_description or ""
         # Count tokens
         resume_tokens = count_tokens(resume_text)
-        jd_tokens = count_tokens(job_description)
+        jd_tokens = count_tokens(jd_text)
         total_tokens = resume_tokens + jd_tokens
         max_total_tokens = 15000  # leave room for prompt/instructions
 
@@ -73,15 +82,15 @@ async def customize_resume_service(resume: UploadFile, job_description: str, pla
                 detail="Your resume and job description are too long for analysis. Please shorten your job description."
             )
 
-        cache_key = hash_inputs(resume_text, job_description, plan)
+        cache_key = hash_inputs(resume_text, jd_text, plan)
         cached = get_cached_response("customize", cache_key)
         if cached:
             logger.info("Cache hit for customize_resume (Jobscan-style)")
-            return cached  # <--- Just return the dict!
-        result = jobscan_style_report(resume_text, job_description, plan=plan)
+            return cached
+        result = jobscan_style_report(resume_text, jd_text, plan=plan)
         cache_if_successful("customize", cache_key, result)
         logger.info("Cache miss for customize_resume, called OpenAI (Jobscan-style)")
-        return result  # <--- Just return the dict!
+        return result
     except HTTPException as e:
         logger.error(f"customize_resume_service failed: {e.detail}")
         raise e
@@ -96,11 +105,11 @@ async def benchmark_resume_service(resume: UploadFile, job_description: str, pla
     cached = get_cached_response("benchmark", cache_key)
     if cached:
         logger.info("Cache hit for benchmark_resume")
-        return JSONResponse(content=cached)
+        return cached
     result = benchmark_resume(resume_text, job_description, plan=plan)
     cache_if_successful("benchmark", cache_key, result)
     logger.info("Cache miss for benchmark_resume, called OpenAI")
-    return JSONResponse(content=result)
+    return result
 
 async def ats_scan_service(resume: UploadFile, plan: str = "free"):
     logger.info("ats_scan_service called")
@@ -109,11 +118,11 @@ async def ats_scan_service(resume: UploadFile, plan: str = "free"):
     cached = get_cached_response("ats_scan", cache_key)
     if cached:
         logger.info("Cache hit for ats_scan")
-        return JSONResponse(content=cached)
+        return cached
     result = ats_scan(resume_text, plan=plan)
     cache_if_successful("ats_scan", cache_key, result)
     logger.info("Cache miss for ats_scan, called OpenAI")
-    return JSONResponse(content=result)
+    return result
 
 async def generate_cover_letter_service(job_title: str, company: str, job_description: str, plan: str = "free"):
     logger.info("generate_cover_letter_service called")
@@ -121,8 +130,8 @@ async def generate_cover_letter_service(job_title: str, company: str, job_descri
     cached = get_cached_response("generate_cover_letter", cache_key)
     if cached:
         logger.info("Cache hit for generate_cover_letter")
-        return JSONResponse(content=cached)
+        return cached
     result = generate_cover_letter(job_title, company, job_description, plan=plan)
     cache_if_successful("generate_cover_letter", cache_key, result)
     logger.info("Cache miss for generate_cover_letter, called OpenAI")
-    return JSONResponse(content=result)
+    return result

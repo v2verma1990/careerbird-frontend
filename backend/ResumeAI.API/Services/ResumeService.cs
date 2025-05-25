@@ -68,30 +68,61 @@ namespace ResumeAI.API.Services
         }
         
         public async Task<JobscanReportResult> CustomizeResume(
-            IFormFile file, string jobDescription, string plan, string userId, string featureType, Subscription? subscription = null)
+            IFormFile file,
+            string jobDescription,
+            string plan,
+            string userId,
+            string featureType,
+            IFormFile? jobDescriptionFile = null, // <-- Add this parameter
+            Subscription? subscription = null)
         {
             if (file == null || file.Length == 0)
                 throw new ArgumentException("Resume file is required", nameof(file));
-            string resumeText;
-            using (var reader = new StreamReader(file.OpenReadStream()))
+
+            var form = new MultipartFormDataContent
             {
-                resumeText = await reader.ReadToEndAsync();
-            }
-            var form = new MultipartFormDataContent();
-            form.Add(new StringContent(jobDescription), "job_description");
-            form.Add(new StreamContent(file.OpenReadStream()), "resume", file.FileName); // <-- use "file" here
-            form.Add(new StringContent(plan), "plan");
-            var response = await _httpClient.PostAsync($"{_pythonApiBaseUrl}/customize", form);
-            response.EnsureSuccessStatusCode();
+                { new StreamContent(file.OpenReadStream()), "resume", file.FileName },
+                { new StringContent(plan), "plan" }
+            };
+
+            // Add job description as text if provided
+            if (!string.IsNullOrWhiteSpace(jobDescription))
+                form.Add(new StringContent(jobDescription), "job_description");
+
+            // Add job description file if provided
+            if (jobDescriptionFile != null && jobDescriptionFile.Length > 0)
+                form.Add(new StreamContent(jobDescriptionFile.OpenReadStream()), "job_description_file", jobDescriptionFile.FileName);
+
+            HttpResponseMessage response = await _httpClient.PostAsync($"{_pythonApiBaseUrl}/customize", form);
             var json = await response.Content.ReadAsStringAsync();
+            Console.WriteLine("PYTHON RAW RESPONSE: " + json); // or use your logger
+            if (!response.IsSuccessStatusCode)
+            {
+                // Improved error extraction
+                string errorMessage = $"Python API Error [{(int)response.StatusCode}]";
+                try
+                {
+                    using var doc = JsonDocument.Parse(json);
+                    if (doc.RootElement.TryGetProperty("detail", out var detailProp))
+                        errorMessage = detailProp.GetString() ?? errorMessage;
+                    else
+                        errorMessage = json;
+                }
+                catch
+                {
+                    errorMessage = json;
+                }
+                throw new HttpRequestException(errorMessage);
+            }
+
             var result = JsonSerializer.Deserialize<JobscanReportResult>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            Console.WriteLine("return result from .NET: " + result); // or use your logger
             if (result == null)
                 throw new Exception("Failed to parse response from resume customization service.");
-            // Only increment usage if success
+
             await _activityLogService.TrackFeatureUsage(userId, featureType, subscription);
             return result;
         }
-        
         public async Task<ResumeBenchmarkResult> BenchmarkResume(string resumeText, string jobDescription, string plan, string userId, string featureType, Subscription? subscription = null)
         {
             var form = new MultipartFormDataContent();

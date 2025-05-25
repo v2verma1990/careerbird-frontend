@@ -68,6 +68,64 @@ namespace ResumeAI.API.Controllers
             }
         }
 
+        // [HttpPost("customize")]
+        // public async Task<IActionResult> CustomizeResume([FromForm] ResumeOptimizationRequest request)
+        // {
+        //     try
+        //     {
+        //         string userId = _authService.ExtractUserIdFromAuthHeader(Request.Headers["Authorization"].ToString());
+        //         if (string.IsNullOrEmpty(userId))
+        //             return Unauthorized(new { error = "Invalid or missing authorization token" });
+        //         if (request.File == null || request.File.Length == 0)
+        //             return BadRequest(new { error = "Resume file is required" });
+        //         if (request.File.Length > 5 * 1024 * 1024)
+        //             return BadRequest(new { error = "File size exceeds the 5MB limit" });
+        //         var fileExtension = Path.GetExtension(request.File.FileName).ToLowerInvariant();
+        //         if (fileExtension != ".pdf" && fileExtension != ".docx" && fileExtension != ".doc" && fileExtension != ".txt")
+        //             return BadRequest(new { error = "Only PDF, DOCX, DOC, and TXT files are supported" });
+
+        //         // Extract job description text from file if present, otherwise use text
+        //         string jobDescriptionText = request.JobDescription ?? string.Empty;
+        //         if (request.JobDescriptionFile != null && request.JobDescriptionFile.Length > 0)
+        //         {
+        //             using (var reader = new StreamReader(request.JobDescriptionFile.OpenReadStream()))
+        //             {
+        //                 jobDescriptionText = await reader.ReadToEndAsync();
+        //             }
+        //         }
+
+        //         if (string.IsNullOrWhiteSpace(jobDescriptionText))
+        //             return BadRequest(new { error = "Job description is required (either as text or file)." });
+
+        //         // Get user plan
+        //         var profile = await _userService.GetUserProfileAsync(userId);
+        //         var isRecruiter = profile?.UserType == "recruiter";
+        //         var subscription = isRecruiter
+        //             ? await _recruiterSubscriptionService.GetRecruiterSubscription(userId)
+        //             : await _candidateSubscriptionService.GetCandidateSubscription(userId);
+        //         var plan = subscription?.subscription_type ?? "free";
+        //         await _activityLogService.LogActivity(userId, "resume_customized", "Resume customized for job description");
+
+        //         var result = await _resumeService.CustomizeResume(
+        //             request.File,
+        //             jobDescriptionText,
+        //             plan,
+        //             userId,
+        //             "resume_customization",
+        //             subscription
+        //         );
+
+        //         return Ok(result);
+        //     }
+        //     catch (UnauthorizedAccessException ex)
+        //     {
+        //         return Unauthorized(new { error = ex.Message });
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         return StatusCode(500, new { error = ex.Message });
+        //     }
+        // }
         [HttpPost("customize")]
         public async Task<IActionResult> CustomizeResume([FromForm] ResumeOptimizationRequest request)
         {
@@ -76,25 +134,28 @@ namespace ResumeAI.API.Controllers
                 string userId = _authService.ExtractUserIdFromAuthHeader(Request.Headers["Authorization"].ToString());
                 if (string.IsNullOrEmpty(userId))
                     return Unauthorized(new { error = "Invalid or missing authorization token" });
+
                 if (request.File == null || request.File.Length == 0)
                     return BadRequest(new { error = "Resume file is required" });
+
                 if (request.File.Length > 5 * 1024 * 1024)
                     return BadRequest(new { error = "File size exceeds the 5MB limit" });
+
                 var fileExtension = Path.GetExtension(request.File.FileName).ToLowerInvariant();
-                if (fileExtension != ".pdf" && fileExtension != ".docx" && fileExtension != ".doc" && fileExtension != ".txt")
+                if (!new[] { ".pdf", ".docx", ".doc", ".txt" }.Contains(fileExtension))
                     return BadRequest(new { error = "Only PDF, DOCX, DOC, and TXT files are supported" });
 
-                // Extract job description text from file if present, otherwise use text
                 string jobDescriptionText = request.JobDescription ?? string.Empty;
-                if (request.JobDescriptionFile != null && request.JobDescriptionFile.Length > 0)
+                IFormFile? jobDescriptionFile = request.JobDescriptionFile;
+
+                // If a file is uploaded, ignore the text and send only the file
+                if (jobDescriptionFile != null && jobDescriptionFile.Length > 0)
                 {
-                    using (var reader = new StreamReader(request.JobDescriptionFile.OpenReadStream()))
-                    {
-                        jobDescriptionText = await reader.ReadToEndAsync();
-                    }
+                    jobDescriptionText = string.Empty;
                 }
 
-                if (string.IsNullOrWhiteSpace(jobDescriptionText))
+                // If neither text nor file is provided, return an error
+                if (string.IsNullOrWhiteSpace(jobDescriptionText) && (jobDescriptionFile == null || jobDescriptionFile.Length == 0))
                     return BadRequest(new { error = "Job description is required (either as text or file)." });
 
                 // Get user plan
@@ -104,26 +165,38 @@ namespace ResumeAI.API.Controllers
                     ? await _recruiterSubscriptionService.GetRecruiterSubscription(userId)
                     : await _candidateSubscriptionService.GetCandidateSubscription(userId);
                 var plan = subscription?.subscription_type ?? "free";
+
                 await _activityLogService.LogActivity(userId, "resume_customized", "Resume customized for job description");
 
-                var result = await _resumeService.CustomizeResume(
-                    request.File,
-                    jobDescriptionText,
-                    plan,
-                    userId,
-                    "resume_customization",
-                    subscription
-                );
-
-                return Ok(result);
+                try
+                {
+                    var result = await _resumeService.CustomizeResume(
+                        request.File,
+                        jobDescriptionText,
+                        plan,
+                        userId,
+                        "resume_customization",
+                        jobDescriptionFile,
+                        subscription
+                    );
+                    return Ok(result);
+                }
+                catch (HttpRequestException ex)  // 🌟 Captures Python API errors & forwards them correctly
+                {
+                    return StatusCode(500, new { error = ex.Message });
+                }
+                catch (ArgumentException ex)  // 🌟 Handles validation errors separately
+                {
+                    return BadRequest(new { error = ex.Message });
+                }
+                catch (Exception ex)  // 🌟 Handles unexpected .NET errors gracefully
+                {
+                    return StatusCode(500, new { error = $"Internal Server Error: {ex.Message}" });
+                }
             }
-            catch (UnauthorizedAccessException ex)
+            catch (UnauthorizedAccessException ex)  // 🌟 Handles authorization errors explicitly
             {
                 return Unauthorized(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { error = ex.Message });
             }
         }
 
