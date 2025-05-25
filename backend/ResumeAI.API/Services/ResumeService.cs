@@ -228,7 +228,8 @@ namespace ResumeAI.API.Services
 
     public class JobscanReportResult
     {
-        public int MatchRate { get; set; }
+        public int MatchRate { get; set; } // Match score as per JD
+        public int AtsScore { get; set; }  // ATS/formatting score
         public SkillsMatch? SkillsMatch { get; set; }
         public List<string>? AtsTips { get; set; }
         public KeywordAnalysis? KeywordAnalysis { get; set; }
@@ -236,7 +237,7 @@ namespace ResumeAI.API.Services
         public string? Summary { get; set; }
         public Dictionary<string, string>? SectionFeedback { get; set; }
         public List<ResumeHighlight>? ResumeHighlights { get; set; }
-        // Add any other fields as needed from the Python response
+        // ...other fields as needed
     }
     public class SkillsMatch
     {

@@ -306,6 +306,10 @@ const handleSubmit = async (e: React.FormEvent) => {
                       <div className="text-lg font-semibold">Match Rate</div>
                       <div className="text-3xl font-bold text-blue-700">{jobscanReport.matchRate ?? '--'}%</div>
                     </div>
+                    <div className="bg-purple-100 rounded p-4 min-w-[180px] shadow">
+                      <div className="text-lg font-semibold">ATS Score</div>
+                      <div className="text-3xl font-bold text-purple-700">{jobscanReport.atsScore ?? '--'}%</div>
+                    </div>
                     <div className="bg-green-100 rounded p-4 min-w-[180px] shadow">
                       <div className="text-lg font-semibold">Skills Match</div>
                       <div className="text-green-700 font-bold">Matched: {jobscanReport.skillsMatch?.matchedSkills?.length ?? 0}</div>
