@@ -1,4 +1,4 @@
-from fastapi import UploadFile, File, Form
+from fastapi import UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse
 from utils.cache import get_cached_response, set_cached_response, hash_inputs,cache_if_successful
 from utils.openai_utils import (
@@ -8,6 +8,7 @@ import logging
 import io
 from docx import Document
 import pdfplumber
+import tiktoken
 
 logger = logging.getLogger("candidate_service")
 
@@ -24,6 +25,10 @@ async def extract_resume_text(resume: UploadFile) -> str:
             return "\n".join(page.extract_text() or "" for page in pdf.pages)
     else:
         return content.decode("utf-8", errors="ignore")
+
+def count_tokens(text, model="gpt-3.5-turbo"):
+    enc = tiktoken.encoding_for_model(model)
+    return len(enc.encode(text))
 
 async def analyze_resume_service(resume: UploadFile, job_description: str, plan: str = "free"):
     logger.info("analyze_resume_service called")
@@ -54,16 +59,35 @@ async def optimize_resume_service(resume: UploadFile, job_description: str, plan
 
 async def customize_resume_service(resume: UploadFile, job_description: str, plan: str = "free"):
     logger.info("customize_resume_service called (Jobscan-style)")
-    resume_text = await extract_resume_text(resume)
-    cache_key = hash_inputs(resume_text, job_description, plan)
-    cached = get_cached_response("customize", cache_key)
-    if cached:
-        logger.info("Cache hit for customize_resume (Jobscan-style)")
-        return JSONResponse(content=cached)
-    result = jobscan_style_report(resume_text, job_description, plan=plan)
-    cache_if_successful("customize", cache_key, result)
-    logger.info("Cache miss for customize_resume, called OpenAI (Jobscan-style)")
-    return JSONResponse(content=result)
+    try:
+        resume_text = await extract_resume_text(resume)
+        # Count tokens
+        resume_tokens = count_tokens(resume_text)
+        jd_tokens = count_tokens(job_description)
+        total_tokens = resume_tokens + jd_tokens
+        max_total_tokens = 15000  # leave room for prompt/instructions
+
+        if total_tokens > max_total_tokens:
+            raise HTTPException(
+                status_code=400,
+                detail="Your resume and job description are too long for analysis. Please shorten your job description."
+            )
+
+        cache_key = hash_inputs(resume_text, job_description, plan)
+        cached = get_cached_response("customize", cache_key)
+        if cached:
+            logger.info("Cache hit for customize_resume (Jobscan-style)")
+            return cached  # <--- Just return the dict!
+        result = jobscan_style_report(resume_text, job_description, plan=plan)
+        cache_if_successful("customize", cache_key, result)
+        logger.info("Cache miss for customize_resume, called OpenAI (Jobscan-style)")
+        return result  # <--- Just return the dict!
+    except HTTPException as e:
+        logger.error(f"customize_resume_service failed: {e.detail}")
+        raise e
+    except Exception as e:
+        logger.error(f"customize_resume_service failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 async def benchmark_resume_service(resume: UploadFile, job_description: str, plan: str = "free"):
     logger.info("benchmark_resume_service called")

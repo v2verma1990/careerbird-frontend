@@ -1,7 +1,9 @@
 from fastapi import APIRouter, UploadFile, File, Form
+from typing import Optional
 from services.candidate_service import (
-    analyze_resume_service, optimize_resume_service, customize_resume_service, benchmark_resume_service, ats_scan_service, generate_cover_letter_service
+    analyze_resume_service, optimize_resume_service, customize_resume_service, benchmark_resume_service, ats_scan_service, generate_cover_letter_service, extract_resume_text
 )
+from fastapi.responses import JSONResponse
 
 router = APIRouter()
 
@@ -14,8 +16,21 @@ async def optimize(resume: UploadFile = File(...), job_description: str = Form(.
     return await optimize_resume_service(resume, job_description, plan)
 
 @router.post("/customize")
-async def customize(resume: UploadFile = File(...), job_description: str = Form(...), plan: str = Form("free")):
-    return await customize_resume_service(resume, job_description, plan)
+async def customize(
+    resume: UploadFile = File(...),
+    job_description: Optional[str] = Form(None),
+    job_description_file: Optional[UploadFile] = File(None),
+    plan: str = Form("free")
+):
+    jd_text = job_description
+    if job_description_file is not None:
+        jd_text = await extract_resume_text(job_description_file)
+    if not jd_text or not jd_text.strip():
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="Job description is required (either as text or file).")
+    
+    result = await customize_resume_service(resume, jd_text, plan)
+    return result
 
 @router.post("/benchmark")
 async def benchmark(resume: UploadFile = File(...), job_description: str = Form(...), plan: str = Form("free")):

@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/auth/AuthContext";
 import api, { IS_BACKEND_RUNNING } from "@/utils/apiClient";
 import ResumeFileUploader from "@/components/ResumeFileUploader";
 import PDFViewer from "@/components/PDFViewer";
+import { Input } from "@/components/ui/input"; // If you have a custom Input component
 
 const ResumeCustomizer = () => {
   const [jobDescription, setJobDescription] = useState("");
@@ -24,6 +25,8 @@ const ResumeCustomizer = () => {
   const [suggestionLoading, setSuggestionLoading] = useState(false);
   const { toast } = useToast();
   const { user, subscriptionStatus, incrementUsageCount } = useAuth();
+  const [jdInputType, setJdInputType] = useState<"text" | "file">("text");
+  const [jobDescriptionFile, setJobDescriptionFile] = useState<File | null>(null);
 
   const handleFileSelected = async (file: File) => {
     setResumeFile(file);
@@ -31,6 +34,13 @@ const ResumeCustomizer = () => {
     setImprovements([]);
     setPdfUrl(null);
     setJobscanReport(null);
+  };
+
+  const handleJDFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setJobDescriptionFile(e.target.files[0]);
+      setJobDescription(""); // Clear text if file is chosen
+    }
   };
 
   useEffect(() => {
@@ -56,11 +66,19 @@ const ResumeCustomizer = () => {
       });
       return;
     }
-    if (!jobDescription) {
+    if (jdInputType === "text" && !jobDescription) {
       toast({
         variant: "destructive",
         title: "Missing information",
         description: "Please provide a job description.",
+      });
+      return;
+    }
+    if (jdInputType === "file" && !jobDescriptionFile) {
+      toast({
+        variant: "destructive",
+        title: "Missing information",
+        description: "Please upload a job description file.",
       });
       return;
     }
@@ -91,12 +109,31 @@ const ResumeCustomizer = () => {
         }, 2000);
         return;
       }
-      // Send request and handle Jobscan-style JSON response
+
+      // Use API client for resume customization
       const { data, error } = await api.resume.customize({
-        file: resumeFile,
-        jobDescription
+        file: resumeFile!,
+        jobDescription: jdInputType === "text" ? jobDescription : undefined,
+        jobDescriptionFile: jdInputType === "file" ? jobDescriptionFile! : undefined,
       });
-      if (error) throw new Error(error);
+
+      if (error) {
+        let errorMsg = "Failed to customize resume. Please try again.";
+        try {
+          // Try to parse as JSON (backend returns {"detail": "..."} for errors)
+          const parsed = JSON.parse(error);
+          if (parsed?.detail) {
+            errorMsg = parsed.detail;
+          } else if (typeof parsed === "string") {
+            errorMsg = parsed;
+          }
+        } catch {
+          // If not JSON, use the error string directly (for plain text errors)
+          errorMsg = error;
+        }
+        throw new Error(errorMsg);
+      }
+
       let newCount = 0;
       try {
         newCount = await incrementUsageCount("resume_customization");
@@ -125,10 +162,18 @@ const ResumeCustomizer = () => {
         throw new Error("No data returned from the server. Please try again.");
       }
     } catch (error: any) {
+      // Try to extract backend error message (for fetch/axios/api client)
+      let errorMsg = error?.message || "Failed to customize resume. Please try again.";
+      // If your api.resume.customize returns error as an object with a response/data/detail, check those:
+      if (error?.response?.data?.detail) {
+        errorMsg = error.response.data.detail;
+      } else if (error?.detail) {
+        errorMsg = error.detail;
+      }
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message || "Failed to customize resume. Please try again.",
+        description: errorMsg,
       });
     } finally {
       setIsLoading(false);
@@ -186,15 +231,61 @@ const ResumeCustomizer = () => {
                   <ResumeFileUploader onFileSelected={handleFileSelected} disabled={isLoading} />
                 </div>
                 <div>
-                  <Label htmlFor="jobDescription">Job Description</Label>
-                  <Textarea
-                    id="jobDescription"
-                    placeholder="Paste the job description here..."
-                    value={jobDescription}
-                    onChange={(e) => setJobDescription(e.target.value)}
-                    className="min-h-[200px]"
-                  />
+                  <Label htmlFor="jdInputType">Job Description Input</Label>
+                  <div className="flex gap-4 mt-2">
+                    <label>
+                      <input
+                        type="radio"
+                        name="jdInputType"
+                        value="text"
+                        checked={jdInputType === "text"}
+                        onChange={() => setJdInputType("text")}
+                        disabled={isLoading}
+                      />{" "}
+                      Paste Text
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        name="jdInputType"
+                        value="file"
+                        checked={jdInputType === "file"}
+                        onChange={() => setJdInputType("file")}
+                        disabled={isLoading}
+                      />{" "}
+                      Upload File
+                    </label>
+                  </div>
                 </div>
+                {jdInputType === "text" ? (
+                  <div>
+                    <Label htmlFor="jobDescription">Job Description</Label>
+                    <Textarea
+                      id="jobDescription"
+                      placeholder="Paste the job description here..."
+                      value={jobDescription}
+                      onChange={(e) => setJobDescription(e.target.value)}
+                      className="min-h-[200px]"
+                      disabled={isLoading}
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <Label htmlFor="jobDescriptionFile">Job Description File</Label>
+                    <Input
+                      id="jobDescriptionFile"
+                      type="file"
+                      accept=".txt,.pdf,.doc,.docx"
+                      onChange={handleJDFileSelected}
+                      disabled={isLoading}
+                    />
+                    {jobDescriptionFile && (
+                      <div className="text-sm text-gray-600 mt-1">
+                        Selected: {jobDescriptionFile.name}
+                      </div>
+                    )}
+                  </div>
+                )}
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? "Customizing..." : "Customize My Resume"}
                 </Button>

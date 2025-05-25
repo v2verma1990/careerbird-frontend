@@ -83,6 +83,20 @@ namespace ResumeAI.API.Controllers
                 var fileExtension = Path.GetExtension(request.File.FileName).ToLowerInvariant();
                 if (fileExtension != ".pdf" && fileExtension != ".docx" && fileExtension != ".doc" && fileExtension != ".txt")
                     return BadRequest(new { error = "Only PDF, DOCX, DOC, and TXT files are supported" });
+
+                // Extract job description text from file if present, otherwise use text
+                string jobDescriptionText = request.JobDescription ?? string.Empty;
+                if (request.JobDescriptionFile != null && request.JobDescriptionFile.Length > 0)
+                {
+                    using (var reader = new StreamReader(request.JobDescriptionFile.OpenReadStream()))
+                    {
+                        jobDescriptionText = await reader.ReadToEndAsync();
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(jobDescriptionText))
+                    return BadRequest(new { error = "Job description is required (either as text or file)." });
+
                 // Get user plan
                 var profile = await _userService.GetUserProfileAsync(userId);
                 var isRecruiter = profile?.UserType == "recruiter";
@@ -91,8 +105,16 @@ namespace ResumeAI.API.Controllers
                     : await _candidateSubscriptionService.GetCandidateSubscription(userId);
                 var plan = subscription?.subscription_type ?? "free";
                 await _activityLogService.LogActivity(userId, "resume_customized", "Resume customized for job description");
-                var result = await _resumeService.CustomizeResume(request.File, request.JobDescription ?? string.Empty, plan, userId, "resume_customization", subscription);
-                // Return the full Jobscan-style report as JSON
+
+                var result = await _resumeService.CustomizeResume(
+                    request.File,
+                    jobDescriptionText,
+                    plan,
+                    userId,
+                    "resume_customization",
+                    subscription
+                );
+
                 return Ok(result);
             }
             catch (UnauthorizedAccessException ex)
@@ -144,7 +166,7 @@ namespace ResumeAI.API.Controllers
                 string userId = _authService.ExtractUserIdFromAuthHeader(Request.Headers["Authorization"].ToString());
                 if (string.IsNullOrEmpty(userId))
                     return Unauthorized(new { error = "Invalid or missing authorization token" });
-                string text = resumeText;
+                string text = resumeText??string.Empty;
                 if (file != null && file.Length > 0)
                 {
                     using (var reader = new StreamReader(file.OpenReadStream()))
@@ -265,5 +287,6 @@ namespace ResumeAI.API.Controllers
         public string? ResumeText { get; set; }
         public string JobDescription { get; set; } = string.Empty;
         public IFormFile? File { get; set; }
+        public IFormFile? JobDescriptionFile { get; set; } // <-- Add this line
     }
 }

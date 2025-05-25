@@ -275,7 +275,7 @@ export const api = {
   resume: {
     analyze: (params: { resumeText: string, jobDescription: string }) => 
       apiCall<any>("POST", "/resume/analyze", params),
-    customize: async (params: { file: File, jobDescription: string }) => {
+    customize: async (params: { file: File, jobDescription?: string, jobDescriptionFile?: File }) => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         let headers: Record<string, string> = {};
@@ -284,7 +284,9 @@ export const api = {
         }
         const formData = new FormData();
         formData.append('file', params.file);
-        if (params.jobDescription !== undefined) {
+        if (params.jobDescriptionFile) {
+          formData.append('jobDescriptionFile', params.jobDescriptionFile);
+        } else if (params.jobDescription !== undefined) {
           formData.append('jobDescription', params.jobDescription);
         }
         const response = await fetch(`${API_BASE_URL}/resume/customize`, {
@@ -297,7 +299,6 @@ export const api = {
           const errorText = await response.text();
           return { data: null, error: errorText };
         }
-        // Expect JSON Jobscan-style report
         const contentType = response.headers.get('content-type');
         if (contentType && contentType.includes('application/json')) {
           const json = await response.json();

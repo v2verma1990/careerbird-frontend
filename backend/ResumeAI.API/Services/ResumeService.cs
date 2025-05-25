@@ -79,7 +79,7 @@ namespace ResumeAI.API.Services
             }
             var form = new MultipartFormDataContent();
             form.Add(new StringContent(jobDescription), "job_description");
-            form.Add(new StreamContent(file.OpenReadStream()), "resume", file.FileName);
+            form.Add(new StreamContent(file.OpenReadStream()), "resume", file.FileName); // <-- use "file" here
             form.Add(new StringContent(plan), "plan");
             var response = await _httpClient.PostAsync($"{_pythonApiBaseUrl}/customize", form);
             response.EnsureSuccessStatusCode();
