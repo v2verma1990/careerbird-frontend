@@ -93,21 +93,7 @@ const ResumeOptimizer = () => {
         file: resumeFile
       });
       if (error) throw new Error(error);
-      let newCount = 0;
-      try {
-        newCount = await incrementUsageCount("resume_optimization");
-      } catch (error) {
-        console.log("Error tracking usage, continuing anyway");
-      }
-      if (subscriptionStatus?.type === "free" && newCount > featureUsage.usageLimit) {
-        toast({
-          variant: "destructive",
-          title: "Usage limit reached",
-          description: "Please upgrade your subscription to continue using this feature.",
-        });
-        setIsLoading(false);
-        return;
-      }
+
       if (data) {
         setOptimizeReport(data);
         setOptimizedResume(data.optimizedContent || "");
@@ -154,7 +140,7 @@ const ResumeOptimizer = () => {
                   <ResumeFileUploader onFileSelected={handleFileSelected} disabled={isLoading} />
                   {/* <Textarea ... /> */}
                 </div>
-                <div>
+                {/* <div>
                   <Label htmlFor="jobDescription">Job Description</Label>
                   <Textarea
                     id="jobDescription"
@@ -163,7 +149,7 @@ const ResumeOptimizer = () => {
                     onChange={(e) => setJobDescription(e.target.value)}
                     className="min-h-[200px]"
                   />
-                </div>
+                </div> */}
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? "Optimizing..." : "Optimize My Resume"}
                 </Button>

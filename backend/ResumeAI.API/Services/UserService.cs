@@ -518,6 +518,7 @@ namespace ResumeAI.API.Services
         /// </summary>
         public async Task<UsageTracking> TrackFeatureUsage(string userId, string featureType, Subscription? subscription = null)
         {
+            Console.WriteLine($"TrackFeatureUsage called for user {userId}, feature {featureType}");
             // Fetch the current usage tracking row
             if (subscription == null)
                 subscription = await GetUserSubscriptionAsync(userId);

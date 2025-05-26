@@ -56,130 +56,113 @@ const ResumeCustomizer = () => {
     });
   }, [user]);
 
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  if (!resumeFile) {
-    toast({
-      variant: "destructive",
-      title: "Missing resume file",
-      description: "Please upload your resume as a PDF file.",
-    });
-    return;
-  }
-
-  if (jdInputType === "text" && !jobDescription) {
-    toast({
-      variant: "destructive",
-      title: "Missing information",
-      description: "Please provide a job description.",
-    });
-    return;
-  }
-
-  if (jdInputType === "file" && !jobDescriptionFile) {
-    toast({
-      variant: "destructive",
-      title: "Missing information",
-      description: "Please upload a job description file.",
-    });
-    return;
-  }
-
-  if (!user) {
-    toast({
-      variant: "destructive",
-      title: "Authentication required",
-      description: "Please sign in to use this feature.",
-    });
-    return;
-  }
-
-  try {
-    setIsLoading(true);
-
-    // Use API client for resume customization
-    const { data, error } = await api.resume.customize({
-      file: resumeFile!,
-      jobDescription: jdInputType === "text" ? jobDescription : undefined,
-      jobDescriptionFile: jdInputType === "file" ? jobDescriptionFile! : undefined,
-    });
-
-    if (error) {
-      let errorMsg = "Failed to customize resume. Please try again.";
-
-      try {
-        // Parse first-level JSON error
-        const parsedError = typeof error === "string" ? JSON.parse(error) : error;
-
-        // Check if error contains nested details
-        if (parsedError?.error) {
-          try {
-            const nestedError = JSON.parse(parsedError.error);
-            errorMsg = nestedError?.detail || parsedError.error;
-          } catch {
-            errorMsg = parsedError.error;
-          }
-        } else if (parsedError?.detail) {
-          errorMsg = parsedError.detail;
-        } else if (typeof parsedError === "string") {
-          errorMsg = parsedError;
-        }
-      } catch {
-        errorMsg = error;
-      }
-
-      throw new Error(errorMsg);
-    }
-
-    let newCount = 0;
-    try {
-      newCount = await incrementUsageCount("resume_customization");
-    } catch (error) {
-      console.log("Error tracking usage, continuing anyway");
-    }
-
-    if (subscriptionStatus?.type === "free" && newCount > featureUsage.usageLimit) {
+    if (!resumeFile) {
       toast({
         variant: "destructive",
-        title: "Usage limit reached",
-        description: "Please upgrade your subscription to continue using this feature.",
+        title: "Missing resume file",
+        description: "Please upload your resume as a PDF file.",
       });
-      setIsLoading(false);
       return;
     }
 
-    if (data) {
-      setJobscanReport(data);
-      setCustomizedResume("");
-      setImprovements([]);
-      setPdfUrl(null);
+    if (jdInputType === "text" && !jobDescription) {
       toast({
-        title: "Resume customization complete",
-        description: "Your Jobscan-style report is ready.",
+        variant: "destructive",
+        title: "Missing information",
+        description: "Please provide a job description.",
       });
-    } else {
-      throw new Error("No data returned from the server. Please try again.");
-    }
-  } catch (error: any) {
-    // Improved error handling
-    let errorMsg = error?.message || "Failed to customize resume. Please try again.";
-
-    if (error?.response?.data?.detail) {
-      errorMsg = error.response.data.detail;
-    } else if (error?.detail) {
-      errorMsg = error.detail;
+      return;
     }
 
-    toast({
-      variant: "destructive",
-      title: "Error",
-      description: errorMsg,
-    });
-  } finally {
-    setIsLoading(false);
-  }
-};
+    if (jdInputType === "file" && !jobDescriptionFile) {
+      toast({
+        variant: "destructive",
+        title: "Missing information",
+        description: "Please upload a job description file.",
+      });
+      return;
+    }
+
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Authentication required",
+        description: "Please sign in to use this feature.",
+      });
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+
+      // Use API client for resume customization
+      const { data, error } = await api.resume.customize({
+        file: resumeFile!,
+        jobDescription: jdInputType === "text" ? jobDescription : undefined,
+        jobDescriptionFile: jdInputType === "file" ? jobDescriptionFile! : undefined,
+      });
+
+      if (error) {
+        let errorMsg = "Failed to customize resume. Please try again.";
+
+        try {
+          // Parse first-level JSON error
+          const parsedError = typeof error === "string" ? JSON.parse(error) : error;
+
+          // Check if error contains nested details
+          if (parsedError?.error) {
+            try {
+              const nestedError = JSON.parse(parsedError.error);
+              errorMsg = nestedError?.detail || parsedError.error;
+            } catch {
+              errorMsg = parsedError.error;
+            }
+          } else if (parsedError?.detail) {
+            errorMsg = parsedError.detail;
+          } else if (typeof parsedError === "string") {
+            errorMsg = parsedError;
+          }
+        } catch {
+          errorMsg = error;
+        }
+
+        throw new Error(errorMsg);
+      }
+
+      if (data) {
+        setJobscanReport(data);
+        setCustomizedResume("");
+        setImprovements([]);
+        setPdfUrl(null);
+        toast({
+          title: "Resume customization complete",
+          description: "Your Jobscan-style report is ready.",
+        });
+      } else {
+        throw new Error("No data returned from the server. Please try again.");
+      }
+    } catch (error: any) {
+      // Improved error handling
+      let errorMsg = error?.message || "Failed to customize resume. Please try again.";
+
+      if (error?.response?.data?.detail) {
+        errorMsg = error.response.data.detail;
+      } else if (error?.detail) {
+        errorMsg = error.detail;
+      }
+
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: errorMsg,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // OpenAI-powered suggestions (section-by-section or overall)
   const fetchOpenAISuggestions = async () => {
