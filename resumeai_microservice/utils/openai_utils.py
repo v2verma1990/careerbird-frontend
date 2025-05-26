@@ -92,7 +92,13 @@ def run_prompt(prompt_key, plan, **kwargs):
         {"role": "system", "content": p["system"]},
         {"role": "user", "content": p["user"].format(**kwargs)}
     ]
-    content, usage, cost = call_openai(messages, plan=plan, max_tokens=2048 if plan=="premium" else 1024)
+    logger.info(f"About to call call_openai for {prompt_key}")
+    try:
+        content, usage, cost = call_openai(messages, plan=plan, max_tokens=2048 if plan=="premium" else 1024)
+    except Exception as e:
+        logger.error(f"Exception in call_openai for {prompt_key}: {e}")
+        raise
+    logger.info(f"RAW LLM response for {prompt_key}: {content}")
     try:
         result = json.loads(content)
     except Exception:
@@ -103,8 +109,6 @@ def run_prompt(prompt_key, plan, **kwargs):
 def analyze_resume(resume_text, job_description, plan="free"):
     return run_prompt("analyze_resume", plan, resume_text=resume_text, job_description=job_description)
 
-def optimize_resume(resume_text, job_description, plan="free"):
-    return run_prompt("optimize_resume", plan, resume_text=resume_text, job_description=job_description)
 
 def customize_resume(resume_text, job_description, plan="free"):
     return run_prompt("customize_resume", plan, resume_text=resume_text, job_description=job_description)
@@ -127,11 +131,7 @@ def generate_interview_questions(job_title, plan="free"):
 def generate_cover_letter(job_title, company, job_description, plan="free"):
     return run_prompt("generate_cover_letter", plan, job_title=job_title, company=company, job_description=job_description)
 
-def optimize_resume_for_job(resume_text, job_description, plan="free"):
-    return run_prompt("optimize_resume_for_job", plan, resume_text=resume_text, job_description=job_description)
 
-def jobscan_style_report(resume_text, job_description, plan="free"):
-    return run_prompt("jobscan_style_report", plan, resume_text=resume_text, job_description=job_description)
 
 def advanced_resume_suggestions(resume_text, job_description, section_feedback=None, plan="free"):
     prompt = {
@@ -151,6 +151,8 @@ def advanced_resume_suggestions(resume_text, job_description, section_feedback=N
         return suggestions
     except Exception:
         return ["AI response could not be parsed", content]
+def jobscan_style_report(resume_text, job_description, plan="free"):
+    return run_prompt("jobscan_style_report", plan, resume_text=resume_text, job_description=job_description)
 
 def optimize_resume_jobscan_style(resume_text, plan="free"):
-    return run_prompt("optimize_resume", plan, resume_text=resume_text)
+    return run_prompt("optimize_resume_jobscan", plan, resume_text=resume_text)

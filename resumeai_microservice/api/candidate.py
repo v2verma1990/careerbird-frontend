@@ -11,9 +11,16 @@ router = APIRouter()
 async def analyze(resume: UploadFile = File(...), job_description: str = Form(...), plan: str = Form("free")):
     return await analyze_resume_service(resume, job_description, plan)
 
+
 @router.post("/optimize")
-async def optimize(resume: UploadFile = File(...), job_description: str = Form(...), plan: str = Form("free")):
-    return await optimize_resume_service(resume, job_description, plan)
+async def optimize(
+    resume: UploadFile = File(...),    
+    plan: str = Form("free")
+):       
+    result = await optimize_resume_service(resume, plan)
+    return result
+
+
 
 @router.post("/customize")
 async def customize(
@@ -22,9 +29,7 @@ async def customize(
     job_description_file: Optional[UploadFile] = File(None),
     plan: str = Form("free")
 ):
-    print("job_description_file:", job_description_file)
-    print("plan:", plan)
-    print("job_description:", job_description)     
+        
     result = await customize_resume_service(resume, job_description,job_description_file, plan)
     return result
 

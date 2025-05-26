@@ -20,8 +20,7 @@ namespace ResumeAI.API.Services
         private readonly string _pythonApiBaseUrl = "http://localhost:8000/candidate"; // Adjust if needed
 
         public ResumeService(ActivityLogService activityLogService)
-        {
-           
+        {           
             _activityLogService = activityLogService;
             _httpClient = new HttpClient();
         }
@@ -43,26 +42,43 @@ namespace ResumeAI.API.Services
             return result;
         }
         
-        public async Task<ResumeOptimizationResult> OptimizeResume(IFormFile file, string jobDescription, string plan, string userId, string featureType, Subscription? subscription = null)
+        public async Task<ResumeOptimizationResult> OptimizeResume(IFormFile file, string plan, string userId, string featureType, Subscription? subscription = null)
         {
             if (file == null || file.Length == 0)
                 throw new ArgumentException("Resume file is required", nameof(file));
-            string resumeText;
-            using (var reader = new StreamReader(file.OpenReadStream()))
+            var form = new MultipartFormDataContent
             {
-                resumeText = await reader.ReadToEndAsync();
-            }
-            var form = new MultipartFormDataContent();
-            form.Add(new StringContent(jobDescription), "job_description");
-            form.Add(new StreamContent(file.OpenReadStream()), "file", file.FileName);
-            form.Add(new StringContent(plan), "plan");
-            var response = await _httpClient.PostAsync($"{_pythonApiBaseUrl}/optimize", form);
+                { new StreamContent(file.OpenReadStream()), "resume", file.FileName },
+                { new StringContent(plan), "plan" }
+            };
+            HttpResponseMessage response = await _httpClient.PostAsync($"{_pythonApiBaseUrl}/optimize", form);
             response.EnsureSuccessStatusCode();
             var json = await response.Content.ReadAsStringAsync();
+            Console.WriteLine("PYTHON RAW RESPONSE for OptimizeResume: " + json); // or use your logger
+            if (!response.IsSuccessStatusCode)
+            {
+                // Improved error extraction
+                string errorMessage = $"Python API Error [{(int)response.StatusCode}]";
+                try
+                {
+                    using var doc = JsonDocument.Parse(json);
+                    if (doc.RootElement.TryGetProperty("detail", out var detailProp))
+                        errorMessage = detailProp.GetString() ?? errorMessage;
+                    else
+                        errorMessage = json;
+                }
+                catch
+                {
+                    errorMessage = json;
+                }
+                throw new HttpRequestException(errorMessage);
+            }
+
             var result = JsonSerializer.Deserialize<ResumeOptimizationResult>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            Console.WriteLine("return result from .NET: " + result); // or use your logger
             if (result == null)
-                throw new Exception("Failed to parse response from resume optimization service.");
-            // Only increment usage if success
+                throw new Exception("Failed to parse response from resume customization service.");
+
             await _activityLogService.TrackFeatureUsage(userId, featureType, subscription);
             return result;
         }
@@ -95,7 +111,7 @@ namespace ResumeAI.API.Services
 
             HttpResponseMessage response = await _httpClient.PostAsync($"{_pythonApiBaseUrl}/customize", form);
             var json = await response.Content.ReadAsStringAsync();
-            Console.WriteLine("PYTHON RAW RESPONSE: " + json); // or use your logger
+            Console.WriteLine("PYTHON RAW RESPONSE for CustomizeResume: " + json); // or use your logger
             if (!response.IsSuccessStatusCode)
             {
                 // Improved error extraction
@@ -156,29 +172,6 @@ namespace ResumeAI.API.Services
             return result;
         }
         
-        public async Task<ResumeOptimizeReportResult> OptimizeResume(
-            IFormFile file, string plan, string userId, string featureType, Subscription? subscription = null)
-        {
-            if (file == null || file.Length == 0)
-                throw new ArgumentException("Resume file is required", nameof(file));
-            string resumeText;
-            using (var reader = new StreamReader(file.OpenReadStream()))
-            {
-                resumeText = await reader.ReadToEndAsync();
-            }
-            var form = new MultipartFormDataContent();
-            form.Add(new StreamContent(file.OpenReadStream()), "file", file.FileName);
-            form.Add(new StringContent(plan), "plan");
-            var response = await _httpClient.PostAsync($"{_pythonApiBaseUrl}/optimize", form);
-            response.EnsureSuccessStatusCode();
-            var json = await response.Content.ReadAsStringAsync();
-            var result = JsonSerializer.Deserialize<ResumeOptimizeReportResult>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            if (result == null)
-                throw new Exception("Failed to parse response from resume optimization service.");
-            // Only increment usage if success
-            await _activityLogService.TrackFeatureUsage(userId, featureType, subscription);
-            return result;
-        }
         
         #region Helper Methods
         
@@ -198,13 +191,7 @@ namespace ResumeAI.API.Services
         public List<string> Suggestions { get; set; } = new List<string>();
     }
     
-    public class ResumeOptimizationResult
-    {
-        public string OriginalContent { get; set; } = string.Empty;
-        public string OptimizedContent { get; set; } = string.Empty;
-        public List<string> Improvements { get; set; } = new List<string>();
-        public int OverallScore { get; set; }
-    }
+   
     
     public class ResumeBenchmarkResult
     {
@@ -239,6 +226,24 @@ namespace ResumeAI.API.Services
         public List<ResumeHighlight>? ResumeHighlights { get; set; }
         // ...other fields as needed
     }
+    public class ResumeOptimizationResult
+    {
+        public int AtsScore { get; set; }  // ATS/formatting score
+        public int FormattingScore { get; set; }  // ATS/formatting score
+        public int ReadabilityScore { get; set; }  // Readability score
+        public string OptimizedContent { get; set; } = string.Empty;
+        public List<string> Improvements { get; set; } = new List<string>();
+        public KeywordAnalysis? KeywordAnalysis { get; set; }
+        public List<string>? SpellingGrammarIssues { get; set; } = new List<string>();
+        public List<string>? AtsTips { get; set; } = new List<string>();
+        public string? Summary { get; set; }
+        public Dictionary<string, string>? SectionFeedback { get; set; } = new Dictionary<string, string>();
+        public List<ResumeHighlight>? ResumeHighlights { get; set; }
+        // Add any other fields as needed from the Python response
+        public string ? AdditionalInsights { get; set; } = string.Empty;
+        public int ActionabilityAssessment { get; set; } 
+    }
+
     public class SkillsMatch
     {
         public List<string>? MatchedSkills { get; set; }
@@ -254,7 +259,7 @@ namespace ResumeAI.API.Services
         public string? Text { get; set; }
         public string? Reason { get; set; }
     }
-    
+
     public class ResumeOptimizeReportResult
     {
         public int AtsScore { get; set; }
@@ -266,6 +271,7 @@ namespace ResumeAI.API.Services
         public string? Summary { get; set; }
         public Dictionary<string, string>? SectionFeedback { get; set; }
         public List<ResumeHighlight>? ResumeHighlights { get; set; }
+        public int ActionabilityAssessment { get; set; } 
         // Add any other fields as needed from the Python response
     }
     #endregion

@@ -187,7 +187,15 @@ const ResumeOptimizer = () => {
                       </div>
                       <div className="bg-green-100 rounded p-4 min-w-[180px] shadow">
                         <div className="text-lg font-semibold">Formatting Score</div>
-                        <div className="text-green-700 font-bold">{optimizeReport.formattingScore ?? '--'}</div>
+                        <div className="text-3xl font-bold text-green-700">{optimizeReport.formattingScore ?? '--'}%</div>
+                      </div>
+                      <div className="bg-purple-100 rounded p-4 min-w-[180px] shadow">
+                        <div className="text-lg font-semibold">Readability Score</div>
+                        <div className="text-3xl font-bold text-purple-700">{optimizeReport.readabilityScore ?? '--'}%</div>
+                      </div>
+                      <div className="bg-purple-100 rounded p-4 min-w-[180px] shadow">
+                        <div className="text-lg font-semibold">Actionability Assessment</div>
+                        <div className="text-3xl font-bold text-purple-700">{optimizeReport.actionabilityAssessment ?? '--'}%</div>
                       </div>
                       <div className="bg-yellow-100 rounded p-4 min-w-[180px] shadow">
                         <div className="text-lg font-semibold">ATS Tips</div>
@@ -199,6 +207,7 @@ const ResumeOptimizer = () => {
                       </div>
                     </div>
                   </div>
+
                   <div className="mb-4">
                     <h3 className="font-semibold text-lg mb-1 text-blue-800">Keyword Analysis</h3>
                     <div className="flex flex-wrap gap-4">
@@ -220,6 +229,18 @@ const ResumeOptimizer = () => {
                       </div>
                     </div>
                   </div>
+
+                  {optimizeReport.spellingGrammarIssues && optimizeReport.spellingGrammarIssues.length > 0 && (
+                    <div className="mb-4">
+                      <h3 className="font-semibold text-lg mb-1 text-blue-800">Spelling & Grammar Issues</h3>
+                      <ul className="list-disc ml-4 text-red-600">
+                        {optimizeReport.spellingGrammarIssues.map((issue: string, idx: number) => (
+                          <li key={idx}>{issue}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
                   <div className="mb-4">
                     <h3 className="font-semibold text-lg mb-1 text-blue-800">Improvements</h3>
                     <ul className="list-disc ml-4">
@@ -228,11 +249,13 @@ const ResumeOptimizer = () => {
                       ))}
                     </ul>
                   </div>
+
                   <div className="mb-4">
                     <h3 className="font-semibold text-lg mb-1 text-blue-800">Summary</h3>
                     <div className="bg-gray-100 rounded p-3 text-gray-700">{optimizeReport.summary}</div>
                   </div>
-                  {optimizeReport.sectionFeedback && (
+
+                  {optimizeReport.sectionFeedback && Object.keys(optimizeReport.sectionFeedback).length > 0 && (
                     <div className="mb-4">
                       <h3 className="font-semibold text-lg mb-1 text-blue-800">Section Feedback</h3>
                       <ul className="list-disc ml-4">
@@ -242,7 +265,8 @@ const ResumeOptimizer = () => {
                       </ul>
                     </div>
                   )}
-                  {optimizeReport.resumeHighlights && (
+
+                  {optimizeReport.resumeHighlights && optimizeReport.resumeHighlights.length > 0 && (
                     <div className="mb-4">
                       <h3 className="font-semibold text-lg mb-1 text-blue-800">Resume Highlights</h3>
                       <ul className="list-disc ml-4">
@@ -252,20 +276,21 @@ const ResumeOptimizer = () => {
                       </ul>
                     </div>
                   )}
-                  <div className="mb-4 flex items-center gap-4">
-                    <Button onClick={fetchOpenAISuggestions} disabled={suggestionLoading} type="button" className="bg-gradient-to-r from-blue-600 to-green-500 text-white font-bold px-4 py-2 rounded shadow">
-                      {suggestionLoading ? 'Loading Suggestions...' : 'Get Advanced Suggestions'}
-                    </Button>
-                    {showSuggestions && suggestions.length > 0 && (
-                      <div className="bg-white border rounded p-4 shadow w-full">
-                        <h4 className="font-semibold text-blue-700 mb-2">AI-Powered Suggestions</h4>
-                        <ul className="list-disc ml-4">
-                          {suggestions.map((s, idx) => (
-                            <li key={idx}>{s}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+
+                  {optimizeReport.additionalInsights && (
+                    <div className="mb-4">
+                      <h3 className="font-semibold text-lg mb-1 text-blue-800">Additional Insights</h3>
+                      <div className="bg-gray-100 rounded p-3 text-gray-700">{optimizeReport.additionalInsights}</div>
+                    </div>
+                  )}
+
+                  <div className="mb-4">
+                    <h3 className="font-semibold text-lg mb-1 text-blue-800">Optimized Resume Content</h3>
+                    <Textarea
+                      value={optimizeReport.optimizedContent || ""}
+                      readOnly
+                      className="min-h-[200px] bg-gray-50 text-gray-800"
+                    />
                   </div>
                 </div>
               ) : !isLoading && (

@@ -1,7 +1,7 @@
 from fastapi import UploadFile, File, Form, HTTPException
 from utils.cache import get_cached_response, set_cached_response, hash_inputs, cache_if_successful
 from utils.openai_utils import (
-    analyze_resume, optimize_resume, customize_resume, benchmark_resume, ats_scan, generate_cover_letter, jobscan_style_report
+    analyze_resume, optimize_resume_jobscan_style, customize_resume, benchmark_resume, ats_scan, generate_cover_letter, jobscan_style_report
 )
 import logging
 import io
@@ -42,19 +42,55 @@ async def analyze_resume_service(resume: UploadFile, job_description: str, plan:
     logger.info("Cache miss for analyze_resume, called OpenAI")
     return result
 
-async def optimize_resume_service(resume: UploadFile, job_description: str, plan: str = "free"):
-    logger.info("optimize_resume_service called (Jobscan-style)")
-    resume_text = await extract_resume_text(resume)
-    cache_key = hash_inputs(resume_text, plan)
-    cached = get_cached_response("optimize", cache_key)
-    if cached:
-        logger.info("Cache hit for optimize_resume (Jobscan-style)")
-        return cached
-    from utils.openai_utils import optimize_resume_jobscan_style
-    result = optimize_resume_jobscan_style(resume_text, plan=plan)
-    cache_if_successful("optimize", cache_key, result)
-    logger.info("Cache miss for optimize_resume, called OpenAI (Jobscan-style)")
+def normalize_resume_highlights(result):
+    highlights = result.get("resumeHighlights", [])
+    normalized = []
+    for item in highlights:
+        if isinstance(item, dict):
+            normalized.append(item)
+        elif isinstance(item, str):
+            normalized.append({"text": item, "reason": ""})
+    result["resumeHighlights"] = normalized
     return result
+
+async def optimize_resume_service(
+    resume: UploadFile,   
+    plan: str = "free"
+):
+    logger.info("optimize_resume_service called (optimize_resume_jobscan)")
+    try:
+        resume_text = await extract_resume_text(resume)       
+        resume_tokens = count_tokens(resume_text)      
+        total_tokens = resume_tokens 
+        max_total_tokens = 15000
+
+        if total_tokens > max_total_tokens:
+            raise HTTPException(
+                status_code=400,
+                detail="Your resume is long for analysis. Please shorten your resume."
+            )
+
+        cache_key = hash_inputs(resume_text,plan,"optimize_resume_service")
+        cached = get_cached_response("optimize", cache_key)
+        logger.info(f"Cached value for key {cache_key}: {cached}")
+        if cached:
+            logger.info("Cache hit for optimize (optimize_resume_jobscan)")
+            return cached
+        result = optimize_resume_jobscan_style(resume_text, plan=plan)
+        logger.info(f"RAW OpenAI result: {result}")
+        logger.info(f"Type of resumeHighlights: {type(result.get('resumeHighlights', None))}, Value: {result.get('resumeHighlights', None)}")
+        result = normalize_resume_highlights(result)
+        cache_if_successful("optimize", cache_key, result)
+        logger.info("Cache miss for optimize, called OpenAI (optimize_resume_jobscan)")
+        return result
+    except HTTPException as e:
+        logger.error(f"optimize_resume_service failed: {e.detail}")
+        raise e
+    except Exception as e:
+        logger.error(f"optimize_resume_service failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 
 async def customize_resume_service(
     resume: UploadFile,
@@ -82,7 +118,7 @@ async def customize_resume_service(
                 detail="Your resume and job description are too long for analysis. Please shorten your job description."
             )
 
-        cache_key = hash_inputs(resume_text, jd_text, plan)
+        cache_key = hash_inputs(resume_text, jd_text, plan,"customize_resume_service")
         cached = get_cached_response("customize", cache_key)
         if cached:
             logger.info("Cache hit for customize_resume (Jobscan-style)")

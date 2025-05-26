@@ -1,7 +1,7 @@
 from fastapi.responses import JSONResponse
 from utils.cache import get_cached_response, set_cached_response, hash_inputs,cache_if_successful
 from utils.openai_utils import (
-    optimize_job_description, find_best_candidates, generate_interview_questions, optimize_resume_for_job
+    optimize_job_description, find_best_candidates, generate_interview_questions
 )
 import logging
 
@@ -50,7 +50,7 @@ async def optimize_resume_for_job_service(resume: str, job_description: str, pla
     if cached:
         logger.info("Cache hit for optimize_resume_for_job")
         return JSONResponse(content=cached)
-    result = optimize_resume_for_job(resume, job_description, plan=plan)
-    cache_if_successful("optimize_resume_for_job", cache_key, result)
+    #result = optimize_resume_jobscan_style(resume, plan=plan)
+    #cache_if_successful("optimize_resume_for_job", cache_key, result)
     logger.info("Cache miss for optimize_resume_for_job, called OpenAI")
-    return JSONResponse(content=result)
+   # return JSONResponse(content=result)

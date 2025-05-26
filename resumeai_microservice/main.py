@@ -6,8 +6,8 @@ from fastapi.responses import JSONResponse, HTMLResponse
 from dotenv import load_dotenv
 from utils.cache import get_cached_response, set_cached_response, hash_inputs,cache_if_successful
 from utils.openai_utils import (
-    analyze_resume, optimize_resume, customize_resume, benchmark_resume, ats_scan,
-    optimize_job_description, find_best_candidates, generate_interview_questions, generate_cover_letter, optimize_resume_for_job
+    analyze_resume, optimize_resume_jobscan_style, customize_resume, benchmark_resume, ats_scan, jobscan_style_report,
+    optimize_job_description, find_best_candidates, generate_interview_questions, generate_cover_letter
 )
 from api.candidate import router as candidate_router
 from api.recruiter import router as recruiter_router
