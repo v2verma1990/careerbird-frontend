@@ -1,7 +1,7 @@
 from fastapi import UploadFile, File, Form, HTTPException
 from utils.cache import get_cached_response, set_cached_response, hash_inputs, cache_if_successful
 from utils.openai_utils import (
-    analyze_resume, optimize_resume_jobscan_style, customize_resume, benchmark_resume, ats_scan, generate_cover_letter, jobscan_style_report
+    analyze_resume, optimize_resume_jobscan_style, customize_resume, benchmark_resume, ats_scan_jobscan_style, generate_cover_letter, jobscan_style_report
 )
 import logging
 import io
@@ -133,6 +133,36 @@ async def customize_resume_service(
     except Exception as e:
         logger.error(f"customize_resume_service failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+    
+async def ats_scan_service(resume: UploadFile, plan: str = "free"):
+    logger.info("ats_scan_service called")
+    try:    
+        resume_text = await extract_resume_text(resume)
+        # Count tokens
+        resume_tokens = count_tokens(resume_text)       
+        max_total_tokens = 15000  # leave room for prompt/instructions
+        total_tokens = resume_tokens 
+        if total_tokens > max_total_tokens:
+            raise HTTPException(
+                status_code=400,
+                detail="Your resume . Please shorten your resume ."
+            )
+        cache_key = hash_inputs(resume_text,plan,"ats_scan_service")
+        cached = get_cached_response("ats_scan", cache_key)
+        if cached:
+            logger.info("Cache hit for ats_scan")
+            return cached
+        result = ats_scan_jobscan_style(resume_text, plan=plan)
+        logger.info(f"RAW OpenAI result: {result}")
+        cache_if_successful("ats_scan", cache_key, result)
+        logger.info("Cache miss for ats_scan, called OpenAI")
+        return result
+    except HTTPException as e:
+        logger.error(f"optimize_resume_service failed: {e.detail}")
+        raise e
+    except Exception as e:
+        logger.error(f"optimize_resume_service failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 async def benchmark_resume_service(resume: UploadFile, job_description: str, plan: str = "free"):
     logger.info("benchmark_resume_service called")
@@ -147,18 +177,7 @@ async def benchmark_resume_service(resume: UploadFile, job_description: str, pla
     logger.info("Cache miss for benchmark_resume, called OpenAI")
     return result
 
-async def ats_scan_service(resume: UploadFile, plan: str = "free"):
-    logger.info("ats_scan_service called")
-    resume_text = await extract_resume_text(resume)
-    cache_key = hash_inputs(resume_text, plan)
-    cached = get_cached_response("ats_scan", cache_key)
-    if cached:
-        logger.info("Cache hit for ats_scan")
-        return cached
-    result = ats_scan(resume_text, plan=plan)
-    cache_if_successful("ats_scan", cache_key, result)
-    logger.info("Cache miss for ats_scan, called OpenAI")
-    return result
+
 
 async def generate_cover_letter_service(job_title: str, company: str, job_description: str, plan: str = "free"):
     logger.info("generate_cover_letter_service called")

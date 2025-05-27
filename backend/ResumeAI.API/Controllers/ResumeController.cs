@@ -167,7 +167,7 @@ namespace ResumeAI.API.Controllers
                 var subscription = isRecruiter
                     ? await _recruiterSubscriptionService.GetRecruiterSubscription(userId)
                     : await _candidateSubscriptionService.GetCandidateSubscription(userId);
-                var plan = subscription?.subscription_type ?? "free";               
+                var plan = subscription?.subscription_type ?? "free";
                 await _activityLogService.LogActivity(userId, "resume_optimized", "Resume optimized for ATS and best practices");
                 try
                 {
@@ -198,6 +198,64 @@ namespace ResumeAI.API.Controllers
                 return Unauthorized(new { error = ex.Message });
             }
         }
+
+        [HttpPost("scan-ats")]
+        public async Task<IActionResult> ScanResumeWithATS([FromForm] ResumeATSRequestModel request)
+        {
+            try
+            {
+                string userId = _authService.ExtractUserIdFromAuthHeader(Request.Headers["Authorization"].ToString());
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized(new { error = "Invalid or missing authorization token" });
+
+                if (request.File == null || request.File.Length == 0)
+                    return BadRequest(new { error = "Resume file is required" });
+
+                if (request.File.Length > 5 * 1024 * 1024)
+                    return BadRequest(new { error = "File size exceeds the 5MB limit" });
+
+                var fileExtension = Path.GetExtension(request.File.FileName).ToLowerInvariant();
+                if (!new[] { ".pdf", ".docx", ".doc", ".txt" }.Contains(fileExtension))
+                    return BadRequest(new { error = "Only PDF, DOCX, DOC, and TXT files are supported" });
+
+                // Get user plan
+                var profile = await _userService.GetUserProfileAsync(userId);
+                var isRecruiter = profile?.UserType == "recruiter";
+                var subscription = isRecruiter
+                    ? await _recruiterSubscriptionService.GetRecruiterSubscription(userId)
+                    : await _candidateSubscriptionService.GetCandidateSubscription(userId);
+                var plan = subscription?.subscription_type ?? "free";
+                await _activityLogService.LogActivity(userId, "resume_ATS Scan", "Resume scan for ATS and recomendations");
+                try
+                {
+                    var result = await _resumeService.ScanResumeWithATS(
+                        request.File,
+                        plan,
+                        userId,
+                        "ats_scan",
+                        subscription
+                    );
+                    return Ok(result);
+                }
+                catch (HttpRequestException ex)  // 🌟 Captures Python API errors & forwards them correctly
+                {
+                    return StatusCode(500, new { error = ex.Message });
+                }
+                catch (ArgumentException ex)  // 🌟 Handles validation errors separately
+                {
+                    return BadRequest(new { error = ex.Message });
+                }
+                catch (Exception ex)  // 🌟 Handles unexpected .NET errors gracefully
+                {
+                    return StatusCode(500, new { error = $"Internal Server Error: {ex.Message}" });
+                }
+            }
+            catch (UnauthorizedAccessException ex)  // 🌟 Handles authorization errors explicitly
+            {
+                return Unauthorized(new { error = ex.Message });
+            }
+        }
+
         [HttpPost("benchmark")]
         public async Task<IActionResult> BenchmarkResume([FromBody] ResumeBenchmarkRequest request)
         {
@@ -229,58 +287,7 @@ namespace ResumeAI.API.Controllers
             }
         }
 
-        [HttpPost("scan-ats")]
-        public async Task<IActionResult> ScanResumeWithATS([FromForm] IFormFile file, [FromForm] string? resumeText, [FromForm] string? plan)
-        {
-            try
-            {
-                string userId = _authService.ExtractUserIdFromAuthHeader(Request.Headers["Authorization"].ToString());
-                if (string.IsNullOrEmpty(userId))
-                    return Unauthorized(new { error = "Invalid or missing authorization token" });
-                string text = resumeText ?? string.Empty;
-                if (file != null && file.Length > 0)
-                {
-                    using (var reader = new StreamReader(file.OpenReadStream()))
-                    {
-                        text = await reader.ReadToEndAsync();
-                    }
-                }
-                if (string.IsNullOrEmpty(text))
-                    return BadRequest(new { error = "Resume text is required" });
-                // Get user plan                
-                var profile = await _userService.GetUserProfileAsync(userId);
-                var isRecruiter = profile?.UserType == "recruiter";
-                var subscription = isRecruiter
-                    ? await _recruiterSubscriptionService.GetRecruiterSubscription(userId)
-                    : await _candidateSubscriptionService.GetCandidateSubscription(userId);
-                var userPlan = plan ?? subscription?.subscription_type ?? "free";
-                var result = await _resumeService.ScanResumeWithATS(text, userPlan, userId, "ats_scan", subscription);
-                if (result == null)
-                {
-                    return StatusCode(500, new { error = "Failed to analyze resume" });
-                }
-                if (result.ATSScore < 0)
-                {
-                    return StatusCode(500, new { error = "Failed to generate ATS score" });
-                }
-                var response = new
-                {
-                    atsScore = result.ATSScore,
-                    parsedSections = result.ParsedSections,
-                    parsingIssues = result.ParsingIssues,
-                    optimizationTips = result.OptimizationTips
-                };
-                return Ok(response);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { error = ex.Message });
-            }
-        }
+
 
         // Helper method to generate a simple PDF from text
         private byte[] GeneratePdfFromText(string text)
@@ -324,6 +331,10 @@ namespace ResumeAI.API.Controllers
         public IFormFile? JobDescriptionFile { get; set; } // <-- Add this line
     }
     public class ResumeOptimizationRequestModel
+    {
+        public IFormFile? File { get; set; }
+    }
+    public class ResumeATSRequestModel
     {
         public IFormFile? File { get; set; }
     }

@@ -20,9 +20,6 @@ const ResumeCustomizer = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [jobscanReport, setJobscanReport] = useState<any>(null);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [suggestionLoading, setSuggestionLoading] = useState(false);
   const { toast } = useToast();
   const { user, subscriptionStatus, incrementUsageCount } = useAuth();
   const [jdInputType, setJdInputType] = useState<"text" | "file">("text");
@@ -161,32 +158,6 @@ const ResumeCustomizer = () => {
       });
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  // OpenAI-powered suggestions (section-by-section or overall)
-  const fetchOpenAISuggestions = async () => {
-    if (!jobscanReport) return;
-    setSuggestionLoading(true);
-    setShowSuggestions(true);
-    try {
-      // Call backend endpoint for advanced suggestions (assume /resume/advanced-suggestions exists)
-      const response = await fetch(`/api/resume/advanced-suggestions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          resumeText: jobscanReport.optimizedContent || '',
-          jobDescription: jobDescription,
-          sectionFeedback: jobscanReport.sectionFeedback || {},
-        })
-      });
-      if (!response.ok) throw new Error('Failed to get suggestions');
-      const data = await response.json();
-      setSuggestions(data.suggestions || []);
-    } catch (e: any) {
-      setSuggestions([e.message || 'Failed to get suggestions.']);
-    } finally {
-      setSuggestionLoading(false);
     }
   };
 
@@ -361,21 +332,6 @@ const ResumeCustomizer = () => {
                     </ul>
                   </div>
                 )}
-                <div className="mb-4 flex items-center gap-4">
-                  <Button onClick={fetchOpenAISuggestions} disabled={suggestionLoading} type="button" className="bg-gradient-to-r from-blue-600 to-green-500 text-white font-bold px-4 py-2 rounded shadow">
-                    {suggestionLoading ? 'Loading Suggestions...' : 'Get Advanced Suggestions'}
-                  </Button>
-                  {showSuggestions && suggestions.length > 0 && (
-                    <div className="bg-white border rounded p-4 shadow w-full">
-                      <h4 className="font-semibold text-blue-700 mb-2">AI-Powered Suggestions</h4>
-                      <ul className="list-disc ml-4">
-                        {suggestions.map((s, idx) => (
-                          <li key={idx}>{s}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
               </div>
             ) : !isLoading && (
               <div className="text-gray-400 text-center">Your customized resume report will appear here after processing.</div>

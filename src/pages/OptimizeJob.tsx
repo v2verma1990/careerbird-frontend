@@ -115,9 +115,14 @@ const OptimizeJob = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card className="p-6">
             <h2 className="text-lg font-semibold mb-4">Original Job Description</h2>
+            <label htmlFor="original-job-description" className="sr-only">
+              Original Job Description
+            </label>
             <textarea 
+              id="original-job-description"
               className="w-full h-64 border border-gray-300 rounded-md p-3"
               placeholder="Paste your job description here..."
+              title="Original Job Description"
               value={jobDescription}
               onChange={(e) => setJobDescription(e.target.value)}
             ></textarea>
@@ -132,17 +137,20 @@ const OptimizeJob = () => {
               </Button>
             </div>
           </Card>
-          
           <Card className="p-6">
-            <h2 className="text-lg font-semibold mb-4">Optimized Job Description</h2>
-            {optimized && optimizedDescription ? (
-              <div>
+            {optimizedDescription ? (
+              <>
+                <label htmlFor="optimized-job-description" className="sr-only">
+                  Optimized Job Description
+                </label>
                 <textarea 
+                  id="optimized-job-description"
                   className="w-full h-64 border border-gray-300 rounded-md p-3"
+                  placeholder="Optimized job description will appear here..."
+                  title="Optimized Job Description"
                   value={optimizedDescription.optimizedContent}
                   readOnly
                 ></textarea>
-                
                 <div className="mt-4">
                   <Button variant="outline" onClick={() => setOptimized(false)}>
                     Reset
@@ -151,7 +159,6 @@ const OptimizeJob = () => {
                     Copy to Clipboard
                   </Button>
                 </div>
-                
                 <div className="mt-4 p-3 bg-blue-50 rounded-md">
                   <h3 className="text-sm font-semibold text-blue-800">Optimization Insights</h3>
                   <ul className="mt-2 text-sm text-blue-700 list-disc pl-5">
@@ -160,7 +167,7 @@ const OptimizeJob = () => {
                     ))}
                   </ul>
                 </div>
-              </div>
+              </>
             ) : (
               <div className="flex flex-col items-center justify-center h-64 text-gray-500">
                 {isProcessing ? (

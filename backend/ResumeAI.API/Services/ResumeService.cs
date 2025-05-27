@@ -139,6 +139,46 @@ namespace ResumeAI.API.Services
             await _activityLogService.TrackFeatureUsage(userId, featureType, subscription);
             return result;
         }
+        public async Task<ResumeATSResult> ScanResumeWithATS(IFormFile file, string plan, string userId, string featureType, Subscription? subscription = null)
+        {
+            if (file == null || file.Length == 0)
+                throw new ArgumentException("Resume file is required", nameof(file));
+            var form = new MultipartFormDataContent
+            {
+                { new StreamContent(file.OpenReadStream()), "resume", file.FileName },
+                { new StringContent(plan), "plan" }
+            };
+            HttpResponseMessage response = await _httpClient.PostAsync($"{_pythonApiBaseUrl}/ats_scan", form);
+            response.EnsureSuccessStatusCode();
+            var json = await response.Content.ReadAsStringAsync();
+            Console.WriteLine("PYTHON RAW RESPONSE for OptimizeResume: " + json); // or use your logger
+            if (!response.IsSuccessStatusCode)
+            {
+                // Improved error extraction
+                string errorMessage = $"Python API Error [{(int)response.StatusCode}]";
+                try
+                {
+                    using var doc = JsonDocument.Parse(json);
+                    if (doc.RootElement.TryGetProperty("detail", out var detailProp))
+                        errorMessage = detailProp.GetString() ?? errorMessage;
+                    else
+                        errorMessage = json;
+                }
+                catch
+                {
+                    errorMessage = json;
+                }
+                throw new HttpRequestException(errorMessage);
+            }
+
+            var result = JsonSerializer.Deserialize<ResumeATSResult>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            Console.WriteLine("return result from .NET: " + result); // or use your logger
+            if (result == null)
+                throw new Exception("Failed to parse response from resume customization service.");
+
+            await _activityLogService.TrackFeatureUsage(userId, featureType, subscription);
+            return result;
+        }
         public async Task<ResumeBenchmarkResult> BenchmarkResume(string resumeText, string jobDescription, string plan, string userId, string featureType, Subscription? subscription = null)
         {
             var form = new MultipartFormDataContent();
@@ -156,21 +196,7 @@ namespace ResumeAI.API.Services
             return result;
         }
         
-        public async Task<ResumeATSResult> ScanResumeWithATS(string resumeText, string plan, string userId, string featureType, Subscription? subscription = null)
-        {
-            var form = new MultipartFormDataContent();
-            form.Add(new StringContent(resumeText ?? string.Empty, Encoding.UTF8), "resume", "resume.txt");
-            form.Add(new StringContent(plan), "plan");
-            var response = await _httpClient.PostAsync($"{_pythonApiBaseUrl}/ats_scan", form);
-            response.EnsureSuccessStatusCode();
-            var json = await response.Content.ReadAsStringAsync();
-            var result = JsonSerializer.Deserialize<ResumeATSResult>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            if (result == null)
-                throw new Exception("Failed to parse response from ATS scan service.");
-            // Only increment usage if success
-            await _activityLogService.TrackFeatureUsage(userId, featureType, subscription);
-            return result;
-        }
+
         
         
         #region Helper Methods
@@ -207,10 +233,8 @@ namespace ResumeAI.API.Services
     
     public class ResumeATSResult
     {
-        public int ATSScore { get; set; }
-        public Dictionary<string, string> ParsedSections { get; set; } = new Dictionary<string, string>();
-        public List<string> ParsingIssues { get; set; } = new List<string>();
-        public List<string> OptimizationTips { get; set; } = new List<string>();
+        public int ATSScore { get; set; }        
+        public List<string>? AtsTips { get; set; }
     }
 
     public class JobscanReportResult

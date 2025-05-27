@@ -346,8 +346,7 @@ export const api = {
     },
     benchmark: (params: { resumeText: string, jobDescription: string }) => 
       apiCall<any>("POST", "/resume/benchmark", params),
-    scanResumeWithATS: (params: { resumeText: string }) => 
-      apiCall<any>("POST", "/resume/scan-ats", params),
+    
     optimize: async (params: { file: File }) => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -378,79 +377,34 @@ export const api = {
         return { data: null, error: 'Failed to connect to server' };
       }
     },
-    scanAts: async (formData: FormData) => {
+    scanAts: async (params: { file: File }) => {
       try {
-        // Get the current session from Supabase for the auth token
         const { data: { session } } = await supabase.auth.getSession();
-        
-        const headers: Record<string, string> = {};
-        
-        // Add authorization header if session exists
+        let headers: Record<string, string> = {};
         if (session?.access_token) {
           headers["Authorization"] = `Bearer ${session.access_token}`;
-        } else {
-          console.warn("No auth token available for scanAts API call");
         }
-
-        // Log the request for debugging
-        console.log("Making scanAts API call to backend", {
-          url: `${API_BASE_URL}/resume/scan-ats`,
-          hasAuth: !!session?.access_token,
-          hasFile: formData.has("file"),
-          fileSize: formData.get("file") ? (formData.get("file") as File).size : 0
-        });
-
+        const formData = new FormData();
+        formData.append('file', params.file);
         const response = await fetch(`${API_BASE_URL}/resume/scan-ats`, {
           method: 'POST',
           headers,
           body: formData,
-          credentials: "include" // Include cookies in requests
+          credentials: "include"
         });
-        
         if (!response.ok) {
           const errorText = await response.text();
-          console.error("scanAts API call failed:", {
-            status: response.status,
-            statusText: response.statusText,
-            errorText
-          });
-          return { data: null, error: `Request failed with status ${response.status}: ${errorText}` };
+          return { data: null, error: errorText };
         }
-        
-        const contentType = response.headers.get("content-type");
-        let data;
-        
-        if (contentType && contentType.includes("application/json")) {
-          data = await response.json();
-          console.log("scanAts API response data:", data);
-          
-          // Validate the data format
-          if (data && typeof data.atsScore !== 'number') {
-            console.error("Invalid data format received from scanAts API:", data);
-            return { data: null, error: "Invalid data format: Missing or non-numeric atsScore" };
-          }
-        } else {
-          data = await response.text();
-          console.log("scanAts API non-JSON response:", data);
-          // Try to parse the text as JSON in case content type header is wrong
-          try {
-            data = JSON.parse(data);
-            
-            // Validate parsed data
-            if (typeof data.atsScore !== 'number') {
-              console.error("Invalid data format after parsing text response:", data);
-              return { data: null, error: "Invalid data format after parsing: Missing or non-numeric atsScore" };
-            }
-          } catch (e) {
-            console.warn("Failed to parse response as JSON:", e);
-            return { data: null, error: "Failed to parse response" };
-          }
+        // Expect JSON Jobscan-style optimization report
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const json = await response.json();
+          return { data: json, error: null };
         }
-        
-        return { data, error: null };
+        return { data: null, error: 'Unexpected response type' };
       } catch (error) {
-        console.error('Error scanning resume:', error);
-        return { data: null, error: error instanceof Error ? error.message : 'Failed to connect to server' };
+        return { data: null, error: 'Failed to connect to server' };
       }
     }
   },

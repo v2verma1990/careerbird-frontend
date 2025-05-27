@@ -33,13 +33,16 @@ async def customize(
     result = await customize_resume_service(resume, job_description,job_description_file, plan)
     return result
 
+@router.post("/ats_scan")
+async def ats_scan(resume: UploadFile = File(...),plan: str = Form("free")):
+    result= await ats_scan_service(resume)
+    return result
+
 @router.post("/benchmark")
 async def benchmark(resume: UploadFile = File(...), job_description: str = Form(...), plan: str = Form("free")):
     return await benchmark_resume_service(resume, job_description, plan)
 
-@router.post("/ats_scan")
-async def ats_scan(resume: UploadFile = File(...)):
-    return await ats_scan_service(resume)
+
 
 @router.post("/generate_cover_letter")
 async def generate_cover_letter(job_title: str = Form(...), company: str = Form(...), job_description: str = Form(...)):

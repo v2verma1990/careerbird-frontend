@@ -10,3 +10,4 @@ pdfplumber
 dotenv
 openai
 tiktoken
+traceback

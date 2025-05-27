@@ -18,9 +18,6 @@ const ResumeOptimizer = () => {
   const [featureUsage, setFeatureUsage] = useState<{ usageCount: number; usageLimit: number }>({ usageCount: 0, usageLimit: 0 });
   const [loadingUsage, setLoadingUsage] = useState(true);
   const [optimizeReport, setOptimizeReport] = useState<any>(null);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [suggestionLoading, setSuggestionLoading] = useState(false);
   const { toast } = useToast();
   const { user, subscriptionStatus, incrementUsageCount } = useAuth();
 
@@ -42,31 +39,6 @@ const ResumeOptimizer = () => {
       setLoadingUsage(false);
     });
   }, [user]);
-
-  // OpenAI-powered suggestions (section-by-section or overall)
-  const fetchOpenAISuggestions = async () => {
-    if (!optimizeReport) return;
-    setSuggestionLoading(true);
-    setShowSuggestions(true);
-    try {
-      // Call backend endpoint for advanced suggestions (assume /resume/advanced-suggestions exists)
-      const response = await fetch(`/api/resume/advanced-suggestions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          resumeText: optimizeReport.optimizedContent || '',
-          sectionFeedback: optimizeReport.sectionFeedback || {},
-        })
-      });
-      if (!response.ok) throw new Error('Failed to get suggestions');
-      const data = await response.json();
-      setSuggestions(data.suggestions || []);
-    } catch (e: any) {
-      setSuggestions([e.message || 'Failed to get suggestions.']);
-    } finally {
-      setSuggestionLoading(false);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

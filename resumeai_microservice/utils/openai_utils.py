@@ -4,6 +4,7 @@ import logging
 import hashlib
 from pathlib import Path
 from openai import OpenAI
+import traceback
 
 from dotenv import load_dotenv, find_dotenv
 
@@ -99,9 +100,10 @@ def run_prompt(prompt_key, plan, **kwargs):
         logger.error(f"Exception in call_openai for {prompt_key}: {e}")
         raise
     logger.info(f"RAW LLM response for {prompt_key}: {content}")
-    try:
+    try:       
         result = json.loads(content)
     except Exception:
+        logger.error(f"Failed to parse OpenAI response as JSON: {e}\n{traceback.format_exc()}")
         result = {"error": "OpenAI response could not be parsed", "raw": content}
     # Restrict output for free plan if needed
     return result
@@ -116,8 +118,7 @@ def customize_resume(resume_text, job_description, plan="free"):
 def benchmark_resume(resume_text, job_description, plan="free"):
     return run_prompt("benchmark_resume", plan, resume_text=resume_text, job_description=job_description)
 
-def ats_scan(resume_text, plan="free"):
-    return run_prompt("ats_scan", plan, resume_text=resume_text)
+
 
 def optimize_job_description(job_description, plan="free"):
     return run_prompt("optimize_job_description", plan, job_description=job_description)
@@ -156,3 +157,6 @@ def jobscan_style_report(resume_text, job_description, plan="free"):
 
 def optimize_resume_jobscan_style(resume_text, plan="free"):
     return run_prompt("optimize_resume_jobscan", plan, resume_text=resume_text)
+
+def ats_scan_jobscan_style(resume_text, plan="free"):
+    return run_prompt("ats_scan_jobscan_style", plan, resume_text=resume_text)
