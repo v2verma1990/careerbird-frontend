@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, Form
 from typing import Optional
 from services.candidate_service import (
-    analyze_resume_service, optimize_resume_service, customize_resume_service, benchmark_resume_service, ats_scan_service, generate_cover_letter_service, extract_resume_text
+    analyze_resume_service, optimize_resume_service, customize_resume_service, benchmark_resume_service, ats_scan_service, generate_cover_letter_service, extract_resume_text, salary_insights_service
 )
 from fastapi.responses import JSONResponse
 
@@ -38,30 +38,37 @@ async def ats_scan(resume: UploadFile = File(...),plan: str = Form("free")):
     result= await ats_scan_service(resume)
     return result
 
-@router.post("/benchmark")
-async def benchmark(resume: UploadFile = File(...), job_description: str = Form(...), plan: str = Form("free")):
-    return await benchmark_resume_service(resume, job_description, plan)
 
-
+@router.post("/salary_insights")
+async def salary_insights(
+    job_title: str = Form(...),
+    location: str = Form(...),
+    industry: str = Form(...),
+    years_experience: int = Form(...),
+    education_level: Optional[str] = Form(None),
+    resume: Optional[UploadFile] = File(None),
+    plan: str = Form("free")
+    
+):
+    
+    result=await salary_insights_service(
+        job_title=job_title,
+        location=location,
+        industry=industry,
+        years_experience=years_experience,
+        education_level=education_level,
+        resume_text=resume,
+        plan=plan
+    )
+    return result
 
 @router.post("/generate_cover_letter")
 async def generate_cover_letter(job_title: str = Form(...), company: str = Form(...), job_description: str = Form(...)):
     return await generate_cover_letter_service(job_title, company, job_description)
 
-@router.post("/advanced-suggestions")
-async def advanced_suggestions(
-    resume_text: str = Form(...),
-    job_description: str = Form(...),
-    section_feedback: str = Form(None),
-    plan: str = Form("free")
-):
-    """
-    Returns advanced OpenAI-powered suggestions for resume improvement, optionally section-by-section.
-    """
-    from utils.openai_utils import advanced_resume_suggestions
-    feedback = None
-    if section_feedback:
-        import json
-        feedback = json.loads(section_feedback)
-    suggestions = advanced_resume_suggestions(resume_text, job_description, feedback, plan)
-    return {"suggestions": suggestions}
+
+@router.post("/benchmark")
+async def benchmark(resume: UploadFile = File(...), job_description: str = Form(...), plan: str = Form("free")):
+    return await benchmark_resume_service(resume, job_description, plan)
+
+

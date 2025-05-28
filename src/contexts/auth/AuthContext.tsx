@@ -1,9 +1,8 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { toast } from '@/components/ui/use-toast';
-import api from '@/utils/apiClient';
-import { logActivity } from '@/utils/exportUtils';
-import { UserProfile as UserProfileType } from '@/types/auth';
+
+import { createContext, useContext, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "@/components/ui/use-toast";
+import api from "@/utils/apiClient";
 import { supabase } from "@/integrations/supabase/client";
 
 interface SubscriptionStatus {
@@ -17,15 +16,13 @@ interface User {
   email: string;
 }
 
-interface UserProfile {
-  userType: string;
-  subscriptionType: string;
-}
-
 interface Session {
   user: User;
   accessToken: string;
 }
+  interface UserProfile {
+  userType: string;
+  subscriptionType: string; }
 
 interface AuthContextType {
   session: Session | null;
@@ -43,25 +40,26 @@ interface AuthContextType {
   resetUsageCount: (featureType: string) => Promise<void>;
 }
 
+
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const navigate = useNavigate();
   const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<User | null>(null);
   const [userType, setUserType] = useState<string | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [user, setUser] = useState<User | null>(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
   const [restoringSession, setRestoringSession] = useState(true);
-  const navigate = useNavigate();
 
   // Initialize authentication state
-  const initializeAuth = async () => {
+const initializeAuth = async () => {
     const storedSession = api.auth.getCurrentUser();
     if (storedSession) {
       console.log("Found existing session:", storedSession.userId);
       setSession({
-        user: { 
+      user: { 
           id: storedSession.userId,
           email: storedSession.email || ''
         },
@@ -77,27 +75,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         userType: storedSession.userType || 'candidate',
         subscriptionType: 'free' // Always set to 'free' as a placeholder; not used for plan logic
       });
-      // fetchSubscriptionStatus() will be called in useEffect when user is set
+      fetchSubscriptionStatus()// will be called in useEffect when user is set
     }
   };
 
   useEffect(() => {
-    // Check for existing session in localStorage
+     // Check for existing session in localStorage
     initializeAuth();
   }, []);
-
-  // On mount or login, always fetch the latest subscription status from backend
+  //On mount or login, always fetch the latest subscription status from backend
   useEffect(() => {
     if (user) {
       fetchSubscriptionStatus();
     }
   }, [user]);
 
-  // Robust session restoration: listen for Supabase auth state changes
+   // Robust session restoration: listen for Supabase auth state changes
   useEffect(() => {
     setRestoringSession(true);
     setSubscriptionLoading(true);
-    // Restore session on mount
+//     Restore session on mount
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         setSession({
@@ -112,8 +109,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setRestoringSession(false);
       setSubscriptionLoading(false);
     });
-    // Listen for auth state changes (login, logout, token refresh)
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+    //  Listen for auth state changes (login, logout, token refresh)
+const { data } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         setSession({
           user: { id: session.user.id, email: session.user.email || "" },
@@ -131,122 +128,70 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       data?.subscription?.unsubscribe();
     };
   }, []);
-
-  // Function to fetch subscription status (single source of truth for plan/limit/usage)
-  const fetchSubscriptionStatus = async () => {
+  // ✅ Fix 1: Prevent Subscription Refetching on Tab Switch
+const fetchSubscriptionStatus = async () => {
+    console.log("Checking subscription status for user:", user?.email);
+    if (!user || subscriptionStatus) return; // 🚀 Prevent unnecessary calls
     setSubscriptionLoading(true);
+
     try {
-      console.log("Fetching user subscription");
-      // Get subscription info from backend API (not profile)
-      const { data: subscriptionData, error: subscriptionError } = await api.subscription.getUserSubscription();
-      if (subscriptionError) {
-        console.error("Error fetching subscription:", subscriptionError);
-        setSubscriptionStatus(null);
-        setSubscriptionLoading(false);
-        return;
-      }
-      if (subscriptionData) {
-        setSubscriptionStatus({
-          active: subscriptionData.subscription_type !== 'free',
-          type: subscriptionData.subscription_type,
-          endDate: subscriptionData.end_date ? new Date(subscriptionData.end_date) : null,
-          // Remove usageCount/usageLimit from here: always use per-feature usage from batch endpoint in dashboards
-        });
-      } else {
-        setSubscriptionStatus(null);
-      }
-    } catch (error) {
-      console.error("Error in fetchSubscriptionStatus:", error);
-      setSubscriptionStatus(null);
-    } finally {
-      setSubscriptionLoading(false);
-    }
-  };
-  
-  // Function to update subscription status
-  const updateSubscription = async (type: string, active: boolean, endDate?: Date) => {
-    if (!user) {
-      console.error("Cannot update subscription: No user logged in");
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "You must be logged in to upgrade your subscription.",
-      });
-      return;
-    }
-    try {
-      console.log("Updating subscription status:", { type, active });
-      // Make backend API call to upgrade subscription
-      const { data, error } = await api.subscription.upgradeSubscription(type);
-      if (error) {
-        throw new Error(error);
-      }
-      // Log subscription change activity via backend
-      await api.usage.logActivity({
-        actionType: 'subscription_changed',
-        description: `Changed subscription to ${type}`
-      });
-      // Always fetch latest subscription status from backend before updating UI
-      await fetchSubscriptionStatus();
-      // Update profile (only userType, never plan)
-      if (profile) {
-        setProfile({
-          ...profile,
-          // Do NOT update subscriptionType here; plan logic is only in subscriptionStatus
-        });
-      } else {
-        setProfile({
-          userType: userType || 'candidate',
-          subscriptionType: 'free' // Always set to 'free' as a placeholder
-        });
-      }
-      toast({
-        title: "Subscription updated",
-        description: `Your subscription has been updated to ${type}.`,
-      });
-      // Force reload the relevant page based on user type
-      if (userType === 'candidate') {
-        if (type === 'free') {
-          navigate('/free-plan-dashboard');
+        console.log("Fetching user subscription...");
+        const { data, error } = await api.subscription.getUserSubscription();
+        if (error) {
+            console.error("Error fetching subscription:", error);
+            setSubscriptionStatus(null);
         } else {
-          navigate('/candidate-dashboard');
+            console.log("Fetched Subscription Data:", data); // ✅ Debug log
+            setSubscriptionStatus({
+                active: data.subscription_type !== "free",
+                type: data.subscription_type,
+                endDate: data.end_date ? new Date(data.end_date) : null,
+            });
+
+            // ✅ Verify React state update
+            setTimeout(() => {
+                console.log("Updated subscription status after setting:", subscriptionStatus);
+            }, 100);
         }
-      } else if (userType === 'recruiter') {
-        navigate('/dashboard');
-      }
-    } catch (error: any) {
-      console.error("Error updating subscription:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to update subscription: " + error.message,
-      });
-    }
-  };
-  
-  // Function to reset usage count
-  const resetUsageCount = async (featureType: string): Promise<void> => {
-    if (!user) return;
-    try {
-      console.log(`Resetting usage count for feature: ${featureType}`);
-      // Call backend API to reset usage count
-      const { error } = await api.usage.resetUsageCount(user.id, featureType);
-      if (error) {
-        throw error;
-      }
-      // No longer update usageCount in subscriptionStatus; dashboards will refetch per-feature usage as needed
-      await api.usage.logActivity({
-        actionType: 'usage_reset',
-        description: `Reset usage count for ${featureType}`
-      });
-      console.log(`Usage count for ${featureType} has been reset to 0`);
     } catch (error) {
-      console.error("Error resetting usage count:", error);
+        console.error("Error in fetchSubscriptionStatus:", error);
+        setSubscriptionStatus(null);
+    } finally {
+        setSubscriptionLoading(false);
     }
-  };
-  
-  // Function to increment usage count
-  const incrementUsageCount = async (featureType: string): Promise<number> => {
+};
+
+  // ✅ Fix 2: Prevent Excessive Session Restoration Calls
+  useEffect(() => {
+    if (session) return; // 🚀 Avoid unnecessary session re-fetch
+
+    setRestoringSession(true);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setSession({
+          user: { id: session.user.id, email: session.user.email || "" },
+          accessToken: session.access_token || "",
+        });
+        setUser({ id: session.user.id, email: session.user.email || "" });
+      } else {
+        setSession(null);
+        setUser(null);
+      }
+      setRestoringSession(false);
+    });
+
+    // ✅ Fix 4: Refresh Session & Subscription Only When Tab Gains Focus
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible" && !subscriptionStatus) {
+        fetchSubscriptionStatus(); // 🚀 Refresh subscription ONLY if missing
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [session, subscriptionStatus]); // ✅ Prevents redundant API calls
+
+const incrementUsageCount = async (featureType: string): Promise<number> => {
     if (!user) return 0;
     try {
       console.log(`Incrementing usage count for feature: ${featureType}`);
@@ -267,39 +212,85 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const signUp = async (email: string, password: string, type: 'candidate' | 'recruiter') => {
-    try {
-      const { data, error } = await api.auth.signup(email, password, type);
 
-      if (error) throw new Error(error);
-      
-      toast({
-        title: "Account created successfully!",
-        description: "You can now sign in with your credentials.",
+// Function to reset usage count
+const resetUsageCount = async (featureType: string): Promise<void> => {
+  if (!user) return;
+    try {
+      console.log(`Resetting usage count for feature: ${featureType}`);
+      // Call backend API to reset usage count
+        const { error } = await api.usage.resetUsageCount(user.id, featureType);
+        if (error) {
+        throw error;
+      }
+       // No longer update usageCount in subscriptionStatus; dashboards will refetch per-feature usage as needed
+      await api.usage.logActivity({
+        actionType: 'usage_reset',
+        description: `Reset usage count for ${featureType}`
       });
-      
-      // Navigate to login page after successful signup
-      navigate('/login');
-    } catch (error: any) {
+      console.log(`Usage count for ${featureType} has been reset to 0`);
+    } catch (error) {
+    console.error("Error resetting usage count:", error);
+    }
+  };
+
+
+  // Function to update subscription status
+  const updateSubscription = async (type: string, active: boolean, endDate?: Date) => {
+    if (!user) {
+      console.error("Cannot update subscription: No user logged in");
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message,
+        description: "You must be logged in to upgrade your subscription.",
       });
+      return;
+    }
+    try {
+      console.log("Updating subscription status:", { type, active });
+      const { data, error } = await api.subscription.upgradeSubscription(type);
+      if (error) throw new Error(error);
+
+      await fetchSubscriptionStatus(); // ✅ Ensure updated subscription is fetched immediately
+
+      toast({
+        title: "Subscription updated",
+        description: `Your subscription has been updated to ${type}.`,
+      });
+
+      navigate(type === "free" ? "/free-plan-dashboard" : "/candidate-dashboard");
+    } catch (error: any) {
+      console.error("Error updating subscription:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update subscription: " + error.message,
+      });
+    }
+  };
+
+  const signUp = async (email: string, password: string, type: "candidate" | "recruiter") => {
+    try {
+      const { data, error } = await api.auth.signup(email, password, type);
+      if (error) throw new Error(error);
+
+      toast({ title: "Account created successfully!", description: "You can now sign in." });
+      navigate("/login");
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Error", description: error.message });
       throw error;
     }
   };
 
-  const signIn = async (email: string, password: string) => {
+const signIn = async (email: string, password: string) => {
     try {
-      console.log("Signing in user:", email);
-      const { data, error } = await api.auth.login(email, password);
-
-      if (error) throw new Error(error);
-
-      if (data) {
-        setSession({
-          user: { 
+        console.log("Signing in user:", email);
+        const { data, error } = await api.auth.login(email, password);
+        console.log("inside signIn:");
+        if (error) throw new Error(error);
+        if (data) {
+            setSession({
+            user: { 
             id: data.userId,
             email: data.email 
           },
@@ -312,45 +303,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUserType(data.profile?.userType || 'candidate');
         setProfile({
           userType: data.profile?.userType || 'candidate',
-          subscriptionType: 'free' // Always set to 'free' as a placeholder
+          subscriptionType: 'free'  //Always set to 'free' as a placeholder
         });
-        toast({
-          title: "Signed in successfully!",
-        });
+            console.log("before fetxh subscription :", email);
 
-        // Always fetch latest subscription from backend and redirect based on that
-        await fetchSubscriptionStatus();
-        // Use the latest subscriptionStatus for redirect
-        setTimeout(() => {
-          if (data.profile?.userType === 'candidate') {
-            if (subscriptionStatus && subscriptionStatus.type === 'free') {
-              navigate('/free-plan-dashboard');
-            } else if (subscriptionStatus && subscriptionStatus.type) {
-              navigate('/candidate-dashboard');
+            await fetchSubscriptionStatus(); // ✅ Ensure subscription is fetched before routing
+            console.log("Updated subscription status:", subscriptionStatus);
+            // 🚀 Redirect candidate or recruiter to the right dashboard
+            console.log("Full user data:", data); // ✅ Print full response for debugging
+            console.log("UserType inside profile:", data.profile?.userType); // ✅ Ensure userType is correctly defined
+            if(!data.profile) {
+                console.error("No profile found for user:", data.userId);}
+            if (data.profile?.userType === "recruiter") {
+                console.log("Navigating recruiter to /dashboard");
+                navigate("/dashboard"); // ✅ Recruiters go to recruiter dashboard
             } else {
-              navigate('/candidate-dashboard'); // fallback
+                console.log("Navigating candidate to:", subscriptionStatus?.type === "free" ? "/free-plan-dashboard" : "/candidate-dashboard");
+                navigate(subscriptionStatus?.type === "free" ? "/free-plan-dashboard" : "/candidate-dashboard");
             }
-          } else if (data.profile?.userType === 'recruiter') {
-            navigate('/dashboard');
-          } else {
-            navigate('/');
-          }
-        }, 0);
-      }
-    } catch (error: any) {
-      console.error("Sign in error:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message,
-      });
-      throw error;
-    }
-  };
 
-  const signOut = async () => {
+            toast({ title: "Signed in successfully!" });
+        }
+    } catch (error: any) {
+        console.error("Sign in error:", error);
+        toast({ variant: "destructive", title: "Error", description: error.message });
+        throw error;
+    }
+};
+const signOut = async () => {
     try {
-      // Log sign out activity
+ //      Log sign out activity
       if (user) {
         await api.usage.logActivity({
           actionType: 'signed_out',
@@ -358,14 +340,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         });
       }
       
-      // Clear auth state locally
+   //     Clear auth state locally
       setSession(null);
       setUser(null);
       setUserType(null);
       setProfile(null);
       setSubscriptionStatus({ active: false, type: 'free', endDate: null });
       
-      // Clear authentication data in storage
+     //   Clear authentication data in storage
       await api.auth.logout();
       
       toast({
@@ -398,7 +380,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     </AuthContext.Provider>
   );
 };
-
 export const useAuth = () => {
   return useContext(AuthContext);
 };

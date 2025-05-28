@@ -138,7 +138,7 @@ const Upgrade = () => {
               </div>
               <div className="flex items-center">
                 <Check className="h-5 w-5 text-green-500 mr-2" />
-                <span>Resume benchmarking</span>
+                <span>Salary Insights</span>
               </div>
             </CardContent>
             <CardFooter>

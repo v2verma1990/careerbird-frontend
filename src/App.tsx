@@ -15,7 +15,7 @@ import CandidateDashboard from './pages/CandidateDashboard';
 import FreePlanDashboard from './pages/FreePlanDashboard';
 import ResumeOptimizer from './pages/ResumeOptimizer';
 import ResumeCustomizer from './pages/ResumeCustomizer';
-import ResumeBenchmarking from './pages/ResumeBenchmarking';
+import SalaryInsights from './pages/SalaryInsights';
 import AtsScanner from './pages/AtsScanner';
 import BestCandidates from './pages/BestCandidates';
 import OptimizeJob from './pages/OptimizeJob';
@@ -26,6 +26,7 @@ import Upgrade from './pages/Upgrade';
 import Navbar from './components/Navbar';
 
 import './App.css';
+
 
 function App() {
   return (
@@ -41,7 +42,7 @@ function App() {
           <Route path="/free-plan-dashboard" element={<CandidateProtectedRoute><FreePlanDashboard /></CandidateProtectedRoute>} />
           <Route path="/resume-optimizer" element={<ProtectedRoute><ResumeOptimizer /></ProtectedRoute>} />
           <Route path="/resume-customizer" element={<ProtectedRoute><ResumeCustomizer /></ProtectedRoute>} />
-          <Route path="/resume-benchmarking" element={<ProtectedRoute><ResumeBenchmarking /></ProtectedRoute>} />
+          <Route path="/salary-insights" element={<ProtectedRoute><SalaryInsights /></ProtectedRoute>} />
           <Route path="/ats-scanner" element={<ProtectedRoute><AtsScanner /></ProtectedRoute>} />
           <Route path="/best-candidates" element={<ProtectedRoute><BestCandidates /></ProtectedRoute>} />
           <Route path="/optimize-job" element={<ProtectedRoute><OptimizeJob /></ProtectedRoute>} />

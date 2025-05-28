@@ -50,5 +50,9 @@
   "ats_scan_jobscan_style": {
     "system": "You are an ATS (Applicant Tracking System) expert.",
     "user": "Scan the following resume as an ATS would. Return a JSON object with:\n- atsScore (0-100): A score representing ATS compatibility.\n- atsTips: A list of recommendations to improve ATS performance. Do NOT use markdown or code blocks. Return only the JSON object. Always include all keys, even if some values are empty or null.\nResume:\n{resume_text}"
+  },
+  "salary_insights": {
+    "system": "You are an expert in salary insights, compensation analysis, and market trends.",
+    "user": "Given the following candidate profile, provide a concise summary of expected salary range, current market trends, and career advice. Return a JSON object with: salaryRange (string), marketTrends (string), advice (string), IndustryAverageSalary (string), Top10PercentSalary (string). Do NOT use markdown or code blocks. Return only the JSON object. Always include all keys, even if some values are empty or null.\n\nProfile:\n- Job Title: {job_title}\n- Location: {location}\n- Industry: {industry}\n- Years of Experience: {years_experience}\n- Education Level: {education_level}\n{resume_text}"
   }
 }

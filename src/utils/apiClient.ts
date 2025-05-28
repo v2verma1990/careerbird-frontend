@@ -377,6 +377,51 @@ export const api = {
         return { data: null, error: 'Failed to connect to server' };
       }
     },
+    salaryinsights: async (form: {
+  jobTitle: string;
+  location: string;
+  industry: string;
+  yearsExperience: number | string;
+  educationLevel?: string;
+  resume?: File | null;
+}) => {
+  
+  
+
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+        let headers: Record<string, string> = {};
+        if (session?.access_token) {
+          headers["Authorization"] = `Bearer ${session.access_token}`;
+        }
+        const formData = new FormData();
+        formData.append("JobTitle", form.jobTitle);
+        formData.append("Location", form.location);
+        formData.append("Industry", form.industry);
+        formData.append("YearsExperience", form.yearsExperience.toString());
+        if (form.educationLevel) formData.append("EducationLevel", form.educationLevel);
+        if (form.resume) formData.append("Resume", form.resume);
+      const response = await fetch(`${API_BASE_URL}/resume/salary-insights`, {
+          method: 'POST',
+          headers,
+          body: formData,
+          credentials: "include"
+        });
+        if (!response.ok) {
+          const errorText = await response.text();
+          return { data: null, error: errorText };
+        }
+        // Expect JSON Jobscan-style optimization report
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const json = await response.json();
+          return { data: json, error: null };
+        }
+        return { data: null, error: 'Unexpected response type' };
+      } catch (error) {
+        return { data: null, error: 'Failed to connect to server' };
+      }
+    },
     scanAts: async (params: { file: File }) => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -505,3 +550,6 @@ function downloadBlob(blob: Blob, filename: string) {
     window.URL.revokeObjectURL(url);
   }, 100);
 }
+
+// Add or update in your apiClient.ts
+

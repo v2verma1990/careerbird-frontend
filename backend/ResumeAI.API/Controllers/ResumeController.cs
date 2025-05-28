@@ -11,6 +11,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using PdfSharpCore.Drawing;
 using PdfSharpCore.Pdf;
+using System.ComponentModel.DataAnnotations;
 
 namespace ResumeAI.API.Controllers
 {
@@ -256,6 +257,67 @@ namespace ResumeAI.API.Controllers
             }
         }
 
+        [HttpPost("salary-insights")]
+        public async Task<IActionResult> GetSalaryInsights([FromForm] SalaryInsightsRequestModel request)
+        {
+            try
+            {
+                string userId = _authService.ExtractUserIdFromAuthHeader(Request.Headers["Authorization"].ToString());
+
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized(new { error = "Invalid or missing authorization token" });
+                if (string.IsNullOrEmpty(request.JobTitle) || string.IsNullOrEmpty(request.Location))
+                    return BadRequest(new { error = "Job title and location are required" });
+                if (request.YearsExperience < 0)
+                    return BadRequest(new { error = "Years of experience cannot be negative" });
+                if (request.Resume != null && request.Resume.Length > 5 * 1024 * 1024)
+                    return BadRequest(new { error = "Resume file size exceeds the 5MB limit" });
+                var fileExtension = request.Resume != null ? Path.GetExtension(request.Resume.FileName).ToLowerInvariant() : string.Empty;
+                if (request.Resume != null && !new[] { ".pdf", ".docx", ".doc", ".txt" }.Contains(fileExtension))
+                    return BadRequest(new { error = "Only PDF, DOCX, DOC, and TXT files are supported for resume" });
+                // Get user plan
+                var profile = await _userService.GetUserProfileAsync(userId);
+                var isRecruiter = profile?.UserType == "recruiter";
+                var subscription = isRecruiter
+                    ? await _recruiterSubscriptionService.GetRecruiterSubscription(userId)
+                    : await _candidateSubscriptionService.GetCandidateSubscription(userId);
+                var plan = subscription?.subscription_type ?? "free";
+                await _activityLogService.LogActivity(userId, "salary_insights_requested", "Salary insights requested for job title and location");
+                try
+                {
+                    var result = await _resumeService.GetSalaryInsightsAsync(
+                        request.JobTitle,
+                        request.Location,
+                        request.Industry,
+                        request.YearsExperience,
+                        plan,
+                        userId,
+                        "salary_insights",
+                        subscription,
+                        request.EducationLevel,
+                        request.Resume
+                    );
+                    return Ok(result);
+                }
+                catch (HttpRequestException ex)  // 🌟 Captures Python API errors & forwards them correctly
+                {
+                    return StatusCode(500, new { error = ex.Message });
+                }
+                catch (ArgumentException ex)  // 🌟 Handles validation errors separately
+                {
+                    return BadRequest(new { error = ex.Message });
+                }
+                catch (Exception ex)  // 🌟 Handles unexpected .NET errors gracefully
+                {
+                    return StatusCode(500, new { error = $"Internal Server Error: {ex.Message}" });
+                }
+            }
+            catch (UnauthorizedAccessException ex)  // 🌟 Handles authorization errors explicitly
+            {
+                return Unauthorized(new { error = ex.Message });
+            }
+        }
+
         [HttpPost("benchmark")]
         public async Task<IActionResult> BenchmarkResume([FromBody] ResumeBenchmarkRequest request)
         {
@@ -303,39 +365,56 @@ namespace ResumeAI.API.Controllers
                 return stream.ToArray();
             }
         }
-    }
 
-    public class ResumeAnalysisRequest
-    {
-        public string ResumeText { get; set; } = string.Empty;
-        public string JobDescription { get; set; } = string.Empty;
-    }
+        public class ResumeAnalysisRequest
+        {
+            public string ResumeText { get; set; } = string.Empty;
+            public string JobDescription { get; set; } = string.Empty;
+        }
 
-    public class ResumeCustomizationRequest
-    {
-        public string ResumeText { get; set; } = string.Empty;
-        public string JobDescription { get; set; } = string.Empty;
-    }
+        public class ResumeCustomizationRequest
+        {
+            public string ResumeText { get; set; } = string.Empty;
+            public string JobDescription { get; set; } = string.Empty;
+        }
 
-    public class ResumeBenchmarkRequest
-    {
-        public string ResumeText { get; set; } = string.Empty;
-        public string JobDescription { get; set; } = string.Empty;
-    }
+        public class ResumeBenchmarkRequest
+        {
+            public string ResumeText { get; set; } = string.Empty;
+            public string JobDescription { get; set; } = string.Empty;
+        }
 
-    public class ResumeCustomizationRequestModel
-    {
-        public string? ResumeText { get; set; }
-        public string JobDescription { get; set; } = string.Empty;
-        public IFormFile? File { get; set; }
-        public IFormFile? JobDescriptionFile { get; set; } // <-- Add this line
-    }
-    public class ResumeOptimizationRequestModel
-    {
-        public IFormFile? File { get; set; }
-    }
-    public class ResumeATSRequestModel
-    {
-        public IFormFile? File { get; set; }
+        public class ResumeCustomizationRequestModel
+        {
+            
+            public string? ResumeText { get; set; }
+            public string JobDescription { get; set; } = string.Empty;
+            public IFormFile? File { get; set; }
+            public IFormFile? JobDescriptionFile { get; set; } // <-- Add this line
+        }
+        public class ResumeOptimizationRequestModel
+        {
+            [Required]
+            public IFormFile? File { get; set; }
+        }
+        public class ResumeATSRequestModel
+        {
+            [Required]
+            public IFormFile? File { get; set; }
+        }
+
+        public class SalaryInsightsRequestModel
+        {
+            [Required]
+            public required string JobTitle { get; set; } 
+            [Required]
+            public required string Location { get; set; } 
+            [Required]
+            public required string Industry { get; set; } 
+            [Required]
+            public required int YearsExperience { get; set; }
+            public string? EducationLevel { get; set; }
+            public IFormFile? Resume { get; set; }
+        }
     }
 }

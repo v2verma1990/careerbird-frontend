@@ -8,21 +8,22 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using System.IO;
+//using Newtonsoft.Json;
 
 namespace ResumeAI.API.Services
 {
     public class ResumeService
     {
-        
+
         private readonly ActivityLogService _activityLogService;
         private readonly Random _random = new Random();
         private readonly HttpClient _httpClient;
         private readonly string _pythonApiBaseUrl = "http://localhost:8000/candidate"; // Adjust if needed
 
-        public ResumeService(ActivityLogService activityLogService)
-        {           
+        public ResumeService(ActivityLogService activityLogService, HttpClient httpClient)
+        {
             _activityLogService = activityLogService;
-            _httpClient = new HttpClient();
+            _httpClient = httpClient;
         }
 
         public async Task<ResumeAnalysisResult> AnalyzeResume(string resumeText, string jobDescription, string plan, string userId, string featureType, Subscription? subscription = null)
@@ -41,7 +42,7 @@ namespace ResumeAI.API.Services
             await _activityLogService.TrackFeatureUsage(userId, featureType, subscription);
             return result;
         }
-        
+
         public async Task<ResumeOptimizationResult> OptimizeResume(IFormFile file, string plan, string userId, string featureType, Subscription? subscription = null)
         {
             if (file == null || file.Length == 0)
@@ -82,7 +83,7 @@ namespace ResumeAI.API.Services
             await _activityLogService.TrackFeatureUsage(userId, featureType, subscription);
             return result;
         }
-        
+
         public async Task<JobscanReportResult> CustomizeResume(
             IFormFile file,
             string jobDescription,
@@ -195,19 +196,84 @@ namespace ResumeAI.API.Services
             await _activityLogService.TrackFeatureUsage(userId, featureType, subscription);
             return result;
         }
-        
 
-        
-        
+        public async Task<SalaryInsightReportResult> GetSalaryInsightsAsync(string jobTitle, string location, string industry, int yearsExperience,string plan, string userId, string featureType, Subscription? subscription = null, string? educationLevel = null, IFormFile? resume = null)
+        {
+            // Validate required fields
+            if (string.IsNullOrEmpty(jobTitle))
+                throw new ArgumentException("Job title is required", nameof(jobTitle));
+            if (string.IsNullOrEmpty(location))
+                throw new ArgumentException("Location is required", nameof(location));
+            if (yearsExperience < 0)
+                throw new ArgumentOutOfRangeException(nameof(yearsExperience), "Years of experience cannot be negative");
+            if (industry == null)
+                throw new ArgumentNullException(nameof(industry), "Industry cannot be null");
+            if (resume != null && resume.Length == 0)
+                throw new ArgumentException("Resume file cannot be empty", nameof(resume));
+            else if (resume != null && resume.Length > 5 * 1024 * 1024) // Limit to 5MB
+                throw new ArgumentException("Resume file size cannot exceed 5MB", nameof(resume));
+            var form = new MultipartFormDataContent
+            {
+                { new StringContent(jobTitle), "job_title"},
+                { new StringContent(location), "location" },
+                { new StringContent(industry), "industry" },
+                { new StringContent(yearsExperience.ToString()), "years_experience" },
+                { new StringContent(educationLevel ?? ""), "education_level" },
+                { new StringContent(plan), "plan" }
+            };
+            if (resume != null && resume.Length > 0)
+            {
+                using var ms = new MemoryStream();
+                await resume.CopyToAsync(ms);
+                ms.Position = 0;
+                var fileContent = new ByteArrayContent(ms.ToArray());
+                fileContent.Headers.ContentType = new MediaTypeHeaderValue(resume.ContentType ?? "application/octet-stream");
+                form.Add(fileContent, "resume", resume.FileName);
+            }
+
+            HttpResponseMessage response = await _httpClient.PostAsync($"{_pythonApiBaseUrl}/salary_insights", form);
+            var json = await response.Content.ReadAsStringAsync();
+            Console.WriteLine("PYTHON RAW RESPONSE for salary_insights: " + json); // or use your logger
+            if (!response.IsSuccessStatusCode)
+            {
+                // Improved error extraction
+                string errorMessage = $"Python API Error [{(int)response.StatusCode}]";
+                try
+                {
+                    using var doc = JsonDocument.Parse(json);
+                    if (doc.RootElement.TryGetProperty("detail", out var detailProp))
+                        errorMessage = detailProp.GetString() ?? errorMessage;
+                    else
+                        errorMessage = json;
+                }
+                catch
+                {
+                    errorMessage = json;
+                }
+                throw new HttpRequestException(errorMessage);
+            }
+
+            var result = JsonSerializer.Deserialize<SalaryInsightReportResult>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            Console.WriteLine("return result from .NET: " + result); // or use your logger
+            if (result == null)
+                throw new Exception("Failed to parse response from resume customization service.");
+
+            await _activityLogService.TrackFeatureUsage(userId, featureType, subscription);
+            return result;
+        }
+
+
         #region Helper Methods
-        
+
         // Removed mock/demo helper methods as all logic is handled by the Python microservice
-        
+
         #endregion
     }
-    
+
+
+
     #region Result Classes
-    
+
     public class ResumeAnalysisResult
     {
         public int MatchScore { get; set; }
@@ -216,9 +282,6 @@ namespace ResumeAI.API.Services
         public List<string> MissingKeywords { get; set; } = new List<string>();
         public List<string> Suggestions { get; set; } = new List<string>();
     }
-    
-   
-    
     public class ResumeBenchmarkResult
     {
         public int OverallScore { get; set; }
@@ -230,10 +293,10 @@ namespace ResumeAI.API.Services
         public List<string> Strengths { get; set; } = new List<string>();
         public List<string> Weaknesses { get; set; } = new List<string>();
     }
-    
+
     public class ResumeATSResult
     {
-        public int ATSScore { get; set; }        
+        public int ATSScore { get; set; }
         public List<string>? AtsTips { get; set; }
     }
 
@@ -264,8 +327,8 @@ namespace ResumeAI.API.Services
         public Dictionary<string, string>? SectionFeedback { get; set; } = new Dictionary<string, string>();
         public List<ResumeHighlight>? ResumeHighlights { get; set; }
         // Add any other fields as needed from the Python response
-        public string ? AdditionalInsights { get; set; } = string.Empty;
-        public int ActionabilityAssessment { get; set; } 
+        public string? AdditionalInsights { get; set; } = string.Empty;
+        public int ActionabilityAssessment { get; set; }
     }
 
     public class SkillsMatch
@@ -295,8 +358,17 @@ namespace ResumeAI.API.Services
         public string? Summary { get; set; }
         public Dictionary<string, string>? SectionFeedback { get; set; }
         public List<ResumeHighlight>? ResumeHighlights { get; set; }
-        public int ActionabilityAssessment { get; set; } 
+        public int ActionabilityAssessment { get; set; }
         // Add any other fields as needed from the Python response
+    }
+    public class SalaryInsightReportResult
+    {
+        public string? SalaryRange { get; set; }
+        public string? MarketTrends { get; set; }
+        public string? Advice { get; set; }
+        public string? IndustryAverageSalary { get; set; }
+        public string? Top10PercentSalary { get; set; }       
+        
     }
     #endregion
 }

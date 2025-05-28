@@ -160,3 +160,7 @@ def optimize_resume_jobscan_style(resume_text, plan="free"):
 
 def ats_scan_jobscan_style(resume_text, plan="free"):
     return run_prompt("ats_scan_jobscan_style", plan, resume_text=resume_text)
+
+def salary_insights(job_title, location, industry, years_experience, education_level=None, resume_text=None, plan="free"):
+    return run_prompt("salary_insights", plan, job_title=job_title, location=location, industry=industry,
+years_experience=years_experience, education_level=education_level, resume_text=resume_text)

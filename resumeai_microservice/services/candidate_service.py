@@ -1,13 +1,17 @@
 from fastapi import UploadFile, File, Form, HTTPException
 from utils.cache import get_cached_response, set_cached_response, hash_inputs, cache_if_successful
 from utils.openai_utils import (
-    analyze_resume, optimize_resume_jobscan_style, customize_resume, benchmark_resume, ats_scan_jobscan_style, generate_cover_letter, jobscan_style_report
+    analyze_resume, optimize_resume_jobscan_style, customize_resume, benchmark_resume, ats_scan_jobscan_style, generate_cover_letter, jobscan_style_report, get_openai_api_key, run_prompt,salary_insights
 )
 import logging
 import io
 from docx import Document
 import pdfplumber
 import tiktoken
+import os
+import httpx
+from openai import OpenAI
+import json
 
 logger = logging.getLogger("candidate_service")
 
@@ -26,6 +30,8 @@ async def extract_resume_text(resume: UploadFile) -> str:
         return content.decode("utf-8", errors="ignore")
 
 def count_tokens(text, model="gpt-3.5-turbo"):
+    if not isinstance(text, str):
+        text = str(text)
     enc = tiktoken.encoding_for_model(model)
     return len(enc.encode(text))
 
@@ -163,6 +169,69 @@ async def ats_scan_service(resume: UploadFile, plan: str = "free"):
     except Exception as e:
         logger.error(f"optimize_resume_service failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+    
+    
+async def salary_insights_service(
+        job_title: str,
+        location: str,
+        industry: str,
+        years_experience: int,
+        education_level: str = None,
+        resume_text: UploadFile = None,
+        plan: str = "free"):
+    logger.info("salary_insights_service called")
+    try:
+        if resume_text is not None:
+            resume_text_section = await extract_resume_text(resume_text)
+        else:
+            resume_text_section = None
+        if not job_title or not location or not industry or years_experience is None:
+            raise HTTPException(
+                status_code=400,
+                detail="job_title, location, industry, and years_experience are required fields."
+            )
+        # Count tokens
+        job_title_tokens = count_tokens(job_title)
+        location_tokens = count_tokens(location)
+        industry_tokens = count_tokens(industry)
+        years_experience_tokens = count_tokens(str(years_experience))
+        education_level_tokens = count_tokens(education_level or "Not specified")
+        resume_text_tokens = count_tokens(resume_text_section) if resume_text_section else 0
+        total_tokens = (job_title_tokens + location_tokens + industry_tokens +
+                        years_experience_tokens + education_level_tokens + resume_text_tokens)  
+        max_total_tokens = 15000  # leave room for prompt/instructions
+        if total_tokens > max_total_tokens:
+            raise HTTPException(
+                status_code=400,
+                detail="Your input is too long for analysis. Please shorten your input."
+            )
+        cache_key = hash_inputs(
+            job_title, location, industry, str(years_experience), plan,"salary_insights_service"
+        )   
+        cached = get_cached_response("salary_insights", cache_key)
+        if cached:
+            logger.info("Cache hit for salary_insights")
+            return cached
+        logger.info(f"Cache miss for salary_insights, cache_key: {cache_key}")
+        result = salary_insights(
+            job_title=job_title,
+            location=location,
+            industry=industry,
+            years_experience=years_experience,
+            education_level=education_level,
+            resume_text=resume_text_section,
+            plan=plan
+        )
+        logger.info(f"RAW OpenAI result: {result}")
+        cache_if_successful("salary_insights", cache_key, result)
+        logger.info("Cache miss for salary_insights, called OpenAI")
+        return result
+    except HTTPException as e:
+        logger.error(f"salary_insights_service failed: {e.detail}")
+        raise e
+    except Exception as e:
+        logger.error(f"salary_insights_service failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))   
 
 async def benchmark_resume_service(resume: UploadFile, job_description: str, plan: str = "free"):
     logger.info("benchmark_resume_service called")
@@ -190,3 +259,4 @@ async def generate_cover_letter_service(job_title: str, company: str, job_descri
     cache_if_successful("generate_cover_letter", cache_key, result)
     logger.info("Cache miss for generate_cover_letter, called OpenAI")
     return result
+
