@@ -451,25 +451,77 @@ export const AuthProvider = ({ children }) => {
       });
       return;
     }
+    
+    // Don't do anything if user is already on this plan
+    if (subscriptionStatus?.type === type) {
+      console.log(`User is already on ${type} plan, no need to upgrade`);
+      toast({
+        title: "Already subscribed",
+        description: `You are already on the ${type} plan.`
+      });
+      return;
+    }
+    
     try {
       console.log("Updating subscription status:", { type, active });
+      
+      // Set loading state in subscription status
+      setSubscriptionLoading(true);
+      
+      // Call the API to upgrade the subscription
       const { data, error } = await api.subscription.upgradeSubscription(type);
-      if (error) throw new Error(error);
-
-      // Fetch updated subscription status using current user data
-      await fetchSubscriptionStatus(user);
+      
+      if (error) {
+        console.error("API error upgrading subscription:", error);
+        throw new Error(error);
+      }
+      
+      console.log("Subscription upgrade API response:", data);
+      
+      // Fetch the updated subscription status from the backend
+      const { data: subscriptionData, error: subscriptionError } = await api.subscription.getUserSubscription();
+      
+      if (subscriptionError) {
+        console.error("Error fetching updated subscription:", subscriptionError);
+        throw new Error("Failed to verify subscription update");
+      }
+      
+      console.log("Updated subscription data:", subscriptionData);
+      
+      // Update the subscription status in the context
+      setSubscriptionStatus({
+        active: subscriptionData.subscription_type || type,
+        type: subscriptionData.subscription_type || type,
+        endDate: subscriptionData.end_date ? new Date(subscriptionData.end_date) : null,
+      });
+      
+      // Update the profile as well to keep everything in sync
+      setProfile(prevProfile => ({
+        ...prevProfile,
+        subscriptionType: subscriptionData.subscription_type || type
+      }));
+      
+      // Show success toast
       toast({
         title: "Subscription updated",
         description: `Your subscription has been updated to ${type}.`
       });
-      navigate(type === "free" ? "/free-plan-dashboard" : "/candidate-dashboard", { replace: true });
+      
+      // Navigate to the appropriate dashboard based on the new subscription type and user type
+      if (userType === 'recruiter') {
+        navigate("/dashboard", { replace: true });
+      } else {
+        navigate(type === "free" ? "/free-plan-dashboard" : "/candidate-dashboard", { replace: true });
+      }
     } catch (error) {
       console.error("Error updating subscription:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to update subscription: " + error.message
+        description: "Failed to update subscription: " + (error.message || "Unknown error")
       });
+    } finally {
+      setSubscriptionLoading(false);
     }
   };
 

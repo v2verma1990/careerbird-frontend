@@ -279,10 +279,30 @@ export const api = {
     }
   },
   subscription: {
-    getUserSubscription: () => 
-      apiCall<any>("GET", `/subscription/current`),
-    upgradeSubscription: (subscriptionType: string) => 
-      apiCall<any>("POST", "/subscription/upgrade", { subscriptionType })
+    getUserSubscription: () => {
+      console.log("Fetching current user subscription");
+      return apiCall<any>("GET", `/subscription/current`)
+        .then(result => {
+          console.log("User subscription data:", result);
+          return result;
+        })
+        .catch(error => {
+          console.error("Error fetching user subscription:", error);
+          return { data: null, error: error.message || "Failed to fetch subscription" };
+        });
+    },
+    upgradeSubscription: (subscriptionType: string) => {
+      console.log(`Calling API to upgrade subscription to ${subscriptionType}`);
+      return apiCall<any>("POST", "/subscription/upgrade", { subscriptionType })
+        .then(result => {
+          console.log(`Subscription upgrade API result:`, result);
+          return result;
+        })
+        .catch(error => {
+          console.error(`Error in subscription upgrade API:`, error);
+          return { data: null, error: error.message || "API call failed" };
+        });
+    }
   },
   usage: {
     incrementUsage: (userId: string, featureType: string) => {

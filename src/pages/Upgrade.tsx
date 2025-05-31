@@ -7,13 +7,26 @@ import React, { useState } from "react";
 
 const Upgrade = () => {
   const navigate = useNavigate();
-  const { user, profile, subscriptionStatus, updateSubscription } = useAuth();
+  const { user, userType, profile, subscriptionStatus, updateSubscription } = useAuth();
   const [loading, setLoading] = useState(false);
+
+  // Check if user is a recruiter or candidate
+  const isRecruiter = userType === 'recruiter';
+  const isCandidate = userType === 'candidate';
+
+  console.log("Upgrade page - User info:", { 
+    userType, 
+    subscriptionType: subscriptionStatus?.type,
+    isRecruiter,
+    isCandidate
+  });
 
   const handleUpgrade = async (type: string) => {
     setLoading(true);
     try {
+      console.log(`Initiating upgrade to ${type} plan`);
       await updateSubscription(type, true);
+      console.log(`Upgrade to ${type} plan completed`);
     } catch (error) {
       console.error("Error upgrading subscription:", error);
     } finally {
@@ -33,10 +46,11 @@ const Upgrade = () => {
     });
   };
   
-  // Show only necessary plans based on current subscription
-  const showFreePlan = subscriptionStatus.type === 'free';
-  const showBasicPlan = true; // Always show basic plan
-  const showPremiumPlan = true; // Always show premium plan
+  // Show plans based on user type and current subscription
+  const showFreePlan = isCandidate && subscriptionStatus?.type === 'free';
+  const showBasicPlan = isCandidate; // Always show basic plan for candidates
+  const showPremiumPlan = isCandidate; // Always show premium plan for candidates
+  const showRecruiterPlan = isRecruiter; // Show recruiter plan for recruiters
 
   return (
     <div className="container mx-auto py-12 px-4">
@@ -103,8 +117,22 @@ const Upgrade = () => {
           </tbody>
         </table>
         <div className="flex flex-col md:flex-row justify-center gap-6 mb-8">
-          <Button size="lg" className="bg-blue-600 text-white">Upgrade Now</Button>
-          <Button size="lg" variant="outline" className="border-blue-600 text-blue-600">Contact Sales</Button>
+          <Button 
+            size="lg" 
+            className="bg-blue-600 text-white"
+            onClick={() => subscriptionStatus.type === 'free' ? handleUpgrade("basic") : handleUpgrade("premium")}
+            disabled={loading}
+          >
+            {loading ? "Upgrading..." : "Upgrade Now"}
+          </Button>
+          <Button 
+            size="lg" 
+            variant="outline" 
+            className="border-blue-600 text-blue-600"
+            onClick={() => window.open('mailto:support@resumeai.com?subject=Enterprise%20Plan%20Inquiry', '_blank')}
+          >
+            Contact Sales
+          </Button>
         </div>
       </div>
 
@@ -116,9 +144,9 @@ const Upgrade = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-        {/* Free Plan */}
+        {/* Free Plan - Only for candidates */}
         {showFreePlan && (
-          <Card className={`border ${subscriptionStatus.type === 'free' ? 'border-blue-500 ring-2 ring-blue-500' : ''}`}>
+          <Card className={`border ${subscriptionStatus?.type === 'free' ? 'border-blue-500 ring-2 ring-blue-500' : ''}`}>
             <CardHeader>
               <CardTitle className="text-xl">Free Plan</CardTitle>
               <CardDescription>For casual users</CardDescription>
@@ -144,19 +172,19 @@ const Upgrade = () => {
             <CardFooter>
               <Button 
                 className="w-full" 
-                variant={subscriptionStatus.type === 'free' ? "secondary" : "outline"}
+                variant={subscriptionStatus?.type === 'free' ? "secondary" : "outline"}
                 onClick={() => handleUpgrade("free")}
-                disabled={subscriptionStatus.type === 'free' || loading}
+                disabled={subscriptionStatus?.type === 'free' || loading}
               >
-                {loading && subscriptionStatus.type !== 'free' ? "Upgrading..." : (subscriptionStatus.type === 'free' ? "Current Plan" : "Select Free")}
+                {loading && subscriptionStatus?.type !== 'free' ? "Upgrading..." : (subscriptionStatus?.type === 'free' ? "Current Plan" : "Select Free")}
               </Button>
             </CardFooter>
           </Card>
         )}
 
-        {/* Basic Plan */}
+        {/* Basic Plan - For candidates */}
         {showBasicPlan && (
-          <Card className={`border ${subscriptionStatus.type === 'basic' ? 'border-blue-500 ring-2 ring-blue-500' : ''}`}>
+          <Card className={`border ${subscriptionStatus?.type === 'basic' ? 'border-blue-500 ring-2 ring-blue-500' : ''}`}>
             <CardHeader>
               <CardTitle className="text-xl">Basic Plan</CardTitle>
               <CardDescription>For active job seekers</CardDescription>
@@ -186,19 +214,19 @@ const Upgrade = () => {
             <CardFooter>
               <Button 
                 className="w-full" 
-                variant={subscriptionStatus.type === 'basic' ? "secondary" : "default"}
+                variant={subscriptionStatus?.type === 'basic' ? "secondary" : "default"}
                 onClick={() => handleUpgrade("basic")}
-                disabled={subscriptionStatus.type === 'basic' || loading}
+                disabled={subscriptionStatus?.type === 'basic' || loading}
               >
-                {loading && subscriptionStatus.type !== 'basic' ? "Upgrading..." : (subscriptionStatus.type === 'basic' ? "Current Plan" : "Upgrade to Basic")}
+                {loading && subscriptionStatus?.type !== 'basic' ? "Upgrading..." : (subscriptionStatus?.type === 'basic' ? "Current Plan" : "Upgrade to Basic")}
               </Button>
             </CardFooter>
           </Card>
         )}
 
-        {/* Premium Plan */}
+        {/* Premium Plan - For candidates */}
         {showPremiumPlan && (
-          <Card className={`border ${subscriptionStatus.type === 'premium' ? 'border-blue-500 ring-2 ring-blue-500' : ''}`}>
+          <Card className={`border ${subscriptionStatus?.type === 'premium' ? 'border-blue-500 ring-2 ring-blue-500' : ''}`}>
             <CardHeader>
               <CardTitle className="text-xl">Premium Plan</CardTitle>
               <CardDescription>For professionals</CardDescription>
@@ -232,11 +260,57 @@ const Upgrade = () => {
             <CardFooter>
               <Button 
                 className="w-full" 
-                variant={subscriptionStatus.type === 'premium' ? "secondary" : "default"}
+                variant={subscriptionStatus?.type === 'premium' ? "secondary" : "default"}
                 onClick={() => handleUpgrade("premium")}
-                disabled={subscriptionStatus.type === 'premium' || loading}
+                disabled={subscriptionStatus?.type === 'premium' || loading}
               >
-                {loading && subscriptionStatus.type !== 'premium' ? "Upgrading..." : (subscriptionStatus.type === 'premium' ? "Current Plan" : "Upgrade to Premium")}
+                {loading && subscriptionStatus?.type !== 'premium' ? "Upgrading..." : (subscriptionStatus?.type === 'premium' ? "Current Plan" : "Upgrade to Premium")}
+              </Button>
+            </CardFooter>
+          </Card>
+        )}
+        
+        {/* Recruiter Plan - Only for recruiters */}
+        {showRecruiterPlan && (
+          <Card className={`border ${subscriptionStatus?.type === 'recruiter' ? 'border-blue-500 ring-2 ring-blue-500' : ''}`}>
+            <CardHeader>
+              <CardTitle className="text-xl">Recruiter Plan</CardTitle>
+              <CardDescription>For hiring professionals</CardDescription>
+              <div className="mt-4">
+                <span className="text-4xl font-bold">$29.99</span>
+                <span className="text-gray-500">/month</span>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center">
+                <Check className="h-5 w-5 text-green-500 mr-2" />
+                <span>Unlimited job postings</span>
+              </div>
+              <div className="flex items-center">
+                <Check className="h-5 w-5 text-green-500 mr-2" />
+                <span>AI candidate matching</span>
+              </div>
+              <div className="flex items-center">
+                <Check className="h-5 w-5 text-green-500 mr-2" />
+                <span>Resume database access</span>
+              </div>
+              <div className="flex items-center">
+                <Check className="h-5 w-5 text-green-500 mr-2" />
+                <span>Advanced analytics</span>
+              </div>
+              <div className="flex items-center">
+                <Check className="h-5 w-5 text-green-500 mr-2" />
+                <span>Priority support</span>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button 
+                className="w-full" 
+                variant={subscriptionStatus?.type === 'recruiter' ? "secondary" : "default"}
+                onClick={() => handleUpgrade("recruiter")}
+                disabled={subscriptionStatus?.type === 'recruiter' || loading}
+              >
+                {loading && subscriptionStatus?.type !== 'recruiter' ? "Upgrading..." : (subscriptionStatus?.type === 'recruiter' ? "Current Plan" : "Upgrade to Recruiter")}
               </Button>
             </CardFooter>
           </Card>
