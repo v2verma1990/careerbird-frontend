@@ -10,7 +10,20 @@ import "@/styles/Dashboard.css";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user, userType, subscriptionStatus, incrementUsageCount, subscriptionLoading, restoringSession } = useAuth();
+  const { user, userType, subscriptionStatus, incrementUsageCount, subscriptionLoading, restoringSession, cancelSubscription } = useAuth();
+  const [cancelLoading, setCancelLoading] = useState(false);
+  
+  // Calculate remaining days in subscription
+  const getRemainingDays = () => {
+    if (!subscriptionStatus?.endDate) return null;
+    
+    const endDate = new Date(subscriptionStatus.endDate);
+    const today = new Date();
+    const diffTime = endDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays > 0 ? diffDays : 0;
+  };
   
   // Only allow recruiters to view this dashboard
   useEffect(() => {
@@ -115,6 +128,25 @@ const Dashboard = () => {
       });
   }, [user, subscriptionStatus]);
 
+  // Handler for cancel subscription
+  const handleCancelSubscription = async () => {
+    if (!user) return;
+    
+    // Confirm cancellation
+    if (!window.confirm("Are you sure you want to cancel your subscription? You will be downgraded to the free plan at the end of your billing period.")) {
+      return;
+    }
+    
+    setCancelLoading(true);
+    try {
+      await cancelSubscription();
+    } catch (error) {
+      console.error("Error cancelling subscription:", error);
+    } finally {
+      setCancelLoading(false);
+    }
+  };
+  
   // Handler for feature button click
   const handleFeatureClick = async (feature: any) => {
     if (!user) return;
@@ -154,9 +186,51 @@ const Dashboard = () => {
           <h1 className="text-3xl font-bold mb-2">Recruiter Dashboard</h1>
           <p className="text-gray-600">Welcome, {user.email}! Manage your hiring process with AI-powered tools.</p>
         </div>
-        <div className="flex items-center gap-4 mt-4 md:mt-0">
-          <Badge className={`px-3 py-1 ${subscriptionStatus.type === 'premium' ? 'bg-green-500' : subscriptionStatus.type === 'basic' ? 'bg-blue-500' : 'bg-gray-500'}`}>{subscriptionStatus.type.charAt(0).toUpperCase() + subscriptionStatus.type.slice(1)} Plan</Badge>
-          <Button variant="outline" onClick={() => navigate('/upgrade')}>Upgrade</Button>
+        <div className="flex flex-col items-end gap-2 mt-4 md:mt-0">
+          <div className="flex items-center gap-4">
+            <Badge className={`px-3 py-1 ${subscriptionStatus.type === 'premium' ? 'bg-green-500' : subscriptionStatus.type === 'basic' ? 'bg-blue-500' : 'bg-gray-500'}`}>
+              {subscriptionStatus.type.charAt(0).toUpperCase() + subscriptionStatus.type.slice(1)} Plan
+            </Badge>
+            
+            {/* Show upgrade button if not on premium or if subscription is cancelled */}
+            {(subscriptionStatus.type !== "premium" || subscriptionStatus.cancelled) && (
+              <Button variant="outline" onClick={() => navigate("/upgrade")}>
+                {subscriptionStatus.cancelled ? "Renew Subscription" : "Upgrade"}
+              </Button>
+            )}
+            
+            {/* Only show cancel button if subscription is active and not already cancelled */}
+            {(subscriptionStatus.type === "basic" || subscriptionStatus.type === "premium" || subscriptionStatus.type === "recruiter") && 
+             !subscriptionStatus.cancelled && (
+              <Button 
+                variant="outline" 
+                className="text-red-500 border-red-500 hover:bg-red-50"
+                onClick={handleCancelSubscription}
+                disabled={cancelLoading}
+              >
+                {cancelLoading ? "Cancelling..." : "Cancel Subscription"}
+              </Button>
+            )}
+          </div>
+          
+          {/* Show subscription status message */}
+          {subscriptionStatus.endDate && subscriptionStatus.type !== "free" && (
+            <p className="text-sm text-gray-500">
+              {subscriptionStatus.cancelled 
+                ? getRemainingDays() > 0 
+                  ? `Your subscription will end in ${getRemainingDays()} days` 
+                  : "Your subscription will end today"
+                : getRemainingDays() > 0 
+                  ? `Your subscription will renew in ${getRemainingDays()} days` 
+                  : "Your subscription will renew today"
+              }
+            </p>
+          )}
+          
+          {/* Show cancelled badge if subscription is cancelled */}
+          {subscriptionStatus.cancelled && (
+            <Badge className="px-3 py-1 bg-red-500 mt-2">Cancelled</Badge>
+          )}
         </div>
       </div>
       

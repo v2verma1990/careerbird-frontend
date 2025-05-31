@@ -29,17 +29,23 @@ export default function CandidateProtectedRoute({ children }: { children: JSX.El
     userType
   });
   
-  // If user is on free-plan-dashboard but has a paid subscription, redirect to candidate-dashboard
-  if (currentPath === '/free-plan-dashboard' && subscriptionStatus?.type !== 'free') {
-    console.log(`Redirecting from free-plan-dashboard to candidate-dashboard (subscription: ${subscriptionStatus?.type})`);
+  // If user is on free-plan-dashboard but has an active paid subscription, redirect to candidate-dashboard
+  if (currentPath === '/free-plan-dashboard' && 
+      subscriptionStatus?.type !== 'free' && 
+      subscriptionStatus?.active) {
+    console.log(`Redirecting from free-plan-dashboard to candidate-dashboard (subscription: ${subscriptionStatus?.type}, cancelled: ${subscriptionStatus?.cancelled})`);
     return <Navigate to="/candidate-dashboard" replace />;
   }
   
-  // If user is on candidate-dashboard but has a free subscription, redirect to free-plan-dashboard
-  if (currentPath === '/candidate-dashboard' && subscriptionStatus?.type === 'free') {
-    console.log(`Redirecting from candidate-dashboard to free-plan-dashboard (subscription: ${subscriptionStatus?.type})`);
+  // If user is on candidate-dashboard but has a free subscription or their subscription has ended, redirect to free-plan-dashboard
+  if (currentPath === '/candidate-dashboard' && 
+      (subscriptionStatus?.type === 'free' || !subscriptionStatus?.active)) {
+    console.log(`Redirecting from candidate-dashboard to free-plan-dashboard (subscription: ${subscriptionStatus?.type}, active: ${subscriptionStatus?.active})`);
     return <Navigate to="/free-plan-dashboard" replace />;
   }
+  
+  // If subscription is cancelled but still active (end date not reached), stay on candidate dashboard
+  // This is handled implicitly by the above conditions
   
   return children;
 }

@@ -129,10 +129,17 @@ const CandidateDashboard = () => {
             <Badge className={`px-3 py-1 ${subscriptionStatus.type === "premium" ? "bg-green-500" : subscriptionStatus.type === "basic" ? "bg-blue-500" : "bg-gray-500"}`}>
               {subscriptionStatus.type.charAt(0).toUpperCase() + subscriptionStatus.type.slice(1)} Plan
             </Badge>
-            {subscriptionStatus.type !== "premium" && (
-              <Button variant="outline" onClick={() => navigate("/upgrade")}>Upgrade</Button>
+            
+            {/* Show upgrade button if not on premium or if subscription is cancelled */}
+            {(subscriptionStatus.type !== "premium" || subscriptionStatus.cancelled) && (
+              <Button variant="outline" onClick={() => navigate("/upgrade")}>
+                {subscriptionStatus.cancelled ? "Renew Subscription" : "Upgrade"}
+              </Button>
             )}
-            {(subscriptionStatus.type === "basic" || subscriptionStatus.type === "premium") && (
+            
+            {/* Only show cancel button if subscription is active and not already cancelled */}
+            {(subscriptionStatus.type === "basic" || subscriptionStatus.type === "premium") && 
+             !subscriptionStatus.cancelled && (
               <Button 
                 variant="outline" 
                 className="text-red-500 border-red-500 hover:bg-red-50"
@@ -143,12 +150,24 @@ const CandidateDashboard = () => {
               </Button>
             )}
           </div>
+          
+          {/* Show subscription status message */}
           {subscriptionStatus.endDate && subscriptionStatus.type !== "free" && (
             <p className="text-sm text-gray-500">
-              {getRemainingDays() > 0 
-                ? `Your subscription will renew in ${getRemainingDays()} days` 
-                : "Your subscription will end today"}
+              {subscriptionStatus.cancelled 
+                ? getRemainingDays() > 0 
+                  ? `Your subscription will end in ${getRemainingDays()} days` 
+                  : "Your subscription will end today"
+                : getRemainingDays() > 0 
+                  ? `Your subscription will renew in ${getRemainingDays()} days` 
+                  : "Your subscription will renew today"
+              }
             </p>
+          )}
+          
+          {/* Show cancelled badge if subscription is cancelled */}
+          {subscriptionStatus.cancelled && (
+            <Badge className="px-3 py-1 bg-red-500 mt-2">Cancelled</Badge>
           )}
         </div>
       </div>

@@ -354,16 +354,42 @@ namespace ResumeAI.API.Services
                 
                 var json = JsonSerializer.Serialize(subscription, new JsonSerializerOptions 
                 { 
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase 
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    WriteIndented = true
                 });
+                Console.WriteLine($"Subscription JSON: {json}");
+                
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
                 
+                // Use UPSERT with ON CONFLICT DO UPDATE
+                _supabaseHttpClientService.Client.DefaultRequestHeaders.Remove("Prefer");
+                _supabaseHttpClientService.Client.DefaultRequestHeaders.Add("Prefer", "return=representation,resolution=merge-duplicates");
+                
+                // Ensure we have proper authorization
+                var serviceKey = _supabaseHttpClientService.GetServiceKey();
+                if (!string.IsNullOrEmpty(serviceKey)) {
+                    Console.WriteLine("Using service key for subscription update");
+                    _supabaseHttpClientService.SetServiceKey();
+                } else {
+                    Console.WriteLine("Warning: No service key available for subscription update");
+                }
+                
+                // Log Authorization header before making the request
+                var authHeader = _supabaseHttpClientService.Client.DefaultRequestHeaders.Authorization;
+                Console.WriteLine($"[Supabase] Authorization header before subscription upsert: {authHeader}");
+                
                 var response = await _supabaseHttpClientService.Client.PostAsync(url, content);
+                var responseContent = await response.Content.ReadAsStringAsync();
                 
                 if (!response.IsSuccessStatusCode)
                 {
                     Console.WriteLine($"Error adding/updating subscription: {response.StatusCode}");
-                    Console.WriteLine($"Response: {await response.Content.ReadAsStringAsync()}");
+                    Console.WriteLine($"Response: {responseContent}");
+                    throw new Exception($"Failed to update subscription: {response.StatusCode} - {responseContent}");
+                }
+                else
+                {
+                    Console.WriteLine($"Subscription updated successfully. Response: {responseContent}");
                 }
 
                 return subscription;
@@ -371,7 +397,11 @@ namespace ResumeAI.API.Services
             catch (Exception ex)
             {
                 Console.WriteLine($"Exception in AddOrUpdateSubscriptionAsync: {ex.Message}");
-                return subscription;
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                }
+                throw; // Rethrow to ensure the controller knows about the error
             }
         }
         
@@ -652,6 +682,47 @@ namespace ResumeAI.API.Services
                 result[key] = (usageCount, usageLimit);
             }
             return result;
+        }
+        
+        /// <summary>
+        /// Gets all subscriptions that are cancelled and have an end date in the past.
+        /// </summary>
+        /// <returns>A list of expired subscriptions</returns>
+        public async Task<List<Subscription>> GetExpiredSubscriptions()
+        {
+            try
+            {
+                Console.WriteLine("GetExpiredSubscriptions: Fetching expired subscriptions");
+                
+                // Current date in UTC for comparison
+                var currentDate = DateTime.UtcNow;
+                
+                // Query for subscriptions that are cancelled and have an end date in the past
+                var url = $"{_supabaseHttpClientService.Url}/rest/v1/subscriptions?is_cancelled=eq.true&end_date=lt.{Uri.EscapeDataString(currentDate.ToString("o"))}&is_active=eq.true&select=*";
+                Console.WriteLine($"Expired subscriptions URL: {url}");
+                
+                var response = await _supabaseHttpClientService.Client.GetAsync(url);
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine($"Error fetching expired subscriptions: {response.StatusCode}");
+                    Console.WriteLine($"Response: {await response.Content.ReadAsStringAsync()}");
+                    return new List<Subscription>();
+                }
+                
+                var content = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Expired subscriptions response content: {content}");
+                
+                var expiredSubscriptions = JsonSerializer.Deserialize<List<Subscription>>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<Subscription>();
+                Console.WriteLine($"Found {expiredSubscriptions.Count} expired subscriptions");
+                
+                return expiredSubscriptions;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception in GetExpiredSubscriptions: {ex.Message}");
+                return new List<Subscription>();
+            }
         }
     }
 }

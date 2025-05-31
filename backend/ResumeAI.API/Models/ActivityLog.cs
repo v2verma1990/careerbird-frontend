@@ -27,7 +27,7 @@ namespace ResumeAI.API.Models
 
     public class Subscription
     {
-        // Using consistent casing (PascalCase) for all properties to avoid confusion
+        // Using consistent casing (snake_case) for all properties to match Supabase
         public string id { get; set; } = Guid.NewGuid().ToString();
         public string user_id { get; set; } = string.Empty;
         public string subscription_type { get; set; } = "free";
@@ -35,15 +35,7 @@ namespace ResumeAI.API.Models
         public DateTime? end_date { get; set; } = null;
         public DateTime created_at { get; set; } = DateTime.UtcNow;
         public DateTime updated_at { get; set; } = DateTime.UtcNow;
-        
-        // // Add these properties to match what's used in Supabase
-        // public DateTime created_at { 
-        //     get { return CreatedAt; } 
-        //     set { CreatedAt = value; } 
-        // }
-        // public DateTime updated_at { 
-        //     get { return UpdatedAt; } 
-        //     set { UpdatedAt = value; } 
-        // }
+        public bool is_cancelled { get; set; } = false;
+        public bool is_active { get; set; } = true;
     }
 }

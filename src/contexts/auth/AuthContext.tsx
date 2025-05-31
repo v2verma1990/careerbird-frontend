@@ -50,25 +50,28 @@ export const AuthProvider = ({ children }) => {
         console.error("Error fetching subscription:", error);
         // Set a default free subscription if there's an error
         setSubscriptionStatus({
-          active: 'free',
+          active: true,
           type: 'free',
           endDate: null,
+          cancelled: false,
         });
       } else {
         console.log("Fetched Subscription Data:", data);
         setSubscriptionStatus({
-          active: data.subscription_type || 'free', // Default to free if not specified
+          active: data.is_active !== undefined ? data.is_active : true,
           type: data.subscription_type || 'free',
           endDate: data.end_date ? new Date(data.end_date) : null,
+          cancelled: data.is_cancelled || false,
         });
       }
     } catch (error) {
       console.error("Error in fetchSubscriptionStatus:", error);
       // Set a default free subscription if there's an exception
       setSubscriptionStatus({
-        active: 'free',
+        active: true,
         type: 'free',
         endDate: null,
+        cancelled: false,
       });
     } finally {
       setSubscriptionLoading(false);
@@ -261,17 +264,19 @@ export const AuthProvider = ({ children }) => {
             console.error("Error fetching subscription:", subscriptionError);
             // Set default subscription if there's an error
             setSubscriptionStatus({
-              active: 'free',
+              active: true,
               type: 'free',
               endDate: null,
+              cancelled: false,
             });
           } else {
             console.log("Subscription data received:", subscriptionData);
             // Set the actual subscription data
             setSubscriptionStatus({
-              active: subscriptionData.subscription_type || 'free',
+              active: subscriptionData.is_active !== undefined ? subscriptionData.is_active : true,
               type: subscriptionData.subscription_type || 'free',
               endDate: subscriptionData.end_date ? new Date(subscriptionData.end_date) : null,
+              cancelled: subscriptionData.is_cancelled || false,
             });
           }
           
@@ -280,11 +285,21 @@ export const AuthProvider = ({ children }) => {
             navigate("/dashboard", { replace: true });
           } else if (data.profile?.userType === "candidate") {
             const subType = subscriptionData?.subscription_type || 'free';
-            console.log("Navigating based on subscription type:", subType);
-            navigate(
-              subType === "free" ? "/free-plan-dashboard" : "/candidate-dashboard",
-              { replace: true }
-            );
+            const isActive = subscriptionData?.is_active !== undefined ? subscriptionData.is_active : true;
+            
+            console.log("Navigating based on subscription:", {
+              type: subType,
+              active: isActive,
+              cancelled: subscriptionData?.is_cancelled
+            });
+            
+            // If subscription is active and not free, go to candidate dashboard
+            // Otherwise go to free plan dashboard
+            if (subType !== 'free' && isActive) {
+              navigate("/candidate-dashboard", { replace: true });
+            } else {
+              navigate("/free-plan-dashboard", { replace: true });
+            }
           } else {
             console.error("Unexpected userType:", data.profile?.userType);
             toast({
@@ -297,9 +312,10 @@ export const AuthProvider = ({ children }) => {
           console.error("Error in subscription fetch:", error);
           // Set default subscription if there's an exception
           setSubscriptionStatus({
-            active: 'free',
+            active: true,
             type: 'free',
             endDate: null,
+            cancelled: false,
           });
           
           // Navigate to a safe default
@@ -456,7 +472,7 @@ export const AuthProvider = ({ children }) => {
       console.log("Cancelling subscription");
       setSubscriptionLoading(true);
       
-      // Call the API to cancel the subscription (downgrade to free)
+      // Call the API to cancel the subscription but maintain access until end date
       const { data, error } = await api.subscription.cancelSubscription();
       
       if (error) {
@@ -476,27 +492,22 @@ export const AuthProvider = ({ children }) => {
       
       console.log("Updated subscription data after cancellation:", subscriptionData);
       
-      // Update the subscription status in the context
-      setSubscriptionStatus({
-        active: 'free',
-        type: 'free',
-        endDate: subscriptionData.end_date ? new Date(subscriptionData.end_date) : null,
-      });
-      
-      // Update the profile as well to keep everything in sync
-      setProfile(prevProfile => ({
-        ...prevProfile,
-        subscriptionType: 'free'
+      // Keep the current subscription type but mark it as cancelled
+      // The backend should maintain the current plan until the end date
+      setSubscriptionStatus(prevStatus => ({
+        ...prevStatus,
+        active: true, // Still active until end date
+        cancelled: true, // Mark as cancelled for UI purposes
+        endDate: subscriptionData.end_date ? new Date(subscriptionData.end_date) : prevStatus.endDate,
       }));
       
       // Show success toast
       toast({
         title: "Subscription cancelled",
-        description: "Your subscription has been cancelled. You will be downgraded to the free plan at the end of your billing period."
+        description: "Your subscription has been cancelled. You will continue to have access until the end of your billing period."
       });
       
-      // Navigate to the free plan dashboard
-      navigate("/free-plan-dashboard", { replace: true });
+      // Stay on the current dashboard since the user still has access
     } catch (error) {
       console.error("Error cancelling subscription:", error);
       toast({
@@ -559,9 +570,10 @@ export const AuthProvider = ({ children }) => {
       
       // Update the subscription status in the context
       setSubscriptionStatus({
-        active: subscriptionData.subscription_type || type,
+        active: subscriptionData.is_active !== undefined ? subscriptionData.is_active : true,
         type: subscriptionData.subscription_type || type,
         endDate: subscriptionData.end_date ? new Date(subscriptionData.end_date) : null,
+        cancelled: false, // Reset cancelled flag when upgrading
       });
       
       // Update the profile as well to keep everything in sync

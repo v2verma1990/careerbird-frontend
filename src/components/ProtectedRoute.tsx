@@ -2,7 +2,7 @@ import { useAuth } from "@/contexts/auth/AuthContext";
 import { Navigate } from "react-router-dom";
 
 export default function ProtectedRoute({ children }: { children: JSX.Element }) {
-  const { user, subscriptionLoading, restoringSession } = useAuth();
+  const { user, subscriptionStatus, subscriptionLoading, restoringSession } = useAuth();
   
   // Show loading indicator while session is being restored or subscription is loading
   if (restoringSession || subscriptionLoading) {

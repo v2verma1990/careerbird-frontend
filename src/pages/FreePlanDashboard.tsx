@@ -221,9 +221,20 @@ const FreePlanDashboard = () => {
           <h1 className="text-3xl font-bold mb-2">Free Plan Dashboard</h1>
           <p className="text-gray-600">{user?.email ? `Hello, ${user.email}!` : "Hello!"} Start optimizing your job search with our ATS scanner.</p>
         </div>
-        <div className="flex items-center gap-4 mt-4 md:mt-0">
-          <Badge className="px-3 py-1 bg-gray-500">Free Plan</Badge>
-          <Button variant="outline" onClick={() => navigate('/upgrade')}>Upgrade</Button>
+        <div className="flex flex-col items-end gap-2 mt-4 md:mt-0">
+          <div className="flex items-center gap-4">
+            <Badge className="px-3 py-1 bg-gray-500">Free Plan</Badge>
+            <Button variant="outline" onClick={() => navigate('/upgrade')}>Upgrade</Button>
+          </div>
+          
+          {/* Show message if user has a subscription that's ending */}
+          {subscriptionStatus.endDate && subscriptionStatus.cancelled && (
+            <p className="text-sm text-gray-500">
+              {getRemainingDays() > 0 
+                ? `Your ${subscriptionStatus.type} plan will end in ${getRemainingDays()} days` 
+                : "Your subscription ends today"}
+            </p>
+          )}
         </div>
       </div>
 
