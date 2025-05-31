@@ -113,23 +113,23 @@ namespace ResumeAI.API.Services
             await Task.CompletedTask;
         }
         
-        public async Task<List<User>> GetUsersAsync()
-        {
-            Console.WriteLine("GetUsersAsync Method");
-            var url = $"{_supabaseHttpClientService.Url}/rest/v1/users?select=*";
-            Console.WriteLine($"Fetching users from: {url}");
-            var response = await _supabaseHttpClientService.Client.GetAsync(url);
+        // public async Task<List<User>> GetUsersAsync()
+        // {
+        //     Console.WriteLine("GetUsersAsync Method");
+        //     var url = $"{_supabaseHttpClientService.Url}/rest/v1/users?select=*";
+        //     Console.WriteLine($"Fetching users from: {url}");
+        //     var response = await _supabaseHttpClientService.Client.GetAsync(url);
             
-            if (!response.IsSuccessStatusCode)
-            {
-                Console.WriteLine($"Error fetching users: {response.StatusCode}");
-                Console.WriteLine($"Response: {await response.Content.ReadAsStringAsync()}");
-                return new List<User>();
-            }
-            var content = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"GetUsersAsync response content: {content}");
-            return JsonSerializer.Deserialize<List<User>>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<User>();
-        }
+        //     if (!response.IsSuccessStatusCode)
+        //     {
+        //         Console.WriteLine($"Error fetching users: {response.StatusCode}");
+        //         Console.WriteLine($"Response: {await response.Content.ReadAsStringAsync()}");
+        //         return new List<User>();
+        //     }
+        //     var content = await response.Content.ReadAsStringAsync();
+        //     Console.WriteLine($"GetUsersAsync response content: {content}");
+        //     return JsonSerializer.Deserialize<List<User>>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<User>();
+        // }
         
         public async Task<User> GetUserByEmailAsync(string email)
         {
