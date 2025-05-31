@@ -23,14 +23,7 @@ const CandidateDashboard = () => {
   const [error, setError] = useState<string | null>(null);
   const [upgradePrompt, setUpgradePrompt] = useState<string | null>(null);
 
-  // Redirect free users to FreePlanDashboard if not already on that page
-  useEffect(() => {
-    if (!subscriptionLoading && subscriptionStatus?.type === "free" && window.location.pathname !== "/free-plan-dashboard") {
-      navigate("/free-plan-dashboard");
-    } else if (!subscriptionLoading && subscriptionStatus?.type !== "free" && window.location.pathname === "/free-plan-dashboard") {
-      navigate("/candidate-dashboard");
-    }
-  }, [subscriptionStatus, subscriptionLoading, navigate]);
+  // Redirection is now handled by CandidateProtectedRoute
 
   // Fetch feature usage **only if not already stored**
   useEffect(() => {

@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }) => {
   const [profile, setProfile] = useState(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
   const [subscriptionLoading, setSubscriptionLoading] = useState(false);
-  const [restoringSession, setRestoringSession] = useState(false);
+  const [restoringSession, setRestoringSession] = useState(true); // Start with true to prevent flashing
 
   /**
    * Fetch the user's subscription data.
@@ -30,12 +30,16 @@ export const AuthProvider = ({ children }) => {
     const effectiveUser = userDataParam || user;
     if (!effectiveUser) {
       console.warn("Cannot fetch subscription status: user is null.");
+      setSubscriptionLoading(false); // Make sure to reset loading state
       return;
     }
     console.log("Checking subscription status for user:", effectiveUser.email);
 
     // If we already have a subscription, skip
-    if (subscriptionStatus) return;
+    if (subscriptionStatus) {
+      setSubscriptionLoading(false);
+      return;
+    }
 
     setSubscriptionLoading(true);
 
@@ -44,60 +48,178 @@ export const AuthProvider = ({ children }) => {
       const { data, error } = await api.subscription.getUserSubscription();
       if (error) {
         console.error("Error fetching subscription:", error);
-        setSubscriptionStatus(null);
+        // Set a default free subscription if there's an error
+        setSubscriptionStatus({
+          active: 'free',
+          type: 'free',
+          endDate: null,
+        });
       } else {
         console.log("Fetched Subscription Data:", data);
         setSubscriptionStatus({
-          active: data.subscription_type, // adjust if needed
-          type: data.subscription_type,
+          active: data.subscription_type || 'free', // Default to free if not specified
+          type: data.subscription_type || 'free',
           endDate: data.end_date ? new Date(data.end_date) : null,
         });
-        // Verify state update (for debug)
-        setTimeout(() => {
-          console.log("Updated subscription status after setting:", subscriptionStatus);
-        }, 100);
       }
     } catch (error) {
       console.error("Error in fetchSubscriptionStatus:", error);
-      setSubscriptionStatus(null);
+      // Set a default free subscription if there's an exception
+      setSubscriptionStatus({
+        active: 'free',
+        type: 'free',
+        endDate: null,
+      });
     } finally {
       setSubscriptionLoading(false);
     }
   };
 
-  // Avoid redundant session restoration calls
+  // Session restoration and auth state management
   useEffect(() => {
-    if (session) return;
-
+    // Skip if we already have a session
+    if (session) {
+      console.log("Session already exists, skipping restoration");
+      setRestoringSession(false);
+      return;
+    }
+    
+    console.log("Starting session restoration process");
+    
+    // Set restoring flag to true at the beginning
     setRestoringSession(true);
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setSession({
-          user: { id: session.user.id, email: session.user.email || "" },
-          accessToken: session.access_token || "",
-        });
-        setUser({ id: session.user.id, email: session.user.email || "" });
-      } else {
+    
+    const restoreSession = async () => {
+      try {
+        console.log("Fetching session from Supabase");
+        // Get session from Supabase
+        const { data: { session: supabaseSession } } = await supabase.auth.getSession();
+        
+        if (supabaseSession?.user) {
+          console.log("Session found, user ID:", supabaseSession.user.id);
+          
+          // Set session and user state
+          const userData = { 
+            id: supabaseSession.user.id, 
+            email: supabaseSession.user.email || "" 
+          };
+          
+          // Set all user data at once to minimize state updates
+          const defaultUserType = supabaseSession.user.user_metadata?.user_type || 'candidate';
+          
+          // Prepare for batch state update
+          let profileData;
+          let subscriptionData;
+          
+          try {
+            // Fetch user profile and subscription in parallel
+            const [profileResponse, subscriptionResponse] = await Promise.all([
+              api.auth.getProfile(),
+              api.subscription.getUserSubscription()
+            ]);
+            
+            // Process profile data
+            if (!profileResponse.error && profileResponse.data) {
+              console.log("Profile data received:", profileResponse.data);
+              profileData = {
+                userType: profileResponse.data.userType || defaultUserType,
+                subscriptionType: profileResponse.data.subscriptionType || 'free',
+              };
+            } else {
+              console.warn("No profile data or error:", profileResponse.error);
+              profileData = {
+                userType: defaultUserType,
+                subscriptionType: 'free',
+              };
+            }
+            
+            // Process subscription data
+            if (!subscriptionResponse.error && subscriptionResponse.data) {
+              console.log("Subscription data received:", subscriptionResponse.data);
+              subscriptionData = {
+                active: subscriptionResponse.data.subscription_type || 'free',
+                type: subscriptionResponse.data.subscription_type || 'free',
+                endDate: subscriptionResponse.data.end_date ? new Date(subscriptionResponse.data.end_date) : null,
+              };
+            } else {
+              console.warn("No subscription data or error:", subscriptionResponse.error);
+              subscriptionData = {
+                active: 'free',
+                type: 'free',
+                endDate: null,
+              };
+            }
+          } catch (error) {
+            console.error("Error fetching profile or subscription:", error);
+            profileData = {
+              userType: defaultUserType,
+              subscriptionType: 'free',
+            };
+            subscriptionData = {
+              active: 'free',
+              type: 'free',
+              endDate: null,
+            };
+          }
+          
+          // Batch update all state at once
+          setSession({
+            user: userData,
+            accessToken: supabaseSession.access_token || "",
+          });
+          setUser(userData);
+          setUserType(profileData.userType);
+          setProfile(profileData);
+          setSubscriptionStatus(subscriptionData);
+          
+        } else {
+          console.log("No session found, user is not authenticated");
+          // No session found - clear all auth state
+          setSession(null);
+          setUser(null);
+          setUserType(null);
+          setProfile(null);
+          setSubscriptionStatus(null);
+        }
+      } catch (error) {
+        console.error("Error restoring session:", error);
+        // Reset all auth state on error
         setSession(null);
         setUser(null);
+        setUserType(null);
+        setProfile(null);
+        setSubscriptionStatus(null);
+      } finally {
+        console.log("Session restoration complete");
+        // Set restoring to false when done - with a small delay to ensure state updates have propagated
+        setTimeout(() => {
+          setRestoringSession(false);
+          console.log("Restoration flag set to false");
+        }, 500);
       }
-      setRestoringSession(false);
-    });
+    };
+    
+    // Execute the session restoration
+    restoreSession();
 
-    // Refresh subscription only when the tab gains focus (and if missing).
+    // Set up event listener for tab visibility changes
     const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible" && !subscriptionStatus) {
+      if (document.visibilityState === "visible" && !subscriptionStatus && user) {
+        console.log("Tab became visible, refreshing subscription status");
         fetchSubscriptionStatus();
       }
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [session, subscriptionStatus]);
+  }, [session]);
 
   // --- SIGN IN ---
   const signIn = async (email, password) => {
     try {
+      // Set restoring session to true to prevent flickering during login
+      setRestoringSession(true);
+      
       console.log("Signing in user:", email);
       const { data, error } = await api.auth.login(email, password);
 
@@ -110,57 +232,95 @@ export const AuthProvider = ({ children }) => {
         };
 
         console.log("User data before setting:", userData);
-
-        // Update session and user state
+        
+        // Prepare subscription data - we need to fetch the actual subscription data
+        // from the backend instead of relying on the profile data from login
+        let subscriptionData = null;
+        
+        // Set basic user data first
         setSession({
           user: userData,
           accessToken: data.accessToken || '',
         });
-
         setUser(userData);
         setUserType(data.profile?.userType || null);
-
         setProfile({
           userType: data.profile?.userType || null,
           subscriptionType: data.profile?.subscriptionType || 'free',
         });
-
-        console.log("Waiting for state updates...");
-        // Allow time for state updates (if needed)
-        await new Promise(resolve => setTimeout(resolve, 100));
-
-        if (userData.email) {
-          console.log("Fetching subscription status...");
-          // Pass the freshly obtained user data
-          await fetchSubscriptionStatus(userData);
-        } else {
-          console.error("Skipping subscription fetch—email is missing.");
-        }
-
-        console.log("Updated subscription status:", subscriptionStatus);
-
-        // Navigate based on user type and subscription
-        if (data.profile?.userType === "recruiter") {
-          navigate("/dashboard");
-        } else if (data.profile?.userType === "candidate") {
-          navigate(
-            subscriptionStatus?.type === "free" ? "/free-plan-dashboard" : "/candidate-dashboard"
-          );
-        } else {
-          console.error("Unexpected userType:", data.profile?.userType);
-          toast({
-            variant: "destructive",
-            title: "Error",
-            description: `Unknown userType: ${data.profile?.userType}`
-          });
-          return;
-        }
-
+        
+        // Show success toast
         toast({ title: "Signed in successfully!" });
+        
+        // Fetch the actual subscription data from the backend
+        try {
+          console.log("Fetching subscription data from backend...");
+          const { data: subscriptionData, error: subscriptionError } = await api.subscription.getUserSubscription();
+          
+          if (subscriptionError) {
+            console.error("Error fetching subscription:", subscriptionError);
+            // Set default subscription if there's an error
+            setSubscriptionStatus({
+              active: 'free',
+              type: 'free',
+              endDate: null,
+            });
+          } else {
+            console.log("Subscription data received:", subscriptionData);
+            // Set the actual subscription data
+            setSubscriptionStatus({
+              active: subscriptionData.subscription_type || 'free',
+              type: subscriptionData.subscription_type || 'free',
+              endDate: subscriptionData.end_date ? new Date(subscriptionData.end_date) : null,
+            });
+          }
+          
+          // Navigate based on user type and subscription after fetching subscription data
+          if (data.profile?.userType === "recruiter") {
+            navigate("/dashboard", { replace: true });
+          } else if (data.profile?.userType === "candidate") {
+            const subType = subscriptionData?.subscription_type || 'free';
+            console.log("Navigating based on subscription type:", subType);
+            navigate(
+              subType === "free" ? "/free-plan-dashboard" : "/candidate-dashboard",
+              { replace: true }
+            );
+          } else {
+            console.error("Unexpected userType:", data.profile?.userType);
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description: `Unknown userType: ${data.profile?.userType}`
+            });
+          }
+        } catch (error) {
+          console.error("Error in subscription fetch:", error);
+          // Set default subscription if there's an exception
+          setSubscriptionStatus({
+            active: 'free',
+            type: 'free',
+            endDate: null,
+          });
+          
+          // Navigate to a safe default
+          if (data.profile?.userType === "recruiter") {
+            navigate("/dashboard", { replace: true });
+          } else {
+            navigate("/free-plan-dashboard", { replace: true });
+          }
+        } finally {
+          // Set restoring session to false after navigation
+          setTimeout(() => {
+            setRestoringSession(false);
+          }, 300);
+        }
+        
       } else {
+        setRestoringSession(false);
         throw new Error("Invalid login response: Missing user data.");
       }
     } catch (error) {
+      setRestoringSession(false);
       console.error("Sign in error:", error);
       toast({
         variant: "destructive",
@@ -194,23 +354,53 @@ export const AuthProvider = ({ children }) => {
   // --- SIGN OUT ---
   const signOut = async () => {
     try {
+      console.log("Signing out user");
+      
+      // Log the sign out activity if user exists
       if (user) {
-        await api.usage.logActivity({
-          actionType: 'signed_out',
-          description: 'User signed out'
-        });
+        try {
+          await api.usage.logActivity({
+            actionType: 'signed_out',
+            description: 'User signed out'
+          });
+        } catch (error) {
+          console.error("Error logging sign out activity:", error);
+        }
       }
+      
       // Clear all auth-related state
       setSession(null);
       setUser(null);
       setUserType(null);
       setProfile(null);
       setSubscriptionStatus(null);
-      await api.auth.logout();
+      
+      // Call the logout API
+      try {
+        await api.auth.logout();
+      } catch (error) {
+        console.error("Error during API logout:", error);
+      }
+      
+      // Clear any local storage items related to auth
+      localStorage.removeItem("supabase-auth");
+      
+      // Show success toast
       toast({ title: "Signed out successfully" });
-      navigate('/');
+      
+      // Navigate to home page
+      navigate('/', { replace: true });
+      
+      console.log("Sign out complete");
     } catch (error) {
       console.error("Sign out error:", error);
+      
+      // Force clear state even if there's an error
+      setSession(null);
+      setUser(null);
+      setUserType(null);
+      setProfile(null);
+      setSubscriptionStatus(null);
     }
   };
 
@@ -272,7 +462,7 @@ export const AuthProvider = ({ children }) => {
         title: "Subscription updated",
         description: `Your subscription has been updated to ${type}.`
       });
-      navigate(type === "free" ? "/free-plan-dashboard" : "/candidate-dashboard");
+      navigate(type === "free" ? "/free-plan-dashboard" : "/candidate-dashboard", { replace: true });
     } catch (error) {
       console.error("Error updating subscription:", error);
       toast({

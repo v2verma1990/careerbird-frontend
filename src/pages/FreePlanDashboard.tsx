@@ -24,12 +24,7 @@ const FreePlanDashboard = () => {
   const usageRemaining = atsUsage ? atsUsage.usageLimit - atsUsage.usageCount : 0;
   const hasReachedLimit = atsUsage ? usageRemaining <= 0 && subscriptionStatus.type === 'free' : false;
   
-  // Redirect paid users away from free dashboard
-  React.useEffect(() => {
-    if (subscriptionStatus.type !== 'free') {
-      navigate('/candidate-dashboard');
-    }
-  }, [subscriptionStatus.type, navigate]);
+  // Redirection is now handled by CandidateProtectedRoute
   
   // Fetch current usage from the backend when component mounts
   useEffect(() => {
@@ -160,7 +155,7 @@ const FreePlanDashboard = () => {
               description: "You've used all your free scans. Please upgrade to continue.",
             });
             setIsLoading(false);
-            navigate('/upgrade');
+            navigate('/upgrade', { replace: true });
             return;
           }
           

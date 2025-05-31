@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/auth/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { toast } from "@/components/ui/use-toast";
 
@@ -10,7 +10,35 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn } = useAuth();
+  const { signIn, user, userType, subscriptionStatus, restoringSession } = useAuth();
+  const navigate = useNavigate();
+  
+  // Redirect if user is already authenticated
+  useEffect(() => {
+    // Don't do anything while session is being restored
+    if (restoringSession) {
+      return;
+    }
+    
+    // Only redirect if we have a user and all required data
+    if (user && userType && subscriptionStatus) {
+      console.log("Login: User authenticated, redirecting", { userType, subscriptionType: subscriptionStatus?.type });
+      
+      // User is already logged in, redirect to appropriate dashboard
+      if (userType === 'recruiter') {
+        navigate('/dashboard', { replace: true });
+      } else if (userType === 'candidate') {
+        if (subscriptionStatus?.type === 'free') {
+          navigate('/free-plan-dashboard', { replace: true });
+        } else {
+          navigate('/candidate-dashboard', { replace: true });
+        }
+      } else {
+        // Default fallback
+        navigate('/', { replace: true });
+      }
+    }
+  }, [user, userType, subscriptionStatus, restoringSession, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,10 +1,76 @@
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, Search, FileText, Star } from "lucide-react";
 import { useAuth } from "@/contexts/auth/AuthContext";
+import { useEffect, useState } from "react";
 
 const Index = () => {
-  const { user } = useAuth();
+  const { user, userType, subscriptionStatus, restoringSession } = useAuth();
+  const navigate = useNavigate();
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  
+  // Redirect authenticated users to their dashboard
+  useEffect(() => {
+    console.log("Index page - Auth state:", { 
+      user: !!user, 
+      userType, 
+      subscriptionType: subscriptionStatus?.type,
+      restoringSession 
+    });
+    
+    // Only redirect after session restoration is complete
+    if (restoringSession) {
+      console.log("Session is still being restored, waiting...");
+      return;
+    }
+    
+    // Only redirect if we have a user and all required data
+    if (user && userType && subscriptionStatus && !isRedirecting) {
+      console.log("User is authenticated, redirecting to dashboard");
+      setIsRedirecting(true);
+      
+      // User is authenticated, redirect to appropriate dashboard
+      if (userType === 'recruiter') {
+        console.log("Redirecting recruiter to /dashboard");
+        navigate('/dashboard', { replace: true });
+      } else if (userType === 'candidate') {
+        if (subscriptionStatus?.type === 'free') {
+          console.log("Redirecting free candidate to /free-plan-dashboard");
+          navigate('/free-plan-dashboard', { replace: true });
+        } else {
+          console.log("Redirecting paid candidate to /candidate-dashboard");
+          navigate('/candidate-dashboard', { replace: true });
+        }
+      } else {
+        console.log("User type unknown, defaulting to candidate dashboard");
+        navigate('/candidate-dashboard', { replace: true });
+      }
+    }
+  }, [user, userType, subscriptionStatus, restoringSession, navigate, isRedirecting]);
+  
+  // Show loading indicator while checking auth state
+  if (restoringSession) {
+    return (
+      <div className="min-h-screen flex justify-center items-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // Show loading indicator while redirecting
+  if (isRedirecting) {
+    return (
+      <div className="min-h-screen flex justify-center items-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Redirecting to your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">

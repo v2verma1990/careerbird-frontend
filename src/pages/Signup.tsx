@@ -1,9 +1,9 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/auth/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -13,7 +13,32 @@ const Signup = () => {
   const [password, setPassword] = useState("");
   const [userType, setUserType] = useState<"candidate" | "recruiter">("candidate");
   const [isLoading, setIsLoading] = useState(false);
-  const { signUp } = useAuth();
+  const { signUp, user, userType: authUserType, subscriptionStatus, restoringSession } = useAuth();
+  const navigate = useNavigate();
+  
+  // Redirect if user is already authenticated
+  useEffect(() => {
+    if (restoringSession) {
+      // Wait for session restoration to complete
+      return;
+    }
+    
+    if (user) {
+      // User is already logged in, redirect to appropriate dashboard
+      if (authUserType === 'recruiter') {
+        navigate('/dashboard');
+      } else if (authUserType === 'candidate') {
+        if (subscriptionStatus?.type === 'free') {
+          navigate('/free-plan-dashboard');
+        } else {
+          navigate('/candidate-dashboard');
+        }
+      } else {
+        // Default fallback
+        navigate('/');
+      }
+    }
+  }, [user, authUserType, subscriptionStatus, restoringSession, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
