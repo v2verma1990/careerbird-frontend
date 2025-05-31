@@ -281,18 +281,44 @@ namespace ResumeAI.API.Services
         }
         
         // Subscription methods
-        public async Task<Subscription> GetUserSubscriptionAsync(string userId)
+        public async Task<List<Subscription>> GetAllUserSubscriptionsAsync(string userId)
         {
             try
             {
-                Console.WriteLine($"GetUserSubscriptionAsync: {userId}");
+                Console.WriteLine($"GetAllUserSubscriptionsAsync: {userId}");
                 var url = $"{_supabaseHttpClientService.Url}/rest/v1/subscriptions?user_id=eq.{Uri.EscapeDataString(userId)}&order=start_date.desc&select=*";
                 var response = await _supabaseHttpClientService.Client.GetAsync(url);
                 
                 if (!response.IsSuccessStatusCode)
                 {
-                    Console.WriteLine($"Error fetching subscription: {response.StatusCode}");
+                    Console.WriteLine($"Error fetching subscriptions: {response.StatusCode}");
                     Console.WriteLine($"Response: {await response.Content.ReadAsStringAsync()}");
+                    return new List<Subscription>();
+                }
+                
+                var content = await response.Content.ReadAsStringAsync();
+                var subscriptions = JsonSerializer.Deserialize<List<Subscription>>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<Subscription>();
+                
+                return subscriptions;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception in GetAllUserSubscriptionsAsync: {ex.Message}");
+                return new List<Subscription>();
+            }
+        }
+        
+        public async Task<Subscription> GetUserSubscriptionAsync(string userId)
+        {
+            try
+            {
+                Console.WriteLine($"GetUserSubscriptionAsync: {userId}");
+                
+                // Get all subscriptions
+                var subscriptions = await GetAllUserSubscriptionsAsync(userId);
+                
+                if (subscriptions.Count == 0)
+                {
                     // Return an in-memory free subscription (do NOT insert into DB)
                     return new Subscription
                     {
@@ -302,22 +328,53 @@ namespace ResumeAI.API.Services
                         start_date = DateTime.UtcNow,
                         end_date = null,
                         created_at = DateTime.UtcNow,
-                        updated_at = DateTime.UtcNow
+                        updated_at = DateTime.UtcNow,
+                        is_active = true,
+                        is_cancelled = false
                     };
                 }
-                var content = await response.Content.ReadAsStringAsync();
-                var subscriptions = JsonSerializer.Deserialize<List<Subscription>>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<Subscription>();
-                // Return the most recent active subscription
+                
+                // Log all subscriptions for debugging
+                Console.WriteLine($"Found {subscriptions.Count} total subscriptions for user {userId}");
+                foreach (var sub in subscriptions)
+                {
+                    Console.WriteLine($"Subscription: ID={sub.id}, Type={sub.subscription_type}, " +
+                                     $"Active={sub.is_active}, Cancelled={sub.is_cancelled}, " +
+                                     $"EndDate={sub.end_date}, StartDate={sub.start_date}, " +
+                                     $"CreatedAt={sub.created_at}, UpdatedAt={sub.updated_at}");
+                }
+                
+                // First try to find the MOST RECENT active subscription that's not cancelled
                 var activeSubscription = subscriptions
-                    .Where(s => !s.end_date.HasValue || s.end_date > DateTime.UtcNow)
-                    .OrderByDescending(s => s.start_date)
+                    .Where(s => s.is_active && !s.is_cancelled && (!s.end_date.HasValue || s.end_date > DateTime.UtcNow))
+                    .OrderByDescending(s => s.updated_at) // Order by most recently updated
+                    .ThenByDescending(s => s.created_at) // Then by most recently created
                     .FirstOrDefault();
+                
                 if (activeSubscription != null)
                 {
+                    Console.WriteLine($"Found active non-cancelled subscription: ID={activeSubscription.id}, Type={activeSubscription.subscription_type}");
                     return activeSubscription;
                 }
-                // If no active subscription, return an in-memory free subscription (do NOT insert into DB)
-                return new Subscription
+                
+                // If no active non-cancelled subscription, look for the MOST RECENT active cancelled subscription that hasn't expired
+                activeSubscription = subscriptions
+                    .Where(s => s.is_active && s.is_cancelled && s.end_date.HasValue && s.end_date > DateTime.UtcNow)
+                    .OrderByDescending(s => s.updated_at) // Order by most recently updated
+                    .ThenByDescending(s => s.created_at) // Then by most recently created
+                    .FirstOrDefault();
+                
+                if (activeSubscription != null)
+                {
+                    Console.WriteLine($"Found active cancelled subscription: ID={activeSubscription.id}, Type={activeSubscription.subscription_type}");
+                    return activeSubscription;
+                }
+                
+                // If no active subscription found, return a free subscription
+                Console.WriteLine("No active subscription found, returning free subscription");
+                
+                // We don't want to look for any other subscriptions - if we get here, the user should be on the free plan
+                var freeSubscription = new Subscription
                 {
                     id = string.Empty,
                     user_id = userId,
@@ -325,8 +382,12 @@ namespace ResumeAI.API.Services
                     start_date = DateTime.UtcNow,
                     end_date = null,
                     created_at = DateTime.UtcNow,
-                    updated_at = DateTime.UtcNow
+                    updated_at = DateTime.UtcNow,
+                    is_active = true,
+                    is_cancelled = false
                 };
+                
+                return freeSubscription;
             }
             catch (Exception ex)
             {
@@ -340,8 +401,76 @@ namespace ResumeAI.API.Services
                     start_date = DateTime.UtcNow,
                     end_date = null,
                     created_at = DateTime.UtcNow,
-                    updated_at = DateTime.UtcNow
+                    updated_at = DateTime.UtcNow,
+                    is_active = true,
+                    is_cancelled = false
                 };
+            }
+        }
+        
+        public async Task<bool> DeactivateAllPreviousSubscriptionsAsync(string userId, string exceptSubscriptionId)
+        {
+            try
+            {
+                Console.WriteLine($"DeactivateAllPreviousSubscriptionsAsync for user: {userId}, except subscription ID: {exceptSubscriptionId}");
+                
+                // Get all subscriptions for this user
+                var subscriptions = await GetAllUserSubscriptionsAsync(userId);
+                
+                // Filter out the current subscription we want to keep - deactivate ALL others
+                var otherSubscriptions = subscriptions
+                    .Where(s => s.id != exceptSubscriptionId)
+                    .ToList();
+                
+                if (otherSubscriptions.Count == 0)
+                {
+                    Console.WriteLine("No other subscriptions to deactivate");
+                    return true;
+                }
+                
+                Console.WriteLine($"Found {otherSubscriptions.Count} other subscriptions to deactivate");
+                
+                // Deactivate each other subscription
+                foreach (var otherSub in otherSubscriptions)
+                {
+                    Console.WriteLine($"Deactivating subscription: ID={otherSub.id}, Type={otherSub.subscription_type}, " +
+                                     $"Active={otherSub.is_active}, Cancelled={otherSub.is_cancelled}");
+                    
+                    // Mark as inactive and cancelled
+                    otherSub.is_active = false;
+                    otherSub.is_cancelled = true;
+                    otherSub.updated_at = DateTime.UtcNow;
+                    
+                    // Update in database
+                    await AddOrUpdateSubscriptionAsync(otherSub);
+                    Console.WriteLine($"Successfully deactivated subscription: ID={otherSub.id}");
+                }
+                
+                // Double-check that all other subscriptions are now inactive
+                var checkSubscriptions = await GetAllUserSubscriptionsAsync(userId);
+                var stillActiveSubscriptions = checkSubscriptions
+                    .Where(s => s.id != exceptSubscriptionId && s.is_active)
+                    .ToList();
+                
+                if (stillActiveSubscriptions.Count > 0)
+                {
+                    Console.WriteLine($"WARNING: {stillActiveSubscriptions.Count} subscriptions are still active after deactivation attempt!");
+                    foreach (var activeSub in stillActiveSubscriptions)
+                    {
+                        Console.WriteLine($"Still active: ID={activeSub.id}, Type={activeSub.subscription_type}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Successfully deactivated all other subscriptions");
+                }
+                
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error deactivating other subscriptions: {ex.Message}");
+                return false;
             }
         }
         
@@ -390,8 +519,21 @@ namespace ResumeAI.API.Services
                 else
                 {
                     Console.WriteLine($"Subscription updated successfully. Response: {responseContent}");
+                    
+                    // Parse the response to get the updated subscription
+                    try {
+                        var updatedSubscriptions = JsonSerializer.Deserialize<List<Subscription>>(responseContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        if (updatedSubscriptions != null && updatedSubscriptions.Count > 0) {
+                            Console.WriteLine($"Returning updated subscription from response: id={updatedSubscriptions[0].id}, type={updatedSubscriptions[0].subscription_type}, endDate={updatedSubscriptions[0].end_date}");
+                            return updatedSubscriptions[0];
+                        }
+                    } catch (Exception ex) {
+                        Console.WriteLine($"Error parsing subscription response: {ex.Message}");
+                    }
                 }
 
+                // If we couldn't parse the response, return the original subscription
+                Console.WriteLine($"Returning original subscription: id={subscription.id}, type={subscription.subscription_type}, endDate={subscription.end_date}");
                 return subscription;
             }
             catch (Exception ex)

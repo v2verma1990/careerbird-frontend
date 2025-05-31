@@ -492,14 +492,62 @@ export const AuthProvider = ({ children }) => {
       
       console.log("Updated subscription data after cancellation:", subscriptionData);
       
-      // Keep the current subscription type but mark it as cancelled
-      // The backend should maintain the current plan until the end date
-      setSubscriptionStatus(prevStatus => ({
-        ...prevStatus,
-        active: true, // Still active until end date
-        cancelled: true, // Mark as cancelled for UI purposes
-        endDate: subscriptionData.end_date ? new Date(subscriptionData.end_date) : prevStatus.endDate,
-      }));
+      // Calculate and log the remaining days
+      let daysRemaining = 0;
+      if (subscriptionData.end_date) {
+        const endDate = new Date(subscriptionData.end_date);
+        const today = new Date();
+        const diffTime = endDate.getTime() - today.getTime();
+        daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        console.log(`Remaining days in subscription: ${daysRemaining > 0 ? daysRemaining : 0}`);
+      }
+      
+      // Check if the current subscription status has a different number of days remaining
+      if (subscriptionStatus?.endDate) {
+        const currentEndDate = new Date(subscriptionStatus.endDate);
+        const today = new Date();
+        const currentDiffTime = currentEndDate.getTime() - today.getTime();
+        const currentDaysRemaining = Math.ceil(currentDiffTime / (1000 * 60 * 60 * 24));
+        
+        console.log(`Current days remaining before update: ${currentDaysRemaining > 0 ? currentDaysRemaining : 0}`);
+        console.log(`New days remaining after cancellation: ${daysRemaining > 0 ? daysRemaining : 0}`);
+        
+        // If there's a significant difference and we're not extending the subscription
+        if (Math.abs(currentDaysRemaining - daysRemaining) > 1 && currentDaysRemaining < daysRemaining) {
+          console.warn(`Days remaining changed unexpectedly after cancellation. Using original days remaining.`);
+          // Use the original end date to preserve the days remaining
+          subscriptionData.end_date = subscriptionStatus.endDate.toISOString();
+        }
+      }
+      
+      // Calculate the original days remaining before cancellation
+      let originalDaysRemaining = null;
+      if (subscriptionStatus?.endDate) {
+        const currentEndDate = new Date(subscriptionStatus.endDate);
+        const today = new Date();
+        const currentDiffTime = currentEndDate.getTime() - today.getTime();
+        originalDaysRemaining = Math.ceil(currentDiffTime / (1000 * 60 * 60 * 24));
+        originalDaysRemaining = originalDaysRemaining > 0 ? originalDaysRemaining : 0;
+        console.log(`Original days remaining before cancellation: ${originalDaysRemaining}`);
+      }
+      
+      // Directly use the subscription data from the backend
+      // This ensures we get the correct end date and status
+      // Important: We must preserve the original subscription type when cancelling
+      const newStatus = {
+        active: subscriptionData.is_active !== undefined ? subscriptionData.is_active : true,
+        // Keep the original subscription type (premium, basic, recruiter) even when cancelled
+        type: subscriptionData.subscription_type,
+        cancelled: subscriptionData.is_cancelled !== undefined ? subscriptionData.is_cancelled : true,
+        endDate: subscriptionData.end_date ? new Date(subscriptionData.end_date) : null,
+        originalDaysRemaining: originalDaysRemaining // Store the original days remaining
+      };
+      
+      console.log("New subscription status after cancellation:", newStatus);
+      console.log(`User cancelled ${newStatus.type} plan. Will maintain access until ${newStatus.endDate} and then revert to free plan.`);
+      
+      console.log("Setting subscription status in frontend to:", newStatus);
+      setSubscriptionStatus(newStatus);
       
       // Show success toast
       toast({
@@ -532,14 +580,19 @@ export const AuthProvider = ({ children }) => {
       return;
     }
     
-    // Don't do anything if user is already on this plan
-    if (subscriptionStatus?.type === type) {
-      console.log(`User is already on ${type} plan, no need to upgrade`);
+    // Don't do anything if user is already on this plan AND it's not cancelled
+    if (subscriptionStatus?.type === type && !subscriptionStatus?.cancelled) {
+      console.log(`User is already on active ${type} plan, no need to upgrade`);
       toast({
         title: "Already subscribed",
         description: `You are already on the ${type} plan.`
       });
       return;
+    }
+    
+    // If the subscription is cancelled, allow renewal even to the same plan type
+    if (subscriptionStatus?.type === type && subscriptionStatus?.cancelled) {
+      console.log(`User has a cancelled ${type} plan, allowing renewal`);
     }
     
     try {
@@ -569,12 +622,17 @@ export const AuthProvider = ({ children }) => {
       console.log("Updated subscription data:", subscriptionData);
       
       // Update the subscription status in the context
-      setSubscriptionStatus({
+      const newSubscriptionStatus = {
         active: subscriptionData.is_active !== undefined ? subscriptionData.is_active : true,
         type: subscriptionData.subscription_type || type,
         endDate: subscriptionData.end_date ? new Date(subscriptionData.end_date) : null,
         cancelled: false, // Reset cancelled flag when upgrading
-      });
+      };
+      
+      console.log("Setting new subscription status after upgrade:", newSubscriptionStatus);
+      console.log(`User upgraded to ${newSubscriptionStatus.type} plan with end date ${newSubscriptionStatus.endDate}`);
+      
+      setSubscriptionStatus(newSubscriptionStatus);
       
       // Update the profile as well to keep everything in sync
       setProfile(prevProfile => ({

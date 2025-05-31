@@ -47,10 +47,27 @@ const Upgrade = () => {
   };
   
   // Show plans based on user type and current subscription
-  const showFreePlan = isCandidate && subscriptionStatus?.type === 'free';
-  const showBasicPlan = isCandidate && subscriptionStatus?.type !== 'basic'; // Show basic plan for candidates not already on basic
-  const showPremiumPlan = isCandidate && subscriptionStatus?.type !== 'premium'; // Show premium plan for candidates not already on premium
-  const showRecruiterPlan = isRecruiter && subscriptionStatus?.type !== 'recruiter'; // Show recruiter plan for recruiters not already on recruiter plan
+  // Only consider a user "effectively free" if they're actually on the free plan
+  // Users with cancelled paid plans should still see their current plan type options
+  const isEffectivelyFree = subscriptionStatus?.type === 'free';
+  
+  const showFreePlan = isCandidate && isEffectivelyFree;
+  
+  // Show basic plan for candidates not currently on premium (active or cancelled)
+  // and not on an active basic plan
+  const showBasicPlan = isCandidate && 
+                       subscriptionStatus?.type !== 'premium' && 
+                       (subscriptionStatus?.type !== 'basic' || 
+                        (subscriptionStatus?.type === 'basic' && subscriptionStatus?.cancelled));
+  
+  // Show premium plan for candidates not currently on an active premium plan
+  const showPremiumPlan = isCandidate && 
+                         (subscriptionStatus?.type !== 'premium' || 
+                          (subscriptionStatus?.type === 'premium' && subscriptionStatus?.cancelled));
+  
+  // Show recruiter plan for recruiters - always show for recruiters
+  // This is the only plan available for recruiters
+  const showRecruiterPlan = isRecruiter;
 
   return (
     <div className="container mx-auto py-12 px-4">
@@ -143,8 +160,8 @@ const Upgrade = () => {
         </p>
       </div>
 
-      {/* Show message if no upgrades available */}
-      {isCandidate && subscriptionStatus?.type === 'premium' && (
+      {/* Show message for active premium subscriptions */}
+      {isCandidate && subscriptionStatus?.type === 'premium' && !subscriptionStatus?.cancelled && (
         <div className="text-center mb-12 p-6 bg-gray-50 rounded-lg max-w-2xl mx-auto">
           <h3 className="text-2xl font-bold mb-4">You're Already on Our Premium Plan!</h3>
           <p className="text-gray-600 mb-4">
@@ -165,7 +182,24 @@ const Upgrade = () => {
         </div>
       )}
       
-      {isRecruiter && subscriptionStatus?.type === 'recruiter' && (
+      {/* Show message for cancelled premium subscriptions */}
+      {isCandidate && subscriptionStatus?.type === 'premium' && subscriptionStatus?.cancelled && (
+        <div className="text-center mb-12 p-6 bg-gray-100 rounded-lg max-w-2xl mx-auto border border-blue-300">
+          <h3 className="text-2xl font-bold mb-4">Your Premium Plan is Cancelled</h3>
+          <p className="text-gray-600 mb-4">
+            Your premium subscription has been cancelled but is still active until {formatExpirationDate()}.
+          </p>
+          <p className="text-gray-600 mb-4">
+            You can renew your premium subscription below to continue enjoying all premium features with a new 30-day period.
+          </p>
+          <p className="text-blue-600 font-medium">
+            Note: You cannot downgrade from Premium to Basic. You can only renew your Premium subscription.
+          </p>
+        </div>
+      )}
+      
+      {/* Show message for active recruiter subscriptions */}
+      {isRecruiter && subscriptionStatus?.type === 'recruiter' && !subscriptionStatus?.cancelled && (
         <div className="text-center mb-12 p-6 bg-gray-50 rounded-lg max-w-2xl mx-auto">
           <h3 className="text-2xl font-bold mb-4">You're Already on Our Recruiter Plan!</h3>
           <p className="text-gray-600 mb-4">
@@ -183,6 +217,22 @@ const Upgrade = () => {
           >
             Return to Dashboard
           </Button>
+        </div>
+      )}
+      
+      {/* Show message for cancelled recruiter subscriptions */}
+      {isRecruiter && subscriptionStatus?.type === 'recruiter' && subscriptionStatus?.cancelled && (
+        <div className="text-center mb-12 p-6 bg-gray-100 rounded-lg max-w-2xl mx-auto border border-blue-300">
+          <h3 className="text-2xl font-bold mb-4">Your Recruiter Plan is Cancelled</h3>
+          <p className="text-gray-600 mb-4">
+            Your recruiter subscription has been cancelled but is still active until {formatExpirationDate()}.
+          </p>
+          <p className="text-gray-600 mb-4">
+            You can renew your recruiter subscription below to continue enjoying all recruiter features with a new 30-day period.
+          </p>
+          <p className="text-blue-600 font-medium">
+            Note: The Recruiter plan is the only plan available for recruiters.
+          </p>
         </div>
       )}
       
@@ -257,11 +307,17 @@ const Upgrade = () => {
             <CardFooter>
               <Button 
                 className="w-full" 
-                variant={subscriptionStatus?.type === 'basic' ? "secondary" : "default"}
+                variant={subscriptionStatus?.type === 'basic' && !subscriptionStatus?.cancelled ? "secondary" : "default"}
                 onClick={() => handleUpgrade("basic")}
-                disabled={subscriptionStatus?.type === 'basic' || loading}
+                disabled={(subscriptionStatus?.type === 'basic' && !subscriptionStatus?.cancelled) || loading}
               >
-                {loading && subscriptionStatus?.type !== 'basic' ? "Upgrading..." : (subscriptionStatus?.type === 'basic' ? "Current Plan" : "Upgrade to Basic")}
+                {loading && subscriptionStatus?.type !== 'basic' ? 
+                  "Upgrading..." : 
+                  (subscriptionStatus?.type === 'basic' && !subscriptionStatus?.cancelled ? 
+                    "Current Plan" : 
+                    (subscriptionStatus?.type === 'basic' && subscriptionStatus?.cancelled ? 
+                      "Renew Basic Plan" : 
+                      "Upgrade to Basic"))}
               </Button>
             </CardFooter>
           </Card>
@@ -303,11 +359,17 @@ const Upgrade = () => {
             <CardFooter>
               <Button 
                 className="w-full" 
-                variant={subscriptionStatus?.type === 'premium' ? "secondary" : "default"}
+                variant={subscriptionStatus?.type === 'premium' && !subscriptionStatus?.cancelled ? "secondary" : "default"}
                 onClick={() => handleUpgrade("premium")}
-                disabled={subscriptionStatus?.type === 'premium' || loading}
+                disabled={(subscriptionStatus?.type === 'premium' && !subscriptionStatus?.cancelled) || loading}
               >
-                {loading && subscriptionStatus?.type !== 'premium' ? "Upgrading..." : (subscriptionStatus?.type === 'premium' ? "Current Plan" : "Upgrade to Premium")}
+                {loading && subscriptionStatus?.type !== 'premium' ? 
+                  "Upgrading..." : 
+                  (subscriptionStatus?.type === 'premium' && !subscriptionStatus?.cancelled ? 
+                    "Current Plan" : 
+                    (subscriptionStatus?.type === 'premium' && subscriptionStatus?.cancelled ? 
+                      "Renew Premium Plan" : 
+                      "Upgrade to Premium"))}
               </Button>
             </CardFooter>
           </Card>
@@ -349,11 +411,17 @@ const Upgrade = () => {
             <CardFooter>
               <Button 
                 className="w-full" 
-                variant={subscriptionStatus?.type === 'recruiter' ? "secondary" : "default"}
+                variant={subscriptionStatus?.type === 'recruiter' && !subscriptionStatus?.cancelled ? "secondary" : "default"}
                 onClick={() => handleUpgrade("recruiter")}
-                disabled={subscriptionStatus?.type === 'recruiter' || loading}
+                disabled={(subscriptionStatus?.type === 'recruiter' && !subscriptionStatus?.cancelled) || loading}
               >
-                {loading && subscriptionStatus?.type !== 'recruiter' ? "Upgrading..." : (subscriptionStatus?.type === 'recruiter' ? "Current Plan" : "Upgrade to Recruiter")}
+                {loading && subscriptionStatus?.type !== 'recruiter' ? 
+                  "Upgrading..." : 
+                  (subscriptionStatus?.type === 'recruiter' && !subscriptionStatus?.cancelled ? 
+                    "Current Plan" : 
+                    (subscriptionStatus?.type === 'recruiter' && subscriptionStatus?.cancelled ? 
+                      "Renew Recruiter Plan" : 
+                      "Upgrade to Recruiter"))}
               </Button>
             </CardFooter>
           </Card>

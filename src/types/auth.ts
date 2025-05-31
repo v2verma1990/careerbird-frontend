@@ -14,7 +14,10 @@ export interface UserProfile {
 export interface SubscriptionStatus {
   type: string;
   isActive: boolean;
-  endDate: string | null;
-  usageCount: number;
-  usageLimit: number | null;
+  endDate: Date | null;
+  usageCount?: number;
+  usageLimit?: number | null;
+  cancelled?: boolean;
+  active?: boolean;
+  originalDaysRemaining?: number | null;
 }

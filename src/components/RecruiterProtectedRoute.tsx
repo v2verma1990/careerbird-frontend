@@ -19,5 +19,13 @@ export default function RecruiterProtectedRoute({ children }: { children: JSX.El
     return <Navigate to="/login" replace />;
   }
   
+  // If subscription is free, inactive, or cancelled and expired, redirect to free plan dashboard
+  if (subscriptionStatus?.type === 'free' || 
+      !subscriptionStatus?.active || 
+      (subscriptionStatus?.cancelled && subscriptionStatus?.endDate && new Date() >= subscriptionStatus.endDate)) {
+    console.log(`Redirecting recruiter to free-plan-dashboard (subscription: ${subscriptionStatus?.type}, active: ${subscriptionStatus?.active}, cancelled: ${subscriptionStatus?.cancelled}, endDate: ${subscriptionStatus?.endDate})`);
+    return <Navigate to="/free-plan-dashboard" replace />;
+  }
+  
   return children;
 }

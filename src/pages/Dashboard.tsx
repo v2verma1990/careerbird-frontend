@@ -22,6 +22,8 @@ const Dashboard = () => {
     const diffTime = endDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
+    console.log(`RecruiterDashboard - Calculating remaining days: endDate=${endDate}, today=${today}, diffDays=${diffDays}`);
+    
     return diffDays > 0 ? diffDays : 0;
   };
   
@@ -188,14 +190,31 @@ const Dashboard = () => {
         </div>
         <div className="flex flex-col items-end gap-2 mt-4 md:mt-0">
           <div className="flex items-center gap-4">
-            <Badge className={`px-3 py-1 ${subscriptionStatus.type === 'premium' ? 'bg-green-500' : subscriptionStatus.type === 'basic' ? 'bg-blue-500' : 'bg-gray-500'}`}>
-              {subscriptionStatus.type.charAt(0).toUpperCase() + subscriptionStatus.type.slice(1)} Plan
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge className={`px-3 py-1 ${
+                subscriptionStatus.type === "premium" || subscriptionStatus.type === "recruiter" 
+                  ? "bg-green-500" 
+                  : subscriptionStatus.type === "basic" 
+                    ? "bg-blue-500" 
+                    : "bg-gray-500"
+              }`}>
+                {subscriptionStatus.type.charAt(0).toUpperCase() + subscriptionStatus.type.slice(1)} Plan
+              </Badge>
+              
+              {/* Show cancelled badge if subscription is cancelled */}
+              {subscriptionStatus.cancelled && subscriptionStatus.type !== "free" && (
+                <Badge variant="outline" className="border-red-500 text-red-500">
+                  Cancelled
+                </Badge>
+              )}
+            </div>
             
-            {/* Show upgrade button if not on premium or if subscription is cancelled */}
-            {(subscriptionStatus.type !== "premium" || subscriptionStatus.cancelled) && (
+            {/* Show upgrade/renew button if not on recruiter or if subscription is cancelled */}
+            {(subscriptionStatus.type !== "recruiter" || subscriptionStatus.cancelled) && (
               <Button variant="outline" onClick={() => navigate("/upgrade")}>
-                {subscriptionStatus.cancelled ? "Renew Subscription" : "Upgrade"}
+                {subscriptionStatus.cancelled ? 
+                  (subscriptionStatus.type === "recruiter" ? "Renew Recruiter" : "Renew Subscription") : 
+                  "Upgrade"}
               </Button>
             )}
             
