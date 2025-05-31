@@ -48,9 +48,9 @@ const Upgrade = () => {
   
   // Show plans based on user type and current subscription
   const showFreePlan = isCandidate && subscriptionStatus?.type === 'free';
-  const showBasicPlan = isCandidate; // Always show basic plan for candidates
-  const showPremiumPlan = isCandidate; // Always show premium plan for candidates
-  const showRecruiterPlan = isRecruiter; // Show recruiter plan for recruiters
+  const showBasicPlan = isCandidate && subscriptionStatus?.type !== 'basic'; // Show basic plan for candidates not already on basic
+  const showPremiumPlan = isCandidate && subscriptionStatus?.type !== 'premium'; // Show premium plan for candidates not already on premium
+  const showRecruiterPlan = isRecruiter && subscriptionStatus?.type !== 'recruiter'; // Show recruiter plan for recruiters not already on recruiter plan
 
   return (
     <div className="container mx-auto py-12 px-4">
@@ -143,6 +143,49 @@ const Upgrade = () => {
         </p>
       </div>
 
+      {/* Show message if no upgrades available */}
+      {isCandidate && subscriptionStatus?.type === 'premium' && (
+        <div className="text-center mb-12 p-6 bg-gray-50 rounded-lg max-w-2xl mx-auto">
+          <h3 className="text-2xl font-bold mb-4">You're Already on Our Premium Plan!</h3>
+          <p className="text-gray-600 mb-4">
+            You're currently enjoying all the benefits of our Premium plan. There are no higher tiers available at this time.
+          </p>
+          {subscriptionStatus?.endDate && (
+            <p className="text-blue-600 font-medium">
+              Your premium subscription is active until {formatExpirationDate()}.
+            </p>
+          )}
+          <Button 
+            className="mt-6" 
+            variant="outline" 
+            onClick={() => navigate('/candidate-dashboard', { replace: true })}
+          >
+            Return to Dashboard
+          </Button>
+        </div>
+      )}
+      
+      {isRecruiter && subscriptionStatus?.type === 'recruiter' && (
+        <div className="text-center mb-12 p-6 bg-gray-50 rounded-lg max-w-2xl mx-auto">
+          <h3 className="text-2xl font-bold mb-4">You're Already on Our Recruiter Plan!</h3>
+          <p className="text-gray-600 mb-4">
+            You're currently enjoying all the benefits of our Recruiter plan. There are no higher tiers available at this time.
+          </p>
+          {subscriptionStatus?.endDate && (
+            <p className="text-blue-600 font-medium">
+              Your recruiter subscription is active until {formatExpirationDate()}.
+            </p>
+          )}
+          <Button 
+            className="mt-6" 
+            variant="outline" 
+            onClick={() => navigate('/dashboard', { replace: true })}
+          >
+            Return to Dashboard
+          </Button>
+        </div>
+      )}
+      
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
         {/* Free Plan - Only for candidates */}
         {showFreePlan && (

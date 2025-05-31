@@ -302,6 +302,18 @@ export const api = {
           console.error(`Error in subscription upgrade API:`, error);
           return { data: null, error: error.message || "API call failed" };
         });
+    },
+    cancelSubscription: () => {
+      console.log("Calling API to cancel subscription");
+      return apiCall<any>("POST", "/subscription/cancel")
+        .then(result => {
+          console.log("Subscription cancellation API result:", result);
+          return result;
+        })
+        .catch(error => {
+          console.error("Error in subscription cancellation API:", error);
+          return { data: null, error: error.message || "API call failed" };
+        });
     }
   },
   usage: {

@@ -440,6 +440,75 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // --- CANCEL SUBSCRIPTION ---
+  const cancelSubscription = async () => {
+    if (!user) {
+      console.error("Cannot cancel subscription: No user logged in");
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "You must be logged in to cancel your subscription."
+      });
+      return;
+    }
+    
+    try {
+      console.log("Cancelling subscription");
+      setSubscriptionLoading(true);
+      
+      // Call the API to cancel the subscription (downgrade to free)
+      const { data, error } = await api.subscription.cancelSubscription();
+      
+      if (error) {
+        console.error("API error cancelling subscription:", error);
+        throw new Error(error);
+      }
+      
+      console.log("Subscription cancellation API response:", data);
+      
+      // Fetch the updated subscription status from the backend
+      const { data: subscriptionData, error: subscriptionError } = await api.subscription.getUserSubscription();
+      
+      if (subscriptionError) {
+        console.error("Error fetching updated subscription:", subscriptionError);
+        throw new Error("Failed to verify subscription update");
+      }
+      
+      console.log("Updated subscription data after cancellation:", subscriptionData);
+      
+      // Update the subscription status in the context
+      setSubscriptionStatus({
+        active: 'free',
+        type: 'free',
+        endDate: subscriptionData.end_date ? new Date(subscriptionData.end_date) : null,
+      });
+      
+      // Update the profile as well to keep everything in sync
+      setProfile(prevProfile => ({
+        ...prevProfile,
+        subscriptionType: 'free'
+      }));
+      
+      // Show success toast
+      toast({
+        title: "Subscription cancelled",
+        description: "Your subscription has been cancelled. You will be downgraded to the free plan at the end of your billing period."
+      });
+      
+      // Navigate to the free plan dashboard
+      navigate("/free-plan-dashboard", { replace: true });
+    } catch (error) {
+      console.error("Error cancelling subscription:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to cancel subscription: " + (error.message || "Unknown error")
+      });
+    } finally {
+      setSubscriptionLoading(false);
+    }
+  };
+  
   // --- UPDATE SUBSCRIPTION ---
   const updateSubscription = async (type, active, endDate) => {
     if (!user) {
@@ -539,7 +608,8 @@ export const AuthProvider = ({ children }) => {
         signUp, 
         signIn, 
         signOut, 
-        updateSubscription, 
+        updateSubscription,
+        cancelSubscription, 
         incrementUsageCount, 
         resetUsageCount 
       }}

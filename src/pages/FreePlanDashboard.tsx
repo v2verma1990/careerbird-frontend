@@ -20,6 +20,18 @@ const FreePlanDashboard = () => {
   const [hasViewedResults, setHasViewedResults] = useState(false);
   const [atsUsage, setAtsUsage] = useState<{ usageCount: number; usageLimit: number } | null>(null);
   const [usageLoading, setUsageLoading] = useState(true);
+  
+  // Calculate remaining days in subscription if user has a subscription that's ending
+  const getRemainingDays = () => {
+    if (!subscriptionStatus?.endDate) return null;
+    
+    const endDate = new Date(subscriptionStatus.endDate);
+    const today = new Date();
+    const diffTime = endDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays > 0 ? diffDays : 0;
+  };
 
   const usageRemaining = atsUsage ? atsUsage.usageLimit - atsUsage.usageCount : 0;
   const hasReachedLimit = atsUsage ? usageRemaining <= 0 && subscriptionStatus.type === 'free' : false;
