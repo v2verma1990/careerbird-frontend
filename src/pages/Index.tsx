@@ -1,6 +1,7 @@
+
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, Search, FileText, Star } from "lucide-react";
+import { ArrowRight, FileText, Star, Zap, Users, Download, Eye } from "lucide-react";
 import { useAuth } from "@/contexts/auth/AuthContext";
 import { useEffect, useState } from "react";
 
@@ -51,7 +52,7 @@ const Index = () => {
   // Show loading indicator while checking auth state
   if (restoringSession) {
     return (
-      <div className="min-h-screen flex justify-center items-center">
+      <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading your dashboard...</p>
@@ -63,7 +64,7 @@ const Index = () => {
   // Show loading indicator while redirecting
   if (isRedirecting) {
     return (
-      <div className="min-h-screen flex justify-center items-center">
+      <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Redirecting to your dashboard...</p>
@@ -73,181 +74,164 @@ const Index = () => {
   }
   
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       {/* Hero Section */}
-      <div className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-blue-50 to-white">
-        <div className="max-w-7xl mx-auto">
+      <div className="relative pt-24 pb-32 px-4 sm:px-6 lg:px-8 overflow-hidden">
+        {/* Background decorations */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse delay-1000"></div>
+          <div className="absolute top-40 left-1/2 w-60 h-60 bg-pink-200 rounded-full mix-blend-multiply filter blur-xl opacity-50 animate-pulse delay-500"></div>
+        </div>
+
+        <div className="relative max-w-7xl mx-auto">
           <div className="text-center">
-            <h1 className="text-5xl md:text-6xl font-extrabold text-gray-900 tracking-tight">
-              Your Career Success <span className="text-blue-600">Starts Here</span>
+            {/* Badge */}
+            <div className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 text-blue-800 text-sm font-medium mb-8 border border-blue-200">
+              <Zap className="w-4 h-4 mr-2" />
+              AI-Powered Resume Builder
+            </div>
+
+            <h1 className="text-6xl md:text-7xl font-black text-gray-900 tracking-tight mb-6">
+              Build Your Perfect{" "}
+              <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                Resume
+              </span>
             </h1>
-            <p className="mt-6 text-xl text-gray-600 max-w-3xl mx-auto">
-              AI-powered resume analysis for recruiters and job seekers. Find the perfect match or optimize your career journey.
+            
+            <p className="mt-6 text-xl md:text-2xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
+              Create stunning, ATS-friendly resumes in minutes with our AI-powered templates and smart suggestions.
             </p>
-            <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
-              <Link to="/signup?type=recruiter">
-                <Button size="lg" className="px-8 py-6 text-lg bg-blue-600 hover:bg-blue-700 text-white shadow-lg">I'm a Recruiter</Button>
+            
+            <div className="mt-12 flex flex-col sm:flex-row justify-center gap-6">
+              <Link to="/resume-optimizer">
+                <Button size="lg" className="px-10 py-6 text-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-xl rounded-full transition-all duration-300 transform hover:scale-105">
+                  Start Building
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Button>
               </Link>
-              <Link to="/signup?type=candidate">
-                <Button size="lg" variant="outline" className="px-8 py-6 text-lg border-blue-600 text-blue-600 hover:bg-blue-50">I'm a Candidate</Button>
-              </Link>
+              <Button size="lg" variant="outline" className="px-10 py-6 text-lg border-2 border-gray-300 text-gray-700 hover:bg-gray-50 rounded-full transition-all duration-300">
+                <Eye className="mr-2 w-5 h-5" />
+                View Templates
+              </Button>
             </div>
-            <div className="mt-8 flex justify-center gap-8">
-              <img src="/public/placeholder.svg" alt="Trusted by 1000+ users" className="h-12" />
-              <span className="text-gray-500 text-lg">Trusted by 1000+ professionals</span>
+
+            {/* Stats */}
+            <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-3xl mx-auto">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-gray-900">50K+</div>
+                <div className="text-gray-600 mt-1">Resumes Created</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-gray-900">95%</div>
+                <div className="text-gray-600 mt-1">Success Rate</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-gray-900">4.9★</div>
+                <div className="text-gray-600 mt-1">User Rating</div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Features Grid */}
-      <div className="py-20 bg-white">
+      {/* Features Section */}
+      <div className="py-24 bg-white relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-900">Solutions for Everyone</h2>
+          <div className="text-center mb-20">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+              Everything You Need to{" "}
+              <span className="text-blue-600">Succeed</span>
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Our comprehensive suite of tools helps you create, optimize, and perfect your resume for any job application.
+            </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-            {/* Recruiter Features */}
-            <div className="p-6 border rounded-lg hover:shadow-lg transition-shadow">
-              <div className="flex items-center mb-4">
-                <Search className="h-6 w-6 text-blue-600 mr-2" />
-                <h3 className="text-xl font-semibold">For Recruiters</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+            {features.map((feature, index) => (
+              <div key={index} className="relative group">
+                <div className="bg-gradient-to-br from-white to-gray-50 p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                    <feature.icon className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-4">{feature.title}</h3>
+                  <p className="text-gray-600 leading-relaxed">{feature.description}</p>
+                </div>
               </div>
-              <ul className="space-y-3">
-                {recruiterFeatures.map((feature, index) => (
-                  <li key={index} className="flex items-start">
-                    <span className="text-blue-600 mr-2">✓</span>
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Candidate Features */}
-            <div className="p-6 border rounded-lg hover:shadow-lg transition-shadow">
-              <div className="flex items-center mb-4">
-                <FileText className="h-6 w-6 text-blue-600 mr-2" />
-                <h3 className="text-xl font-semibold">For Candidates</h3>
-              </div>
-              <ul className="space-y-3">
-                {candidateFeatures.map((feature, index) => (
-                  <li key={index} className="flex items-start">
-                    <span className="text-blue-600 mr-2">✓</span>
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Pricing Section - Enterprise-level comparison */}
-      <div className="py-20 bg-gray-50">
+      {/* Templates Preview */}
+      <div className="py-24 bg-gradient-to-br from-gray-50 to-blue-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold">Plans & Pricing</h2>
-            <p className="mt-4 text-lg text-gray-600">Choose the plan that fits your needs. Upgrade for advanced features and enterprise support.</p>
+          <div className="text-center mb-20">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+              Professional{" "}
+              <span className="text-blue-600">Templates</span>
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Choose from our collection of beautifully designed, ATS-optimized resume templates.
+            </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-            {/* Recruiter Pricing Table */}
-            <div>
-              <h3 className="text-2xl font-semibold mb-4 text-blue-700">Recruiter Plans</h3>
-              <table className="min-w-full bg-white rounded-lg shadow-lg mb-6">
-                <thead>
-                  <tr>
-                    <th className="py-4 px-6 text-left text-lg font-semibold">Feature</th>
-                    <th className="py-4 px-6 text-center font-semibold">Free</th>
-                    <th className="py-4 px-6 text-center font-semibold">Basic</th>
-                    <th className="py-4 px-6 text-center font-semibold">Pro</th>
-                    <th className="py-4 px-6 text-center font-semibold">Enterprise</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-t"><td className="py-3 px-6">Resume Uploads</td><td className="text-center">1</td><td className="text-center">50/mo</td><td className="text-center">Unlimited</td><td className="text-center">Unlimited</td></tr>
-                  <tr className="border-t"><td className="py-3 px-6">AI Candidate Matching</td><td className="text-center">-</td><td className="text-center">✓</td><td className="text-center">✓</td><td className="text-center">✓</td></tr>
-                  <tr className="border-t"><td className="py-3 px-6">Skill Gap Analysis</td><td className="text-center">-</td><td className="text-center">✓</td><td className="text-center">✓</td><td className="text-center">✓</td></tr>
-                  <tr className="border-t"><td className="py-3 px-6">Bulk Resume Upload</td><td className="text-center">-</td><td className="text-center">-</td><td className="text-center">✓</td><td className="text-center">✓</td></tr>
-                  <tr className="border-t"><td className="py-3 px-6">Team Collaboration</td><td className="text-center">-</td><td className="text-center">-</td><td className="text-center">✓</td><td className="text-center">✓</td></tr>
-                  <tr className="border-t"><td className="py-3 px-6">Support</td><td className="text-center">Email</td><td className="text-center">Priority</td><td className="text-center">24/7</td><td className="text-center">Dedicated Manager</td></tr>
-                </tbody>
-              </table>
-              <div className="flex gap-4 mb-8">
-                <div className="flex-1 bg-blue-50 rounded-lg p-6 text-center">
-                  <div className="text-lg font-bold text-blue-700 mb-2">Free</div>
-                  <div className="text-3xl font-extrabold mb-2">$0</div>
-                  <div className="text-gray-500 mb-4">forever</div>
-                  <Button className="w-full" variant="outline">Get Started</Button>
-                </div>
-                <div className="flex-1 bg-blue-100 rounded-lg p-6 text-center border-2 border-blue-600 shadow-lg">
-                  <div className="text-lg font-bold text-blue-800 mb-2">Basic</div>
-                  <div className="text-3xl font-extrabold mb-2">$19</div>
-                  <div className="text-gray-500 mb-4">/month</div>
-                  <Button className="w-full bg-blue-600 text-white">Start Trial</Button>
-                </div>
-                <div className="flex-1 bg-blue-50 rounded-lg p-6 text-center">
-                  <div className="text-lg font-bold text-blue-700 mb-2">Pro</div>
-                  <div className="text-3xl font-extrabold mb-2">$49</div>
-                  <div className="text-gray-500 mb-4">/month</div>
-                  <Button className="w-full" variant="outline">Upgrade to Pro</Button>
-                </div>
-                <div className="flex-1 bg-blue-50 rounded-lg p-6 text-center">
-                  <div className="text-lg font-bold text-blue-700 mb-2">Enterprise</div>
-                  <div className="text-3xl font-extrabold mb-2">Custom</div>
-                  <div className="text-gray-500 mb-4">Contact Us</div>
-                  <Button className="w-full" variant="outline">Contact Sales</Button>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+            {templates.map((template, index) => (
+              <div key={index} className="group cursor-pointer">
+                <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+                  <div className="h-64 bg-gradient-to-br from-gray-100 to-gray-200 p-6 relative overflow-hidden">
+                    <div className="w-full h-full bg-white rounded-lg shadow-sm p-4 transform group-hover:scale-105 transition-transform duration-300">
+                      <div className="h-6 bg-blue-200 rounded mb-3"></div>
+                      <div className="h-3 bg-gray-200 rounded mb-2"></div>
+                      <div className="h-3 bg-gray-200 rounded w-3/4 mb-4"></div>
+                      <div className="h-4 bg-gray-300 rounded mb-2"></div>
+                      <div className="h-3 bg-gray-200 rounded mb-1"></div>
+                      <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">{template.name}</h3>
+                    <p className="text-gray-600">{template.description}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-            {/* Candidate Pricing Table */}
-            <div>
-              <h3 className="text-2xl font-semibold mb-4 text-blue-700">Candidate Plans</h3>
-              <table className="min-w-full bg-white rounded-lg shadow-lg mb-6">
-                <thead>
-                  <tr>
-                    <th className="py-4 px-6 text-left text-lg font-semibold">Feature</th>
-                    <th className="py-4 px-6 text-center font-semibold">Free</th>
-                    <th className="py-4 px-6 text-center font-semibold">Basic</th>
-                    <th className="py-4 px-6 text-center font-semibold">Premium</th>
-                    <th className="py-4 px-6 text-center font-semibold">Enterprise</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-t"><td className="py-3 px-6">Resume Uploads</td><td className="text-center">1</td><td className="text-center">10/mo</td><td className="text-center">Unlimited</td><td className="text-center">Unlimited</td></tr>
-                  <tr className="border-t"><td className="py-3 px-6">ATS Analysis</td><td className="text-center">Basic</td><td className="text-center">Advanced</td><td className="text-center">Premium</td><td className="text-center">Custom</td></tr>
-                  <tr className="border-t"><td className="py-3 px-6">AI Resume Customization</td><td className="text-center">-</td><td className="text-center">✓</td><td className="text-center">✓</td><td className="text-center">✓</td></tr>
-                  <tr className="border-t"><td className="py-3 px-6">Cover Letter Generation</td><td className="text-center">-</td><td className="text-center">✓</td><td className="text-center">✓</td><td className="text-center">✓</td></tr>
-                  <tr className="border-t"><td className="py-3 px-6">Interview Prep Tools</td><td className="text-center">-</td><td className="text-center">-</td><td className="text-center">✓</td><td className="text-center">✓</td></tr>
-                  <tr className="border-t"><td className="py-3 px-6">Support</td><td className="text-center">Email</td><td className="text-center">Priority</td><td className="text-center">24/7</td><td className="text-center">Dedicated Manager</td></tr>
-                </tbody>
-              </table>
-              <div className="flex gap-4 mb-8">
-                <div className="flex-1 bg-blue-50 rounded-lg p-6 text-center">
-                  <div className="text-lg font-bold text-blue-700 mb-2">Free</div>
-                  <div className="text-3xl font-extrabold mb-2">$0</div>
-                  <div className="text-gray-500 mb-4">forever</div>
-                  <Button className="w-full" variant="outline">Get Started</Button>
-                </div>
-                <div className="flex-1 bg-blue-100 rounded-lg p-6 text-center border-2 border-blue-600 shadow-lg">
-                  <div className="text-lg font-bold text-blue-800 mb-2">Basic</div>
-                  <div className="text-3xl font-extrabold mb-2">$9.99</div>
-                  <div className="text-gray-500 mb-4">/month</div>
-                  <Button className="w-full bg-blue-600 text-white">Upgrade</Button>
-                </div>
-                <div className="flex-1 bg-blue-50 rounded-lg p-6 text-center">
-                  <div className="text-lg font-bold text-blue-700 mb-2">Premium</div>
-                  <div className="text-3xl font-extrabold mb-2">$19.99</div>
-                  <div className="text-gray-500 mb-4">/month</div>
-                  <Button className="w-full" variant="outline">Upgrade to Premium</Button>
-                </div>
-                <div className="flex-1 bg-blue-50 rounded-lg p-6 text-center">
-                  <div className="text-lg font-bold text-blue-700 mb-2">Enterprise</div>
-                  <div className="text-3xl font-extrabold mb-2">Custom</div>
-                  <div className="text-gray-500 mb-4">Contact Us</div>
-                  <Button className="w-full" variant="outline">Contact Sales</Button>
-                </div>
-              </div>
-            </div>
+            ))}
+          </div>
+
+          <div className="text-center">
+            <Link to="/resume-optimizer">
+              <Button size="lg" className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-full">
+                Explore All Templates
+                <ArrowRight className="ml-2 w-5 h-5" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* CTA Section */}
+      <div className="py-24 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 relative overflow-hidden">
+        <div className="absolute inset-0 bg-black opacity-10"></div>
+        <div className="relative max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+            Ready to Land Your Dream Job?
+          </h2>
+          <p className="text-xl text-blue-100 mb-12 max-w-2xl mx-auto">
+            Join thousands of professionals who have successfully transformed their careers with our resume builder.
+          </p>
+          <div className="flex flex-col sm:flex-row justify-center gap-6">
+            <Link to="/resume-optimizer">
+              <Button size="lg" className="px-10 py-6 text-lg bg-white text-blue-600 hover:bg-gray-100 rounded-full font-semibold transition-all duration-300 transform hover:scale-105">
+                Get Started Free
+                <ArrowRight className="ml-2 w-5 h-5" />
+              </Button>
+            </Link>
+            <Button size="lg" variant="outline" className="px-10 py-6 text-lg border-2 border-white text-white hover:bg-white hover:text-blue-600 rounded-full transition-all duration-300">
+              <Download className="mr-2 w-5 h-5" />
+              Download Sample
+            </Button>
           </div>
         </div>
       </div>
@@ -255,20 +239,37 @@ const Index = () => {
   );
 };
 
-const recruiterFeatures = [
-  "Upload and analyze multiple resumes",
-  "AI-powered candidate matching",
-  "Skill gap analysis",
-  "Automated feedback generation",
-  "Export detailed reports"
+const features = [
+  {
+    icon: FileText,
+    title: "Smart Templates",
+    description: "Choose from professionally designed templates that are optimized for ATS systems and tailored for different industries."
+  },
+  {
+    icon: Zap,
+    title: "AI-Powered Suggestions",
+    description: "Get intelligent recommendations for content, keywords, and formatting to make your resume stand out to employers."
+  },
+  {
+    icon: Users,
+    title: "Expert Review",
+    description: "Access feedback from career experts and industry professionals to ensure your resume meets current standards."
+  }
 ];
 
-const candidateFeatures = [
-  "ATS optimization score",
-  "Resume enhancement suggestions",
-  "Job description matching",
-  "Cover letter generation",
-  "Interview preparation tools"
+const templates = [
+  {
+    name: "Modern Professional",
+    description: "Clean and contemporary design perfect for tech and creative roles."
+  },
+  {
+    name: "Executive Classic",
+    description: "Traditional layout ideal for senior positions and corporate environments."
+  },
+  {
+    name: "Creative Designer",
+    description: "Bold and artistic template for creative professionals and designers."
+  }
 ];
 
 export default Index;
