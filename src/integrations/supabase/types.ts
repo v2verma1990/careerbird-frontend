@@ -33,12 +33,65 @@ export type Database = {
         }
         Relationships: []
       }
+      feature_usage_logs: {
+        Row: {
+          created_at: string | null
+          extra_info: Json | null
+          feature: string
+          id: number
+          plan: string | null
+          tokens_used: number | null
+          used_cache: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          extra_info?: Json | null
+          feature: string
+          id?: number
+          plan?: string | null
+          tokens_used?: number | null
+          used_cache: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          extra_info?: Json | null
+          feature?: string
+          id?: number
+          plan?: string | null
+          tokens_used?: number | null
+          used_cache?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
+      plan_limits: {
+        Row: {
+          feature_type: string
+          id: string
+          plan_name: string
+          usage_limit: number
+        }
+        Insert: {
+          feature_type: string
+          id?: string
+          plan_name: string
+          usage_limit: number
+        }
+        Update: {
+          feature_type?: string
+          id?: string
+          plan_name?: string
+          usage_limit?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
           email: string | null
           id: string
-          subscription_type: string
           updated_at: string
           user_type: string
         }
@@ -46,7 +99,6 @@ export type Database = {
           created_at?: string
           email?: string | null
           id: string
-          subscription_type?: string
           updated_at?: string
           user_type: string
         }
@@ -54,7 +106,6 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
-          subscription_type?: string
           updated_at?: string
           user_type?: string
         }
@@ -65,6 +116,8 @@ export type Database = {
           created_at: string
           end_date: string | null
           id: string
+          is_active: boolean | null
+          is_cancelled: boolean | null
           start_date: string
           subscription_type: string
           updated_at: string
@@ -74,6 +127,8 @@ export type Database = {
           created_at?: string
           end_date?: string | null
           id?: string
+          is_active?: boolean | null
+          is_cancelled?: boolean | null
           start_date?: string
           subscription_type?: string
           updated_at?: string
@@ -83,6 +138,8 @@ export type Database = {
           created_at?: string
           end_date?: string | null
           id?: string
+          is_active?: boolean | null
+          is_cancelled?: boolean | null
           start_date?: string
           subscription_type?: string
           updated_at?: string
@@ -96,30 +153,30 @@ export type Database = {
           feature_type: string
           id: string
           last_used: string
+          plan: string | null
           updated_at: string
           usage_count: number
           user_id: string
-          plan: string // NEW: plan/subscription_type for per-plan usage tracking
         }
         Insert: {
           created_at?: string
           feature_type: string
           id?: string
           last_used?: string
+          plan?: string | null
           updated_at?: string
           usage_count?: number
           user_id: string
-          plan: string // NEW: plan/subscription_type for per-plan usage tracking
         }
         Update: {
           created_at?: string
           feature_type?: string
           id?: string
           last_used?: string
+          plan?: string | null
           updated_at?: string
           usage_count?: number
           user_id?: string
-          plan?: string // NEW: plan/subscription_type for per-plan usage tracking
         }
         Relationships: []
       }
@@ -153,7 +210,7 @@ export type Tables<
   }
     ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
   ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
       Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
