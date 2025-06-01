@@ -82,12 +82,9 @@ const FreePlanDashboard = () => {
       // Removed pre-scan incrementUsageCount call to prevent double-counting
 
       setIsLoading(true);
-      // Create form data for file upload
-      const formData = new FormData();
-      formData.append("file", resumeFile);
       
-      // Call API to scan resume
-      const { data, error } = await api.resume.scanAts(formData);
+      // Call API to scan resume - pass file directly
+      const { data, error } = await api.resume.scanAts({ file: resumeFile });
       
       if (error) {
         throw new Error(error);
@@ -134,12 +131,8 @@ const FreePlanDashboard = () => {
     try {
       setIsLoading(true);
       
-      // Create form data for file upload
-      const formData = new FormData();
-      formData.append("file", resumeFile);
-      
-      // Call API to scan resume
-      const { data, error } = await api.resume.scanAts(formData);
+      // Call API to scan resume - pass file directly
+      const { data, error } = await api.resume.scanAts({ file: resumeFile });
       console.log("ATS scan response:", data, error);
       
       if (error) {
