@@ -34,9 +34,15 @@ import InterviewPrep from './pages/services/InterviewPrep';
 import RecruitingTools from './pages/services/RecruitingTools';
 import CareerInsights from './pages/services/CareerInsights';
 
-// Legal Pages
+// Legal and Info Pages
 import PrivacyPolicy from './pages/legal/PrivacyPolicy';
 import TermsConditions from './pages/legal/TermsConditions';
+import AboutUs from './pages/AboutUs';
+import Careers from './pages/Careers';
+import ContactUs from './pages/ContactUs';
+import HelpCenter from './pages/HelpCenter';
+import Sitemap from './pages/Sitemap';
+import Grievances from './pages/Grievances';
 
 import './App.css';
 
@@ -71,9 +77,15 @@ function App() {
           <Route path="/services/recruiting-tools" element={<RecruitingTools />} />
           <Route path="/services/career-insights" element={<CareerInsights />} />
           
-          {/* Legal Pages */}
+          {/* Legal and Info Pages */}
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms-conditions" element={<TermsConditions />} />
+          <Route path="/about-us" element={<AboutUs />} />
+          <Route path="/careers" element={<Careers />} />
+          <Route path="/contact-us" element={<ContactUs />} />
+          <Route path="/help-center" element={<HelpCenter />} />
+          <Route path="/sitemap" element={<Sitemap />} />
+          <Route path="/grievances" element={<Grievances />} />
           
           <Route path="*" element={<NotFound />} />
         </Routes>
