@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, FileText, Star, Zap, Users, Download, Eye, Target, Brain, BarChart3, MessageSquare, CheckCircle, UserCheck, TrendingUp, FileSearch, Award, Briefcase } from "lucide-react";
+import { ArrowRight, FileText, Star, Zap, Users, Download, Eye, Target, Brain, BarChart3, MessageSquare, CheckCircle, UserCheck, TrendingUp, FileSearch, Award, Briefcase, Facebook, Twitter, Linkedin, Instagram, Youtube, Phone, Mail, MapPin } from "lucide-react";
 import { useAuth } from "@/contexts/auth/AuthContext";
 import { useEffect, useState } from "react";
 
@@ -48,6 +48,14 @@ const Index = () => {
       }
     }
   }, [user, userType, subscriptionStatus, restoringSession, navigate, isRedirecting]);
+
+  // Smooth scroll to dual platform section
+  const scrollToFeatures = () => {
+    const featuresSection = document.getElementById('dual-platform');
+    if (featuresSection) {
+      featuresSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
   
   // Show loading indicator while checking auth state
   if (restoringSession) {
@@ -75,6 +83,34 @@ const Index = () => {
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      {/* Services Navigation */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-center items-center py-3">
+            <nav className="flex space-x-8">
+              <Link to="/services/resume-builder" className="text-gray-600 hover:text-blue-600 text-sm font-medium transition-colors">
+                Resume Builder
+              </Link>
+              <Link to="/services/ats-optimization" className="text-gray-600 hover:text-blue-600 text-sm font-medium transition-colors">
+                ATS Optimization
+              </Link>
+              <Link to="/services/cover-letters" className="text-gray-600 hover:text-blue-600 text-sm font-medium transition-colors">
+                Cover Letters
+              </Link>
+              <Link to="/services/interview-prep" className="text-gray-600 hover:text-blue-600 text-sm font-medium transition-colors">
+                Interview Prep
+              </Link>
+              <Link to="/services/recruiting-tools" className="text-gray-600 hover:text-blue-600 text-sm font-medium transition-colors">
+                Recruiting Tools
+              </Link>
+              <Link to="/services/career-insights" className="text-gray-600 hover:text-blue-600 text-sm font-medium transition-colors">
+                Career Insights
+              </Link>
+            </nav>
+          </div>
+        </div>
+      </div>
+
       {/* Hero Section */}
       <div className="relative pt-24 pb-32 px-4 sm:px-6 lg:px-8 overflow-hidden">
         {/* Background decorations */}
@@ -110,7 +146,12 @@ const Index = () => {
                   <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
-              <Button size="lg" variant="outline" className="px-10 py-6 text-lg border-2 border-gray-300 text-gray-700 hover:bg-gray-50 rounded-full transition-all duration-300">
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="px-10 py-6 text-lg border-2 border-gray-300 text-gray-700 hover:bg-gray-50 rounded-full transition-all duration-300"
+                onClick={scrollToFeatures}
+              >
                 <Eye className="mr-2 w-5 h-5" />
                 Explore Features
               </Button>
@@ -140,7 +181,7 @@ const Index = () => {
       </div>
 
       {/* Dual Platform Section */}
-      <div className="py-24 bg-white relative">
+      <div id="dual-platform" className="py-24 bg-white relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-20">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
@@ -156,6 +197,15 @@ const Index = () => {
             {/* Candidates Section */}
             <div className="relative">
               <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-8 rounded-3xl border border-blue-100">
+                {/* Candidate Image */}
+                <div className="mb-8">
+                  <img 
+                    src="https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=600&h=300&fit=crop&crop=center" 
+                    alt="Professional candidate working on laptop" 
+                    className="w-full h-48 object-cover rounded-2xl"
+                  />
+                </div>
+                
                 <div className="flex items-center mb-6">
                   <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center">
                     <Users className="w-6 h-6 text-white" />
@@ -188,6 +238,15 @@ const Index = () => {
             {/* Recruiters Section */}
             <div className="relative">
               <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-8 rounded-3xl border border-purple-100">
+                {/* Recruiter Image */}
+                <div className="mb-8">
+                  <img 
+                    src="https://images.unsplash.com/photo-1605810230434-7631ac76ec81?w=600&h=300&fit=crop&crop=center" 
+                    alt="Recruiting team analyzing candidates" 
+                    className="w-full h-48 object-cover rounded-2xl"
+                  />
+                </div>
+                
                 <div className="flex items-center mb-6">
                   <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center">
                     <Briefcase className="w-6 h-6 text-white" />
@@ -323,6 +382,107 @@ const Index = () => {
           </div>
         </div>
       </div>
+
+      {/* Comprehensive Footer */}
+      <footer className="bg-gray-900 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
+            {/* Company Info */}
+            <div className="lg:col-span-2">
+              <div className="flex items-center mb-4">
+                <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
+                  <Brain className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold">ResumeAI</h3>
+              </div>
+              <p className="text-gray-400 mb-6 max-w-md">
+                Empowering careers with AI-powered tools for resume optimization, candidate matching, and career advancement.
+              </p>
+              <div className="flex space-x-4">
+                <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                  <Facebook className="w-6 h-6" />
+                </a>
+                <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                  <Twitter className="w-6 h-6" />
+                </a>
+                <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                  <Linkedin className="w-6 h-6" />
+                </a>
+                <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                  <Instagram className="w-6 h-6" />
+                </a>
+                <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                  <Youtube className="w-6 h-6" />
+                </a>
+              </div>
+            </div>
+
+            {/* Services */}
+            <div>
+              <h4 className="text-lg font-semibold mb-4">Services</h4>
+              <ul className="space-y-2">
+                <li><Link to="/services/resume-builder" className="text-gray-400 hover:text-white transition-colors">Resume Builder</Link></li>
+                <li><Link to="/services/ats-optimization" className="text-gray-400 hover:text-white transition-colors">ATS Optimization</Link></li>
+                <li><Link to="/services/cover-letters" className="text-gray-400 hover:text-white transition-colors">Cover Letters</Link></li>
+                <li><Link to="/services/interview-prep" className="text-gray-400 hover:text-white transition-colors">Interview Prep</Link></li>
+                <li><Link to="/services/recruiting-tools" className="text-gray-400 hover:text-white transition-colors">Recruiting Tools</Link></li>
+                <li><Link to="/employer-home" className="text-gray-400 hover:text-white transition-colors">Employer Home</Link></li>
+              </ul>
+            </div>
+
+            {/* Company */}
+            <div>
+              <h4 className="text-lg font-semibold mb-4">Company</h4>
+              <ul className="space-y-2">
+                <li><Link to="/about" className="text-gray-400 hover:text-white transition-colors">About Us</Link></li>
+                <li><Link to="/careers" className="text-gray-400 hover:text-white transition-colors">Careers</Link></li>
+                <li><Link to="/help-center" className="text-gray-400 hover:text-white transition-colors">Help Center</Link></li>
+                <li><Link to="/sitemap" className="text-gray-400 hover:text-white transition-colors">Sitemap</Link></li>
+                <li><Link to="/credits" className="text-gray-400 hover:text-white transition-colors">Credits</Link></li>
+              </ul>
+            </div>
+
+            {/* Legal & Support */}
+            <div>
+              <h4 className="text-lg font-semibold mb-4">Legal & Support</h4>
+              <ul className="space-y-2">
+                <li><Link to="/privacy-policy" className="text-gray-400 hover:text-white transition-colors">Privacy Policy</Link></li>
+                <li><Link to="/terms-conditions" className="text-gray-400 hover:text-white transition-colors">Terms & Conditions</Link></li>
+                <li><Link to="/fraud-alert" className="text-gray-400 hover:text-white transition-colors">Fraud Alert</Link></li>
+                <li><Link to="/trust-safety" className="text-gray-400 hover:text-white transition-colors">Trust & Safety</Link></li>
+                <li><Link to="/summons-notices" className="text-gray-400 hover:text-white transition-colors">Summons/Notices</Link></li>
+                <li><Link to="/grievances" className="text-gray-400 hover:text-white transition-colors">Grievances</Link></li>
+                <li><Link to="/report-issue" className="text-gray-400 hover:text-white transition-colors">Report Issue</Link></li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Contact Info */}
+          <div className="border-t border-gray-800 mt-12 pt-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="flex items-center">
+                <Phone className="w-5 h-5 text-blue-400 mr-3" />
+                <span className="text-gray-400">+1 (555) 123-4567</span>
+              </div>
+              <div className="flex items-center">
+                <Mail className="w-5 h-5 text-blue-400 mr-3" />
+                <span className="text-gray-400">support@resumeai.com</span>
+              </div>
+              <div className="flex items-center">
+                <MapPin className="w-5 h-5 text-blue-400 mr-3" />
+                <span className="text-gray-400">San Francisco, CA</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Copyright */}
+          <div className="border-t border-gray-800 mt-8 pt-8 text-center">
+            <p className="text-gray-400">
+              © 2024 ResumeAI. All rights reserved. | Built with ❤️ for career success.
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
