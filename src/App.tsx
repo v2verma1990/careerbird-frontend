@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/auth/AuthContext';
@@ -25,6 +26,18 @@ import NotFound from './pages/NotFound';
 import Upgrade from './pages/Upgrade';
 import Navbar from './components/Navbar';
 
+// Service Pages
+import ResumeBuilder from './pages/services/ResumeBuilder';
+import ATSOptimization from './pages/services/ATSOptimization';
+import CoverLetters from './pages/services/CoverLetters';
+import InterviewPrep from './pages/services/InterviewPrep';
+import RecruitingTools from './pages/services/RecruitingTools';
+import CareerInsights from './pages/services/CareerInsights';
+
+// Legal Pages
+import PrivacyPolicy from './pages/legal/PrivacyPolicy';
+import TermsConditions from './pages/legal/TermsConditions';
+
 import './App.css';
 
 
@@ -49,6 +62,19 @@ function App() {
           <Route path="/interview-questions" element={<ProtectedRoute><InterviewQuestions /></ProtectedRoute>} />
           <Route path="/cover-letter-generator" element={<ProtectedRoute><CoverLetterGenerator /></ProtectedRoute>} />
           <Route path="/upgrade" element={<ProtectedRoute><Upgrade /></ProtectedRoute>} />
+          
+          {/* Service Pages */}
+          <Route path="/services/resume-builder" element={<ResumeBuilder />} />
+          <Route path="/services/ats-optimization" element={<ATSOptimization />} />
+          <Route path="/services/cover-letters" element={<CoverLetters />} />
+          <Route path="/services/interview-prep" element={<InterviewPrep />} />
+          <Route path="/services/recruiting-tools" element={<RecruitingTools />} />
+          <Route path="/services/career-insights" element={<CareerInsights />} />
+          
+          {/* Legal Pages */}
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms-conditions" element={<TermsConditions />} />
+          
           <Route path="*" element={<NotFound />} />
         </Routes>
         <Toaster />

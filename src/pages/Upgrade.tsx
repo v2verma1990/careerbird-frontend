@@ -1,8 +1,9 @@
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/auth/AuthContext";
-import { Check } from "lucide-react";
+import { Check, Star, Crown, Briefcase, Users } from "lucide-react";
 import React, { useState } from "react";
 
 const Upgrade = () => {
@@ -10,16 +11,8 @@ const Upgrade = () => {
   const { user, userType, profile, subscriptionStatus, updateSubscription } = useAuth();
   const [loading, setLoading] = useState(false);
 
-  // Check if user is a recruiter or candidate
   const isRecruiter = userType === 'recruiter';
   const isCandidate = userType === 'candidate';
-
-  console.log("Upgrade page - User info:", { 
-    userType, 
-    subscriptionType: subscriptionStatus?.type,
-    isRecruiter,
-    isCandidate
-  });
 
   const handleUpgrade = async (type: string) => {
     setLoading(true);
@@ -33,11 +26,9 @@ const Upgrade = () => {
       setLoading(false);
     }
   };
-  
-  // Format subscription end date nicely
+
   const formatExpirationDate = () => {
-    if (!subscriptionStatus.endDate) return null;
-    
+    if (!subscriptionStatus?.endDate) return null;
     const endDate = new Date(subscriptionStatus.endDate);
     return endDate.toLocaleDateString('en-US', { 
       year: 'numeric', 
@@ -45,393 +36,292 @@ const Upgrade = () => {
       day: 'numeric' 
     });
   };
-  
-  // Show plans based on user type and current subscription
-  // Only consider a user "effectively free" if they're actually on the free plan
-  // Users with cancelled paid plans should still see their current plan type options
-  const isEffectivelyFree = subscriptionStatus?.type === 'free';
-  
-  const showFreePlan = isCandidate && isEffectivelyFree;
-  
-  // Show basic plan for candidates not currently on premium (active or cancelled)
-  // and not on an active basic plan
-  const showBasicPlan = isCandidate && 
-                       subscriptionStatus?.type !== 'premium' && 
-                       (subscriptionStatus?.type !== 'basic' || 
-                        (subscriptionStatus?.type === 'basic' && subscriptionStatus?.cancelled));
-  
-  // Show premium plan for candidates not currently on an active premium plan
-  const showPremiumPlan = isCandidate && 
-                         (subscriptionStatus?.type !== 'premium' || 
-                          (subscriptionStatus?.type === 'premium' && subscriptionStatus?.cancelled));
-  
-  // Show recruiter plan for recruiters - always show for recruiters
-  // This is the only plan available for recruiters
-  const showRecruiterPlan = isRecruiter;
 
   return (
-    <div className="container mx-auto py-12 px-4">
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold">Upgrade Your Plan</h1>
-        <p className="text-gray-600 mt-4 max-w-2xl mx-auto">
-          Choose the plan that best fits your needs and unlock more features to boost your career. For enterprise, contact us for a custom solution.
-        </p>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-white rounded-lg shadow-lg mb-12">
-          <thead>
-            <tr>
-              <th className="py-4 px-6 text-left text-lg font-semibold">Feature</th>
-              <th className="py-4 px-6 text-center font-semibold">Free</th>
-              <th className="py-4 px-6 text-center font-semibold">Basic</th>
-              <th className="py-4 px-6 text-center font-semibold">Premium</th>
-              <th className="py-4 px-6 text-center font-semibold">Enterprise</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr className="border-t">
-              <td className="py-3 px-6">Resume Uploads</td>
-              <td className="text-center">1</td>
-              <td className="text-center">10/mo</td>
-              <td className="text-center">Unlimited</td>
-              <td className="text-center">Unlimited</td>
-            </tr>
-            <tr className="border-t">
-              <td className="py-3 px-6">ATS Analysis</td>
-              <td className="text-center">Basic</td>
-              <td className="text-center">Advanced</td>
-              <td className="text-center">Premium</td>
-              <td className="text-center">Custom</td>
-            </tr>
-            <tr className="border-t">
-              <td className="py-3 px-6">AI Resume Customization</td>
-              <td className="text-center">-</td>
-              <td className="text-center">✓</td>
-              <td className="text-center">✓</td>
-              <td className="text-center">✓</td>
-            </tr>
-            <tr className="border-t">
-              <td className="py-3 px-6">Cover Letter Generation</td>
-              <td className="text-center">-</td>
-              <td className="text-center">✓</td>
-              <td className="text-center">✓</td>
-              <td className="text-center">✓</td>
-            </tr>
-            <tr className="border-t">
-              <td className="py-3 px-6">Interview Prep Tools</td>
-              <td className="text-center">-</td>
-              <td className="text-center">-</td>
-              <td className="text-center">✓</td>
-              <td className="text-center">✓</td>
-            </tr>
-            <tr className="border-t">
-              <td className="py-3 px-6">Support</td>
-              <td className="text-center">Email</td>
-              <td className="text-center">Priority</td>
-              <td className="text-center">24/7</td>
-              <td className="text-center">Dedicated Manager</td>
-            </tr>
-          </tbody>
-        </table>
-        <div className="flex flex-col md:flex-row justify-center gap-6 mb-8">
-          <Button 
-            size="lg" 
-            className="bg-blue-600 text-white"
-            onClick={() => subscriptionStatus.type === 'free' ? handleUpgrade("basic") : handleUpgrade("premium")}
-            disabled={loading}
-          >
-            {loading ? "Upgrading..." : "Upgrade Now"}
-          </Button>
-          <Button 
-            size="lg" 
-            variant="outline" 
-            className="border-blue-600 text-blue-600"
-            onClick={() => window.open('mailto:support@resumeai.com?subject=Enterprise%20Plan%20Inquiry', '_blank')}
-          >
-            Contact Sales
-          </Button>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="container mx-auto py-12 px-4">
+        {/* Header */}
+        <div className="text-center mb-16">
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-6">
+            Choose Your Plan
+          </h1>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            Whether you're advancing your career or finding top talent, we have the perfect plan for you.
+          </p>
         </div>
-      </div>
 
-      <div className="text-center mt-12">
-        <h2 className="text-3xl font-bold mb-6">Our Plans</h2>
-        <p className="text-gray-600 mb-8">
-          Select a plan to see detailed features and pricing.
-        </p>
-      </div>
-
-      {/* Show message for active premium subscriptions */}
-      {isCandidate && subscriptionStatus?.type === 'premium' && !subscriptionStatus?.cancelled && (
-        <div className="text-center mb-12 p-6 bg-gray-50 rounded-lg max-w-2xl mx-auto">
-          <h3 className="text-2xl font-bold mb-4">You're Already on Our Premium Plan!</h3>
-          <p className="text-gray-600 mb-4">
-            You're currently enjoying all the benefits of our Premium plan. There are no higher tiers available at this time.
-          </p>
-          {subscriptionStatus?.endDate && (
-            <p className="text-blue-600 font-medium">
-              Your premium subscription is active until {formatExpirationDate()}.
-            </p>
-          )}
-          <Button 
-            className="mt-6" 
-            variant="outline" 
-            onClick={() => navigate('/candidate-dashboard', { replace: true })}
-          >
-            Return to Dashboard
-          </Button>
-        </div>
-      )}
-      
-      {/* Show message for cancelled premium subscriptions */}
-      {isCandidate && subscriptionStatus?.type === 'premium' && subscriptionStatus?.cancelled && (
-        <div className="text-center mb-12 p-6 bg-gray-100 rounded-lg max-w-2xl mx-auto border border-blue-300">
-          <h3 className="text-2xl font-bold mb-4">Your Premium Plan is Cancelled</h3>
-          <p className="text-gray-600 mb-4">
-            Your premium subscription has been cancelled but is still active until {formatExpirationDate()}.
-          </p>
-          <p className="text-gray-600 mb-4">
-            You can renew your premium subscription below to continue enjoying all premium features with a new 30-day period.
-          </p>
-          <p className="text-blue-600 font-medium">
-            Note: You cannot downgrade from Premium to Basic. You can only renew your Premium subscription.
-          </p>
-        </div>
-      )}
-      
-      {/* Show message for active recruiter subscriptions */}
-      {isRecruiter && subscriptionStatus?.type === 'recruiter' && !subscriptionStatus?.cancelled && (
-        <div className="text-center mb-12 p-6 bg-gray-50 rounded-lg max-w-2xl mx-auto">
-          <h3 className="text-2xl font-bold mb-4">You're Already on Our Recruiter Plan!</h3>
-          <p className="text-gray-600 mb-4">
-            You're currently enjoying all the benefits of our Recruiter plan. There are no higher tiers available at this time.
-          </p>
-          {subscriptionStatus?.endDate && (
-            <p className="text-blue-600 font-medium">
-              Your recruiter subscription is active until {formatExpirationDate()}.
-            </p>
-          )}
-          <Button 
-            className="mt-6" 
-            variant="outline" 
-            onClick={() => navigate('/dashboard', { replace: true })}
-          >
-            Return to Dashboard
-          </Button>
-        </div>
-      )}
-      
-      {/* Show message for cancelled recruiter subscriptions */}
-      {isRecruiter && subscriptionStatus?.type === 'recruiter' && subscriptionStatus?.cancelled && (
-        <div className="text-center mb-12 p-6 bg-gray-100 rounded-lg max-w-2xl mx-auto border border-blue-300">
-          <h3 className="text-2xl font-bold mb-4">Your Recruiter Plan is Cancelled</h3>
-          <p className="text-gray-600 mb-4">
-            Your recruiter subscription has been cancelled but is still active until {formatExpirationDate()}.
-          </p>
-          <p className="text-gray-600 mb-4">
-            You can renew your recruiter subscription below to continue enjoying all recruiter features with a new 30-day period.
-          </p>
-          <p className="text-blue-600 font-medium">
-            Note: The Recruiter plan is the only plan available for recruiters.
-          </p>
-        </div>
-      )}
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-        {/* Free Plan - Only for candidates */}
-        {showFreePlan && (
-          <Card className={`border ${subscriptionStatus?.type === 'free' ? 'border-blue-500 ring-2 ring-blue-500' : ''}`}>
-            <CardHeader>
-              <CardTitle className="text-xl">Free Plan</CardTitle>
-              <CardDescription>For casual users</CardDescription>
-              <div className="mt-4">
-                <span className="text-4xl font-bold">$0</span>
-                <span className="text-gray-500">/month</span>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center">
-                <Check className="h-5 w-5 text-green-500 mr-2" />
-                <span>3 Resume scans per month</span>
-              </div>
-              <div className="flex items-center">
-                <Check className="h-5 w-5 text-green-500 mr-2" />
-                <span>Basic ATS feedback</span>
-              </div>
-              <div className="flex items-center">
-                <Check className="h-5 w-5 text-green-500 mr-2" />
-                <span>Salary Insights</span>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button 
-                className="w-full" 
-                variant={subscriptionStatus?.type === 'free' ? "secondary" : "outline"}
-                onClick={() => handleUpgrade("free")}
-                disabled={subscriptionStatus?.type === 'free' || loading}
-              >
-                {loading && subscriptionStatus?.type !== 'free' ? "Upgrading..." : (subscriptionStatus?.type === 'free' ? "Current Plan" : "Select Free")}
-              </Button>
-            </CardFooter>
-          </Card>
+        {/* Current Plan Status */}
+        {subscriptionStatus && (
+          <div className="max-w-2xl mx-auto mb-12">
+            <Card className="border-blue-200 bg-blue-50">
+              <CardContent className="p-6 text-center">
+                <h3 className="text-lg font-semibold mb-2">Current Plan Status</h3>
+                <p className="text-gray-600">
+                  You're currently on the <span className="font-bold text-blue-600 capitalize">{subscriptionStatus.type}</span> plan
+                  {subscriptionStatus.endDate && (
+                    <span className="block text-sm mt-1">
+                      {subscriptionStatus.cancelled ? 'Expires' : 'Renews'} on {formatExpirationDate()}
+                    </span>
+                  )}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
         )}
 
-        {/* Basic Plan - For candidates */}
-        {showBasicPlan && (
-          <Card className={`border ${subscriptionStatus?.type === 'basic' ? 'border-blue-500 ring-2 ring-blue-500' : ''}`}>
-            <CardHeader>
-              <CardTitle className="text-xl">Basic Plan</CardTitle>
-              <CardDescription>For active job seekers</CardDescription>
-              <div className="mt-4">
-                <span className="text-4xl font-bold">$9.99</span>
-                <span className="text-gray-500">/month</span>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center">
-                <Check className="h-5 w-5 text-green-500 mr-2" />
-                <span>10 Resume scans per month</span>
-              </div>
-              <div className="flex items-center">
-                <Check className="h-5 w-5 text-green-500 mr-2" />
-                <span>Advanced ATS feedback</span>
-              </div>
-              <div className="flex items-center">
-                <Check className="h-5 w-5 text-green-500 mr-2" />
-                <span>Resume optimization</span>
-              </div>
-              <div className="flex items-center">
-                <Check className="h-5 w-5 text-green-500 mr-2" />
-                <span>Cover letter generation</span>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button 
-                className="w-full" 
-                variant={subscriptionStatus?.type === 'basic' && !subscriptionStatus?.cancelled ? "secondary" : "default"}
-                onClick={() => handleUpgrade("basic")}
-                disabled={(subscriptionStatus?.type === 'basic' && !subscriptionStatus?.cancelled) || loading}
-              >
-                {loading && subscriptionStatus?.type !== 'basic' ? 
-                  "Upgrading..." : 
-                  (subscriptionStatus?.type === 'basic' && !subscriptionStatus?.cancelled ? 
-                    "Current Plan" : 
-                    (subscriptionStatus?.type === 'basic' && subscriptionStatus?.cancelled ? 
-                      "Renew Basic Plan" : 
-                      "Upgrade to Basic"))}
-              </Button>
-            </CardFooter>
-          </Card>
-        )}
+        {/* Plans Section */}
+        <div className="max-w-7xl mx-auto">
+          {/* Candidate Plans */}
+          <div className="mb-16">
+            <div className="flex items-center justify-center mb-8">
+              <Users className="w-8 h-8 text-blue-600 mr-3" />
+              <h2 className="text-3xl font-bold text-gray-900">For Job Seekers</h2>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {/* Free Plan */}
+              <Card className={`relative border-2 transition-all duration-300 hover:shadow-xl ${
+                subscriptionStatus?.type === 'free' ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'
+              }`}>
+                <CardHeader className="text-center pb-6">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Users className="w-8 h-8 text-gray-600" />
+                  </div>
+                  <CardTitle className="text-2xl">Free</CardTitle>
+                  <CardDescription>Perfect for getting started</CardDescription>
+                  <div className="mt-4">
+                    <span className="text-4xl font-bold">$0</span>
+                    <span className="text-gray-500">/month</span>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center">
+                    <Check className="h-5 w-5 text-green-500 mr-3" />
+                    <span>3 Resume scans per month</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Check className="h-5 w-5 text-green-500 mr-3" />
+                    <span>Basic ATS feedback</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Check className="h-5 w-5 text-green-500 mr-3" />
+                    <span>Salary insights</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Check className="h-5 w-5 text-green-500 mr-3" />
+                    <span>Email support</span>
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button 
+                    className="w-full" 
+                    variant={subscriptionStatus?.type === 'free' ? "secondary" : "outline"}
+                    disabled={subscriptionStatus?.type === 'free'}
+                  >
+                    {subscriptionStatus?.type === 'free' ? "Current Plan" : "Get Started"}
+                  </Button>
+                </CardFooter>
+              </Card>
 
-        {/* Premium Plan - For candidates */}
-        {showPremiumPlan && (
-          <Card className={`border ${subscriptionStatus?.type === 'premium' ? 'border-blue-500 ring-2 ring-blue-500' : ''}`}>
-            <CardHeader>
-              <CardTitle className="text-xl">Premium Plan</CardTitle>
-              <CardDescription>For professionals</CardDescription>
-              <div className="mt-4">
-                <span className="text-4xl font-bold">$19.99</span>
-                <span className="text-gray-500">/month</span>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center">
-                <Check className="h-5 w-5 text-green-500 mr-2" />
-                <span>Unlimited Resume scans</span>
-              </div>
-              <div className="flex items-center">
-                <Check className="h-5 w-5 text-green-500 mr-2" />
-                <span>Premium ATS feedback</span>
-              </div>
-              <div className="flex items-center">
-                <Check className="h-5 w-5 text-green-500 mr-2" />
-                <span>AI Resume customization</span>
-              </div>
-              <div className="flex items-center">
-                <Check className="h-5 w-5 text-green-500 mr-2" />
-                <span>Interview preparation</span>
-              </div>
-              <div className="flex items-center">
-                <Check className="h-5 w-5 text-green-500 mr-2" />
-                <span>Priority support</span>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button 
-                className="w-full" 
-                variant={subscriptionStatus?.type === 'premium' && !subscriptionStatus?.cancelled ? "secondary" : "default"}
-                onClick={() => handleUpgrade("premium")}
-                disabled={(subscriptionStatus?.type === 'premium' && !subscriptionStatus?.cancelled) || loading}
-              >
-                {loading && subscriptionStatus?.type !== 'premium' ? 
-                  "Upgrading..." : 
-                  (subscriptionStatus?.type === 'premium' && !subscriptionStatus?.cancelled ? 
-                    "Current Plan" : 
-                    (subscriptionStatus?.type === 'premium' && subscriptionStatus?.cancelled ? 
-                      "Renew Premium Plan" : 
-                      "Upgrade to Premium"))}
-              </Button>
-            </CardFooter>
-          </Card>
-        )}
-        
-        {/* Recruiter Plan - Only for recruiters */}
-        {showRecruiterPlan && (
-          <Card className={`border ${subscriptionStatus?.type === 'recruiter' ? 'border-blue-500 ring-2 ring-blue-500' : ''}`}>
-            <CardHeader>
-              <CardTitle className="text-xl">Recruiter Plan</CardTitle>
-              <CardDescription>For hiring professionals</CardDescription>
-              <div className="mt-4">
-                <span className="text-4xl font-bold">$29.99</span>
-                <span className="text-gray-500">/month</span>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center">
-                <Check className="h-5 w-5 text-green-500 mr-2" />
-                <span>Unlimited job postings</span>
-              </div>
-              <div className="flex items-center">
-                <Check className="h-5 w-5 text-green-500 mr-2" />
-                <span>AI candidate matching</span>
-              </div>
-              <div className="flex items-center">
-                <Check className="h-5 w-5 text-green-500 mr-2" />
-                <span>Resume database access</span>
-              </div>
-              <div className="flex items-center">
-                <Check className="h-5 w-5 text-green-500 mr-2" />
-                <span>Advanced analytics</span>
-              </div>
-              <div className="flex items-center">
-                <Check className="h-5 w-5 text-green-500 mr-2" />
-                <span>Priority support</span>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button 
-                className="w-full" 
-                variant={subscriptionStatus?.type === 'recruiter' && !subscriptionStatus?.cancelled ? "secondary" : "default"}
-                onClick={() => handleUpgrade("recruiter")}
-                disabled={(subscriptionStatus?.type === 'recruiter' && !subscriptionStatus?.cancelled) || loading}
-              >
-                {loading && subscriptionStatus?.type !== 'recruiter' ? 
-                  "Upgrading..." : 
-                  (subscriptionStatus?.type === 'recruiter' && !subscriptionStatus?.cancelled ? 
-                    "Current Plan" : 
-                    (subscriptionStatus?.type === 'recruiter' && subscriptionStatus?.cancelled ? 
-                      "Renew Recruiter Plan" : 
-                      "Upgrade to Recruiter"))}
-              </Button>
-            </CardFooter>
-          </Card>
-        )}
-      </div>
+              {/* Basic Plan */}
+              <Card className={`relative border-2 transition-all duration-300 hover:shadow-xl ${
+                subscriptionStatus?.type === 'basic' ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'
+              }`}>
+                <CardHeader className="text-center pb-6">
+                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Star className="w-8 h-8 text-blue-600" />
+                  </div>
+                  <CardTitle className="text-2xl">Basic</CardTitle>
+                  <CardDescription>For active job seekers</CardDescription>
+                  <div className="mt-4">
+                    <span className="text-4xl font-bold">$9.99</span>
+                    <span className="text-gray-500">/month</span>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center">
+                    <Check className="h-5 w-5 text-green-500 mr-3" />
+                    <span>10 Resume scans per month</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Check className="h-5 w-5 text-green-500 mr-3" />
+                    <span>Advanced ATS feedback</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Check className="h-5 w-5 text-green-500 mr-3" />
+                    <span>Resume optimization</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Check className="h-5 w-5 text-green-500 mr-3" />
+                    <span>Cover letter generation</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Check className="h-5 w-5 text-green-500 mr-3" />
+                    <span>Priority support</span>
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button 
+                    className="w-full bg-blue-600 hover:bg-blue-700" 
+                    onClick={() => handleUpgrade("basic")}
+                    disabled={loading || (subscriptionStatus?.type === 'basic' && !subscriptionStatus?.cancelled)}
+                  >
+                    {loading ? "Upgrading..." : 
+                     (subscriptionStatus?.type === 'basic' && !subscriptionStatus?.cancelled ? "Current Plan" : "Upgrade to Basic")}
+                  </Button>
+                </CardFooter>
+              </Card>
 
-      <div className="flex justify-center mt-8">
-        <Button variant="outline" onClick={() => navigate(-1)}>
-          Go Back
-        </Button>
+              {/* Premium Plan */}
+              <Card className={`relative border-2 transition-all duration-300 hover:shadow-xl ${
+                subscriptionStatus?.type === 'premium' ? 'border-purple-500 ring-2 ring-purple-200' : 'border-gray-200'
+              }`}>
+                {subscriptionStatus?.type !== 'premium' && (
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                    <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-full text-sm font-medium">
+                      Most Popular
+                    </span>
+                  </div>
+                )}
+                <CardHeader className="text-center pb-6">
+                  <div className="w-16 h-16 bg-gradient-to-r from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Crown className="w-8 h-8 text-purple-600" />
+                  </div>
+                  <CardTitle className="text-2xl">Premium</CardTitle>
+                  <CardDescription>For career professionals</CardDescription>
+                  <div className="mt-4">
+                    <span className="text-4xl font-bold">$19.99</span>
+                    <span className="text-gray-500">/month</span>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center">
+                    <Check className="h-5 w-5 text-green-500 mr-3" />
+                    <span>Unlimited resume scans</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Check className="h-5 w-5 text-green-500 mr-3" />
+                    <span>Premium ATS feedback</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Check className="h-5 w-5 text-green-500 mr-3" />
+                    <span>AI resume customization</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Check className="h-5 w-5 text-green-500 mr-3" />
+                    <span>Interview preparation tools</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Check className="h-5 w-5 text-green-500 mr-3" />
+                    <span>24/7 priority support</span>
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button 
+                    className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700" 
+                    onClick={() => handleUpgrade("premium")}
+                    disabled={loading || (subscriptionStatus?.type === 'premium' && !subscriptionStatus?.cancelled)}
+                  >
+                    {loading ? "Upgrading..." : 
+                     (subscriptionStatus?.type === 'premium' && !subscriptionStatus?.cancelled ? "Current Plan" : "Upgrade to Premium")}
+                  </Button>
+                </CardFooter>
+              </Card>
+            </div>
+          </div>
+
+          {/* Recruiter Plan */}
+          <div>
+            <div className="flex items-center justify-center mb-8">
+              <Briefcase className="w-8 h-8 text-indigo-600 mr-3" />
+              <h2 className="text-3xl font-bold text-gray-900">For Recruiters</h2>
+            </div>
+            
+            <div className="max-w-md mx-auto">
+              <Card className={`border-2 transition-all duration-300 hover:shadow-xl ${
+                subscriptionStatus?.type === 'recruiter' ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-200'
+              }`}>
+                <CardHeader className="text-center pb-6">
+                  <div className="w-16 h-16 bg-gradient-to-r from-indigo-100 to-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Briefcase className="w-8 h-8 text-indigo-600" />
+                  </div>
+                  <CardTitle className="text-2xl">Recruiter Pro</CardTitle>
+                  <CardDescription>Complete hiring solution</CardDescription>
+                  <div className="mt-4">
+                    <span className="text-4xl font-bold">$29.99</span>
+                    <span className="text-gray-500">/month</span>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center">
+                    <Check className="h-5 w-5 text-green-500 mr-3" />
+                    <span>Unlimited candidate analysis</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Check className="h-5 w-5 text-green-500 mr-3" />
+                    <span>AI-powered candidate matching</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Check className="h-5 w-5 text-green-500 mr-3" />
+                    <span>Skill gap analysis</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Check className="h-5 w-5 text-green-500 mr-3" />
+                    <span>Automated feedback reports</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Check className="h-5 w-5 text-green-500 mr-3" />
+                    <span>Candidate comparison tools</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Check className="h-5 w-5 text-green-500 mr-3" />
+                    <span>Advanced analytics</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Check className="h-5 w-5 text-green-500 mr-3" />
+                    <span>Dedicated account manager</span>
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button 
+                    className="w-full bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700" 
+                    onClick={() => handleUpgrade("recruiter")}
+                    disabled={loading || (subscriptionStatus?.type === 'recruiter' && !subscriptionStatus?.cancelled)}
+                  >
+                    {loading ? "Upgrading..." : 
+                     (subscriptionStatus?.type === 'recruiter' && !subscriptionStatus?.cancelled ? "Current Plan" : "Get Recruiter Pro")}
+                  </Button>
+                </CardFooter>
+              </Card>
+            </div>
+          </div>
+        </div>
+
+        {/* Enterprise Section */}
+        <div className="mt-16 text-center">
+          <Card className="max-w-2xl mx-auto bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-gray-200">
+            <CardContent className="p-8">
+              <h3 className="text-2xl font-bold mb-4">Need Something Custom?</h3>
+              <p className="text-gray-600 mb-6">
+                For large organizations with specific requirements, we offer custom enterprise solutions.
+              </p>
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white"
+                onClick={() => window.open('mailto:enterprise@resumeai.com?subject=Enterprise%20Plan%20Inquiry', '_blank')}
+              >
+                Contact Enterprise Sales
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="flex justify-center mt-12">
+          <Button variant="outline" onClick={() => navigate(-1)} className="px-8">
+            Go Back
+          </Button>
+        </div>
       </div>
     </div>
   );
