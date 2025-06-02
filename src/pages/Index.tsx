@@ -317,41 +317,100 @@ const Index = () => {
               <span className="text-green-600">Plan</span>
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              From free essential tools to premium AI-powered features, find the perfect plan for your needs.
+              Whether you're a job seeker or recruiter, we have the perfect plan for your needs.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {plans.map((plan, index) => (
-              <div key={index} className={`relative p-8 rounded-2xl border-2 ${plan.popular ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white'} transition-all duration-300 hover:shadow-xl`}>
-                {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <span className="bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-medium">Most Popular</span>
+          {/* Plan Type Selector */}
+          <div className="flex justify-center mb-16">
+            <div className="bg-gray-100 p-1 rounded-lg">
+              <button className="px-6 py-3 bg-blue-600 text-white rounded-md font-medium">
+                Candidate Plans
+              </button>
+              <button className="px-6 py-3 text-gray-600 rounded-md font-medium ml-1">
+                Recruiter Plans
+              </button>
+            </div>
+          </div>
+
+          {/* Candidate Plans */}
+          <div className="mb-20">
+            <h3 className="text-3xl font-bold text-center mb-12 text-blue-900">For Job Seekers</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {candidatePlans.map((plan, index) => (
+                <div key={index} className={`relative p-8 rounded-2xl border-2 ${plan.popular ? 'border-blue-500 bg-blue-50 transform scale-105' : 'border-gray-200 bg-white'} transition-all duration-300 hover:shadow-xl`}>
+                  {plan.popular && (
+                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                      <span className="bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-medium">Most Popular</span>
+                    </div>
+                  )}
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Users className="w-8 h-8 text-blue-600" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
+                    <div className="text-4xl font-bold text-gray-900 mb-6">
+                      {plan.price}
+                      <span className="text-lg text-gray-500">/month</span>
+                    </div>
+                    <p className="text-gray-600 mb-8">{plan.description}</p>
+                    
+                    <ul className="space-y-3 mb-8 text-left">
+                      {plan.features.map((feature, featureIndex) => (
+                        <li key={featureIndex} className="flex items-center">
+                          <CheckCircle className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
+                          <span className="text-gray-700">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    
+                    <Button className={`w-full ${plan.popular ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-800 hover:bg-gray-900'} text-white rounded-xl py-3`}>
+                      Get Started
+                    </Button>
                   </div>
-                )}
-                <div className="text-center">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
-                  <div className="text-4xl font-bold text-gray-900 mb-6">
-                    {plan.price}
-                    <span className="text-lg text-gray-500">/month</span>
-                  </div>
-                  <p className="text-gray-600 mb-8">{plan.description}</p>
-                  
-                  <ul className="space-y-3 mb-8">
-                    {plan.features.map((feature, featureIndex) => (
-                      <li key={featureIndex} className="flex items-center">
-                        <CheckCircle className="w-5 h-5 text-green-500 mr-3" />
-                        <span className="text-gray-700">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  
-                  <Button className={`w-full ${plan.popular ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-800 hover:bg-gray-900'} text-white rounded-xl py-3`}>
-                    Get Started
-                  </Button>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+          </div>
+
+          {/* Recruiter Plans */}
+          <div>
+            <h3 className="text-3xl font-bold text-center mb-12 text-purple-900">For Recruiters</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {recruiterPlans.map((plan, index) => (
+                <div key={index} className={`relative p-8 rounded-2xl border-2 ${plan.popular ? 'border-purple-500 bg-purple-50 transform scale-105' : 'border-gray-200 bg-white'} transition-all duration-300 hover:shadow-xl`}>
+                  {plan.popular && (
+                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                      <span className="bg-purple-500 text-white px-4 py-2 rounded-full text-sm font-medium">Most Popular</span>
+                    </div>
+                  )}
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Briefcase className="w-8 h-8 text-purple-600" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
+                    <div className="text-4xl font-bold text-gray-900 mb-6">
+                      {plan.price}
+                      <span className="text-lg text-gray-500">/month</span>
+                    </div>
+                    <p className="text-gray-600 mb-8">{plan.description}</p>
+                    
+                    <ul className="space-y-3 mb-8 text-left">
+                      {plan.features.map((feature, featureIndex) => (
+                        <li key={featureIndex} className="flex items-center">
+                          <CheckCircle className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
+                          <span className="text-gray-700">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    
+                    <Button className={`w-full ${plan.popular ? 'bg-purple-600 hover:bg-purple-700' : 'bg-gray-800 hover:bg-gray-900'} text-white rounded-xl py-3`}>
+                      Get Started
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -559,7 +618,7 @@ const coreFeatures = [
   }
 ];
 
-const plans = [
+const candidatePlans = [
   {
     name: "Free",
     price: "$0",
@@ -568,7 +627,8 @@ const plans = [
       "Basic resume builder",
       "3 ATS scans per month",
       "Basic job matching",
-      "Standard templates"
+      "Standard templates",
+      "Community support"
     ],
     popular: false
   },
@@ -581,7 +641,8 @@ const plans = [
       "Unlimited ATS scans",
       "Cover letter generator",
       "Priority support",
-      "Premium templates"
+      "Premium templates",
+      "Interview prep tools"
     ],
     popular: true
   },
@@ -593,9 +654,53 @@ const plans = [
       "All Basic features",
       "AI interview preparation",
       "Advanced analytics",
-      "Recruiter tools access",
+      "Salary insights",
       "Custom branding",
-      "API access"
+      "1-on-1 career coaching"
+    ],
+    popular: false
+  }
+];
+
+const recruiterPlans = [
+  {
+    name: "Starter",
+    price: "$49",
+    description: "Perfect for small teams",
+    features: [
+      "Up to 50 candidate profiles",
+      "Basic AI matching",
+      "Standard reporting",
+      "Email support",
+      "Job posting optimization"
+    ],
+    popular: false
+  },
+  {
+    name: "Professional",
+    price: "$99",
+    description: "Advanced recruiting tools",
+    features: [
+      "Up to 200 candidate profiles",
+      "Advanced AI matching",
+      "Detailed analytics",
+      "Priority support",
+      "Bulk resume analysis",
+      "Interview question generator"
+    ],
+    popular: true
+  },
+  {
+    name: "Enterprise",
+    price: "$199",
+    description: "Full-scale recruiting solution",
+    features: [
+      "Unlimited candidate profiles",
+      "Custom AI models",
+      "Advanced reporting & analytics",
+      "Dedicated account manager",
+      "API access",
+      "Custom integrations"
     ],
     popular: false
   }
