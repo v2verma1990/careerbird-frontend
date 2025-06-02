@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/auth/AuthContext';
@@ -6,6 +5,7 @@ import { Toaster } from './components/ui/toaster';
 import ProtectedRoute from './components/ProtectedRoute';
 import RecruiterProtectedRoute from './components/RecruiterProtectedRoute';
 import CandidateProtectedRoute from './components/CandidateProtectedRoute';
+import CookieConsent from './components/CookieConsent';
 
 // Pages
 import Index from './pages/Index';
@@ -90,6 +90,7 @@ function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
         <Toaster />
+        <CookieConsent />
       </AuthProvider>
     </Router>
   );

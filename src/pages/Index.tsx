@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, FileText, Star, Zap, Users, Download, Eye, Target, Brain, BarChart3, MessageSquare, CheckCircle, UserCheck, TrendingUp, FileSearch, Award, Briefcase, Facebook, Twitter, Linkedin, Instagram, Youtube, Phone, Mail, MapPin } from "lucide-react";
@@ -9,6 +8,7 @@ const Index = () => {
   const { user, userType, subscriptionStatus, restoringSession } = useAuth();
   const navigate = useNavigate();
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [activePlanType, setActivePlanType] = useState<'candidate' | 'recruiter'>('candidate');
   
   // Redirect authenticated users to their dashboard
   useEffect(() => {
@@ -324,17 +324,31 @@ const Index = () => {
           {/* Plan Type Selector */}
           <div className="flex justify-center mb-16">
             <div className="bg-gray-100 p-1 rounded-lg">
-              <button className="px-6 py-3 bg-blue-600 text-white rounded-md font-medium">
-                Candidate Plans
+              <button 
+                className={`px-6 py-3 rounded-md font-medium transition-all duration-300 ${
+                  activePlanType === 'candidate' 
+                    ? 'bg-blue-600 text-white' 
+                    : 'text-gray-600 hover:text-blue-600'
+                }`}
+                onClick={() => setActivePlanType('candidate')}
+              >
+                Job Seeker Plans
               </button>
-              <button className="px-6 py-3 text-gray-600 rounded-md font-medium ml-1">
+              <button 
+                className={`px-6 py-3 rounded-md font-medium ml-1 transition-all duration-300 ${
+                  activePlanType === 'recruiter' 
+                    ? 'bg-purple-600 text-white' 
+                    : 'text-gray-600 hover:text-purple-600'
+                }`}
+                onClick={() => setActivePlanType('recruiter')}
+              >
                 Recruiter Plans
               </button>
             </div>
           </div>
 
           {/* Candidate Plans */}
-          <div className="mb-20">
+          <div className={`transition-all duration-500 ${activePlanType === 'candidate' ? 'block' : 'hidden'}`}>
             <h3 className="text-3xl font-bold text-center mb-12 text-blue-900">For Job Seekers</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {candidatePlans.map((plan, index) => (
@@ -364,9 +378,11 @@ const Index = () => {
                       ))}
                     </ul>
                     
-                    <Button className={`w-full ${plan.popular ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-800 hover:bg-gray-900'} text-white rounded-xl py-3`}>
-                      Get Started
-                    </Button>
+                    <Link to="/signup?type=candidate">
+                      <Button className={`w-full ${plan.popular ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-800 hover:bg-gray-900'} text-white rounded-xl py-3`}>
+                        Get Started
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               ))}
@@ -374,7 +390,7 @@ const Index = () => {
           </div>
 
           {/* Recruiter Plans */}
-          <div>
+          <div className={`transition-all duration-500 ${activePlanType === 'recruiter' ? 'block' : 'hidden'}`}>
             <h3 className="text-3xl font-bold text-center mb-12 text-purple-900">For Recruiters</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {recruiterPlans.map((plan, index) => (
@@ -404,9 +420,11 @@ const Index = () => {
                       ))}
                     </ul>
                     
-                    <Button className={`w-full ${plan.popular ? 'bg-purple-600 hover:bg-purple-700' : 'bg-gray-800 hover:bg-gray-900'} text-white rounded-xl py-3`}>
-                      Get Started
-                    </Button>
+                    <Link to="/signup?type=recruiter">
+                      <Button className={`w-full ${plan.popular ? 'bg-purple-600 hover:bg-purple-700' : 'bg-gray-800 hover:bg-gray-900'} text-white rounded-xl py-3`}>
+                        Get Started
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               ))}
