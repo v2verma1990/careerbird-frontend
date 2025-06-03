@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/auth/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Link, useNavigate } from "react-router-dom";
 import api from "@/utils/apiClient";
+import { supabase } from "@/integrations/supabase/client";
 import {
   FileText,
   Search,
@@ -34,7 +36,10 @@ import {
   BookOpen,
   Briefcase,
   Bot,
-  Mail
+  Mail,
+  Key,
+  Eye,
+  EyeOff
 } from "lucide-react";
 
 interface QuickAction {
@@ -63,6 +68,13 @@ interface ActivityItem {
   title: string;
   timestamp: string;
   status: 'completed' | 'in-progress' | 'pending';
+}
+
+interface UserStats {
+  resumesOptimized: number;
+  atsScore: number | null;
+  coverLetters: number;
+  practiceSessions: number;
 }
 
 const featureTypes = [
@@ -124,17 +136,103 @@ const CandidateDashboard = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'account'>('overview');
   const [recentActivity, setRecentActivity] = useState<ActivityItem[]>([]);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [userStats, setUserStats] = useState<UserStats>({
+    resumesOptimized: 0,
+    atsScore: null,
+    coverLetters: 0,
+    practiceSessions: 0
+  });
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [changingPassword, setChangingPassword] = useState(false);
 
   useEffect(() => {
-    // Initialize achievements
+    if (user?.id) {
+      fetchUserData();
+      fetchRecentActivity();
+      fetchAchievements();
+      fetchUserProfile();
+    }
+  }, [user]);
+
+  const fetchUserData = async () => {
+    if (!user?.id) return;
+
+    try {
+      // Fetch usage data for different features
+      const features = ['resume_optimization', 'ats_scan', 'cover_letter', 'interview_questions'];
+      const stats = { resumesOptimized: 0, atsScore: null, coverLetters: 0, practiceSessions: 0 };
+
+      for (const feature of features) {
+        const { data } = await api.usage.getFeatureUsage(user.id, feature);
+        if (data) {
+          switch (feature) {
+            case 'resume_optimization':
+              stats.resumesOptimized = data.usageCount;
+              break;
+            case 'cover_letter':
+              stats.coverLetters = data.usageCount;
+              break;
+            case 'interview_questions':
+              stats.practiceSessions = data.usageCount;
+              break;
+          }
+        }
+      }
+
+      setUserStats(stats);
+    } catch (error) {
+      console.error('Error fetching user stats:', error);
+    }
+  };
+
+  const fetchRecentActivity = async () => {
+    if (!user?.id) return;
+
+    try {
+      // Fetch from activity_logs table
+      const { data, error } = await supabase
+        .from('activity_logs')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (error) {
+        console.error('Error fetching activity:', error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        const formattedActivity = data.map((item: any) => ({
+          id: item.id,
+          type: item.action_type,
+          title: item.description,
+          timestamp: new Date(item.created_at).toLocaleDateString(),
+          status: 'completed' as const
+        }));
+        setRecentActivity(formattedActivity);
+      }
+    } catch (error) {
+      console.error('Error fetching recent activity:', error);
+    }
+  };
+
+  const fetchAchievements = async () => {
+    // Initialize achievements based on actual usage data
     const initAchievements: Achievement[] = [
       {
         id: '1',
         title: 'Resume Optimizer',
         description: 'Optimize your first resume',
         icon: FileCheck,
-        earned: false,
-        progress: 0,
+        earned: userStats.resumesOptimized > 0,
+        progress: Math.min(userStats.resumesOptimized, 1),
         maxProgress: 1
       },
       {
@@ -142,8 +240,8 @@ const CandidateDashboard = () => {
         title: 'Interview Ready',
         description: 'Generate 10 interview questions',
         icon: MessageSquare,
-        earned: false,
-        progress: 0,
+        earned: userStats.practiceSessions >= 10,
+        progress: Math.min(userStats.practiceSessions, 10),
         maxProgress: 10
       },
       {
@@ -151,66 +249,81 @@ const CandidateDashboard = () => {
         title: 'Cover Letter Pro',
         description: 'Create 5 cover letters',
         icon: Edit3,
-        earned: false,
-        progress: 0,
-        maxProgress: 5
-      },
-      {
-        id: '4',
-        title: 'Market Expert',
-        description: 'Check salary insights',
-        icon: DollarSign,
-        earned: false,
-        progress: 0,
-        maxProgress: 1
-      },
-      {
-        id: '5',
-        title: 'ATS Master',
-        description: 'Scan 3 resumes through ATS',
-        icon: Search,
-        earned: false,
-        progress: 0,
-        maxProgress: 3
-      },
-      {
-        id: '6',
-        title: 'Career Champion',
-        description: 'Complete all basic features',
-        icon: Crown,
-        earned: false,
-        progress: 0,
+        earned: userStats.coverLetters >= 5,
+        progress: Math.min(userStats.coverLetters, 5),
         maxProgress: 5
       }
     ];
     setAchievements(initAchievements);
+  };
 
-    // Initialize recent activity
-    const initActivity: ActivityItem[] = [
-      {
-        id: '1',
-        type: 'resume',
-        title: 'Resume uploaded for optimization',
-        timestamp: '2 hours ago',
-        status: 'completed'
-      },
-      {
-        id: '2',
-        type: 'cover-letter',
-        title: 'Cover letter generated for Software Engineer',
-        timestamp: '1 day ago',
-        status: 'completed'
-      },
-      {
-        id: '3',
-        type: 'interview',
-        title: 'Interview questions generated',
-        timestamp: '2 days ago',
-        status: 'completed'
+  const fetchUserProfile = async () => {
+    if (!user?.id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return;
       }
-    ];
-    setRecentActivity(initActivity);
-  }, []);
+
+      setUserProfile(data);
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "New passwords don't match"
+      });
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Password must be at least 6 characters long"
+      });
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: passwordData.newPassword
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Success",
+        description: "Password updated successfully"
+      });
+
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setShowChangePassword(false);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to update password"
+      });
+    } finally {
+      setChangingPassword(false);
+    }
+  };
 
   const quickActions: QuickAction[] = [
     {
@@ -262,15 +375,6 @@ const CandidateDashboard = () => {
       bgColor: "bg-pink-50 border-pink-200"
     }
   ];
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-    toast({
-      title: "Logged out successfully",
-      description: "You have been logged out of your account.",
-    });
-  };
 
   if (!user) {
     return (
@@ -342,14 +446,14 @@ const CandidateDashboard = () => {
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         {activeTab === 'overview' ? (
           <div className="space-y-8">
-            {/* Stats Cards */}
+            {/* Stats Cards - Only show if we have data */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 shadow-xl">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-blue-100 text-sm font-medium">Resumes Optimized</p>
-                      <p className="text-3xl font-bold">12</p>
+                      <p className="text-3xl font-bold">{userStats.resumesOptimized}</p>
                     </div>
                     <FileCheck className="w-8 h-8 text-blue-200" />
                   </div>
@@ -361,7 +465,9 @@ const CandidateDashboard = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-green-100 text-sm font-medium">ATS Score</p>
-                      <p className="text-3xl font-bold">89%</p>
+                      <p className="text-3xl font-bold">
+                        {userStats.atsScore ? `${userStats.atsScore}%` : 'N/A'}
+                      </p>
                     </div>
                     <Shield className="w-8 h-8 text-green-200" />
                   </div>
@@ -373,7 +479,7 @@ const CandidateDashboard = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-purple-100 text-sm font-medium">Cover Letters</p>
-                      <p className="text-3xl font-bold">8</p>
+                      <p className="text-3xl font-bold">{userStats.coverLetters}</p>
                     </div>
                     <Edit3 className="w-8 h-8 text-purple-200" />
                   </div>
@@ -385,7 +491,7 @@ const CandidateDashboard = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-orange-100 text-sm font-medium">Practice Sessions</p>
-                      <p className="text-3xl font-bold">15</p>
+                      <p className="text-3xl font-bold">{userStats.practiceSessions}</p>
                     </div>
                     <Brain className="w-8 h-8 text-orange-200" />
                   </div>
@@ -445,21 +551,29 @@ const CandidateDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {recentActivity.map((item) => (
-                      <div key={item.id} className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                        <div className={`w-2 h-2 rounded-full ${
-                          item.status === 'completed' ? 'bg-green-500' : 
-                          item.status === 'in-progress' ? 'bg-yellow-500' : 'bg-gray-400'
-                        }`}></div>
-                        <div className="flex-1">
-                          <p className="font-medium text-gray-900">{item.title}</p>
-                          <p className="text-sm text-gray-500">{item.timestamp}</p>
+                    {recentActivity.length > 0 ? (
+                      recentActivity.map((item) => (
+                        <div key={item.id} className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <div className={`w-2 h-2 rounded-full ${
+                            item.status === 'completed' ? 'bg-green-500' : 
+                            item.status === 'in-progress' ? 'bg-yellow-500' : 'bg-gray-400'
+                          }`}></div>
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-900">{item.title}</p>
+                            <p className="text-sm text-gray-500">{item.timestamp}</p>
+                          </div>
+                          <CheckCircle className={`w-4 h-4 ${
+                            item.status === 'completed' ? 'text-green-500' : 'text-gray-300'
+                          }`} />
                         </div>
-                        <CheckCircle className={`w-4 h-4 ${
-                          item.status === 'completed' ? 'text-green-500' : 'text-gray-300'
-                        }`} />
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        <Clock className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                        <p>No recent activity</p>
+                        <p className="text-sm">Start using our tools to see your activity here!</p>
                       </div>
-                    ))}
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -592,7 +706,7 @@ const CandidateDashboard = () => {
                       <Label className="text-base font-medium text-gray-700">Member Since</Label>
                       <div className="mt-2 p-3 bg-gray-50 rounded-lg border">
                         <span className="text-gray-900">
-                          {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown'}
+                          {userProfile?.created_at ? new Date(userProfile.created_at).toLocaleDateString() : 'Loading...'}
                         </span>
                       </div>
                     </div>
@@ -601,7 +715,7 @@ const CandidateDashboard = () => {
                       <Label className="text-base font-medium text-gray-700">Last Updated</Label>
                       <div className="mt-2 p-3 bg-gray-50 rounded-lg border">
                         <span className="text-gray-900">
-                          {user.updated_at ? new Date(user.updated_at).toLocaleDateString() : 'Unknown'}
+                          {userProfile?.updated_at ? new Date(userProfile.updated_at).toLocaleDateString() : 'Loading...'}
                         </span>
                       </div>
                     </div>
@@ -617,9 +731,13 @@ const CandidateDashboard = () => {
                   <Shield className="w-12 h-12 text-blue-600 mx-auto mb-4" />
                   <h3 className="font-semibold text-blue-900 mb-2">Security Settings</h3>
                   <p className="text-blue-700 text-sm mb-4">Manage your password and security preferences</p>
-                  <Button variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-100">
-                    <Settings className="w-4 h-4 mr-2" />
-                    Manage Security
+                  <Button 
+                    variant="outline" 
+                    className="border-blue-300 text-blue-700 hover:bg-blue-100"
+                    onClick={() => setShowChangePassword(!showChangePassword)}
+                  >
+                    <Key className="w-4 h-4 mr-2" />
+                    Change Password
                   </Button>
                 </CardContent>
               </Card>
@@ -629,7 +747,11 @@ const CandidateDashboard = () => {
                   <BarChart3 className="w-12 h-12 text-green-600 mx-auto mb-4" />
                   <h3 className="font-semibold text-green-900 mb-2">Usage Analytics</h3>
                   <p className="text-green-700 text-sm mb-4">View your feature usage and statistics</p>
-                  <Button variant="outline" className="border-green-300 text-green-700 hover:bg-green-100">
+                  <Button 
+                    variant="outline" 
+                    className="border-green-300 text-green-700 hover:bg-green-100"
+                    onClick={() => setActiveTab('overview')}
+                  >
                     <TrendingUp className="w-4 h-4 mr-2" />
                     View Analytics
                   </Button>
@@ -651,26 +773,57 @@ const CandidateDashboard = () => {
               </Card>
             </div>
 
-            {/* Logout Section */}
-            <Card className="shadow-xl border-red-200 bg-red-50">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
+            {/* Change Password Section */}
+            {showChangePassword && (
+              <Card className="shadow-xl border-blue-200 bg-blue-50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-3 text-blue-900">
+                    <Key className="w-6 h-6" />
+                    Change Password
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div>
-                    <h3 className="font-semibold text-red-900 mb-2">Sign Out</h3>
-                    <p className="text-red-700 text-sm">
-                      Sign out of your account. You'll need to sign in again to access your dashboard.
-                    </p>
+                    <Label className="text-sm font-medium text-gray-700">New Password</Label>
+                    <input
+                      type="password"
+                      value={passwordData.newPassword}
+                      onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                      className="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Enter new password"
+                    />
                   </div>
-                  <Button 
-                    variant="outline" 
-                    onClick={handleLogout}
-                    className="border-red-300 text-red-700 hover:bg-red-100"
-                  >
-                    Sign Out
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700">Confirm New Password</Label>
+                    <input
+                      type="password"
+                      value={passwordData.confirmPassword}
+                      onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                      className="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Confirm new password"
+                    />
+                  </div>
+                  <div className="flex gap-4">
+                    <Button 
+                      onClick={handleChangePassword}
+                      disabled={changingPassword || !passwordData.newPassword || !passwordData.confirmPassword}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      {changingPassword ? "Updating..." : "Update Password"}
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      onClick={() => {
+                        setShowChangePassword(false);
+                        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
       </div>
