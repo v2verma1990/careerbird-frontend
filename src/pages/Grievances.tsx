@@ -1,202 +1,210 @@
 
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertTriangle, Clock, FileText, CheckCircle } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { AlertCircle, FileText, Clock, CheckCircle } from "lucide-react";
+import { useState } from "react";
 
 const Grievances = () => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    category: '',
+    description: '',
+    priority: 'medium'
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // TODO: Implement actual grievance submission
+    console.log('Grievance submitted:', formData);
+    alert('Thank you for your submission. We will review your grievance and respond within 5 business days.');
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-100">
       <div className="container mx-auto px-4 py-12">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Grievances & Complaints</h1>
+          <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Grievance Resolution</h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            We take all concerns seriously. Submit your grievance and our team will investigate and respond promptly.
+            We take your concerns seriously. Submit a formal grievance and we'll work to resolve it promptly.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-          <Card className="text-center hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <FileText className="w-12 h-12 text-blue-600 mx-auto mb-4" />
-              <CardTitle>Submit</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600">File your complaint with detailed information</p>
-            </CardContent>
-          </Card>
-
-          <Card className="text-center hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <Clock className="w-12 h-12 text-orange-600 mx-auto mb-4" />
-              <CardTitle>Review</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600">We review and investigate within 2-3 business days</p>
-            </CardContent>
-          </Card>
-
-          <Card className="text-center hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-4" />
-              <CardTitle>Resolve</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600">Receive resolution and follow-up within 7 days</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Grievance Form */}
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <AlertTriangle className="w-5 h-5 mr-2 text-red-500" />
-                Submit Grievance
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">First Name *</label>
-                  <Input placeholder="John" required />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Last Name *</label>
-                  <Input placeholder="Doe" required />
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-2">Email Address *</label>
-                <Input type="email" placeholder="john.doe@example.com" required />
-              </div>
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Submit a Grievance</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="name">Full Name *</Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) => handleInputChange('name', e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="email">Email Address *</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => handleInputChange('email', e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">Phone Number</label>
-                <Input type="tel" placeholder="+1 (555) 123-4567" />
-              </div>
+                  <div>
+                    <Label htmlFor="category">Category *</Label>
+                    <select
+                      id="category"
+                      className="w-full p-2 border border-gray-300 rounded-md"
+                      value={formData.category}
+                      onChange={(e) => handleInputChange('category', e.target.value)}
+                      required
+                    >
+                      <option value="">Select a category</option>
+                      <option value="billing">Billing & Payments</option>
+                      <option value="service">Service Quality</option>
+                      <option value="privacy">Privacy Concerns</option>
+                      <option value="discrimination">Discrimination</option>
+                      <option value="technical">Technical Issues</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">Grievance Category *</label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="billing">Billing Issue</SelectItem>
-                    <SelectItem value="service">Service Quality</SelectItem>
-                    <SelectItem value="technical">Technical Problem</SelectItem>
-                    <SelectItem value="privacy">Privacy Concern</SelectItem>
-                    <SelectItem value="discrimination">Discrimination</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                  <div>
+                    <Label htmlFor="priority">Priority Level</Label>
+                    <select
+                      id="priority"
+                      className="w-full p-2 border border-gray-300 rounded-md"
+                      value={formData.priority}
+                      onChange={(e) => handleInputChange('priority', e.target.value)}
+                    >
+                      <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
+                      <option value="urgent">Urgent</option>
+                    </select>
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">Incident Date</label>
-                <Input type="date" />
-              </div>
+                  <div>
+                    <Label htmlFor="description">Detailed Description *</Label>
+                    <Textarea
+                      id="description"
+                      placeholder="Please provide a detailed description of your grievance, including dates, times, and any relevant information..."
+                      value={formData.description}
+                      onChange={(e) => handleInputChange('description', e.target.value)}
+                      className="min-h-[120px]"
+                      required
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">Detailed Description *</label>
-                <Textarea 
-                  placeholder="Please provide a detailed description of your grievance, including any relevant dates, names, and circumstances..."
-                  rows={6}
-                  required
-                />
-              </div>
+                  <Button type="submit" className="w-full bg-red-600 hover:bg-red-700">
+                    Submit Grievance
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">Desired Resolution</label>
-                <Textarea 
-                  placeholder="What would you like us to do to resolve this issue?"
-                  rows={3}
-                />
-              </div>
-
-              <Button className="w-full" size="lg">Submit Grievance</Button>
-              
-              <p className="text-xs text-gray-500">
-                * Required fields. All grievances are treated confidentially and will be investigated thoroughly.
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Information Panel */}
+          {/* Sidebar Information */}
           <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <Clock className="w-8 h-8 text-blue-600 mb-2" />
+                <CardTitle>Resolution Process</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-start">
+                    <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center mr-3 mt-1">
+                      <span className="text-sm font-bold text-blue-600">1</span>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold">Submission</h4>
+                      <p className="text-sm text-gray-600">Your grievance is received and logged</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start">
+                    <div className="w-6 h-6 bg-yellow-100 rounded-full flex items-center justify-center mr-3 mt-1">
+                      <span className="text-sm font-bold text-yellow-600">2</span>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold">Review</h4>
+                      <p className="text-sm text-gray-600">Investigation within 3 business days</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start">
+                    <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mr-3 mt-1">
+                      <span className="text-sm font-bold text-green-600">3</span>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold">Resolution</h4>
+                      <p className="text-sm text-gray-600">Response within 5 business days</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <FileText className="w-8 h-8 text-green-600 mb-2" />
+                <CardTitle>Your Rights</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-sm text-gray-600">
+                  <li className="flex items-center">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                    Fair and impartial review
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                    Confidential handling
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                    No retaliation policy
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                    Regular status updates
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                    Appeal process available
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
             <Card className="bg-blue-50 border-blue-200">
               <CardHeader>
-                <CardTitle className="text-blue-800">Our Commitment</CardTitle>
+                <CardTitle className="text-blue-800">Need Immediate Help?</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-blue-700">
-                  We are committed to addressing all grievances fairly, promptly, and confidentially. 
-                  Every complaint is taken seriously and investigated thoroughly by our dedicated team.
+                <p className="text-blue-700 text-sm mb-4">
+                  For urgent matters that require immediate attention, please contact our support team directly.
                 </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>What to Expect</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-                  <div>
-                    <p className="font-medium">Acknowledgment</p>
-                    <p className="text-sm text-gray-600">You'll receive confirmation within 24 hours</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-                  <div>
-                    <p className="font-medium">Investigation</p>
-                    <p className="text-sm text-gray-600">We'll investigate your concern thoroughly</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-                  <div>
-                    <p className="font-medium">Resolution</p>
-                    <p className="text-sm text-gray-600">You'll receive a detailed response and resolution plan</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-                  <div>
-                    <p className="font-medium">Follow-up</p>
-                    <p className="text-sm text-gray-600">We'll ensure the resolution meets your satisfaction</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Alternative Contact Methods</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <p><strong>Email:</strong> grievances@resumeai.com</p>
-                <p><strong>Phone:</strong> +1 (555) 123-4567 (Mon-Fri, 9 AM - 6 PM PST)</p>
-                <p><strong>Mail:</strong> Grievance Department<br />123 Innovation Drive<br />San Francisco, CA 94105</p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-yellow-50 border-yellow-200">
-              <CardHeader>
-                <CardTitle className="text-yellow-800">Anonymous Reporting</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-yellow-700 text-sm">
-                  If you prefer to remain anonymous, you can submit your grievance without providing personal information. 
-                  However, this may limit our ability to follow up with you directly.
-                </p>
+                <Button variant="outline" className="w-full text-blue-700 border-blue-300">
+                  Contact Support
+                </Button>
               </CardContent>
             </Card>
           </div>
