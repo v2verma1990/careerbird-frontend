@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -68,7 +67,7 @@ const OptimizeJob = () => {
       `.trim();
 
       // Make API request to optimize job description
-      const { data, error } = await api.jobs.optimizeJob({
+      const { data, error } = await api.jobs.optimizeJobDescription({
         jobDescription: fullJobDescription
       });
       
