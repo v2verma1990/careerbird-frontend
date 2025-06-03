@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/auth/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Link, useNavigate } from "react-router-dom";
 import api from "@/utils/apiClient";
@@ -31,7 +32,9 @@ import {
   Sparkles,
   Users,
   BookOpen,
-  Briefcase
+  Briefcase,
+  Bot,
+  Mail
 } from "lucide-react";
 
 interface QuickAction {
