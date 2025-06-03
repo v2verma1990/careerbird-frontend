@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,24 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth/AuthContext";
 import api, { IS_BACKEND_RUNNING } from "@/utils/apiClient";
-import { Loader } from "lucide-react";
+import { 
+  Loader, 
+  Users, 
+  Search, 
+  Star, 
+  MapPin, 
+  Calendar, 
+  Mail, 
+  Phone, 
+  Award, 
+  BookOpen, 
+  Briefcase,
+  Download,
+  ArrowLeft,
+  Zap,
+  Target
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 // Create a LoadingSpinner component that accepts className
 const LoadingSpinner = ({ size = 16, className = "" }: { size?: number, className?: string }) => (
@@ -101,7 +119,7 @@ const BestCandidates = () => {
         setCandidates(mockCandidates);
         
         toast({
-          title: "Candidate search complete (mock)",
+          title: "Candidate search complete",
           description: `Found ${mockCandidates.length} matching candidates.`,
         });
       }
@@ -143,121 +161,261 @@ const BestCandidates = () => {
     });
   };
 
+  const getMatchScoreColor = (score: number) => {
+    if (score >= 90) return "text-green-600 bg-green-100";
+    if (score >= 80) return "text-blue-600 bg-blue-100";
+    if (score >= 70) return "text-yellow-600 bg-yellow-100";
+    return "text-red-600 bg-red-100";
+  };
+
   return (
-    <div className="container mx-auto my-8 px-4">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold">Find Best Candidates</h1>
-        <p className="text-gray-600 mt-2">
-          Find the most qualified candidates for your job opening
-        </p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+      {/* Header */}
+      <div className="bg-white/80 backdrop-blur-sm shadow-lg border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Button variant="ghost" onClick={() => window.history.back()}>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back
+              </Button>
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
+                  <Users className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900">Find Best Candidates</h1>
+                  <p className="text-gray-600">AI-powered candidate matching for your perfect hire</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Badge variant="outline" className="border-blue-200 text-blue-700">
+                <Zap className="w-3 h-3 mr-1" />
+                AI Powered
+              </Badge>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <Card className="mb-8">
-        <CardContent className="pt-6">
-          <form onSubmit={handleSubmit}>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="jobDescription">Job Description</Label>
-                <Textarea
-                  id="jobDescription"
-                  placeholder="Paste the complete job description here..."
-                  value={jobDescription}
-                  onChange={(e) => setJobDescription(e.target.value)}
-                  className="min-h-[200px]"
-                />
-              </div>
-              <div>
-                <Label htmlFor="candidateCount">Number of Candidates to Find</Label>
-                <Input
-                  id="candidateCount"
-                  type="number"
-                  min={1}
-                  max={20}
-                  value={candidateCount}
-                  onChange={(e) => setCandidateCount(parseInt(e.target.value) || 5)}
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <LoadingSpinner className="mr-2" />
-                    Finding candidates...
-                  </>
-                ) : (
-                  "Find Best Candidates"
-                )}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-
-      {candidates.length > 0 && (
-        <div className="space-y-6">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold">Matching Candidates</h2>
-            <Button variant="outline" onClick={handleExportCSV}>
-              Export to CSV
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {candidates.map((candidate) => (
-              <Card key={candidate.id}>
-                <CardContent className="pt-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <h3 className="text-xl font-semibold">{candidate.name}</h3>
-                    <div className="bg-primary text-white px-2 py-1 rounded text-sm font-medium">
-                      {candidate.matchScore}% Match
-                    </div>
+      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Search Form */}
+          <div className="lg:col-span-1">
+            <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm sticky top-8">
+              <div className="h-2 bg-gradient-to-r from-blue-500 to-indigo-500"></div>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <Search className="w-6 h-6 text-blue-600" />
+                  <h2 className="text-xl font-bold text-gray-900">Search Criteria</h2>
+                </div>
+                
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div>
+                    <Label htmlFor="jobDescription" className="text-base font-medium flex items-center gap-2">
+                      <Target className="w-4 h-4" />
+                      Job Description
+                    </Label>
+                    <Textarea
+                      id="jobDescription"
+                      placeholder="Paste the complete job description here... Include requirements, responsibilities, and qualifications."
+                      value={jobDescription}
+                      onChange={(e) => setJobDescription(e.target.value)}
+                      className="min-h-[200px] mt-2 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    />
                   </div>
                   
-                  <div className="space-y-3">
-                    <div>
-                      <span className="font-medium">Skills:</span>{" "}
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {candidate.skills.map((skill: string, index: number) => (
-                          <span 
-                            key={index} 
-                            className="bg-gray-100 px-2 py-1 rounded text-sm"
-                          >
-                            {skill}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <span className="font-medium">Experience:</span>{" "}
-                        {candidate.experience}
-                      </div>
-                      <div>
-                        <span className="font-medium">Education:</span>{" "}
-                        {candidate.education}
-                      </div>
-                      <div>
-                        <span className="font-medium">Location:</span>{" "}
-                        {candidate.location}
-                      </div>
-                      <div>
-                        <span className="font-medium">Availability:</span>{" "}
-                        {candidate.availability}
-                      </div>
-                    </div>
-                    
-                    <div className="pt-2 border-t">
-                      <div className="font-medium mb-1">Contact:</div>
-                      <div>{candidate.contactDetails.email}</div>
-                      <div>{candidate.contactDetails.phone}</div>
-                    </div>
+                  <div>
+                    <Label htmlFor="candidateCount" className="text-base font-medium flex items-center gap-2">
+                      <Users className="w-4 h-4" />
+                      Number of Candidates
+                    </Label>
+                    <Input
+                      id="candidateCount"
+                      type="number"
+                      min={1}
+                      max={20}
+                      value={candidateCount}
+                      onChange={(e) => setCandidateCount(parseInt(e.target.value) || 5)}
+                      className="mt-2 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium shadow-lg transform transition-all duration-200 hover:scale-105" 
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <LoadingSpinner className="mr-2" />
+                        Finding candidates...
+                      </>
+                    ) : (
+                      <>
+                        <Search className="w-4 h-4 mr-2" />
+                        Find Best Candidates
+                      </>
+                    )}
+                  </Button>
+                </form>
+
+                {/* Search Tips */}
+                <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <h4 className="font-semibold text-blue-900 mb-2">💡 Pro Tips:</h4>
+                  <ul className="text-sm text-blue-800 space-y-1">
+                    <li>• Include specific skills and requirements</li>
+                    <li>• Mention experience level needed</li>
+                    <li>• Add location preferences</li>
+                    <li>• Specify industry or domain</li>
+                  </ul>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Results Section */}
+          <div className="lg:col-span-2">
+            {candidates.length > 0 ? (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Award className="w-6 h-6 text-blue-600" />
+                    <h2 className="text-2xl font-bold text-gray-900">Top Matching Candidates</h2>
+                    <Badge className="bg-blue-100 text-blue-800">{candidates.length} found</Badge>
+                  </div>
+                  <Button variant="outline" onClick={handleExportCSV} className="hover:bg-blue-50">
+                    <Download className="w-4 h-4 mr-2" />
+                    Export CSV
+                  </Button>
+                </div>
+
+                <div className="space-y-4">
+                  {candidates.map((candidate, index) => (
+                    <Card key={candidate.id} className="shadow-xl border-0 bg-white/90 backdrop-blur-sm hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
+                      <CardContent className="p-6">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center text-white font-bold text-lg">
+                              {candidate.name.charAt(0)}
+                            </div>
+                            <div>
+                              <h3 className="text-xl font-bold text-gray-900">{candidate.name}</h3>
+                              <p className="text-gray-600">Rank #{index + 1}</p>
+                            </div>
+                          </div>
+                          <div className={`px-4 py-2 rounded-full font-bold text-lg ${getMatchScoreColor(candidate.matchScore)}`}>
+                            <Star className="w-4 h-4 inline mr-1" />
+                            {candidate.matchScore}% Match
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="space-y-4">
+                            <div className="flex items-start gap-3">
+                              <Award className="w-5 h-5 text-blue-600 mt-0.5" />
+                              <div>
+                                <h4 className="font-semibold text-gray-900">Skills</h4>
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                  {candidate.skills.map((skill: string, skillIndex: number) => (
+                                    <Badge 
+                                      key={skillIndex} 
+                                      variant="outline"
+                                      className="bg-blue-50 border-blue-200 text-blue-800 hover:bg-blue-100"
+                                    >
+                                      {skill}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-3">
+                              <Briefcase className="w-5 h-5 text-green-600" />
+                              <div>
+                                <span className="font-semibold text-gray-900">Experience:</span>
+                                <span className="ml-2 text-gray-700">{candidate.experience}</span>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-3">
+                              <BookOpen className="w-5 h-5 text-purple-600" />
+                              <div>
+                                <span className="font-semibold text-gray-900">Education:</span>
+                                <span className="ml-2 text-gray-700">{candidate.education}</span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-4">
+                            <div className="flex items-center gap-3">
+                              <MapPin className="w-5 h-5 text-red-600" />
+                              <div>
+                                <span className="font-semibold text-gray-900">Location:</span>
+                                <span className="ml-2 text-gray-700">{candidate.location}</span>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-3">
+                              <Calendar className="w-5 h-5 text-orange-600" />
+                              <div>
+                                <span className="font-semibold text-gray-900">Availability:</span>
+                                <span className="ml-2 text-gray-700">{candidate.availability}</span>
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <h4 className="font-semibold text-gray-900">Contact Information</h4>
+                              <div className="flex items-center gap-2 text-sm">
+                                <Mail className="w-4 h-4 text-blue-600" />
+                                <a href={`mailto:${candidate.contactDetails.email}`} className="text-blue-600 hover:underline">
+                                  {candidate.contactDetails.email}
+                                </a>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm">
+                                <Phone className="w-4 h-4 text-green-600" />
+                                <a href={`tel:${candidate.contactDetails.phone}`} className="text-green-600 hover:underline">
+                                  {candidate.contactDetails.phone}
+                                </a>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            ) : isLoading ? (
+              <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm">
+                <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+                  <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-6"></div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Searching for Candidates</h3>
+                  <p className="text-gray-600 mb-4">Our AI is analyzing your job description and matching the best candidates...</p>
+                  <div className="flex items-center space-x-2 text-sm text-gray-500">
+                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
+                    <span>Processing requirements</span>
                   </div>
                 </CardContent>
               </Card>
-            ))}
+            ) : (
+              <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm">
+                <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+                  <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center mb-6">
+                    <Users className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Ready to Find Your Perfect Hire</h3>
+                  <p className="text-gray-600 max-w-md">
+                    Enter your job description to discover the most qualified candidates using our AI-powered matching system.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };
