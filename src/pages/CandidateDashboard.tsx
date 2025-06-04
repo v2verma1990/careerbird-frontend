@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/auth/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -67,13 +68,13 @@ interface Activity {
 const CandidateDashboard = () => {
   const { user, logout } = useAuth();
   const [stats, setStats] = useState<UserStats>({
-    resumesOptimized: { usageCount: 0, usageLimit: 0 },
-    atsScore: { usageCount: 0, usageLimit: 0 },
-    coverLetters: { usageCount: 0, usageLimit: 0 },
-    practiceSessions: { usageCount: 0, usageLimit: 0 },
-    resumeBuilder: { usageCount: 0, usageLimit: 0 },
-    resumeCustomization: { usageCount: 0, usageLimit: 0 },
-    salaryInsights: { usageCount: 0, usageLimit: 0 }
+    resumesOptimized: { usageCount: 0, usageLimit: 3 },
+    atsScore: { usageCount: 0, usageLimit: 3 },
+    coverLetters: { usageCount: 0, usageLimit: 3 },
+    practiceSessions: { usageCount: 0, usageLimit: 3 },
+    resumeBuilder: { usageCount: 0, usageLimit: 3 },
+    resumeCustomization: { usageCount: 0, usageLimit: 3 },
+    salaryInsights: { usageCount: 0, usageLimit: 3 }
   });
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -222,9 +223,6 @@ const CandidateDashboard = () => {
                 <Settings className="w-4 h-4" />
                 Account Settings
               </Button>
-              <Button variant="outline" onClick={logout}>
-                Logout
-              </Button>
             </div>
           </div>
         </div>
@@ -238,13 +236,18 @@ const CandidateDashboard = () => {
                   <User className="w-5 h-5 mr-2 text-indigo-600" />
                   Account Settings
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowAccountSettings(false)}
-                >
-                  ×
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" onClick={logout}>
+                    Logout
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAccountSettings(false)}
+                  >
+                    ×
+                  </Button>
+                </div>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -287,57 +290,6 @@ const CandidateDashboard = () => {
           </Card>
         )}
 
-        {/* Usage Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium opacity-90">Resume Optimization</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">
-                {stats.resumesOptimized.usageCount}/{stats.resumesOptimized.usageLimit}
-              </div>
-              <p className="text-xs opacity-80">remaining</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium opacity-90">ATS Scans</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">
-                {stats.atsScore.usageCount}/{stats.atsScore.usageLimit}
-              </div>
-              <p className="text-xs opacity-80">remaining</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium opacity-90">Cover Letters</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">
-                {stats.coverLetters.usageCount}/{stats.coverLetters.usageLimit}
-              </div>
-              <p className="text-xs opacity-80">remaining</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium opacity-90">Interview Prep</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">
-                {stats.practiceSessions.usageCount}/{stats.practiceSessions.usageLimit}
-              </div>
-              <p className="text-xs opacity-80">remaining</p>
-            </CardContent>
-          </Card>
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
@@ -352,45 +304,66 @@ const CandidateDashboard = () => {
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   <Link to="/resume-optimizer">
-                    <Button variant="outline" className="w-full h-20 flex flex-col">
+                    <Button variant="outline" className="w-full h-20 flex flex-col relative">
                       <FileText className="w-6 h-6 mb-2" />
                       <span className="text-sm">Resume Optimizer</span>
+                      <Badge variant="secondary" className="absolute top-1 right-1 text-xs">
+                        {stats.resumesOptimized.usageCount}/{stats.resumesOptimized.usageLimit}
+                      </Badge>
                     </Button>
                   </Link>
                   <Link to="/resume-customizer">
-                    <Button variant="outline" className="w-full h-20 flex flex-col">
+                    <Button variant="outline" className="w-full h-20 flex flex-col relative">
                       <Edit3 className="w-6 h-6 mb-2" />
                       <span className="text-sm">Resume Customizer</span>
+                      <Badge variant="secondary" className="absolute top-1 right-1 text-xs">
+                        {stats.resumeCustomization.usageCount}/{stats.resumeCustomization.usageLimit}
+                      </Badge>
                     </Button>
                   </Link>
                   <Link to="/services/resume-builder">
-                    <Button variant="outline" className="w-full h-20 flex flex-col">
+                    <Button variant="outline" className="w-full h-20 flex flex-col relative">
                       <Hammer className="w-6 h-6 mb-2" />
                       <span className="text-sm">Resume Builder</span>
+                      <Badge variant="secondary" className="absolute top-1 right-1 text-xs">
+                        {stats.resumeBuilder.usageCount}/{stats.resumeBuilder.usageLimit}
+                      </Badge>
                     </Button>
                   </Link>
                   <Link to="/ats-scanner">
-                    <Button variant="outline" className="w-full h-20 flex flex-col">
+                    <Button variant="outline" className="w-full h-20 flex flex-col relative">
                       <Target className="w-6 h-6 mb-2" />
                       <span className="text-sm">ATS Scanner</span>
+                      <Badge variant="secondary" className="absolute top-1 right-1 text-xs">
+                        {stats.atsScore.usageCount}/{stats.atsScore.usageLimit}
+                      </Badge>
                     </Button>
                   </Link>
                   <Link to="/cover-letter-generator">
-                    <Button variant="outline" className="w-full h-20 flex flex-col">
+                    <Button variant="outline" className="w-full h-20 flex flex-col relative">
                       <MessageSquare className="w-6 h-6 mb-2" />
                       <span className="text-sm">Cover Letter</span>
+                      <Badge variant="secondary" className="absolute top-1 right-1 text-xs">
+                        {stats.coverLetters.usageCount}/{stats.coverLetters.usageLimit}
+                      </Badge>
                     </Button>
                   </Link>
                   <Link to="/interview-questions">
-                    <Button variant="outline" className="w-full h-20 flex flex-col">
+                    <Button variant="outline" className="w-full h-20 flex flex-col relative">
                       <BookOpen className="w-6 h-6 mb-2" />
                       <span className="text-sm">Interview Prep</span>
+                      <Badge variant="secondary" className="absolute top-1 right-1 text-xs">
+                        {stats.practiceSessions.usageCount}/{stats.practiceSessions.usageLimit}
+                      </Badge>
                     </Button>
                   </Link>
                   <Link to="/salary-insights">
-                    <Button variant="outline" className="w-full h-20 flex flex-col">
+                    <Button variant="outline" className="w-full h-20 flex flex-col relative">
                       <DollarSign className="w-6 h-6 mb-2" />
                       <span className="text-sm">Salary Insights</span>
+                      <Badge variant="secondary" className="absolute top-1 right-1 text-xs">
+                        {stats.salaryInsights.usageCount}/{stats.salaryInsights.usageLimit}
+                      </Badge>
                     </Button>
                   </Link>
                 </div>
