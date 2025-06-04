@@ -222,7 +222,7 @@ const HelpCenter = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
               <h3 className="font-semibold mb-2">How do I cancel my subscription?</h3>
-              <p className="text-gray-600 text-sm">You can cancel your subscription anytime from your dashboard settings. Navigate to Settings > Subscription > Cancel Plan.</p>
+              <p className="text-gray-600 text-sm">You can cancel your subscription anytime from your dashboard settings. Navigate to Settings {'>'}  Subscription {'>'} Cancel Plan.</p>
             </div>
             <div>
               <h3 className="font-semibold mb-2">Is my data secure?</h3>
