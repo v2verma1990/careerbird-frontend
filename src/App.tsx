@@ -32,6 +32,7 @@ import Careers from "./pages/Careers";
 import HelpCenter from "./pages/HelpCenter";
 import HelpSearch from "./pages/HelpSearch";
 import ATSScore from "./pages/help/ATSScore";
+import UpcomingFeatures from "./pages/UpcomingFeatures";
 import Sitemap from "./pages/Sitemap";
 import PrivacyPolicy from "./pages/legal/PrivacyPolicy";
 import TermsConditions from "./pages/legal/TermsConditions";
@@ -87,6 +88,13 @@ const App = () => (
                   </CandidateProtectedRoute>
                 </ProtectedRoute>
               } />
+              <Route path="/upcoming-features" element={
+                <ProtectedRoute>
+                  <CandidateProtectedRoute>
+                    <UpcomingFeatures />
+                  </CandidateProtectedRoute>
+                </ProtectedRoute>
+              } />
               <Route path="/upgrade" element={
                 <ProtectedRoute>
                   <Upgrade />
@@ -117,6 +125,8 @@ const App = () => (
               <Route path="/careers" element={<Careers />} />
               <Route path="/contact-us" element={<ContactUs />} />
               <Route path="/help-center" element={<HelpCenter />} />
+              <Route path="/help-search" element={<HelpSearch />} />
+              <Route path="/help/ats-score" element={<ATSScore />} />
               <Route path="/sitemap" element={<Sitemap />} />
               <Route path="/credits" element={<Credits />} />
 

@@ -31,16 +31,21 @@ import {
   Search,
   PlusCircle,
   Users,
-  Brain
+  Brain,
+  Hammer
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
+import { apiClient } from '@/utils/apiClient';
 
 interface UserStats {
-  resumesOptimized: number;
-  atsScore: number | null;
-  coverLetters: number;
-  practiceSessions: number;
+  resumesOptimized: { usageCount: number; usageLimit: number };
+  atsScore: { usageCount: number; usageLimit: number };
+  coverLetters: { usageCount: number; usageLimit: number };
+  practiceSessions: { usageCount: number; usageLimit: number };
+  resumeBuilder: { usageCount: number; usageLimit: number };
+  resumeCustomization: { usageCount: number; usageLimit: number };
+  salaryInsights: { usageCount: number; usageLimit: number };
 }
 
 interface Achievement {
@@ -55,18 +60,21 @@ interface Achievement {
 
 interface Activity {
   id: string;
-  action: string;
-  timestamp: Date;
+  action_type: string;
+  created_at: string;
   description: string;
 }
 
 const CandidateDashboard = () => {
   const { user, logout } = useAuth();
   const [stats, setStats] = useState<UserStats>({
-    resumesOptimized: 0,
-    atsScore: null,
-    coverLetters: 0,
-    practiceSessions: 0
+    resumesOptimized: { usageCount: 0, usageLimit: 0 },
+    atsScore: { usageCount: 0, usageLimit: 0 },
+    coverLetters: { usageCount: 0, usageLimit: 0 },
+    practiceSessions: { usageCount: 0, usageLimit: 0 },
+    resumeBuilder: { usageCount: 0, usageLimit: 0 },
+    resumeCustomization: { usageCount: 0, usageLimit: 0 },
+    salaryInsights: { usageCount: 0, usageLimit: 0 }
   });
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -84,26 +92,31 @@ const CandidateDashboard = () => {
     
     try {
       setLoading(true);
-      // TODO: Replace with actual API calls when backend is ready
-      // For now, we'll leave the values as 0/null to show no data rather than fake data
       
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Set actual values when we have real data
-      setStats({
-        resumesOptimized: 0, // Will be fetched from backend
-        atsScore: null, // Will be fetched from backend
-        coverLetters: 0, // Will be fetched from backend
-        practiceSessions: 0 // Will be fetched from backend
-      });
+      // Fetch all feature usage data
+      const usageResponse = await apiClient.get(`/usage/all/${user.id}`);
+      if (usageResponse.data) {
+        const usageData = usageResponse.data;
+        setStats({
+          resumesOptimized: usageData.resume_optimization || { usageCount: 0, usageLimit: 3 },
+          atsScore: usageData.ats_scan || { usageCount: 0, usageLimit: 3 },
+          coverLetters: usageData.cover_letter || { usageCount: 0, usageLimit: 3 },
+          practiceSessions: usageData.interview_questions || { usageCount: 0, usageLimit: 3 },
+          resumeBuilder: usageData.resume_builder || { usageCount: 0, usageLimit: 3 },
+          resumeCustomization: usageData.resume_customization || { usageCount: 0, usageLimit: 3 },
+          salaryInsights: usageData.salary_insights || { usageCount: 0, usageLimit: 3 }
+        });
+      }
 
-      // Generate achievements based on actual progress
+      // Fetch user activities
+      const activitiesResponse = await apiClient.get(`/usage/${user.id}`);
+      if (activitiesResponse.data) {
+        setActivities(activitiesResponse.data.slice(0, 5)); // Show last 5 activities
+      }
+
+      // Generate achievements based on actual usage
       const generatedAchievements = generateAchievements(stats);
       setAchievements(generatedAchievements);
-
-      // Set empty activities until we have real data
-      setActivities([]);
       
     } catch (error) {
       console.error('Error fetching user data:', error);
@@ -119,36 +132,36 @@ const CandidateDashboard = () => {
         title: 'First Resume',
         description: 'Optimize your first resume',
         icon: FileText,
-        progress: userStats.resumesOptimized,
+        progress: userStats.resumesOptimized.usageCount,
         maxProgress: 1,
-        unlocked: userStats.resumesOptimized >= 1
+        unlocked: userStats.resumesOptimized.usageCount >= 1
       },
       {
         id: '2',
         title: 'ATS Master',
-        description: 'Achieve 90%+ ATS score',
+        description: 'Scan 3 resumes with ATS',
         icon: Target,
-        progress: userStats.atsScore || 0,
-        maxProgress: 90,
-        unlocked: (userStats.atsScore || 0) >= 90
+        progress: userStats.atsScore.usageCount,
+        maxProgress: 3,
+        unlocked: userStats.atsScore.usageCount >= 3
       },
       {
         id: '3',
         title: 'Cover Letter Pro',
-        description: 'Generate 5 cover letters',
+        description: 'Generate 3 cover letters',
         icon: MessageSquare,
-        progress: userStats.coverLetters,
-        maxProgress: 5,
-        unlocked: userStats.coverLetters >= 5
+        progress: userStats.coverLetters.usageCount,
+        maxProgress: 3,
+        unlocked: userStats.coverLetters.usageCount >= 3
       },
       {
         id: '4',
         title: 'Interview Ready',
-        description: 'Complete 10 practice sessions',
+        description: 'Complete 3 practice sessions',
         icon: Award,
-        progress: userStats.practiceSessions,
-        maxProgress: 10,
-        unlocked: userStats.practiceSessions >= 10
+        progress: userStats.practiceSessions.usageCount,
+        maxProgress: 3,
+        unlocked: userStats.practiceSessions.usageCount >= 3
       }
     ];
   };
@@ -275,25 +288,29 @@ const CandidateDashboard = () => {
           </Card>
         )}
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        {/* Usage Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium opacity-90">Resumes Optimized</CardTitle>
+              <CardTitle className="text-sm font-medium opacity-90">Resume Optimization</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{stats.resumesOptimized}</div>
+              <div className="text-3xl font-bold">
+                {stats.resumesOptimized.usageCount}/{stats.resumesOptimized.usageLimit}
+              </div>
+              <p className="text-xs opacity-80">remaining</p>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium opacity-90">ATS Score</CardTitle>
+              <CardTitle className="text-sm font-medium opacity-90">ATS Scans</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">
-                {stats.atsScore !== null ? `${stats.atsScore}%` : 'No data'}
+                {stats.atsScore.usageCount}/{stats.atsScore.usageLimit}
               </div>
+              <p className="text-xs opacity-80">remaining</p>
             </CardContent>
           </Card>
 
@@ -302,16 +319,22 @@ const CandidateDashboard = () => {
               <CardTitle className="text-sm font-medium opacity-90">Cover Letters</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{stats.coverLetters}</div>
+              <div className="text-3xl font-bold">
+                {stats.coverLetters.usageCount}/{stats.coverLetters.usageLimit}
+              </div>
+              <p className="text-xs opacity-80">remaining</p>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium opacity-90">Practice Sessions</CardTitle>
+              <CardTitle className="text-sm font-medium opacity-90">Interview Prep</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{stats.practiceSessions}</div>
+              <div className="text-3xl font-bold">
+                {stats.practiceSessions.usageCount}/{stats.practiceSessions.usageLimit}
+              </div>
+              <p className="text-xs opacity-80">remaining</p>
             </CardContent>
           </Card>
         </div>
@@ -339,6 +362,12 @@ const CandidateDashboard = () => {
                     <Button variant="outline" className="w-full h-20 flex flex-col">
                       <Edit3 className="w-6 h-6 mb-2" />
                       <span className="text-sm">Resume Customizer</span>
+                    </Button>
+                  </Link>
+                  <Link to="/services/resume-builder">
+                    <Button variant="outline" className="w-full h-20 flex flex-col">
+                      <Hammer className="w-6 h-6 mb-2" />
+                      <span className="text-sm">Resume Builder</span>
                     </Button>
                   </Link>
                   <Link to="/ats-scanner">
@@ -390,10 +419,10 @@ const CandidateDashboard = () => {
                       <div key={activity.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
                         <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
                         <div className="flex-1">
-                          <p className="font-medium text-gray-900">{activity.action}</p>
+                          <p className="font-medium text-gray-900">{activity.action_type}</p>
                           <p className="text-sm text-gray-600">{activity.description}</p>
                           <p className="text-xs text-gray-500 mt-1">
-                            {format(activity.timestamp, 'MMM d, yyyy at h:mm a')}
+                            {format(new Date(activity.created_at), 'MMM d, yyyy at h:mm a')}
                           </p>
                         </div>
                       </div>
@@ -471,62 +500,26 @@ const CandidateDashboard = () => {
                 <div className="space-y-4">
                   <div>
                     <div className="flex justify-between text-sm mb-1">
-                      <span>Profile Completion</span>
-                      <span>60%</span>
+                      <span>Resume Optimization</span>
+                      <span>{Math.round((stats.resumesOptimized.usageCount / stats.resumesOptimized.usageLimit) * 100)}%</span>
                     </div>
-                    <Progress value={60} className="h-2" />
+                    <Progress value={(stats.resumesOptimized.usageCount / stats.resumesOptimized.usageLimit) * 100} className="h-2" />
                   </div>
                   <div>
                     <div className="flex justify-between text-sm mb-1">
-                      <span>Resume Optimization</span>
-                      <span>{stats.resumesOptimized > 0 ? '100%' : '0%'}</span>
+                      <span>ATS Optimization</span>
+                      <span>{Math.round((stats.atsScore.usageCount / stats.atsScore.usageLimit) * 100)}%</span>
                     </div>
-                    <Progress value={stats.resumesOptimized > 0 ? 100 : 0} className="h-2" />
+                    <Progress value={(stats.atsScore.usageCount / stats.atsScore.usageLimit) * 100} className="h-2" />
                   </div>
                   <div>
                     <div className="flex justify-between text-sm mb-1">
                       <span>Interview Readiness</span>
-                      <span>{stats.practiceSessions > 0 ? Math.min((stats.practiceSessions / 5) * 100, 100) : 0}%</span>
+                      <span>{Math.round((stats.practiceSessions.usageCount / stats.practiceSessions.usageLimit) * 100)}%</span>
                     </div>
-                    <Progress value={stats.practiceSessions > 0 ? Math.min((stats.practiceSessions / 5) * 100, 100) : 0} className="h-2" />
+                    <Progress value={(stats.practiceSessions.usageCount / stats.practiceSessions.usageLimit) * 100} className="h-2" />
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <PlusCircle className="w-5 h-5 mr-2 text-blue-600" />
-                  Quick Actions
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Link to="/resume-optimizer" className="block">
-                  <Button variant="outline" className="w-full justify-start">
-                    <FileText className="w-4 h-4 mr-2" />
-                    Optimize Resume
-                  </Button>
-                </Link>
-                <Link to="/salary-insights" className="block">
-                  <Button variant="outline" className="w-full justify-start">
-                    <DollarSign className="w-4 h-4 mr-2" />
-                    Check Salary Range
-                  </Button>
-                </Link>
-                <Link to="/cover-letter-generator" className="block">
-                  <Button variant="outline" className="w-full justify-start">
-                    <MessageSquare className="w-4 h-4 mr-2" />
-                    Generate Cover Letter
-                  </Button>
-                </Link>
-                <Link to="/interview-questions" className="block">
-                  <Button variant="outline" className="w-full justify-start">
-                    <BookOpen className="w-4 h-4 mr-2" />
-                    Practice Interview
-                  </Button>
-                </Link>
               </CardContent>
             </Card>
 
@@ -554,42 +547,41 @@ const CandidateDashboard = () => {
               </CardContent>
             </Card>
 
-            {/* New Features Alert */}
+            {/* Upcoming Features */}
             <Card className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Sparkles className="w-5 h-5 mr-2" />
-                  AI-Powered Features!
+                  Upcoming Features!
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm mb-4 opacity-90">
-                  Discover new AI features that can boost your career success!
+                  Exciting new features are coming soon to boost your career!
                 </p>
                 <div className="space-y-2">
                   <div className="flex items-center text-sm">
                     <Brain className="w-4 h-4 mr-2" />
-                    <span>Smart Resume Analysis</span>
+                    <span>AI Career Coach</span>
                   </div>
                   <div className="flex items-center text-sm">
                     <Target className="w-4 h-4 mr-2" />
-                    <span>ATS Optimization</span>
+                    <span>Job Match Algorithm</span>
                   </div>
                   <div className="flex items-center text-sm">
-                    <DollarSign className="w-4 h-4 mr-2" />
-                    <span>Market Salary Insights</span>
+                    <BarChart3 className="w-4 h-4 mr-2" />
+                    <span>Career Progress Tracking</span>
                   </div>
                 </div>
-                <Button 
-                  variant="outline" 
-                  className="w-full mt-4 bg-white text-purple-600 hover:bg-gray-100"
-                  onClick={() => {
-                    window.location.href = '/#features';
-                  }}
-                >
-                  <ArrowRight className="w-4 h-4 mr-2" />
-                  Explore Features
-                </Button>
+                <Link to="/upcoming-features">
+                  <Button 
+                    variant="outline" 
+                    className="w-full mt-4 bg-white text-purple-600 hover:bg-gray-100"
+                  >
+                    <ArrowRight className="w-4 h-4 mr-2" />
+                    View All Features
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
           </div>
