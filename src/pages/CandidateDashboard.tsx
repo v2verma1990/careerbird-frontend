@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/auth/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -36,7 +35,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
-import { apiClient } from '@/utils/apiClient';
+import api from '@/utils/apiClient';
 
 interface UserStats {
   resumesOptimized: { usageCount: number; usageLimit: number };
@@ -94,7 +93,7 @@ const CandidateDashboard = () => {
       setLoading(true);
       
       // Fetch all feature usage data
-      const usageResponse = await apiClient.get(`/usage/all/${user.id}`);
+      const usageResponse = await api.get(`/usage/all/${user.id}`);
       if (usageResponse.data) {
         const usageData = usageResponse.data;
         setStats({
@@ -109,7 +108,7 @@ const CandidateDashboard = () => {
       }
 
       // Fetch user activities
-      const activitiesResponse = await apiClient.get(`/usage/${user.id}`);
+      const activitiesResponse = await api.get(`/usage/${user.id}`);
       if (activitiesResponse.data) {
         setActivities(activitiesResponse.data.slice(0, 5)); // Show last 5 activities
       }
