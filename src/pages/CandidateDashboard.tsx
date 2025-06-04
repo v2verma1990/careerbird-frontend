@@ -1,223 +1,475 @@
-import React, { useEffect, useState } from "react";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/auth/AuthContext";
-import { Badge } from "@/components/ui/badge";
-import api from "@/utils/apiClient";
 
-const featureTypes = [
-  { key: "resume_customization", title: "Resume Customization", icon: "📝", description: "Tailor your resume for each job application.", route: "/resume-customizer" },
-  { key: "resume_optimization", title: "Resume Optimization", icon: "🚀", description: "Optimize your resume for better results.", route: "/resume-optimizer" },
-  { key: "resume_builder", title: "Resume Builder", icon: "📄", description: "Create professional resumes with templates.", route: "/resume-builder" },
-  { key: "ats_scan", title: "ATS Scanner", icon: "🤖", description: "Scan your resume for ATS compatibility.", route: "/ats-scanner" },
-  { key: "salary_insights", title: "Salary Insights", icon: "📊", description: "See salary and market trends.", route: "/salary-insights" },
-  { key: "cover_letter", title: "Cover Letter Generator", icon: "✉️", description: "Generate a personalized cover letter.", route: "/cover-letter-generator" },
-  { key: "interview_questions", title: "Interview Questions", icon: "💬", description: "Practice with AI-generated interview questions.", route: "/interview-questions" },
-];
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '@/contexts/auth/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { 
+  FileText, 
+  Target, 
+  MessageSquare, 
+  Award, 
+  TrendingUp, 
+  User,
+  Mail,
+  Lock,
+  Calendar,
+  BarChart3,
+  BookOpen,
+  Zap,
+  Sparkles,
+  Clock,
+  CheckCircle,
+  ArrowRight,
+  Settings
+} from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { format } from 'date-fns';
+
+interface UserStats {
+  resumesOptimized: number;
+  atsScore: number | null;
+  coverLetters: number;
+  practiceSessions: number;
+}
+
+interface Achievement {
+  id: string;
+  title: string;
+  description: string;
+  icon: React.ComponentType<any>;
+  progress: number;
+  maxProgress: number;
+  unlocked: boolean;
+}
+
+interface Activity {
+  id: string;
+  action: string;
+  timestamp: Date;
+  description: string;
+}
 
 const CandidateDashboard = () => {
-  const navigate = useNavigate();
-  const { user, subscriptionStatus, subscriptionLoading, cancelSubscription } = useAuth();
-  const [featureUsage, setFeatureUsage] = useState<Record<string, { usageCount: number; usageLimit: number }>>({});
-  const [loadingUsage, setLoadingUsage] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [upgradePrompt, setUpgradePrompt] = useState<string | null>(null);
-  const [cancelLoading, setCancelLoading] = useState(false);
-  
-  // Calculate remaining days in subscription
-  const getRemainingDays = () => {
-    if (!subscriptionStatus?.endDate) return null;
-    
-    const endDate = new Date(subscriptionStatus.endDate);
-    const today = new Date();
-    const diffTime = endDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    console.log(`CandidateDashboard - Calculating remaining days: endDate=${endDate}, today=${today}, diffDays=${diffDays}`);
-    
-    // Ensure we're showing the correct number of days
-    if (subscriptionStatus.originalDaysRemaining && subscriptionStatus.cancelled) {
-      console.log(`Using original days remaining: ${subscriptionStatus.originalDaysRemaining}`);
-      return subscriptionStatus.originalDaysRemaining;
-    }
-    
-    return diffDays > 0 ? diffDays : 0;
-  };
+  const { user, logout } = useAuth();
+  const [stats, setStats] = useState<UserStats>({
+    resumesOptimized: 0,
+    atsScore: null,
+    coverLetters: 0,
+    practiceSessions: 0
+  });
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
 
-  // Redirection is now handled by CandidateProtectedRoute
-
-  // Fetch feature usage **only if not already stored**
   useEffect(() => {
-    if (!user || !subscriptionStatus || subscriptionLoading) return;
-    if (Object.keys(featureUsage).length > 0) return; // 🚀 Prevents unnecessary re-fetch
+    fetchUserData();
+  }, [user]);
 
-    setLoadingUsage(true);
-    setError(null);
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000); // 8s timeout
-    const start = Date.now();
-
-    api.usage.getAllFeatureUsage(user.id)
-      .then(({ data, error }) => {
-        clearTimeout(timeout);
-        console.log("Usage API call took", Date.now() - start, "ms");
-        if (error) {
-          setError("Failed to fetch usage data.");
-          setFeatureUsage({});
-        } else {
-          setFeatureUsage(data || {});
-        }
-        setLoadingUsage(false);
-      })
-      .catch((err) => {
-        clearTimeout(timeout);
-        if (err.name === "AbortError") {
-          setError("Usage data is taking too long to load. Please try again later.");
-        } else {
-          setError("An unexpected error occurred while loading usage data.");
-        }
-        setFeatureUsage({});
-        setLoadingUsage(false);
+  const fetchUserData = async () => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+      // TODO: Replace with actual API calls when backend is ready
+      // For now, we'll leave the values as 0/null to show no data rather than fake data
+      
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Set actual values when we have real data
+      setStats({
+        resumesOptimized: 0, // Will be fetched from backend
+        atsScore: null, // Will be fetched from backend
+        coverLetters: 0, // Will be fetched from backend
+        practiceSessions: 0 // Will be fetched from backend
       });
 
-    return () => clearTimeout(timeout);
-  }, [user, subscriptionStatus, subscriptionLoading, featureUsage]); // ✅ Prevent redundant API calls
+      // Generate achievements based on actual progress
+      const generatedAchievements = generateAchievements(stats);
+      setAchievements(generatedAchievements);
 
-  // Handler for cancel subscription
-  const handleCancelSubscription = async () => {
-    if (!user) return;
-    
-    // Confirm cancellation
-    if (!window.confirm("Are you sure you want to cancel your subscription? You will be downgraded to the free plan at the end of your billing period.")) {
-      return;
-    }
-    
-    setCancelLoading(true);
-    try {
-      await cancelSubscription();
+      // Set empty activities until we have real data
+      setActivities([]);
+      
     } catch (error) {
-      console.error("Error cancelling subscription:", error);
+      console.error('Error fetching user data:', error);
     } finally {
-      setCancelLoading(false);
+      setLoading(false);
     }
-  };
-  
-  // Handler for feature button click
-  const handleFeatureClick = (feature: any) => {
-    if (!user) return;
-    const usage = featureUsage[feature.key] || { usageCount: 0, usageLimit: 0 };
-    if ((subscriptionStatus?.type === "free" && usage.usageCount >= usage.usageLimit) || (subscriptionStatus?.type === "basic" && usage.usageCount >= usage.usageLimit)) {
-      setUpgradePrompt(subscriptionStatus.type === "free" ? "You have reached your free usage limit. Please upgrade to access more features." : "You have reached your monthly usage limit. Upgrade to premium for unlimited access.");
-      return;
-    }
-    setUpgradePrompt(null);
-    navigate(feature.route);
   };
 
-  // Loading and error states
-  if (subscriptionLoading || loadingUsage) {
-    return <div className="flex justify-center items-center h-64"><span className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></span> Loading dashboard...</div>;
-  }
-  if (!user || !subscriptionStatus) {
-    return <div className="flex justify-center items-center h-64 text-red-500">You are not logged in. Please log in again.</div>;
-  }
-  if (error) {
-    return <div className="flex justify-center items-center h-64 text-red-500">{error}</div>;
+  const generateAchievements = (userStats: UserStats): Achievement[] => {
+    return [
+      {
+        id: '1',
+        title: 'First Resume',
+        description: 'Optimize your first resume',
+        icon: FileText,
+        progress: userStats.resumesOptimized,
+        maxProgress: 1,
+        unlocked: userStats.resumesOptimized >= 1
+      },
+      {
+        id: '2',
+        title: 'ATS Master',
+        description: 'Achieve 90%+ ATS score',
+        icon: Target,
+        progress: userStats.atsScore || 0,
+        maxProgress: 90,
+        unlocked: (userStats.atsScore || 0) >= 90
+      },
+      {
+        id: '3',
+        title: 'Cover Letter Pro',
+        description: 'Generate 5 cover letters',
+        icon: MessageSquare,
+        progress: userStats.coverLetters,
+        maxProgress: 5,
+        unlocked: userStats.coverLetters >= 5
+      },
+      {
+        id: '4',
+        title: 'Interview Ready',
+        description: 'Complete 10 practice sessions',
+        icon: Award,
+        progress: userStats.practiceSessions,
+        maxProgress: 10,
+        unlocked: userStats.practiceSessions >= 10
+      }
+    ];
+  };
+
+  const handlePasswordChange = async () => {
+    if (!newPassword || newPassword.length < 6) {
+      alert('Password must be at least 6 characters long');
+      return;
+    }
+    
+    setIsChangingPassword(true);
+    try {
+      // TODO: Implement password change with Supabase
+      console.log('Changing password...');
+      alert('Password change functionality will be implemented with Supabase integration');
+      setNewPassword('');
+    } catch (error) {
+      console.error('Error changing password:', error);
+      alert('Error changing password');
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
+  const formatMemberSince = () => {
+    if (!user?.created_at) return 'Unknown';
+    return format(new Date(user.created_at), 'MMMM yyyy');
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="container mx-auto py-10 px-4">
-      <div className="flex flex-col md:flex-row md:justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Candidate Dashboard</h1>
-          <p className="text-gray-600">Welcome{user?.email ? `, ${user.email}` : ""}! Enhance your job search with our AI-powered tools.</p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+            Welcome back, {user?.email?.split('@')[0] || 'Candidate'}!
+          </h1>
+          <p className="text-xl text-gray-600">Let's continue building your career success.</p>
         </div>
-        <div className="flex flex-col items-end gap-2 mt-4 md:mt-0">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Badge className={`px-3 py-1 ${
-                subscriptionStatus.type === "premium" 
-                  ? "bg-green-500" 
-                  : subscriptionStatus.type === "basic" 
-                    ? "bg-blue-500" 
-                    : "bg-gray-500"
-              }`}>
-                {subscriptionStatus.type.charAt(0).toUpperCase() + subscriptionStatus.type.slice(1)} Plan
-              </Badge>
-              
-              {/* Show cancelled badge if subscription is cancelled */}
-              {subscriptionStatus.cancelled && subscriptionStatus.type !== "free" && (
-                <Badge variant="outline" className="border-red-500 text-red-500">
-                  Cancelled
-                </Badge>
-              )}
-            </div>
-            
-            {/* Show upgrade/renew button if not on premium or if subscription is cancelled */}
-            {(subscriptionStatus.type !== "premium" || subscriptionStatus.cancelled) && (
-              <Button variant="outline" onClick={() => navigate("/upgrade")}>
-                {subscriptionStatus.cancelled ? 
-                  (subscriptionStatus.type === "premium" ? "Renew Premium" : "Renew/Upgrade") : 
-                  "Upgrade"}
-              </Button>
-            )}
-            
-            {/* Only show cancel button if subscription is active and not already cancelled */}
-            {(subscriptionStatus.type === "basic" || subscriptionStatus.type === "premium") && 
-             !subscriptionStatus.cancelled && (
-              <Button 
-                variant="outline" 
-                className="text-red-500 border-red-500 hover:bg-red-50"
-                onClick={handleCancelSubscription}
-                disabled={cancelLoading}
-              >
-                {cancelLoading ? "Cancelling..." : "Cancel Subscription"}
-              </Button>
-            )}
-          </div>
-          
-          {/* Show subscription status message */}
-          {subscriptionStatus.endDate && subscriptionStatus.type !== "free" && (
-            <p className="text-sm text-gray-500">
-              {subscriptionStatus.cancelled 
-                ? getRemainingDays() > 0 
-                  ? `Your subscription will end in ${getRemainingDays()} days` 
-                  : "Your subscription will end today"
-                : getRemainingDays() > 0 
-                  ? `Your subscription will renew in ${getRemainingDays()} days` 
-                  : "Your subscription will renew today"
-              }
-            </p>
-          )}
-          
-          {/* Show cancelled badge if subscription is cancelled */}
-          {subscriptionStatus.cancelled && (
-            <Badge className="px-3 py-1 bg-red-500 mt-2">Cancelled</Badge>
-          )}
+
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium opacity-90">Resumes Optimized</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{stats.resumesOptimized}</div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium opacity-90">ATS Score</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">
+                {stats.atsScore !== null ? `${stats.atsScore}%` : 'No data'}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium opacity-90">Cover Letters</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{stats.coverLetters}</div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium opacity-90">Practice Sessions</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{stats.practiceSessions}</div>
+            </CardContent>
+          </Card>
         </div>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {featureTypes.map((feature, index) => {
-          const usage = featureUsage[feature.key] || { usageCount: 0, usageLimit: 0 };
-          const isBlocked = (subscriptionStatus.type === "free" && usage.usageCount >= usage.usageLimit) || (subscriptionStatus.type === "basic" && usage.usageCount >= usage.usageLimit);
-          return (
-            <Card key={index} className="overflow-hidden border border-gray-200 transition-shadow hover:shadow-lg">
-              <CardHeader className="pb-3 flex flex-col items-center">
-                <div className="flex justify-center mb-2 text-3xl">{feature.icon}</div>
-                <CardTitle className="text-center mt-2">{feature.title}</CardTitle>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Quick Actions */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Zap className="w-5 h-5 mr-2 text-blue-600" />
+                  Quick Actions
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-xs text-center mb-2">{subscriptionStatus.type === "premium" ? "Unlimited usage" : `${usage.usageCount}/${usage.usageLimit} uses this month`}</div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Link to="/resume-optimizer">
+                    <Button variant="outline" className="w-full h-20 flex flex-col">
+                      <FileText className="w-6 h-6 mb-2" />
+                      <span className="text-sm">Optimize Resume</span>
+                    </Button>
+                  </Link>
+                  <Link to="/ats-scanner">
+                    <Button variant="outline" className="w-full h-20 flex flex-col">
+                      <Target className="w-6 h-6 mb-2" />
+                      <span className="text-sm">ATS Scan</span>
+                    </Button>
+                  </Link>
+                  <Link to="/cover-letter-generator">
+                    <Button variant="outline" className="w-full h-20 flex flex-col">
+                      <MessageSquare className="w-6 h-6 mb-2" />
+                      <span className="text-sm">Cover Letter</span>
+                    </Button>
+                  </Link>
+                  <Link to="/interview-questions">
+                    <Button variant="outline" className="w-full h-20 flex flex-col">
+                      <BookOpen className="w-6 h-6 mb-2" />
+                      <span className="text-sm">Interview Prep</span>
+                    </Button>
+                  </Link>
+                </div>
               </CardContent>
-              <CardFooter className="flex flex-col">
-                <Button className="w-full" onClick={() => handleFeatureClick(feature)} disabled={isBlocked || loadingUsage}>
-                  {feature.title}
-                </Button>
-              </CardFooter>
             </Card>
-          );
-        })}
+
+            {/* Recent Activity */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Clock className="w-5 h-5 mr-2 text-purple-600" />
+                  Recent Activity
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {activities.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>No recent activity</p>
+                    <p className="text-sm">Start using our tools to see your activity here</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {activities.map((activity) => (
+                      <div key={activity.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-900">{activity.action}</p>
+                          <p className="text-sm text-gray-600">{activity.description}</p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {format(activity.timestamp, 'MMM d, yyyy at h:mm a')}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Achievements */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Award className="w-5 h-5 mr-2 text-yellow-600" />
+                  Achievements
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {achievements.map((achievement) => (
+                    <div
+                      key={achievement.id}
+                      className={`p-4 rounded-lg border-2 transition-all ${
+                        achievement.unlocked
+                          ? 'border-yellow-300 bg-yellow-50'
+                          : 'border-gray-200 bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center mb-3">
+                        <achievement.icon 
+                          className={`w-6 h-6 mr-2 ${
+                            achievement.unlocked ? 'text-yellow-600' : 'text-gray-400'
+                          }`} 
+                        />
+                        <h3 className={`font-semibold ${
+                          achievement.unlocked ? 'text-yellow-800' : 'text-gray-600'
+                        }`}>
+                          {achievement.title}
+                        </h3>
+                        {achievement.unlocked && (
+                          <Badge variant="secondary" className="ml-auto bg-yellow-100 text-yellow-800">
+                            Unlocked!
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600 mb-3">{achievement.description}</p>
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <span>Progress</span>
+                          <span>{achievement.progress}/{achievement.maxProgress}</span>
+                        </div>
+                        <Progress 
+                          value={(achievement.progress / achievement.maxProgress) * 100} 
+                          className="h-2"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* My Account */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <User className="w-5 h-5 mr-2 text-indigo-600" />
+                  My Account
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-sm font-medium">Email</Label>
+                  <Input id="email" value={user?.email || ''} disabled className="bg-gray-50" />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="member-since" className="text-sm font-medium">Member Since</Label>
+                  <Input id="member-since" value={formatMemberSince()} disabled className="bg-gray-50" />
+                </div>
+
+                <Separator />
+
+                <div className="space-y-2">
+                  <Label htmlFor="new-password" className="text-sm font-medium">Change Password</Label>
+                  <Input
+                    id="new-password"
+                    type="password"
+                    placeholder="Enter new password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                  />
+                  <Button 
+                    onClick={handlePasswordChange}
+                    disabled={isChangingPassword || !newPassword}
+                    className="w-full"
+                    variant="outline"
+                  >
+                    <Lock className="w-4 h-4 mr-2" />
+                    {isChangingPassword ? 'Changing...' : 'Change Password'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Progress Overview */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <TrendingUp className="w-5 h-5 mr-2 text-green-600" />
+                  Your Progress
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>Profile Completion</span>
+                      <span>60%</span>
+                    </div>
+                    <Progress value={60} className="h-2" />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>Resume Optimization</span>
+                      <span>{stats.resumesOptimized > 0 ? '100%' : '0%'}</span>
+                    </div>
+                    <Progress value={stats.resumesOptimized > 0 ? 100 : 0} className="h-2" />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>Interview Readiness</span>
+                      <span>{stats.practiceSessions > 0 ? Math.min((stats.practiceSessions / 5) * 100, 100) : 0}%</span>
+                    </div>
+                    <Progress value={stats.practiceSessions > 0 ? Math.min((stats.practiceSessions / 5) * 100, 100) : 0} className="h-2" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* New Features Alert */}
+            <Card className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Sparkles className="w-5 h-5 mr-2" />
+                  New Features!
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm mb-4 opacity-90">
+                  Discover exciting new features that can boost your career!
+                </p>
+                <Button 
+                  variant="outline" 
+                  className="w-full bg-white text-purple-600 hover:bg-gray-100"
+                  onClick={() => {
+                    // Scroll to upcoming features section on homepage
+                    window.location.href = '/#upcoming-features';
+                  }}
+                >
+                  <ArrowRight className="w-4 h-4 mr-2" />
+                  Explore New Features
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/auth/AuthContext";
-import { UserPlus, FileText, FileSearch, Upload, MessageSquare, PieChart } from "lucide-react";
+import { UserPlus, FileText, FileSearch, Upload, MessageSquare, PieChart, Settings, User, Crown, Zap, TrendingUp, Award, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import api from "@/utils/apiClient";
 import "@/styles/Dashboard.css";
@@ -12,6 +13,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { user, userType, subscriptionStatus, incrementUsageCount, subscriptionLoading, restoringSession, cancelSubscription } = useAuth();
   const [cancelLoading, setCancelLoading] = useState(false);
+  const [showAccount, setShowAccount] = useState(false);
   
   // Calculate remaining days in subscription
   const getRemainingDays = () => {
@@ -48,11 +50,6 @@ const Dashboard = () => {
   const [featureUsage, setFeatureUsage] = useState<Record<string, { usageCount: number; usageLimit: number }>>({});
   const [loadingUsage, setLoadingUsage] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  // Check if user has reached usage limit (legacy, now always use per-feature usage)
-  // const hasReachedLimit = subscriptionStatus.usageCount >= subscriptionStatus.usageLimit 
-  //   && subscriptionStatus.type === 'free';
-  // Remove above: handled per-feature below
 
   const handleFindCandidates = async () => {
     // Increment usage and navigate
@@ -85,7 +82,8 @@ const Dashboard = () => {
       description: "Use AI to find the best candidates based on job description",
       icon: <UserPlus className="w-10 h-10 text-blue-500" />,
       action: handleFindCandidates,
-      buttonText: isLoading ? "Loading..." : "Find Candidates"
+      buttonText: isLoading ? "Loading..." : "Find Candidates",
+      gradient: "from-blue-500 to-cyan-500"
     },
     {
       key: "optimize_job",
@@ -93,7 +91,8 @@ const Dashboard = () => {
       description: "Create an optimized job description using AI",
       icon: <FileText className="w-10 h-10 text-purple-500" />,
       route: "/optimize-job",
-      buttonText: "Create Job Description"
+      buttonText: "Create Job Description",
+      gradient: "from-purple-500 to-pink-500"
     },
     {
       key: "candidate_analysis",
@@ -102,7 +101,8 @@ const Dashboard = () => {
       icon: <PieChart className="w-10 h-10 text-green-500" />,
       route: "/candidate-analysis",
       buttonText: "View Analysis",
-      comingSoon: true
+      comingSoon: true,
+      gradient: "from-green-500 to-emerald-500"
     }
   ];
 
@@ -172,122 +172,254 @@ const Dashboard = () => {
   };
 
   if (subscriptionLoading || loadingUsage || restoringSession) {
-    return <div className="flex justify-center items-center h-64"><span className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></span> Loading dashboard...</div>;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex justify-center items-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 text-lg">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
   }
+  
   if (!user || !subscriptionStatus) {
-    return <div className="flex justify-center items-center h-64 text-red-500">You are not logged in. Please log in again.</div>;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex justify-center items-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <User className="w-8 h-8 text-red-500" />
+          </div>
+          <p className="text-red-500 text-lg">You are not logged in. Please log in again.</p>
+        </div>
+      </div>
+    );
   }
+  
   if (error) {
-    return <div className="flex justify-center items-center h-64 text-red-500">{error}</div>;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex justify-center items-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <FileSearch className="w-8 h-8 text-red-500" />
+          </div>
+          <p className="text-red-500 text-lg">{error}</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="container mx-auto py-10 px-4">
-      <div className="flex flex-col md:flex-row md:justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Recruiter Dashboard</h1>
-          <p className="text-gray-600">Welcome, {user.email}! Manage your hiring process with AI-powered tools.</p>
-        </div>
-        <div className="flex flex-col items-end gap-2 mt-4 md:mt-0">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Badge className={`px-3 py-1 ${
-                subscriptionStatus.type === "premium" || subscriptionStatus.type === "recruiter" 
-                  ? "bg-green-500" 
-                  : subscriptionStatus.type === "basic" 
-                    ? "bg-blue-500" 
-                    : "bg-gray-500"
-              }`}>
-                {subscriptionStatus.type.charAt(0).toUpperCase() + subscriptionStatus.type.slice(1)} Plan
-              </Badge>
-              
-              {/* Show cancelled badge if subscription is cancelled */}
-              {subscriptionStatus.cancelled && subscriptionStatus.type !== "free" && (
-                <Badge variant="outline" className="border-red-500 text-red-500">
-                  Cancelled
-                </Badge>
-              )}
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+      {/* Header */}
+      <div className="bg-white/80 backdrop-blur-sm shadow-lg border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex flex-col md:flex-row md:justify-between items-start md:items-center space-y-4 md:space-y-0">
+            <div className="flex items-center space-x-4">
+              <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
+                <Crown className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+                  Recruiter Dashboard
+                  <Zap className="w-6 h-6 text-yellow-500" />
+                </h1>
+                <p className="text-gray-600 mt-1">Welcome back, {user.email}! Ready to find your next hire?</p>
+              </div>
             </div>
             
-            {/* Show upgrade/renew button if not on recruiter or if subscription is cancelled */}
-            {(subscriptionStatus.type !== "recruiter" || subscriptionStatus.cancelled) && (
-              <Button variant="outline" onClick={() => navigate("/upgrade")}>
-                {subscriptionStatus.cancelled ? 
-                  (subscriptionStatus.type === "recruiter" ? "Renew Recruiter" : "Renew Subscription") : 
-                  "Upgrade"}
-              </Button>
-            )}
-            
-            {/* Only show cancel button if subscription is active and not already cancelled */}
-            {(subscriptionStatus.type === "basic" || subscriptionStatus.type === "premium" || subscriptionStatus.type === "recruiter") && 
-             !subscriptionStatus.cancelled && (
+            <div className="flex items-center space-x-3">
               <Button 
                 variant="outline" 
-                className="text-red-500 border-red-500 hover:bg-red-50"
-                onClick={handleCancelSubscription}
-                disabled={cancelLoading}
+                size="sm"
+                onClick={() => setShowAccount(!showAccount)}
+                className="border-gray-300 hover:border-blue-500 hover:text-blue-600 transition-colors"
               >
-                {cancelLoading ? "Cancelling..." : "Cancel Subscription"}
+                <Settings className="w-4 h-4 mr-2" />
+                My Account
               </Button>
-            )}
+            </div>
           </div>
-          
-          {/* Show subscription status message */}
-          {subscriptionStatus.endDate && subscriptionStatus.type !== "free" && (
-            <p className="text-sm text-gray-500">
-              {subscriptionStatus.cancelled 
-                ? getRemainingDays() > 0 
-                  ? `Your subscription will end in ${getRemainingDays()} days` 
-                  : "Your subscription will end today"
-                : getRemainingDays() > 0 
-                  ? `Your subscription will renew in ${getRemainingDays()} days` 
-                  : "Your subscription will renew today"
-              }
-            </p>
-          )}
-          
-          {/* Show cancelled badge if subscription is cancelled */}
-          {subscriptionStatus.cancelled && (
-            <Badge className="px-3 py-1 bg-red-500 mt-2">Cancelled</Badge>
-          )}
         </div>
       </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {recruiterFeatures.map((feature, index) => {
-          const usage = featureUsage[feature.key] || { usageCount: 0, usageLimit: 0 };
-          const isBlocked = (subscriptionStatus.type === "free" && usage.usageCount >= usage.usageLimit) || (subscriptionStatus.type === "basic" && usage.usageCount >= usage.usageLimit);
-          return (
-            <Card key={index} className="overflow-hidden border border-gray-200 transition-shadow hover:shadow-lg">
-              <CardHeader className="pb-3 flex flex-col items-center">
-                <div className="flex justify-center mb-2">{feature.icon}</div>
-                <CardTitle className="text-center mt-2">{feature.title}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="w-full bg-gray-100 rounded-full h-2 mb-2">
-                  <div
-                    className={`h-2 rounded-full ${subscriptionStatus.type === 'premium' ? 'bg-green-400' : 'bg-blue-400'} dashboard-progress-bar`}
-                    data-progress={Math.min(100, (usage.usageCount / (usage.usageLimit || 1)) * 100)}
-                  ></div>
+
+      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        {/* Account Section */}
+        {showAccount && (
+          <Card className="mb-8 shadow-2xl border-0 bg-white/90 backdrop-blur-sm">
+            <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg">
+              <CardTitle className="flex items-center gap-3">
+                <User className="w-6 h-6" />
+                Account Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <Badge className={`px-3 py-1 ${
+                        subscriptionStatus.type === "premium" || subscriptionStatus.type === "recruiter" 
+                          ? "bg-green-500" 
+                          : subscriptionStatus.type === "basic" 
+                            ? "bg-blue-500" 
+                            : "bg-gray-500"
+                      }`}>
+                        <Crown className="w-3 h-3 mr-1" />
+                        {subscriptionStatus.type.charAt(0).toUpperCase() + subscriptionStatus.type.slice(1)} Plan
+                      </Badge>
+                      
+                      {subscriptionStatus.cancelled && subscriptionStatus.type !== "free" && (
+                        <Badge variant="outline" className="border-red-500 text-red-500">
+                          Cancelled
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {subscriptionStatus.endDate && subscriptionStatus.type !== "free" && (
+                    <p className="text-sm text-gray-600 flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4" />
+                      {subscriptionStatus.cancelled 
+                        ? getRemainingDays() > 0 
+                          ? `Your subscription will end in ${getRemainingDays()} days` 
+                          : "Your subscription will end today"
+                        : getRemainingDays() > 0 
+                          ? `Your subscription will renew in ${getRemainingDays()} days` 
+                          : "Your subscription will renew today"
+                      }
+                    </p>
+                  )}
                 </div>
-                <div className="text-xs text-center mb-2">
-                  {subscriptionStatus.type === "premium" ? "Unlimited usage" : `${usage.usageCount}/${usage.usageLimit} uses this month`}
+                
+                <div className="flex flex-col gap-3">
+                  {(subscriptionStatus.type !== "recruiter" || subscriptionStatus.cancelled) && (
+                    <Button 
+                      variant="outline" 
+                      onClick={() => navigate("/upgrade")}
+                      className="border-blue-500 text-blue-600 hover:bg-blue-50"
+                    >
+                      <Star className="w-4 h-4 mr-2" />
+                      {subscriptionStatus.cancelled ? 
+                        (subscriptionStatus.type === "recruiter" ? "Renew Recruiter" : "Renew Subscription") : 
+                        "Upgrade"}
+                    </Button>
+                  )}
+                  
+                  {(subscriptionStatus.type === "basic" || subscriptionStatus.type === "premium" || subscriptionStatus.type === "recruiter") && 
+                   !subscriptionStatus.cancelled && (
+                    <Button 
+                      variant="outline" 
+                      className="text-red-500 border-red-500 hover:bg-red-50"
+                      onClick={handleCancelSubscription}
+                      disabled={cancelLoading}
+                    >
+                      {cancelLoading ? "Cancelling..." : "Cancel Subscription"}
+                    </Button>
+                  )}
                 </div>
-                {isBlocked && !feature.comingSoon && (
-                  <div className="text-xs text-red-500 text-center mb-2">{subscriptionStatus.type === "free" ? "Free plan limit reached. Upgrade for more." : "Monthly limit reached. Upgrade for unlimited access."}</div>
-                )}
-              </CardContent>
-              <CardFooter className="flex flex-col">
-                <Button className="w-full" onClick={() => handleFeatureClick(feature)} disabled={isBlocked || loadingUsage || feature.comingSoon || (feature.action === handleFindCandidates && isLoading)}>
-                  {feature.buttonText}
-                </Button>
-                {feature.comingSoon && (
-                  <p className="text-xs text-amber-500 font-medium mt-2 text-center">Coming Soon</p>
-                )}
-              </CardFooter>
-            </Card>
-          );
-        })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Features Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {recruiterFeatures.map((feature, index) => {
+            const usage = featureUsage[feature.key] || { usageCount: 0, usageLimit: 0 };
+            const isBlocked = (subscriptionStatus.type === "free" && usage.usageCount >= usage.usageLimit) || (subscriptionStatus.type === "basic" && usage.usageCount >= usage.usageLimit);
+            const progressPercentage = Math.min(100, (usage.usageCount / (usage.usageLimit || 1)) * 100);
+            
+            return (
+              <Card key={index} className="group overflow-hidden border-0 shadow-2xl bg-white/90 backdrop-blur-sm transition-all duration-300 hover:shadow-3xl hover:scale-105">
+                <div className={`h-2 bg-gradient-to-r ${feature.gradient}`}></div>
+                <CardHeader className="pb-4">
+                  <div className="flex justify-center mb-4">
+                    <div className={`w-20 h-20 bg-gradient-to-r ${feature.gradient} rounded-3xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                      {feature.icon}
+                    </div>
+                  </div>
+                  <CardTitle className="text-center text-xl font-bold text-gray-900">{feature.title}</CardTitle>
+                  <p className="text-center text-gray-600 text-sm">{feature.description}</p>
+                </CardHeader>
+                
+                <CardContent className="space-y-4">
+                  <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full bg-gradient-to-r ${feature.gradient} transition-all duration-500 ease-out`}
+                      style={{ width: `${progressPercentage}%` }}
+                    ></div>
+                  </div>
+                  
+                  <div className="text-center">
+                    <div className="text-sm font-medium text-gray-900">
+                      {subscriptionStatus.type === "premium" || subscriptionStatus.type === "recruiter" ? (
+                        <span className="text-green-600 flex items-center justify-center gap-1">
+                          <Star className="w-4 h-4" />
+                          Unlimited usage
+                        </span>
+                      ) : (
+                        `${usage.usageCount}/${usage.usageLimit} uses this month`
+                      )}
+                    </div>
+                    {isBlocked && !feature.comingSoon && (
+                      <div className="text-xs text-red-500 mt-1 font-medium">
+                        {subscriptionStatus.type === "free" ? "Free plan limit reached" : "Monthly limit reached"}
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+                
+                <CardFooter className="pt-0">
+                  <Button 
+                    className={`w-full py-3 font-medium transition-all duration-300 ${
+                      feature.comingSoon 
+                        ? 'bg-gray-400 hover:bg-gray-500 cursor-not-allowed' 
+                        : isBlocked 
+                          ? 'bg-red-500 hover:bg-red-600' 
+                          : `bg-gradient-to-r ${feature.gradient} hover:shadow-lg hover:scale-105`
+                    }`}
+                    onClick={() => handleFeatureClick(feature)} 
+                    disabled={isBlocked || loadingUsage || feature.comingSoon || (feature.action === handleFindCandidates && isLoading)}
+                  >
+                    {feature.comingSoon ? (
+                      <>
+                        <Award className="w-4 h-4 mr-2" />
+                        Coming Soon
+                      </>
+                    ) : (
+                      <>
+                        {feature.action === handleFindCandidates && isLoading ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        ) : null}
+                        {feature.buttonText}
+                      </>
+                    )}
+                  </Button>
+                </CardFooter>
+              </Card>
+            );
+          })}
+        </div>
+
+        {/* Stats Card */}
+        <Card className="mt-8 shadow-2xl border-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+          <CardContent className="p-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+              <div className="space-y-2">
+                <div className="text-3xl font-bold">50K+</div>
+                <p className="text-blue-100">Candidates Found</p>
+              </div>
+              <div className="space-y-2">
+                <div className="text-3xl font-bold">95%</div>
+                <p className="text-blue-100">Success Rate</p>
+              </div>
+              <div className="space-y-2">
+                <div className="text-3xl font-bold">24/7</div>
+                <p className="text-blue-100">AI Support</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
