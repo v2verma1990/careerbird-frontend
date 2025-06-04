@@ -25,7 +25,13 @@ import {
   Clock,
   CheckCircle,
   ArrowRight,
-  Settings
+  Settings,
+  DollarSign,
+  Edit3,
+  Search,
+  PlusCircle,
+  Users,
+  Brain
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -65,6 +71,7 @@ const CandidateDashboard = () => {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAccountSettings, setShowAccountSettings] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [newPassword, setNewPassword] = useState('');
 
@@ -187,11 +194,86 @@ const CandidateDashboard = () => {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Welcome back, {user?.email?.split('@')[0] || 'Candidate'}!
-          </h1>
-          <p className="text-xl text-gray-600">Let's continue building your career success.</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">
+                Welcome back, {user?.email?.split('@')[0] || 'Candidate'}!
+              </h1>
+              <p className="text-xl text-gray-600">Let's continue building your career success.</p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Button
+                variant="outline"
+                onClick={() => setShowAccountSettings(!showAccountSettings)}
+                className="flex items-center gap-2"
+              >
+                <Settings className="w-4 h-4" />
+                Account Settings
+              </Button>
+              <Button variant="outline" onClick={logout}>
+                Logout
+              </Button>
+            </div>
+          </div>
         </div>
+
+        {/* Account Settings Modal */}
+        {showAccountSettings && (
+          <Card className="mb-8 border-blue-200 bg-blue-50/50">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <User className="w-5 h-5 mr-2 text-indigo-600" />
+                  Account Settings
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAccountSettings(false)}
+                >
+                  ×
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-sm font-medium">Email</Label>
+                  <Input id="email" value={user?.email || ''} disabled className="bg-gray-50" />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="member-since" className="text-sm font-medium">Member Since</Label>
+                  <Input id="member-since" value={formatMemberSince()} disabled className="bg-gray-50" />
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-2">
+                <Label htmlFor="new-password" className="text-sm font-medium">Change Password</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="new-password"
+                    type="password"
+                    placeholder="Enter new password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button 
+                    onClick={handlePasswordChange}
+                    disabled={isChangingPassword || !newPassword}
+                    variant="outline"
+                  >
+                    <Lock className="w-4 h-4 mr-2" />
+                    {isChangingPassword ? 'Changing...' : 'Change'}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -237,26 +319,32 @@ const CandidateDashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
-            {/* Quick Actions */}
+            {/* All Tools & Features */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Zap className="w-5 h-5 mr-2 text-blue-600" />
-                  Quick Actions
+                  Career Tools & Features
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   <Link to="/resume-optimizer">
                     <Button variant="outline" className="w-full h-20 flex flex-col">
                       <FileText className="w-6 h-6 mb-2" />
-                      <span className="text-sm">Optimize Resume</span>
+                      <span className="text-sm">Resume Optimizer</span>
+                    </Button>
+                  </Link>
+                  <Link to="/resume-customizer">
+                    <Button variant="outline" className="w-full h-20 flex flex-col">
+                      <Edit3 className="w-6 h-6 mb-2" />
+                      <span className="text-sm">Resume Customizer</span>
                     </Button>
                   </Link>
                   <Link to="/ats-scanner">
                     <Button variant="outline" className="w-full h-20 flex flex-col">
                       <Target className="w-6 h-6 mb-2" />
-                      <span className="text-sm">ATS Scan</span>
+                      <span className="text-sm">ATS Scanner</span>
                     </Button>
                   </Link>
                   <Link to="/cover-letter-generator">
@@ -269,6 +357,12 @@ const CandidateDashboard = () => {
                     <Button variant="outline" className="w-full h-20 flex flex-col">
                       <BookOpen className="w-6 h-6 mb-2" />
                       <span className="text-sm">Interview Prep</span>
+                    </Button>
+                  </Link>
+                  <Link to="/salary-insights">
+                    <Button variant="outline" className="w-full h-20 flex flex-col">
+                      <DollarSign className="w-6 h-6 mb-2" />
+                      <span className="text-sm">Salary Insights</span>
                     </Button>
                   </Link>
                 </div>
@@ -365,49 +459,6 @@ const CandidateDashboard = () => {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* My Account */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <User className="w-5 h-5 mr-2 text-indigo-600" />
-                  My Account
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm font-medium">Email</Label>
-                  <Input id="email" value={user?.email || ''} disabled className="bg-gray-50" />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="member-since" className="text-sm font-medium">Member Since</Label>
-                  <Input id="member-since" value={formatMemberSince()} disabled className="bg-gray-50" />
-                </div>
-
-                <Separator />
-
-                <div className="space-y-2">
-                  <Label htmlFor="new-password" className="text-sm font-medium">Change Password</Label>
-                  <Input
-                    id="new-password"
-                    type="password"
-                    placeholder="Enter new password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                  />
-                  <Button 
-                    onClick={handlePasswordChange}
-                    disabled={isChangingPassword || !newPassword}
-                    className="w-full"
-                    variant="outline"
-                  >
-                    <Lock className="w-4 h-4 mr-2" />
-                    {isChangingPassword ? 'Changing...' : 'Change Password'}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Progress Overview */}
             <Card>
               <CardHeader>
@@ -443,28 +494,101 @@ const CandidateDashboard = () => {
               </CardContent>
             </Card>
 
+            {/* Quick Actions */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <PlusCircle className="w-5 h-5 mr-2 text-blue-600" />
+                  Quick Actions
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Link to="/resume-optimizer" className="block">
+                  <Button variant="outline" className="w-full justify-start">
+                    <FileText className="w-4 h-4 mr-2" />
+                    Optimize Resume
+                  </Button>
+                </Link>
+                <Link to="/salary-insights" className="block">
+                  <Button variant="outline" className="w-full justify-start">
+                    <DollarSign className="w-4 h-4 mr-2" />
+                    Check Salary Range
+                  </Button>
+                </Link>
+                <Link to="/cover-letter-generator" className="block">
+                  <Button variant="outline" className="w-full justify-start">
+                    <MessageSquare className="w-4 h-4 mr-2" />
+                    Generate Cover Letter
+                  </Button>
+                </Link>
+                <Link to="/interview-questions" className="block">
+                  <Button variant="outline" className="w-full justify-start">
+                    <BookOpen className="w-4 h-4 mr-2" />
+                    Practice Interview
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+
+            {/* Help & Support */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Users className="w-5 h-5 mr-2 text-purple-600" />
+                  Help & Support
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Link to="/help-center" className="block">
+                  <Button variant="outline" className="w-full justify-start">
+                    <BookOpen className="w-4 h-4 mr-2" />
+                    Help Center
+                  </Button>
+                </Link>
+                <Link to="/contact-us" className="block">
+                  <Button variant="outline" className="w-full justify-start">
+                    <Mail className="w-4 h-4 mr-2" />
+                    Contact Support
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+
             {/* New Features Alert */}
             <Card className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Sparkles className="w-5 h-5 mr-2" />
-                  New Features!
+                  AI-Powered Features!
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm mb-4 opacity-90">
-                  Discover exciting new features that can boost your career!
+                  Discover new AI features that can boost your career success!
                 </p>
+                <div className="space-y-2">
+                  <div className="flex items-center text-sm">
+                    <Brain className="w-4 h-4 mr-2" />
+                    <span>Smart Resume Analysis</span>
+                  </div>
+                  <div className="flex items-center text-sm">
+                    <Target className="w-4 h-4 mr-2" />
+                    <span>ATS Optimization</span>
+                  </div>
+                  <div className="flex items-center text-sm">
+                    <DollarSign className="w-4 h-4 mr-2" />
+                    <span>Market Salary Insights</span>
+                  </div>
+                </div>
                 <Button 
                   variant="outline" 
-                  className="w-full bg-white text-purple-600 hover:bg-gray-100"
+                  className="w-full mt-4 bg-white text-purple-600 hover:bg-gray-100"
                   onClick={() => {
-                    // Scroll to upcoming features section on homepage
-                    window.location.href = '/#upcoming-features';
+                    window.location.href = '/#features';
                   }}
                 >
                   <ArrowRight className="w-4 h-4 mr-2" />
-                  Explore New Features
+                  Explore Features
                 </Button>
               </CardContent>
             </Card>
