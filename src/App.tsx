@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -29,6 +30,8 @@ import ContactUs from "./pages/ContactUs";
 import AboutUs from "./pages/AboutUs";
 import Careers from "./pages/Careers";
 import HelpCenter from "./pages/HelpCenter";
+import HelpSearch from "./pages/HelpSearch";
+import ATSScore from "./pages/help/ATSScore";
 import Sitemap from "./pages/Sitemap";
 import PrivacyPolicy from "./pages/legal/PrivacyPolicy";
 import TermsConditions from "./pages/legal/TermsConditions";
