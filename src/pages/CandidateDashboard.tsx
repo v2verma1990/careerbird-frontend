@@ -208,7 +208,12 @@ const CandidateDashboard = () => {
                 <CardTitle className="text-center mt-2">{feature.title}</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-xs text-center mb-2">{subscriptionStatus.type === "premium" ? "Unlimited usage" : `${usage.usageCount}/${usage.usageLimit} uses this month`}</div>
+                <div className="text-xs text-center mb-2">
+                  {usage.usageLimit > 0 ? 
+                    `${usage.usageCount}/${usage.usageLimit} uses this month` : 
+                    "Unlimited usage"
+                  }
+                </div>
               </CardContent>
               <CardFooter className="flex flex-col">
                 <Button className="w-full" onClick={() => handleFeatureClick(feature)} disabled={isBlocked || loadingUsage}>

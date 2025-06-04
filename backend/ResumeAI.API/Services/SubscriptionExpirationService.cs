@@ -76,11 +76,15 @@ namespace ResumeAI.API.Services
                         // Add the new free subscription
                         await userService.AddOrUpdateSubscriptionAsync(newSubscription);
                         
+                        // Reset usage for free plan
+                        await userService.ResetUsageOnUpgradeAsync(subscription.user_id, "free");
+                        _logger.LogInformation("Reset usage for free plan for user: {userId}", subscription.user_id);
+                        
                         // Log activity
                         await activityLogService.LogActivity(
                             subscription.user_id, 
                             "subscription_expired", 
-                            $"Subscription expired and downgraded to free plan"
+                            $"Subscription expired and downgraded to free plan with usage reset"
                         );
                         
                         _logger.LogInformation("Successfully downgraded expired subscription for user: {userId}", subscription.user_id);

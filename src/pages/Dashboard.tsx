@@ -352,13 +352,14 @@ const Dashboard = () => {
                   
                   <div className="text-center">
                     <div className="text-sm font-medium text-gray-900">
-                      {subscriptionStatus.type === "premium" || subscriptionStatus.type === "recruiter" ? (
+                      {/* Show actual usage limit for all plans */}
+                      {usage.usageLimit > 0 ? (
+                        `${usage.usageCount}/${usage.usageLimit} uses this month`
+                      ) : (
                         <span className="text-green-600 flex items-center justify-center gap-1">
                           <Star className="w-4 h-4" />
                           Unlimited usage
                         </span>
-                      ) : (
-                        `${usage.usageCount}/${usage.usageLimit} uses this month`
                       )}
                     </div>
                     {isBlocked && !feature.comingSoon && (

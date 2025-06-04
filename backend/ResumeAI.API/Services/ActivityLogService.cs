@@ -129,13 +129,38 @@ namespace ResumeAI.API.Services
 
         public async Task ResetUsageLimits(string userId, string plan = "free")
         {
-            var features = new[] { "resume_optimization", "job_optimization", "cover_letter", "interview_questions" };
+            Console.WriteLine($"ActivityLogService.ResetUsageLimits called for user {userId}, plan {plan}");
+            
+            // Include all possible features
+            var features = new[] { 
+                "resume_optimization", 
+                "job_optimization", 
+                "cover_letter", 
+                "interview_questions", 
+                "ats_scan",
+                "resume_customization"
+            };
+            
             foreach (var feature in features)
             {
-                var usage = await _userService.GetFeatureUsageAsync(userId, feature, plan);
-                usage.updated_at = DateTime.UtcNow;
-                await _userService.UpdateUsageTrackingAsync(usage);
+                try {
+                    var usage = await _userService.GetFeatureUsageAsync(userId, feature, plan);
+                    
+                    // Reset the usage count to 0
+                    usage.usage_count = 0;
+                    usage.updated_at = DateTime.UtcNow;
+                    
+                    // Update in database
+                    await _userService.UpdateUsageTrackingAsync(usage);
+                    
+                    Console.WriteLine($"Reset usage for feature {feature} to 0 for user {userId} on plan {plan}");
+                } catch (Exception ex) {
+                    Console.WriteLine($"Error resetting usage for feature {feature}: {ex.Message}");
+                }
             }
+            
+            // Also call the more direct method to ensure all usage is reset
+            await _userService.ResetUsageOnUpgradeAsync(userId, plan);
         }
     }
 }

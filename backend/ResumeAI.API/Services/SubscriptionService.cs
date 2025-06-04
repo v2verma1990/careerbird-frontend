@@ -110,11 +110,13 @@ namespace ResumeAI.API.Services
                 await _activityLogService.LogActivity(userId, "recruiter_subscription_upgraded", $"Recruiter subscription upgraded to {subscriptionType}");
                 Console.WriteLine($"Activity logged for subscription upgrade");
                 
-                // Reset usage limits for premium recruiter users
+                // Reset usage limits for all paid plans
                 if (subscriptionType.ToLower() != "free")
                 {
-                    await _activityLogService.ResetUsageLimits(userId);
-                    Console.WriteLine($"Usage limits reset for premium user");
+                    // Reset usage through both methods to ensure complete reset
+                    await _activityLogService.ResetUsageLimits(userId, subscriptionType);
+                    await _userService.ResetUsageOnUpgradeAsync(userId, subscriptionType);
+                    Console.WriteLine($"Usage limits reset for {subscriptionType} user");
                 }
                 
                 // Verify the subscription was updated by retrieving it again
@@ -346,11 +348,13 @@ namespace ResumeAI.API.Services
                 await _activityLogService.LogActivity(userId, "candidate_subscription_upgraded", $"Candidate subscription upgraded to {subscriptionType}");
                 Console.WriteLine($"Activity logged for subscription upgrade");
                 
-                // Reset usage limits for premium candidate users
+                // Reset usage limits for all paid plans (basic or premium)
                 if (subscriptionType.ToLower() != "free")
                 {
-                    await _activityLogService.ResetUsageLimits(userId);
-                    Console.WriteLine($"Usage limits reset for premium user");
+                    // Reset usage through both methods to ensure complete reset
+                    await _activityLogService.ResetUsageLimits(userId, subscriptionType);
+                    await _userService.ResetUsageOnUpgradeAsync(userId, subscriptionType);
+                    Console.WriteLine($"Usage limits reset for {subscriptionType} user");
                 }
                 
                 // Verify the subscription was updated by retrieving it again

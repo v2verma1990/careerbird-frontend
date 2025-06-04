@@ -520,6 +520,28 @@ namespace ResumeAI.API.Services
                 {
                     Console.WriteLine($"Subscription updated successfully. Response: {responseContent}");
                     
+                    // Check if this is a downgrade to free plan from a previous paid plan
+                    if (subscription.subscription_type.ToLower() == "free")
+                    {
+                        Console.WriteLine("Detected free plan subscription - checking if this is a downgrade");
+                        try {
+                            // Get all previous subscriptions for this user
+                            var previousSubs = await GetAllUserSubscriptionsAsync(subscription.user_id);
+                            var hadPaidPlan = previousSubs.Any(s => 
+                                s.id != subscription.id && 
+                                s.subscription_type.ToLower() != "free" &&
+                                s.is_active);
+                                
+                            if (hadPaidPlan)
+                            {
+                                Console.WriteLine("User had a paid plan before, resetting usage for free plan");
+                                await ResetUsageOnUpgradeAsync(subscription.user_id, "free");
+                            }
+                        } catch (Exception ex) {
+                            Console.WriteLine($"Error checking previous subscriptions: {ex.Message}");
+                        }
+                    }
+                    
                     // Parse the response to get the updated subscription
                     try {
                         var updatedSubscriptions = JsonSerializer.Deserialize<List<Subscription>>(responseContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
@@ -712,13 +734,77 @@ namespace ResumeAI.API.Services
         }
 
         /// <summary>
-        /// Optionally resets usage for all features on plan upgrade (if business logic requires).
+        /// Resets usage for all features on plan upgrade by directly updating Supabase.
         /// </summary>
         public async Task ResetUsageOnUpgradeAsync(string userId, string newPlan)
         {
-            // This is a placeholder. If you want to reset usage on upgrade, implement logic here.
-            // For now, do nothing.
-            await Task.CompletedTask;
+            Console.WriteLine($"Resetting usage for user {userId} on upgrade to {newPlan}");
+            
+            try
+            {
+                // First, ensure we're using the service key for admin access
+                var serviceKey = _supabaseHttpClientService.GetServiceKey();
+                if (!string.IsNullOrEmpty(serviceKey)) {
+                    Console.WriteLine("Using service key for usage reset");
+                    _supabaseHttpClientService.SetServiceKey();
+                } else {
+                    Console.WriteLine("Warning: No service key available for usage reset");
+                }
+                
+                // Direct SQL-like update to reset all usage counts for this user and plan
+                var url = $"{_supabaseHttpClientService.Url}/rest/v1/usage_tracking?user_id=eq.{Uri.EscapeDataString(userId)}&plan=eq.{Uri.EscapeDataString(newPlan)}";
+                Console.WriteLine($"Reset URL: {url}");
+                
+                // Create update payload
+                var updateData = new
+                {
+                    usage_count = 0,
+                    updated_at = DateTime.UtcNow
+                };
+                
+                var json = JsonSerializer.Serialize(updateData, new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                });
+                
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                
+                // Use PATCH to update all matching rows
+                var response = await _supabaseHttpClientService.Client.PatchAsync(url, content);
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"Error resetting usage: {response.StatusCode}");
+                    Console.WriteLine($"Response: {errorContent}");
+                    throw new Exception($"Failed to reset usage: {response.StatusCode} - {errorContent}");
+                }
+                
+                Console.WriteLine($"Successfully reset all usage for user {userId} on plan {newPlan}");
+                
+                // Now create default usage entries for all features if they don't exist
+                var features = new[] { "resume_optimization", "job_optimization", "cover_letter", "interview_questions", "ats_scan" };
+                foreach (var featureType in features)
+                {
+                    try
+                    {
+                        // This will create the entry if it doesn't exist, with usage_count=0
+                        await GetFeatureUsageAsync(userId, featureType, newPlan);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error ensuring feature {featureType} exists: {ex.Message}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in ResetUsageOnUpgradeAsync: {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                }
+            }
         }
         
         // Helper: Get plan-based usage limit from plan_limits table
