@@ -772,7 +772,7 @@ namespace ResumeAI.API.Services
         public async Task<Dictionary<string, (int usageCount, int usageLimit)>> GetAllFeatureUsage(string userId, Subscription? subscription = null)
         {
             var featureKeys = new List<string> {
-                "resume_customization", "resume_optimization", "ats_scan", "resume_benchmarking", "cover_letter", "interview_questions", "salary_insights"
+                "resume_customization", "resume_optimization", "ats_scan", "resume_benchmarking", "cover_letter", "interview_questions", "salary_insights", "resume_builder"
             };
             if (subscription == null)
                 subscription = await GetActiveSubscription(userId);

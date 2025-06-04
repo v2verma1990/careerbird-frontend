@@ -1,7 +1,9 @@
 from fastapi import APIRouter, UploadFile, File, Form
 from typing import Optional
 from services.candidate_service import (
-    analyze_resume_service, optimize_resume_service, customize_resume_service, benchmark_resume_service, ats_scan_service, generate_cover_letter_service, extract_resume_text, salary_insights_service
+    analyze_resume_service, optimize_resume_service, customize_resume_service, benchmark_resume_service, 
+    ats_scan_service, generate_cover_letter_service, extract_resume_text, salary_insights_service,
+    extract_resume_data_service
 )
 from fastapi.responses import JSONResponse
 
@@ -70,5 +72,13 @@ async def generate_cover_letter(job_title: str = Form(...), company: str = Form(
 @router.post("/benchmark")
 async def benchmark(resume: UploadFile = File(...), job_description: str = Form(...), plan: str = Form("free")):
     return await benchmark_resume_service(resume, job_description, plan)
+
+@router.post("/extract_resume_data")
+async def extract_resume_data(resume: UploadFile = File(...), plan: str = Form("free")):
+    """
+    Extract structured data from a resume file.
+    This endpoint parses a resume and returns structured data that can be used in resume templates.
+    """
+    return await extract_resume_data_service(resume, plan)
 
 

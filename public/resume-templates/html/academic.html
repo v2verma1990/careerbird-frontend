@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{name}} - Academic CV</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Bookman Old Style', 'Palatino Linotype', serif;
+    }
+    body {
+      background-color: #f9f9f9;
+      padding: 20px;
+    }
+    .resume-container {
+      max-width: 8.5in;
+      margin: 0 auto;
+      background-color: white;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      padding: 40px;
+    }
+    .header {
+      margin-bottom: 30px;
+    }
+    .header h1 {
+      font-size: 24px;
+      color: #333;
+      margin-bottom: 5px;
+      font-weight: bold;
+      text-align: center;
+    }
+    .header p {
+      font-size: 18px;
+      color: #555;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    .contact-info {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 20px;
+      font-size: 14px;
+      color: #555;
+      text-align: center;
+    }
+    .section {
+      margin-bottom: 30px;
+    }
+    .section-title {
+      font-size: 18px;
+      color: #333;
+      margin-bottom: 15px;
+      font-weight: bold;
+      border-bottom: 1px solid #333;
+      padding-bottom: 5px;
+    }
+    .experience-item, .education-item, .publication-item {
+      margin-bottom: 20px;
+    }
+    .item-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .item-title {
+      font-weight: bold;
+      color: #333;
+      font-size: 16px;
+    }
+    .item-date {
+      color: #555;
+      font-size: 14px;
+    }
+    .item-subtitle {
+      margin-bottom: 8px;
+      color: #555;
+    }
+    .item-description {
+      font-size: 14px;
+      color: #333;
+      line-height: 1.6;
+    }
+    .skills-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .skill-item {
+      font-size: 14px;
+      color: #333;
+      margin-right: 15px;
+      margin-bottom: 5px;
+      display: inline-block;
+    }
+    .skill-item:not(:last-child)::after {
+      content: "•";
+      margin-left: 10px;
+      color: #555;
+    }
+    .publication-citation {
+      font-size: 14px;
+      color: #333;
+      line-height: 1.6;
+      margin-bottom: 10px;
+      padding-left: 20px;
+      text-indent: -20px;
+    }
+    .teaching-item {
+      margin-bottom: 15px;
+    }
+    .teaching-title {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .teaching-details {
+      font-size: 14px;
+      color: #555;
+    }
+    .grants-item {
+      margin-bottom: 15px;
+    }
+    .grants-title {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .grants-details {
+      font-size: 14px;
+      color: #555;
+    }
+    @media print {
+      body {
+        background-color: white;
+        padding: 0;
+      }
+      .resume-container {
+        box-shadow: none;
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="resume-container">
+    <div class="header">
+      <h1>{{name}}, {{#if education.length}}{{education.0.degree}}{{else}}Ph.D.{{/if}}</h1>
+      <p>{{title}}</p>
+      <div class="contact-info">
+        <span>{{email}}</span>
+        <span>{{phone}}</span>
+        <span>{{location}}</span>
+        {{#if linkedin}}<span>{{linkedin}}</span>{{/if}}
+        {{#if website}}<span>{{website}}</span>{{/if}}
+      </div>
+    </div>
+
+    {{#if summary}}
+    <div class="section">
+      <h2 class="section-title">Research Interests</h2>
+      <p class="item-description">{{summary}}</p>
+    </div>
+    {{/if}}
+
+    {{#if education.length}}
+    <div class="section">
+      <h2 class="section-title">Education</h2>
+      {{#each education}}
+      <div class="education-item">
+        <div class="item-header">
+          <span class="item-title">{{this.degree}}</span>
+          <span class="item-date">{{this.startDate}} - {{this.endDate}}</span>
+        </div>
+        <div class="item-subtitle">{{this.institution}}, {{this.location}}</div>
+        {{#if this.description}}
+        <p class="item-description">{{this.description}}</p>
+        {{/if}}
+      </div>
+      {{/each}}
+    </div>
+    {{/if}}
+
+    {{#if experience.length}}
+    <div class="section">
+      <h2 class="section-title">Academic Appointments</h2>
+      {{#each experience}}
+      <div class="experience-item">
+        <div class="item-header">
+          <span class="item-title">{{this.title}}</span>
+          <span class="item-date">{{this.startDate}} - {{this.endDate}}</span>
+        </div>
+        <div class="item-subtitle">{{this.company}}, {{this.location}}</div>
+        <p class="item-description">{{this.description}}</p>
+      </div>
+      {{/each}}
+    </div>
+    {{/if}}
+
+    {{#if projects.length}}
+    <div class="section">
+      <h2 class="section-title">Publications</h2>
+      {{#each projects}}
+      <p class="publication-citation">{{this.name}} ({{this.date}}). {{this.description}}</p>
+      {{/each}}
+    </div>
+    {{/if}}
+
+    {{#if certifications.length}}
+    <div class="section">
+      <h2 class="section-title">Grants and Fellowships</h2>
+      {{#each certifications}}
+      <div class="grants-item">
+        <div class="grants-title">{{this.name}} ({{this.date}})</div>
+        <div class="grants-details">{{this.issuer}}</div>
+      </div>
+      {{/each}}
+    </div>
+    {{/if}}
+
+    {{#if skills.length}}
+    <div class="section">
+      <h2 class="section-title">Research Skills</h2>
+      <div class="skills-list">
+        {{#each skills}}
+        <span class="skill-item">{{this}}</span>
+        {{/each}}
+      </div>
+    </div>
+    {{/if}}
+
+    <div class="section">
+      <h2 class="section-title">Teaching Experience</h2>
+      <div class="teaching-item">
+        <div class="teaching-title">Introduction to Research Methods</div>
+        <div class="teaching-details">Undergraduate course, Department of {{title}}</div>
+      </div>
+      <div class="teaching-item">
+        <div class="teaching-title">Advanced Research Seminar</div>
+        <div class="teaching-details">Graduate course, Department of {{title}}</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">Professional Memberships</h2>
+      <p class="item-description">
+        American Association for the Advancement of Science<br>
+        National Association of {{title}} Professionals
+      </p>
+    </div>
+  </div>
+</body>
+</html>

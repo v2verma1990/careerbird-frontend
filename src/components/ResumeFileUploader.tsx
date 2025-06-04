@@ -1,48 +1,70 @@
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Upload } from "lucide-react";
+import { Upload, FileIcon, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface ResumeFileUploaderProps {
   onFileSelected: (file: File) => void;
   disabled?: boolean;
+  accept?: string;
+  maxSize?: number; // in MB
 }
 
-const ResumeFileUploader = ({ onFileSelected, disabled = false }: ResumeFileUploaderProps) => {
+const ResumeFileUploader = ({ 
+  onFileSelected, 
+  disabled = false,
+  accept = ".pdf,.docx,.doc,.txt",
+  maxSize = 5
+}: ResumeFileUploaderProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const [fileName, setFileName] = useState<string | null>(null);
+  const [fileSize, setFileSize] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     
     // Check file type
-    if (file.type !== "application/pdf") {
+    const fileExtension = file.name.split('.').pop()?.toLowerCase();
+    const acceptedTypes = accept.split(',').map(type => 
+      type.trim().replace('.', '').toLowerCase()
+    );
+    
+    if (fileExtension && !acceptedTypes.includes(fileExtension)) {
       toast({
         variant: "destructive",
         title: "Invalid file type",
-        description: "Please upload a PDF file.",
+        description: `Please upload ${accept.replace(/\./g, '')} files only.`,
       });
       return;
     }
 
-    // Check file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
+    // Check file size
+    if (file.size > maxSize * 1024 * 1024) {
       toast({
         variant: "destructive",
         title: "File too large",
-        description: "Please upload a file smaller than 5MB.",
+        description: `Please upload a file smaller than ${maxSize}MB.`,
       });
       return;
     }
 
     setFileName(file.name);
+    setFileSize((file.size / 1024 / 1024).toFixed(2) + " MB");
     onFileSelected(file);
   };
 
   const triggerFileInput = () => {
     fileInputRef.current?.click();
+  };
+
+  const handleRemoveFile = () => {
+    setFileName(null);
+    setFileSize(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   return (
@@ -51,32 +73,62 @@ const ResumeFileUploader = ({ onFileSelected, disabled = false }: ResumeFileUplo
         type="file"
         ref={fileInputRef}
         onChange={handleFileChange}
-        accept=".pdf"
+        accept={accept}
         className="hidden"
         disabled={disabled}
-        aria-label="Upload resume PDF"
+        aria-label="Upload resume file"
       />
-      <div className="flex flex-col items-center border-2 border-dashed border-gray-300 rounded-lg p-6 cursor-pointer hover:bg-gray-50 transition-colors" onClick={disabled ? undefined : triggerFileInput}>
-        <Upload className="h-12 w-12 text-gray-400 mb-2" />
-        <p className="text-lg font-medium">Click to upload your resume</p>
-        <p className="text-sm text-gray-500">PDF files only (max 5MB)</p>
+      <div 
+        className="border-2 border-dashed rounded-md p-6 text-center cursor-pointer transition-colors border-gray-300 hover:border-primary/50 hover:bg-gray-50" 
+        onClick={disabled ? undefined : triggerFileInput}
+      >
         {fileName ? (
-          <div className="mt-4 bg-blue-50 p-2 rounded-md w-full max-w-md">
-            <span className="text-sm font-medium text-center truncate block">{fileName}</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <FileIcon className="h-8 w-8 text-primary mr-2" />
+              <div className="text-left">
+                <p className="text-sm font-medium">{fileName}</p>
+                {fileSize && <p className="text-xs text-gray-500">{fileSize}</p>}
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleRemoveFile();
+              }}
+              className="text-gray-500 hover:text-red-500"
+              disabled={disabled}
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
-        ) : null}
+        ) : (
+          <div>
+            <Upload className="h-10 w-10 text-gray-400 mx-auto mb-2" />
+            <p className="text-sm font-medium">
+              Click to upload your resume file
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Supported formats: {accept.replace(/\./g, '')} (Max {maxSize}MB)
+            </p>
+          </div>
+        )}
       </div>
-      <div className="mt-4 flex justify-center">
-        <Button 
-          type="button" 
-          onClick={triggerFileInput} 
-          disabled={disabled}
-          variant="outline"
-          className="w-full max-w-xs"
-        >
-          Select Resume PDF
-        </Button>
-      </div>
+      {!fileName && (
+        <div className="mt-4 flex justify-center">
+          <Button 
+            type="button" 
+            onClick={triggerFileInput} 
+            disabled={disabled}
+            variant="outline"
+            className="w-full max-w-xs"
+          >
+            Select Resume File
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

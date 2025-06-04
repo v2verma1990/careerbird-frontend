@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using ResumeAI.API.Services;
+using ResumeAI.API.Models;
 using System.Text;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Builder;
@@ -65,6 +66,13 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+// Register app settings
+var appSettings = new AppSettings
+{
+    PythonApiBaseUrl = builder.Configuration["PythonApi:BaseUrl"] ?? "http://localhost:8000"
+};
+builder.Services.AddSingleton(appSettings);
+
 // Register services
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<SupabaseHttpClientService>();
@@ -75,6 +83,7 @@ builder.Services.AddSingleton<JobsService>();
 builder.Services.AddSingleton<AuthService>();
 builder.Services.AddSingleton<RecruiterSubscriptionService>();
 builder.Services.AddSingleton<CandidateSubscriptionService>();
+builder.Services.AddSingleton<ResumeBuilderService>();
 
 // Add health endpoint
 builder.Services.AddHealthChecks();

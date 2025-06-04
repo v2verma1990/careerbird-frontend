@@ -1,0 +1,32 @@
+{
+  "templates": [
+    {
+      "id": "modern-clean",
+      "name": "Modern Clean",
+      "description": "A clean, modern design with a professional look",
+      "thumbnail": "/resume-templates/thumbnails/modern-clean.png",
+      "category": "professional"
+    },
+    {
+      "id": "minimal",
+      "name": "Minimal",
+      "description": "A minimalist design focusing on content",
+      "thumbnail": "/resume-templates/thumbnails/minimal.png",
+      "category": "minimal"
+    },
+    {
+      "id": "creative",
+      "name": "Creative",
+      "description": "A creative design for design and creative professionals",
+      "thumbnail": "/resume-templates/thumbnails/creative.png",
+      "category": "creative"
+    },
+    {
+      "id": "professional",
+      "name": "Professional",
+      "description": "A traditional professional resume layout",
+      "thumbnail": "/resume-templates/thumbnails/professional.png",
+      "category": "professional"
+    }
+  ]
+}

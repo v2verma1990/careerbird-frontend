@@ -1,0 +1,74 @@
+{
+  "templates": [
+    {
+      "id": "modern-clean",
+      "name": "Modern Clean",
+      "description": "A clean, modern design with a professional look",
+      "thumbnail": "/resume-templates/thumbnails/modern-clean.png",
+      "category": "professional"
+    },
+    {
+      "id": "minimal",
+      "name": "Minimal",
+      "description": "A minimalist design focusing on content",
+      "thumbnail": "/resume-templates/thumbnails/minimal.png",
+      "category": "minimal"
+    },
+    {
+      "id": "creative",
+      "name": "Creative",
+      "description": "A creative design for design and creative professionals",
+      "thumbnail": "/resume-templates/thumbnails/creative.png",
+      "category": "creative"
+    },
+    {
+      "id": "professional",
+      "name": "Professional",
+      "description": "A traditional professional resume layout",
+      "thumbnail": "/resume-templates/thumbnails/professional.png",
+      "category": "professional"
+    },
+    {
+      "id": "executive",
+      "name": "Executive",
+      "description": "An executive-level resume design",
+      "thumbnail": "/resume-templates/thumbnails/executive.png",
+      "category": "professional"
+    },
+    {
+      "id": "tech",
+      "name": "Tech",
+      "description": "A modern design for tech professionals",
+      "thumbnail": "/resume-templates/thumbnails/tech.png",
+      "category": "professional"
+    },
+    {
+      "id": "elegant",
+      "name": "Elegant",
+      "description": "An elegant design with a touch of sophistication",
+      "thumbnail": "/resume-templates/thumbnails/elegant.png",
+      "category": "professional"
+    },
+    {
+      "id": "academic",
+      "name": "Academic",
+      "description": "A design suited for academic and research positions",
+      "thumbnail": "/resume-templates/thumbnails/academic.png",
+      "category": "specialized"
+    },
+    {
+      "id": "entry-level",
+      "name": "Entry Level",
+      "description": "Perfect for recent graduates and entry-level positions",
+      "thumbnail": "/resume-templates/thumbnails/entry-level.png",
+      "category": "simple"
+    },
+    {
+      "id": "chronological",
+      "name": "Chronological",
+      "description": "A traditional chronological resume layout",
+      "thumbnail": "/resume-templates/thumbnails/chronological.png",
+      "category": "simple"
+    }
+  ]
+}

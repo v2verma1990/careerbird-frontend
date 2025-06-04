@@ -339,6 +339,258 @@ export const api = {
     getAllFeatureUsage: (userId: string) =>
       apiCall<any>("GET", `/usage/all/${userId}`)
   },
+  resumeBuilder: {
+    getTemplates: () => apiCall<any>("GET", "/resumebuilder/templates"),
+    buildResume: async (params: { file?: File, resumeData?: string, templateId: string }) => {
+      // Create a new implementation with better error handling
+      try {
+        // Log the parameters
+        console.log("API Client - buildResume called with params:", {
+          hasFile: !!params.file,
+          hasResumeData: !!params.resumeData,
+          templateId: params.templateId
+        });
+        
+        // Validate required parameters
+        if (!params.templateId) {
+          console.error("API Client - Missing required parameter: templateId");
+          return { data: null, error: "Missing required parameter: templateId" };
+        }
+        
+        if (!params.file && !params.resumeData) {
+          console.error("API Client - Missing required parameter: file or resumeData");
+          return { data: null, error: "Missing required parameter: file or resumeData" };
+        }
+        
+        // Get the auth session
+        let session;
+        try {
+          const { data } = await supabase.auth.getSession();
+          session = data.session;
+        } catch (authError) {
+          console.error("API Client - Auth error:", authError);
+          return { 
+            data: null, 
+            error: "Authentication error: " + (authError instanceof Error ? authError.message : String(authError))
+          };
+        }
+        
+        // Prepare headers
+        let headers: Record<string, string> = {
+          // Don't set Content-Type for FormData, browser will set it with boundary
+          // "Content-Type": "multipart/form-data"
+        };
+        
+        if (session?.access_token) {
+          headers["Authorization"] = `Bearer ${session.access_token}`;
+        }
+        
+        // Prepare form data
+        const formData = new FormData();
+        
+        // Add file if provided
+        if (params.file) {
+          formData.append('resumeFile', params.file);
+        }
+        
+        // Add resume data if provided
+        if (params.resumeData) {
+          try {
+            // Parse the JSON to validate it
+            const parsedData = JSON.parse(params.resumeData);
+            
+            // Always convert to PascalCase to ensure consistency
+            console.log("API Client - Original data:", parsedData);
+            
+            // Create a properly formatted object with PascalCase keys
+            const formattedData = {
+              Name: parsedData.Name || parsedData.name || "",
+              Title: parsedData.Title || parsedData.title || "",
+              Email: parsedData.Email || parsedData.email || "",
+              Phone: parsedData.Phone || parsedData.phone || "",
+              Location: parsedData.Location || parsedData.location || "",
+              LinkedIn: parsedData.LinkedIn || parsedData.linkedin || "",
+              Website: parsedData.Website || parsedData.website || "",
+              Summary: parsedData.Summary || parsedData.summary || "",
+              Skills: Array.isArray(parsedData.Skills) ? parsedData.Skills : 
+                     (Array.isArray(parsedData.skills) ? parsedData.skills : []),
+              Experience: Array.isArray(parsedData.Experience) ? parsedData.Experience : 
+                         (Array.isArray(parsedData.experience) ? parsedData.experience.map(exp => ({
+                            Title: exp.Title || exp.title || "",
+                            Company: exp.Company || exp.company || "",
+                            Location: exp.Location || exp.location || "",
+                            StartDate: exp.StartDate || exp.startDate || "",
+                            EndDate: exp.EndDate || exp.endDate || "",
+                            Description: exp.Description || exp.description || ""
+                          })) : []),
+              Education: Array.isArray(parsedData.Education) ? parsedData.Education : 
+                        (Array.isArray(parsedData.education) ? parsedData.education.map(edu => ({
+                           Degree: edu.Degree || edu.degree || "",
+                           Institution: edu.Institution || edu.institution || "",
+                           Location: edu.Location || edu.location || "",
+                           StartDate: edu.StartDate || edu.startDate || "",
+                           EndDate: edu.EndDate || edu.endDate || "",
+                           Description: edu.Description || edu.description || ""
+                         })) : []),
+              Certifications: Array.isArray(parsedData.Certifications) ? parsedData.Certifications : 
+                             (Array.isArray(parsedData.certifications) ? parsedData.certifications.map(cert => ({
+                                Name: cert.Name || cert.name || "",
+                                Issuer: cert.Issuer || cert.issuer || "",
+                                Date: cert.Date || cert.date || ""
+                              })) : []),
+              Projects: Array.isArray(parsedData.Projects) ? parsedData.Projects : 
+                       (Array.isArray(parsedData.projects) ? parsedData.projects.map(proj => ({
+                          Name: proj.Name || proj.name || "",
+                          Description: proj.Description || proj.description || "",
+                          Technologies: proj.Technologies || proj.technologies || ""
+                        })) : [])
+            };
+            
+            console.log("API Client - Formatted data:", formattedData);
+            formData.append('resumeData', JSON.stringify(formattedData));
+          } catch (jsonError) {
+            console.error("API Client - JSON parse error:", jsonError);
+            // Use the original data if parsing fails
+            formData.append('resumeData', params.resumeData);
+          }
+        }
+        
+        // Add template ID
+        formData.append('templateId', params.templateId);
+        
+        // Make the API request
+        try {
+          console.log("API Client - Making request to:", `${API_BASE_URL}/resumebuilder/build`);
+          
+          // Log the FormData contents
+          console.log("API Client - FormData contents:");
+          for (const pair of formData.entries()) {
+            if (typeof pair[1] === 'string') {
+              console.log(`${pair[0]}: ${pair[1].length > 100 ? pair[1].substring(0, 100) + '...' : pair[1]}`);
+            } else {
+              console.log(`${pair[0]}: [${typeof pair[1]}]`);
+            }
+          }
+          
+          // Log the headers
+          console.log("API Client - Request headers:", headers);
+          
+          // For local development, we need to handle self-signed certificates
+          const fetchOptions: RequestInit = {
+            method: 'POST',
+            headers,
+            body: formData,
+            credentials: "include"
+          };
+          
+          // Add a warning about self-signed certificates
+          console.log("API Client - Note: If you're using a self-signed certificate, you may need to accept it in your browser first");
+          
+          const response = await fetch(`${API_BASE_URL}/resumebuilder/build`, fetchOptions);
+          
+          console.log("API Client - Response status:", response.status);
+          console.log("API Client - Response headers:", Object.fromEntries([...response.headers.entries()]));
+          
+          // Always get the response text first for debugging
+          const responseText = await response.text();
+          console.log("API Client - Response body:", responseText.substring(0, 500));
+          
+          // Handle error responses
+          if (!response.ok) {
+            console.error("API Client - Error response:", responseText);
+            return { data: null, error: responseText };
+          }
+          
+          // Parse the response text back to JSON
+          try {
+            const responseData = JSON.parse(responseText);
+            console.log("API Client - Parsed response data:", responseData);
+            
+            // Handle empty data response
+            if (responseData.html && responseData.html.includes("No resume data available")) {
+              console.warn("API Client - Backend returned 'No resume data available' message");
+              return { 
+                data: {
+                  html: responseData.html,
+                  data: {
+                    name: "",
+                    title: "",
+                    email: "",
+                    phone: "",
+                    location: "",
+                    linkedin: "",
+                    website: "",
+                    summary: "",
+                    experience: [],
+                    education: [],
+                    skills: [],
+                    certifications: [],
+                    projects: []
+                  }
+                }, 
+                error: null 
+              };
+            }
+            
+            return { data: responseData, error: null };
+          } catch (parseError) {
+            console.error("API Client - Error parsing response JSON:", parseError);
+            // If we can't parse as JSON, return the raw text
+            return { data: { html: responseText, data: {} }, error: null };
+          }
+        } catch (fetchError) {
+          console.error("API Client - Fetch error:", fetchError);
+          return { 
+            data: null, 
+            error: "Network error: " + (fetchError instanceof Error ? fetchError.message : String(fetchError))
+          };
+        }
+      } catch (error) {
+        // Catch any other errors
+        console.error("API Client - Unexpected error:", error);
+        return { 
+          data: null, 
+          error: "Unexpected error: " + (error instanceof Error ? error.message : String(error))
+        };
+      }
+    },
+    optimizeResume: async (params: { resumeData: string, templateId: string }) => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        let headers: Record<string, string> = {
+          'Content-Type': 'application/json'
+        };
+        if (session?.access_token) {
+          headers["Authorization"] = `Bearer ${session.access_token}`;
+        }
+        
+        const response = await fetch(`${API_BASE_URL}/resumebuilder/optimize`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            resumeData: params.resumeData,
+            templateId: params.templateId
+          }),
+          credentials: "include"
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          return { data: null, error: errorText };
+        }
+        
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const json = await response.json();
+          return { data: json, error: null };
+        }
+        
+        return { data: null, error: 'Unexpected response type' };
+      } catch (error) {
+        return { data: null, error: 'Failed to connect to server' };
+      }
+    }
+  },
   resume: {
     analyze: (params: { resumeText: string, jobDescription: string }) => 
       apiCall<any>("POST", "/resume/analyze", params),

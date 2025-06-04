@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fixed Resume Test</title>
+  <!-- Load Handlebars from a different CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.7.7/handlebars.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background-color: white;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    
+    .controls {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    
+    button {
+      padding: 8px 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    button:hover {
+      background-color: #45a049;
+    }
+    
+    #resume-container {
+      border: 1px solid #ddd;
+      padding: 20px;
+      min-height: 500px;
+    }
+    
+    /* Resume Styles */
+    .resume-container {
+      max-width: 8.5in;
+      margin: 0 auto;
+      background-color: white;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.05);
+      padding: 40px;
+    }
+    .header {
+      margin-bottom: 30px;
+    }
+    .header h1 {
+      font-size: 24px;
+      color: #333;
+      margin-bottom: 5px;
+      font-weight: normal;
+      letter-spacing: 1px;
+    }
+    .header p {
+      font-size: 16px;
+      color: #666;
+      margin-bottom: 15px;
+    }
+    .contact-info {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      font-size: 14px;
+      color: #666;
+    }
+    .section {
+      margin-bottom: 25px;
+    }
+    .section-title {
+      font-size: 16px;
+      color: #333;
+      margin-bottom: 15px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: normal;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 5px;
+    }
+    .experience-item, .education-item {
+      margin-bottom: 20px;
+    }
+    .item-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+    }
+    .item-title {
+      font-weight: bold;
+      color: #333;
+    }
+    .item-date {
+      color: #999;
+      font-size: 14px;
+    }
+    .item-subtitle {
+      margin-bottom: 5px;
+      color: #666;
+    }
+    .item-description {
+      font-size: 14px;
+      color: #666;
+      line-height: 1.5;
+    }
+    .skills-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .skill-item {
+      font-size: 14px;
+      color: #666;
+      margin-right: 15px;
+      margin-bottom: 5px;
+      display: inline-block;
+    }
+    .skill-item:not(:last-child)::after {
+      content: "•";
+      margin-left: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Fixed Resume Template Test</h1>
+    
+    <div class="controls">
+      <button id="generate-btn">Generate Resume</button>
+    </div>
+    
+    <div id="resume-container"></div>
+  </div>
+  
+  <script id="resume-template" type="text/x-handlebars-template">
+    <div class="resume-container">
+      <div class="header">
+        <h1>{{name}}</h1>
+        <p>{{title}}</p>
+        <div class="contact-info">
+          <span>{{email}}</span>
+          <span>{{phone}}</span>
+          <span>{{location}}</span>
+          {{#if linkedin}}<span>{{linkedin}}</span>{{/if}}
+          {{#if website}}<span>{{website}}</span>{{/if}}
+        </div>
+      </div>
+
+      {{#if summary}}
+      <div class="section">
+        <h2 class="section-title">Summary</h2>
+        <p class="item-description">{{summary}}</p>
+      </div>
+      {{/if}}
+
+      {{#if experience.length}}
+      <div class="section">
+        <h2 class="section-title">Experience</h2>
+        {{#each experience}}
+        <div class="experience-item">
+          <div class="item-header">
+            <span class="item-title">{{this.title}}</span>
+            <span class="item-date">{{this.startDate}} - {{this.endDate}}</span>
+          </div>
+          <div class="item-subtitle">{{this.company}}, {{this.location}}</div>
+          <p class="item-description">{{this.description}}</p>
+        </div>
+        {{/each}}
+      </div>
+      {{/if}}
+
+      {{#if education.length}}
+      <div class="section">
+        <h2 class="section-title">Education</h2>
+        {{#each education}}
+        <div class="education-item">
+          <div class="item-header">
+            <span class="item-title">{{this.degree}}</span>
+            <span class="item-date">{{this.startDate}} - {{this.endDate}}</span>
+          </div>
+          <div class="item-subtitle">{{this.institution}}, {{this.location}}</div>
+          {{#if this.description}}
+          <p class="item-description">{{this.description}}</p>
+          {{/if}}
+        </div>
+        {{/each}}
+      </div>
+      {{/if}}
+
+      {{#if skills.length}}
+      <div class="section">
+        <h2 class="section-title">Skills</h2>
+        <div class="skills-list">
+          {{#each skills}}
+          <span class="skill-item">{{this}}</span>
+          {{/each}}
+        </div>
+      </div>
+      {{/if}}
+
+      {{#if certifications.length}}
+      <div class="section">
+        <h2 class="section-title">Certifications</h2>
+        {{#each certifications}}
+        <div class="education-item">
+          <div class="item-header">
+            <span class="item-title">{{this.name}}</span>
+            <span class="item-date">{{this.date}}</span>
+          </div>
+          <div class="item-subtitle">{{this.issuer}}</div>
+        </div>
+        {{/each}}
+      </div>
+      {{/if}}
+
+      {{#if projects.length}}
+      <div class="section">
+        <h2 class="section-title">Projects</h2>
+        {{#each projects}}
+        <div class="experience-item">
+          <div class="item-header">
+            <span class="item-title">{{this.name}}</span>
+            <span class="item-date">{{this.date}}</span>
+          </div>
+          <p class="item-description">{{this.description}}</p>
+        </div>
+        {{/each}}
+      </div>
+      {{/if}}
+    </div>
+  </script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const generateBtn = document.getElementById('generate-btn');
+      const resumeContainer = document.getElementById('resume-container');
+      
+      // Sample resume data
+      const resumeData = {
+        "name": "John Doe",
+        "title": "Senior Software Engineer",
+        "email": "john.doe@example.com",
+        "phone": "(123) 456-7890",
+        "location": "San Francisco, CA",
+        "linkedin": "linkedin.com/in/johndoe",
+        "website": "johndoe.com",
+        "summary": "Experienced software engineer with over 8 years of expertise in full-stack development, specializing in React, Node.js, and cloud technologies. Proven track record of delivering high-quality, scalable applications for enterprise clients.",
+        "experience": [
+          {
+            "title": "Senior Software Engineer",
+            "company": "Tech Innovations Inc.",
+            "location": "San Francisco, CA",
+            "startDate": "01/2020",
+            "endDate": "Present",
+            "description": "Lead developer for the company's flagship product, managing a team of 5 engineers. Implemented microservices architecture that improved system reliability by 35%. Reduced API response times by 40% through optimization of database queries and caching strategies."
+          },
+          {
+            "title": "Software Engineer",
+            "company": "WebSolutions LLC",
+            "location": "San Jose, CA",
+            "startDate": "03/2017",
+            "endDate": "12/2019",
+            "description": "Developed and maintained multiple client-facing web applications using React and Node.js. Implemented CI/CD pipelines that reduced deployment time by 60%. Collaborated with UX designers to improve user experience, resulting in a 25% increase in user engagement."
+          }
+        ],
+        "education": [
+          {
+            "degree": "Master of Science in Computer Science",
+            "institution": "Stanford University",
+            "location": "Stanford, CA",
+            "startDate": "09/2013",
+            "endDate": "05/2015",
+            "description": "Specialized in Artificial Intelligence and Machine Learning. GPA: 3.8/4.0"
+          }
+        ],
+        "skills": [
+          "JavaScript",
+          "TypeScript",
+          "React",
+          "Node.js",
+          "Express",
+          "MongoDB",
+          "PostgreSQL",
+          "AWS",
+          "Docker",
+          "Kubernetes"
+        ],
+        "certifications": [
+          {
+            "name": "AWS Certified Solutions Architect",
+            "issuer": "Amazon Web Services",
+            "date": "04/2022"
+          }
+        ],
+        "projects": [
+          {
+            "name": "E-commerce Platform",
+            "date": "2019",
+            "description": "Developed a full-stack e-commerce platform using React, Node.js, and MongoDB. Implemented payment processing, inventory management, and user authentication."
+          }
+        ]
+      };
+      
+      generateBtn.addEventListener('click', function() {
+        try {
+          // Get the template from the script tag
+          const source = document.getElementById('resume-template').innerHTML;
+          
+          // Compile the template with Handlebars
+          const template = Handlebars.compile(source);
+          
+          // Generate the resume HTML
+          const resumeHtml = template(resumeData);
+          
+          // Display the resume in the container
+          resumeContainer.innerHTML = resumeHtml;
+          
+          console.log('Resume generated successfully');
+        } catch (error) {
+          console.error('Error generating resume:', error);
+          alert(`Error generating resume: ${error.message}`);
+        }
+      });
+    });
+  </script>
+</body>
+</html>

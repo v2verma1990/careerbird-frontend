@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{name}} - Resume</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Montserrat', 'Arial', sans-serif;
+    }
+    body {
+      background-color: #f0f0f0;
+      padding: 20px;
+    }
+    .resume-container {
+      max-width: 8.5in;
+      margin: 0 auto;
+      background-color: white;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      padding: 0;
+      display: flex;
+    }
+    .sidebar {
+      width: 30%;
+      background-color: #2c3e50;
+      color: white;
+      padding: 40px 20px;
+    }
+    .main-content {
+      width: 70%;
+      padding: 40px;
+    }
+    .profile-img {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background-color: #3498db;
+      margin: 0 auto 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      color: white;
+    }
+    .sidebar h1 {
+      font-size: 24px;
+      text-align: center;
+      margin-bottom: 5px;
+      font-weight: 600;
+    }
+    .sidebar p.title {
+      font-size: 16px;
+      color: #3498db;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .contact-info {
+      margin-bottom: 30px;
+    }
+    .contact-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+    .contact-icon {
+      width: 20px;
+      margin-right: 10px;
+      text-align: center;
+    }
+    .skills-list {
+      margin-top: 10px;
+    }
+    .skill-item {
+      background-color: #3498db;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 15px;
+      display: inline-block;
+      margin: 0 5px 8px 0;
+      font-size: 12px;
+    }
+    .section {
+      margin-bottom: 30px;
+    }
+    .section-title {
+      font-size: 18px;
+      color: #2c3e50;
+      margin-bottom: 15px;
+      position: relative;
+      padding-bottom: 8px;
+    }
+    .section-title::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 50px;
+      height: 3px;
+      background-color: #3498db;
+    }
+    .experience-item, .education-item {
+      margin-bottom: 25px;
+    }
+    .item-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+    }
+    .item-title {
+      font-weight: bold;
+      color: #2c3e50;
+      font-size: 16px;
+    }
+    .item-date {
+      color: #3498db;
+      font-size: 14px;
+    }
+    .item-subtitle {
+      margin-bottom: 8px;
+      color: #7f8c8d;
+      font-style: italic;
+    }
+    .item-description {
+      font-size: 14px;
+      color: #34495e;
+      line-height: 1.6;
+    }
+    .sidebar-title {
+      font-size: 18px;
+      margin-bottom: 15px;
+      position: relative;
+      padding-bottom: 8px;
+    }
+    .sidebar-title::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 30px;
+      height: 2px;
+      background-color: #3498db;
+    }
+    @media print {
+      body {
+        background-color: white;
+        padding: 0;
+      }
+      .resume-container {
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="resume-container">
+    <div class="sidebar">
+      <div class="profile-img">
+        {{name.[0]}}
+      </div>
+      <h1>{{name}}</h1>
+      <p class="title">{{title}}</p>
+      
+      <div class="contact-info">
+        <h3 class="sidebar-title">Contact</h3>
+        <div class="contact-item">
+          <span class="contact-icon">✉</span>
+          <span>{{email}}</span>
+        </div>
+        <div class="contact-item">
+          <span class="contact-icon">☎</span>
+          <span>{{phone}}</span>
+        </div>
+        <div class="contact-item">
+          <span class="contact-icon">📍</span>
+          <span>{{location}}</span>
+        </div>
+        {{#if linkedin}}
+        <div class="contact-item">
+          <span class="contact-icon">🔗</span>
+          <span>{{linkedin}}</span>
+        </div>
+        {{/if}}
+        {{#if website}}
+        <div class="contact-item">
+          <span class="contact-icon">🌐</span>
+          <span>{{website}}</span>
+        </div>
+        {{/if}}
+      </div>
+      
+      {{#if skills.length}}
+      <div>
+        <h3 class="sidebar-title">Skills</h3>
+        <div class="skills-list">
+          {{#each skills}}
+          <span class="skill-item">{{this}}</span>
+          {{/each}}
+        </div>
+      </div>
+      {{/if}}
+    </div>
+    
+    <div class="main-content">
+      {{#if summary}}
+      <div class="section">
+        <h2 class="section-title">About Me</h2>
+        <p class="item-description">{{summary}}</p>
+      </div>
+      {{/if}}
+      
+      {{#if experience.length}}
+      <div class="section">
+        <h2 class="section-title">Experience</h2>
+        {{#each experience}}
+        <div class="experience-item">
+          <div class="item-header">
+            <span class="item-title">{{this.title}}</span>
+            <span class="item-date">{{this.startDate}} - {{this.endDate}}</span>
+          </div>
+          <div class="item-subtitle">{{this.company}}, {{this.location}}</div>
+          <p class="item-description">{{this.description}}</p>
+        </div>
+        {{/each}}
+      </div>
+      {{/if}}
+      
+      {{#if education.length}}
+      <div class="section">
+        <h2 class="section-title">Education</h2>
+        {{#each education}}
+        <div class="education-item">
+          <div class="item-header">
+            <span class="item-title">{{this.degree}}</span>
+            <span class="item-date">{{this.startDate}} - {{this.endDate}}</span>
+          </div>
+          <div class="item-subtitle">{{this.institution}}, {{this.location}}</div>
+          {{#if this.description}}
+          <p class="item-description">{{this.description}}</p>
+          {{/if}}
+        </div>
+        {{/each}}
+      </div>
+      {{/if}}
+      
+      {{#if certifications.length}}
+      <div class="section">
+        <h2 class="section-title">Certifications</h2>
+        {{#each certifications}}
+        <div class="education-item">
+          <div class="item-header">
+            <span class="item-title">{{this.name}}</span>
+            <span class="item-date">{{this.date}}</span>
+          </div>
+          <div class="item-subtitle">{{this.issuer}}</div>
+        </div>
+        {{/each}}
+      </div>
+      {{/if}}
+      
+      {{#if projects.length}}
+      <div class="section">
+        <h2 class="section-title">Projects</h2>
+        {{#each projects}}
+        <div class="experience-item">
+          <div class="item-header">
+            <span class="item-title">{{this.name}}</span>
+            <span class="item-date">{{this.date}}</span>
+          </div>
+          <p class="item-description">{{this.description}}</p>
+        </div>
+        {{/each}}
+      </div>
+      {{/if}}
+    </div>
+  </div>
+</body>
+</html>

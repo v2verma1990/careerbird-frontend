@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Resume</title>
+  <script src="https://cdn.jsdelivr.net/npm/handlebars@latest/dist/handlebars.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background-color: white;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    
+    .controls {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    
+    select {
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+    }
+    
+    button {
+      padding: 8px 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    button:hover {
+      background-color: #45a049;
+    }
+    
+    #resume-preview {
+      border: 1px solid #ddd;
+      padding: 20px;
+      min-height: 500px;
+    }
+    
+    iframe {
+      width: 100%;
+      height: 800px;
+      border: 1px solid #ddd;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Test Resume Template</h1>
+    
+    <div class="controls">
+      <label for="template-select">Select Template:</label>
+      <select id="template-select">
+        <option value="minimal">Minimal</option>
+        <option value="modern-clean">Modern Clean</option>
+        <option value="creative">Creative</option>
+        <option value="professional">Professional</option>
+        <option value="executive">Executive</option>
+        <option value="tech">Tech</option>
+        <option value="elegant">Elegant</option>
+        <option value="academic">Academic</option>
+        <option value="entry-level">Entry Level</option>
+        <option value="chronological">Chronological</option>
+      </select>
+      
+      <button id="generate-btn">Generate Resume</button>
+    </div>
+    
+    <iframe id="resume-preview"></iframe>
+  </div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const templateSelect = document.getElementById('template-select');
+      const generateBtn = document.getElementById('generate-btn');
+      const resumePreview = document.getElementById('resume-preview');
+      
+      // Load sample data
+      let resumeData = null;
+      
+      // Use the full path to the sample data file
+      fetch('/resume-templates/sample-data.json')
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          resumeData = data;
+          console.log('Sample data loaded:', resumeData);
+          // Enable the generate button once data is loaded
+          generateBtn.disabled = false;
+        })
+        .catch(error => {
+          console.error('Error loading sample data:', error);
+          alert('Error loading sample data: ' + error.message);
+        });
+        
+      // Disable the generate button until data is loaded
+      generateBtn.disabled = true;
+      
+      generateBtn.addEventListener('click', function() {
+        if (!resumeData) {
+          alert('Sample data not loaded yet. Please try again.');
+          return;
+        }
+        
+        const selectedTemplate = templateSelect.value;
+        
+        // Load the template HTML with full path
+        fetch(`/resume-templates/html/${selectedTemplate}.html`)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.text();
+          })
+          .then(templateHtml => {
+            // Compile the template with Handlebars
+            const template = Handlebars.compile(templateHtml);
+            
+            // Generate the resume HTML
+            const resumeHtml = template(resumeData);
+            
+            // Display the resume in the iframe
+            const iframe = resumePreview;
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            iframeDoc.open();
+            iframeDoc.write(resumeHtml);
+            iframeDoc.close();
+          })
+          .catch(error => {
+            console.error('Error loading template:', error);
+            alert(`Error loading template: ${error.message}`);
+          });
+      });
+    });
+  </script>
+</body>
+</html>

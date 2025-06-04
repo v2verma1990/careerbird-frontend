@@ -10,4 +10,5 @@ pdfplumber
 dotenv
 openai
 tiktoken
-traceback
+jsonschema
+json-validator
