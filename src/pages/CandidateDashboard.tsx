@@ -92,8 +92,8 @@ const CandidateDashboard = () => {
     try {
       setLoading(true);
       
-      // Fetch all feature usage data
-      const usageResponse = await api.get(`/usage/all/${user.id}`);
+      // Fetch all feature usage data using the correct API method
+      const usageResponse = await api.usage.getAllFeatureUsage(user.id);
       if (usageResponse.data) {
         const usageData = usageResponse.data;
         setStats({
@@ -108,7 +108,7 @@ const CandidateDashboard = () => {
       }
 
       // Fetch user activities
-      const activitiesResponse = await api.get(`/usage/${user.id}`);
+      const activitiesResponse = await api.usage.getFeatureUsage(user.id, 'activity');
       if (activitiesResponse.data) {
         setActivities(activitiesResponse.data.slice(0, 5)); // Show last 5 activities
       }
