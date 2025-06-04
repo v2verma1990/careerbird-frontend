@@ -134,7 +134,7 @@ const ReportIssue = () => {
                     <Label htmlFor="steps">Steps to Reproduce</Label>
                     <Textarea
                       id="steps"
-                      placeholder="1. Go to...&#10;2. Click on...&#10;3. See error..."
+                      placeholder={"1. Go to...\n2. Click on...\n3. See error..."}
                       value={formData.steps}
                       onChange={(e) => handleInputChange('steps', e.target.value)}
                       className="min-h-[80px]"
@@ -198,19 +198,19 @@ const ReportIssue = () => {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="font-medium">Critical:</span>
-                    <span className="text-green-600">< 4 hours</span>
+                    <span className="text-green-600">{"< 4 hours"}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="font-medium">High:</span>
-                    <span className="text-yellow-600">< 1 day</span>
+                    <span className="text-yellow-600">{"< 1 day"}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="font-medium">Medium:</span>
-                    <span className="text-blue-600">< 3 days</span>
+                    <span className="text-blue-600">{"< 3 days"}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="font-medium">Low:</span>
-                    <span className="text-gray-600">< 1 week</span>
+                    <span className="text-gray-600">{"< 1 week"}</span>
                   </div>
                 </div>
               </CardContent>
