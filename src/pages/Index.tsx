@@ -1,16 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, FileText, Star, Zap, Users, Download, Eye, Target, Brain, BarChart3, MessageSquare, CheckCircle, UserCheck, TrendingUp, FileSearch, Award, Briefcase, Facebook, Twitter, Linkedin, Instagram, Youtube, Phone, Mail, MapPin, Clock, Sparkles, Rocket, Bot, Search, Shield, ChevronDown } from "lucide-react";
+import { ArrowRight, FileText, Star, Zap, Users, Download, Eye, Target, Brain, BarChart3, MessageSquare, CheckCircle, UserCheck, TrendingUp, FileSearch, Award, Briefcase, Facebook, Twitter, Linkedin, Instagram, Youtube, Phone, Mail, MapPin, Clock, Sparkles, Rocket, Bot, Search, Shield } from "lucide-react";
 import { useAuth } from "@/contexts/auth/AuthContext";
 import { useEffect, useState } from "react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 const Index = () => {
   const { user, userType, subscriptionStatus, restoringSession } = useAuth();
@@ -99,124 +91,6 @@ const Index = () => {
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      {/* Services Navigation */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-center items-center py-3">
-            <nav className="flex items-center space-x-8">
-              {/* Services Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="flex items-center text-gray-600 hover:text-blue-600 text-sm font-medium transition-colors">
-                    Services
-                    <ChevronDown className="ml-1 h-4 w-4" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-80 bg-white shadow-lg border border-gray-200" align="center">
-                  <DropdownMenuLabel className="text-gray-900 font-semibold">For Job Seekers</DropdownMenuLabel>
-                  <DropdownMenuItem asChild>
-                    <Link to="/services/resume-builder" className="flex items-center p-3 hover:bg-blue-50 transition-colors">
-                      <FileText className="w-5 h-5 mr-3 text-blue-600" />
-                      <div>
-                        <div className="font-medium">Resume Builder</div>
-                        <div className="text-sm text-gray-500">Create professional resumes</div>
-                      </div>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/resume-optimizer" className="flex items-center p-3 hover:bg-blue-50 transition-colors">
-                      <Zap className="w-5 h-5 mr-3 text-purple-600" />
-                      <div>
-                        <div className="font-medium">Resume Optimization</div>
-                        <div className="text-sm text-gray-500">AI-powered resume enhancement</div>
-                      </div>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/resume-customizer" className="flex items-center p-3 hover:bg-blue-50 transition-colors">
-                      <Target className="w-5 h-5 mr-3 text-green-600" />
-                      <div>
-                        <div className="font-medium">Resume Customizer</div>
-                        <div className="text-sm text-gray-500">Tailor resumes for specific jobs</div>
-                      </div>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/services/ats-optimization" className="flex items-center p-3 hover:bg-blue-50 transition-colors">
-                      <Search className="w-5 h-5 mr-3 text-orange-600" />
-                      <div>
-                        <div className="font-medium">ATS Optimization</div>
-                        <div className="text-sm text-gray-500">Beat applicant tracking systems</div>
-                      </div>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/services/cover-letters" className="flex items-center p-3 hover:bg-blue-50 transition-colors">
-                      <MessageSquare className="w-5 h-5 mr-3 text-pink-600" />
-                      <div>
-                        <div className="font-medium">Cover Letters</div>
-                        <div className="text-sm text-gray-500">Generate compelling cover letters</div>
-                      </div>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/services/interview-prep" className="flex items-center p-3 hover:bg-blue-50 transition-colors">
-                      <Brain className="w-5 h-5 mr-3 text-indigo-600" />
-                      <div>
-                        <div className="font-medium">Interview Prep</div>
-                        <div className="text-sm text-gray-500">AI-powered interview practice</div>
-                      </div>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/services/career-insights" className="flex items-center p-3 hover:bg-blue-50 transition-colors">
-                      <TrendingUp className="w-5 h-5 mr-3 text-teal-600" />
-                      <div>
-                        <div className="font-medium">Career Insights</div>
-                        <div className="text-sm text-gray-500">Market trends and salary data</div>
-                      </div>
-                    </Link>
-                  </DropdownMenuItem>
-                  
-                  <DropdownMenuSeparator />
-                  
-                  <DropdownMenuLabel className="text-gray-900 font-semibold">For Recruiters</DropdownMenuLabel>
-                  <DropdownMenuItem asChild>
-                    <Link to="/services/recruiting-tools" className="flex items-center p-3 hover:bg-purple-50 transition-colors">
-                      <Users className="w-5 h-5 mr-3 text-purple-600" />
-                      <div>
-                        <div className="font-medium">Recruiting Tools</div>
-                        <div className="text-sm text-gray-500">AI-powered candidate matching</div>
-                      </div>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/best-candidates" className="flex items-center p-3 hover:bg-purple-50 transition-colors">
-                      <Award className="w-5 h-5 mr-3 text-yellow-600" />
-                      <div>
-                        <div className="font-medium">Candidate Analysis</div>
-                        <div className="text-sm text-gray-500">Find the best candidates</div>
-                      </div>
-                    </Link>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              {/* Individual Service Links */}
-              <Link to="/salary-insights" className="text-gray-600 hover:text-blue-600 text-sm font-medium transition-colors">
-                Salary Insights
-              </Link>
-              <button 
-                onClick={scrollToUpcomingFeatures}
-                className="text-gray-600 hover:text-blue-600 text-sm font-medium transition-colors"
-              >
-                New Features
-              </button>
-            </nav>
-          </div>
-        </div>
-      </div>
-
       {/* Hero Section */}
       <div className="relative pt-24 pb-32 px-4 sm:px-6 lg:px-8 overflow-hidden">
         {/* Background decorations */}
