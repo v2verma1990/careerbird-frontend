@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 // Base URL for API calls
@@ -104,6 +103,7 @@ async function apiCall<T>(
 // Create API client with methods for different endpoints
 export const api = {
   auth: {
+    // ... keep existing code (auth methods)
     getCurrentUser: () => {
       const storedSession = localStorage.getItem("supabase-auth");
       if (!storedSession) return null;
@@ -271,6 +271,7 @@ export const api = {
     }
   },
   subscription: {
+    // ... keep existing code (subscription methods)
     getUserSubscription: () => {
       console.log("Fetching current user subscription");
       return apiCall<any>("GET", `/subscription/current`)
@@ -309,6 +310,7 @@ export const api = {
     }
   },
   usage: {
+    // ... keep existing code (usage methods)
     incrementUsage: (userId: string, featureType: string) => {
       if (!userId) {
         console.error("No user ID available for usage tracking");
@@ -342,7 +344,7 @@ export const api = {
           headers["Authorization"] = `Bearer ${session.access_token}`;
         }
         
-        const response = await fetch(`${API_BASE_URL}/resumebuilder/extract`, {
+        const response = await fetch(`${API_BASE_URL}/resumebuilder/extract-data`, {
           method: 'POST',
           headers,
           body: formData,
