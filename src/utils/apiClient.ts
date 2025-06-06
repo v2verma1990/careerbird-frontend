@@ -4,6 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 // Base URL for API calls
 const API_BASE_URL = "https://localhost:5001/api"; // Local development URL
 
+// Check if backend is running
+export const IS_BACKEND_RUNNING = false; // Set to false for demo mode
+
 // Helper function for API calls
 async function apiCall<T>(
   method: string,
@@ -433,8 +436,8 @@ export const api = {
   coverLetters: {
     generateCoverLetter: (jobTitle: string, company: string, jobDescription: string) =>
       apiCall<any>("POST", "/cover-letters/generate", { jobTitle, company, jobDescription }),
-    generate: (jobTitle: string, company: string, jobDescription: string) =>
-      apiCall<any>("POST", "/cover-letters/generate", { jobTitle, company, jobDescription })
+    generate: (params: { jobTitle: string, company: string, jobDescription: string }) =>
+      apiCall<any>("POST", "/cover-letters/generate", params)
   },
   fileUtils: {
     extractTextFromFile: async (file: File): Promise<string> => {
