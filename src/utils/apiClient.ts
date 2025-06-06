@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 // Base URL for API calls
@@ -416,8 +417,41 @@ export const api = {
       apiCall<any>("POST", "/resume/ats-scan", { file, plan }),
     benchmark: (file: File, plan?: string) =>
       apiCall<any>("POST", "/resume/benchmark", { file, plan }),
-    salaryInsights: (file: File, plan?: string) =>
-      apiCall<any>("POST", "/resume/salary-insights", { file, plan })
+    salaryInsights: async (formData: FormData, plan?: string) => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        const headers: Record<string, string> = {};
+        if (session?.access_token) {
+          headers["Authorization"] = `Bearer ${session.access_token}`;
+        }
+        
+        if (plan) {
+          formData.append('plan', plan);
+        }
+        
+        const response = await fetch(`${API_BASE_URL}/resume/salary-insights`, {
+          method: 'POST',
+          headers,
+          body: formData,
+          credentials: "include"
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          return { data: null, error: errorText };
+        }
+        
+        const data = await response.json();
+        return { data, error: null };
+      } catch (error) {
+        console.error("Salary insights error:", error);
+        return { 
+          data: null, 
+          error: error instanceof Error ? error.message : "Failed to get salary insights" 
+        };
+      }
+    }
   },
   jobs: {
     searchJobs: (query: string, location?: string, company?: string) =>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -87,23 +86,17 @@ const SalaryInsights = () => {
     }
     try {
       setIsLoading(true);
-      const payload: {
-        jobTitle: string;
-        location: string;
-        industry: string;
-        yearsExperience: string | number;
-        educationLevel?: string;
-        resume?: File;
-      } = {
-        jobTitle,
-        location,
-        industry,
-        yearsExperience,
-      };
-      if (educationLevel) payload.educationLevel = educationLevel;
-      if (resumeFile) payload.resume = resumeFile;
+      
+      // Create form data for the API call
+      const formData = new FormData();
+      formData.append('jobTitle', jobTitle);
+      formData.append('location', location);
+      formData.append('industry', industry);
+      formData.append('yearsExperience', yearsExperience.toString());
+      if (educationLevel) formData.append('educationLevel', educationLevel);
+      if (resumeFile) formData.append('resume', resumeFile);
 
-      const { data, error } = await api.resume.salaryInsights(payload);
+      const { data, error } = await api.resume.salaryInsights(formData, subscriptionStatus?.type);
       if (error) throw new Error(error);
 
       if (data) {
