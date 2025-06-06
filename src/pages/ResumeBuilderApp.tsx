@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Download, Eye, Plus, Trash2, Upload } from "lucide-react";
+import { Loader2, Download, Eye, Plus, Trash2, Upload, FileText } from "lucide-react";
 import api from "@/utils/apiClient";
 
 interface Template {
@@ -18,6 +17,7 @@ interface Template {
   description: string;
   thumbnail: string;
   category: string;
+  color: string;
 }
 
 interface ExperienceItem {
@@ -86,6 +86,7 @@ const ResumeBuilderApp = () => {
     projects: []
   });
   const [loading, setLoading] = useState(false);
+  const [extracting, setExtracting] = useState(false);
   const [templatesLoading, setTemplatesLoading] = useState(true);
   const [previewHtml, setPreviewHtml] = useState<string>("");
   const [showPreview, setShowPreview] = useState(false);
@@ -101,88 +102,113 @@ const ResumeBuilderApp = () => {
       setTemplatesLoading(true);
       const result = await api.resumeBuilder.getTemplates();
       if (result.error) {
-        // Use fallback templates if API fails
-        setTemplates(fallbackTemplates);
+        setTemplates(beautifulTemplates);
       } else {
-        setTemplates(result.data || fallbackTemplates);
+        setTemplates([...beautifulTemplates, ...(result.data || [])]);
       }
     } catch (error) {
-      setTemplates(fallbackTemplates);
+      setTemplates(beautifulTemplates);
     } finally {
       setTemplatesLoading(false);
     }
   };
 
-  const fallbackTemplates: Template[] = [
+  const beautifulTemplates: Template[] = [
     {
-      id: "modern-clean",
-      name: "Modern Clean",
-      description: "A clean, modern design with a professional look",
-      thumbnail: "/resume-templates/thumbnails/modern-clean.png",
-      category: "professional"
+      id: "modern-executive",
+      name: "Modern Executive",
+      description: "Clean, professional design perfect for executives and senior roles",
+      thumbnail: "/resume-templates/thumbnails/modern-executive.png",
+      category: "professional",
+      color: "#1e3a8a"
     },
     {
-      id: "minimal",
-      name: "Minimal",
-      description: "A minimalist design focusing on content",
-      thumbnail: "/resume-templates/thumbnails/minimal.png",
-      category: "minimal"
+      id: "creative-designer",
+      name: "Creative Designer",
+      description: "Bold, creative layout ideal for designers and creative professionals",
+      thumbnail: "/resume-templates/thumbnails/creative-designer.png",
+      category: "creative",
+      color: "#7c3aed"
     },
     {
-      id: "creative",
-      name: "Creative",
-      description: "A creative design for design and creative professionals",
-      thumbnail: "/resume-templates/thumbnails/creative.png",
-      category: "creative"
+      id: "tech-minimalist",
+      name: "Tech Minimalist",
+      description: "Clean, minimal design focusing on skills and experience",
+      thumbnail: "/resume-templates/thumbnails/tech-minimalist.png",
+      category: "tech",
+      color: "#059669"
     },
     {
-      id: "professional",
-      name: "Professional",
-      description: "A traditional professional resume layout",
-      thumbnail: "/resume-templates/thumbnails/professional.png",
-      category: "professional"
+      id: "startup-founder",
+      name: "Startup Founder",
+      description: "Dynamic layout for entrepreneurs and startup professionals",
+      thumbnail: "/resume-templates/thumbnails/startup-founder.png",
+      category: "professional",
+      color: "#dc2626"
     },
     {
-      id: "executive",
-      name: "Executive",
-      description: "An executive-level resume design",
-      thumbnail: "/resume-templates/thumbnails/executive.png",
-      category: "professional"
+      id: "academic-scholar",
+      name: "Academic Scholar",
+      description: "Traditional academic format for researchers and professors",
+      thumbnail: "/resume-templates/thumbnails/academic-scholar.png",
+      category: "academic",
+      color: "#1f2937"
     },
     {
-      id: "tech",
-      name: "Tech",
-      description: "A modern design for tech professionals",
-      thumbnail: "/resume-templates/thumbnails/tech.png",
-      category: "professional"
+      id: "marketing-pro",
+      name: "Marketing Pro",
+      description: "Vibrant design perfect for marketing and sales professionals",
+      thumbnail: "/resume-templates/thumbnails/marketing-pro.png",
+      category: "creative",
+      color: "#ea580c"
     },
     {
-      id: "elegant",
-      name: "Elegant",
-      description: "An elegant design with a touch of sophistication",
-      thumbnail: "/resume-templates/thumbnails/elegant.png",
-      category: "professional"
+      id: "finance-expert",
+      name: "Finance Expert",
+      description: "Conservative, trustworthy design for finance professionals",
+      thumbnail: "/resume-templates/thumbnails/finance-expert.png",
+      category: "professional",
+      color: "#0f172a"
     },
     {
-      id: "academic",
-      name: "Academic",
-      description: "A design suited for academic and research positions",
-      thumbnail: "/resume-templates/thumbnails/academic.png",
-      category: "specialized"
+      id: "healthcare-pro",
+      name: "Healthcare Professional",
+      description: "Clean, medical-focused design for healthcare workers",
+      thumbnail: "/resume-templates/thumbnails/healthcare-pro.png",
+      category: "specialized",
+      color: "#0369a1"
     },
     {
-      id: "entry-level",
-      name: "Entry Level",
-      description: "Perfect for recent graduates and entry-level positions",
-      thumbnail: "/resume-templates/thumbnails/entry-level.png",
-      category: "simple"
+      id: "entry-graduate",
+      name: "Fresh Graduate",
+      description: "Perfect for new graduates and entry-level professionals",
+      thumbnail: "/resume-templates/thumbnails/entry-graduate.png",
+      category: "entry-level",
+      color: "#16a34a"
     },
     {
-      id: "chronological",
-      name: "Chronological",
-      description: "A traditional chronological resume layout",
-      thumbnail: "/resume-templates/thumbnails/chronological.png",
-      category: "simple"
+      id: "consultant-elite",
+      name: "Elite Consultant",
+      description: "Premium design for consultants and advisory professionals",
+      thumbnail: "/resume-templates/thumbnails/consultant-elite.png",
+      category: "professional",
+      color: "#7c2d12"
+    },
+    {
+      id: "data-scientist",
+      name: "Data Scientist",
+      description: "Modern layout highlighting technical skills and projects",
+      thumbnail: "/resume-templates/thumbnails/data-scientist.png",
+      category: "tech",
+      color: "#4338ca"
+    },
+    {
+      id: "product-manager",
+      name: "Product Manager",
+      description: "Strategic design for product managers and project leads",
+      thumbnail: "/resume-templates/thumbnails/product-manager.png",
+      category: "professional",
+      color: "#0891b2"
     }
   ];
 
@@ -329,7 +355,7 @@ const ResumeBuilderApp = () => {
     if (!file) return;
 
     try {
-      setLoading(true);
+      setExtracting(true);
       const result = await api.resumeBuilder.extractResumeData(file);
       
       if (result.error) {
@@ -342,7 +368,21 @@ const ResumeBuilderApp = () => {
       }
 
       if (result.data) {
-        setResumeData(result.data);
+        setResumeData({
+          name: result.data.name || "",
+          title: result.data.title || "",
+          email: result.data.email || "",
+          phone: result.data.phone || "",
+          location: result.data.location || "",
+          linkedin: result.data.linkedin || "",
+          website: result.data.website || "",
+          summary: result.data.summary || "",
+          skills: result.data.skills || [],
+          experience: result.data.experience || [],
+          education: result.data.education || [],
+          certifications: result.data.certifications || [],
+          projects: result.data.projects || []
+        });
         toast({
           title: "Success",
           description: "Resume data extracted successfully!"
@@ -355,7 +395,7 @@ const ResumeBuilderApp = () => {
         variant: "destructive"
       });
     } finally {
-      setLoading(false);
+      setExtracting(false);
     }
   };
 
@@ -426,6 +466,7 @@ const ResumeBuilderApp = () => {
             <h1 className="text-3xl font-bold">Resume Preview</h1>
             <div className="flex gap-4">
               <Button variant="outline" onClick={() => setShowPreview(false)}>
+                <FileText className="w-4 h-4 mr-2" />
                 Back to Editor
               </Button>
               <Button onClick={downloadResume}>
@@ -450,8 +491,8 @@ const ResumeBuilderApp = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-4">Resume Builder</h1>
-          <p className="text-xl text-gray-600">Create a professional resume with our easy-to-use builder</p>
+          <h1 className="text-4xl font-bold mb-4">Professional Resume Builder</h1>
+          <p className="text-xl text-gray-600">Create stunning resumes with our AI-powered builder and beautiful templates</p>
         </div>
 
         {templatesLoading ? (
@@ -460,36 +501,37 @@ const ResumeBuilderApp = () => {
             <span className="ml-2">Loading templates...</span>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {/* Template Selection */}
             <div className="lg:col-span-1">
               <Card>
                 <CardHeader>
-                  <CardTitle>Choose Template</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <Eye className="w-5 h-5" />
+                    Choose Template
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 gap-4">
+                  <div className="grid grid-cols-1 gap-4 max-h-96 overflow-y-auto">
                     {templates.map((template) => (
                       <div
                         key={template.id}
                         className={`border rounded-lg p-3 cursor-pointer transition-all ${
                           selectedTemplate === template.id
-                            ? "border-blue-500 bg-blue-50"
-                            : "border-gray-200 hover:border-gray-300"
+                            ? "border-blue-500 bg-blue-50 shadow-md"
+                            : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
                         }`}
                         onClick={() => setSelectedTemplate(template.id)}
                       >
-                        <img
-                          src={template.thumbnail}
-                          alt={template.name}
-                          className="w-full h-32 object-cover rounded mb-2"
-                          onError={(e) => {
-                            e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%23f3f4f6'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='%236b7280'%3ETemplate%3C/text%3E%3C/svg%3E";
-                          }}
-                        />
-                        <h3 className="font-semibold">{template.name}</h3>
-                        <p className="text-sm text-gray-600">{template.description}</p>
-                        <Badge variant="secondary" className="mt-2">
+                        <div 
+                          className="w-full h-24 rounded mb-2 flex items-center justify-center text-white font-semibold text-sm"
+                          style={{ backgroundColor: template.color || '#6b7280' }}
+                        >
+                          {template.name}
+                        </div>
+                        <h3 className="font-semibold text-sm">{template.name}</h3>
+                        <p className="text-xs text-gray-600 mb-2">{template.description}</p>
+                        <Badge variant="secondary" className="text-xs">
                           {template.category}
                         </Badge>
                       </div>
@@ -500,26 +542,36 @@ const ResumeBuilderApp = () => {
             </div>
 
             {/* Form */}
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-3">
               <Card>
                 <CardHeader>
-                  <CardTitle>Resume Information</CardTitle>
-                  <div className="flex gap-4">
-                    <input
-                      type="file"
-                      accept=".pdf,.docx,.doc,.txt"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                      id="resume-upload"
-                    />
-                    <Button
-                      variant="outline"
-                      onClick={() => document.getElementById('resume-upload')?.click()}
-                      disabled={loading}
-                    >
-                      <Upload className="w-4 h-4 mr-2" />
-                      Upload Existing Resume
-                    </Button>
+                  <div className="flex justify-between items-center">
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="w-5 h-5" />
+                      Resume Information
+                    </CardTitle>
+                    <div className="flex gap-2">
+                      <input
+                        type="file"
+                        accept=".pdf,.docx,.doc,.txt"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                        id="resume-upload"
+                      />
+                      <Button
+                        variant="outline"
+                        onClick={() => document.getElementById('resume-upload')?.click()}
+                        disabled={extracting}
+                        size="sm"
+                      >
+                        {extracting ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <Upload className="w-4 h-4 mr-2" />
+                        )}
+                        Extract from Resume
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -605,7 +657,7 @@ const ResumeBuilderApp = () => {
                           id="summary"
                           value={resumeData.summary}
                           onChange={(e) => handleInputChange('summary', e.target.value)}
-                          placeholder="Brief professional summary..."
+                          placeholder="Brief professional summary highlighting your key achievements and skills..."
                           rows={4}
                         />
                       </div>
@@ -912,6 +964,7 @@ const ResumeBuilderApp = () => {
                       onClick={generateResume}
                       disabled={loading || !selectedTemplate}
                       className="flex-1"
+                      size="lg"
                     >
                       {loading ? (
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
