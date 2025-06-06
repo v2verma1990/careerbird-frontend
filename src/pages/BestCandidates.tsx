@@ -77,10 +77,9 @@ const BestCandidates = () => {
         return;
       }
 
-      // Make API request to find best candidates
+      // Make API request to find best candidates - remove candidateCount as it's not expected by the API
       const { data, error } = await api.jobs.findBestCandidates({
-        description: jobDescription,
-        candidateCount
+        description: jobDescription
       });
       
       if (error) {

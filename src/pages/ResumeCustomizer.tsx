@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,13 +5,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth/AuthContext";
-import api, { IS_BACKEND_RUNNING } from "@/utils/apiClient";
+import api from "@/utils/apiClient";
 import ResumeFileUploader from "@/components/ResumeFileUploader";
-import PDFViewer from "@/components/PDFViewer";
-import { Input } from "@/components/ui/input";
 import { 
   FileText, 
-  Sparkles, 
+  Wand2, 
   ArrowLeft, 
   Download, 
   Copy, 
@@ -21,41 +18,33 @@ import {
   Target,
   Award,
   TrendingUp,
-  Users,
-  BarChart3,
-  FileCheck,
-  Brain
+  FileEdit,
+  Brain,
+  Star
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 const ResumeCustomizer = () => {
+  const [resumeText, setResumeText] = useState("");
   const [jobDescription, setJobDescription] = useState("");
   const [customizedResume, setCustomizedResume] = useState("");
   const [improvements, setImprovements] = useState<string[]>([]);
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  const [featureUsage, setFeatureUsage] = useState<{ usageCount: number; usageLimit: number }>({ usageCount: 0, usageLimit: 0 });
-  const [loadingUsage, setLoadingUsage] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
-  const [jobscanReport, setJobscanReport] = useState<any>(null);
+  const [jobDescriptionFile, setJobDescriptionFile] = useState<File | null>(null);
+  const [featureUsage, setFeatureUsage] = useState<{ usageCount: number; usageLimit: number }>({ usageCount: 0, usageLimit: 0 });
+  const [loadingUsage, setLoadingUsage] = useState(true);
+  const [customizeReport, setCustomizeReport] = useState<any>(null);
   const { toast } = useToast();
   const { user, subscriptionStatus, incrementUsageCount } = useAuth();
-  const [jdInputType, setJdInputType] = useState<"text" | "file">("text");
-  const [jobDescriptionFile, setJobDescriptionFile] = useState<File | null>(null);
 
   const handleFileSelected = async (file: File) => {
     setResumeFile(file);
-    setCustomizedResume("");
-    setImprovements([]);
-    setPdfUrl(null);
-    setJobscanReport(null);
+    setResumeText("[PDF text will be extracted here]");
   };
 
-  const handleJDFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setJobDescriptionFile(e.target.files[0]);
-      setJobDescription("");
-    }
+  const handleJobDescriptionFileSelected = async (file: File) => {
+    setJobDescriptionFile(file);
   };
 
   useEffect(() => {
@@ -73,7 +62,6 @@ const ResumeCustomizer = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!resumeFile) {
       toast({
         variant: "destructive",
@@ -82,25 +70,6 @@ const ResumeCustomizer = () => {
       });
       return;
     }
-
-    if (jdInputType === "text" && !jobDescription) {
-      toast({
-        variant: "destructive",
-        title: "Missing information",
-        description: "Please provide a job description.",
-      });
-      return;
-    }
-
-    if (jdInputType === "file" && !jobDescriptionFile) {
-      toast({
-        variant: "destructive",
-        title: "Missing information",
-        description: "Please upload a job description file.",
-      });
-      return;
-    }
-
     if (!user) {
       toast({
         variant: "destructive",
@@ -109,96 +78,40 @@ const ResumeCustomizer = () => {
       });
       return;
     }
-
     try {
       setIsLoading(true);
-
-      const { data, error } = await api.resume.customize({
-        file: resumeFile!,
-        jobDescription: jdInputType === "text" ? jobDescription : undefined,
-        jobDescriptionFile: jdInputType === "file" ? jobDescriptionFile! : undefined,
-      });
-
-      if (error) {
-        let errorMsg = "Failed to customize resume. Please try again.";
-
-        try {
-          const parsedError = typeof error === "string" ? JSON.parse(error) : error;
-
-          if (parsedError?.error) {
-            try {
-              const nestedError = JSON.parse(parsedError.error);
-              errorMsg = nestedError?.detail || parsedError.error;
-            } catch {
-              errorMsg = parsedError.error;
-            }
-          } else if (parsedError?.detail) {
-            errorMsg = parsedError.detail;
-          } else if (typeof parsedError === "string") {
-            errorMsg = parsedError;
-          }
-        } catch {
-          errorMsg = error;
-        }
-
-        throw new Error(errorMsg);
-      }
+      const { data, error } = await api.resume.customize(
+        resumeFile,
+        jobDescription,
+        jobDescriptionFile,
+        subscriptionStatus?.type
+      );
+      if (error) throw new Error(error);
 
       if (data) {
-        setJobscanReport(data);
-        setCustomizedResume("");
-        setImprovements([]);
-        setPdfUrl(null);
+        setCustomizeReport(data);
+        setCustomizedResume(data.customizedContent || "");
+        setImprovements(data.improvements || []);
         toast({
           title: "Resume customization complete",
-          description: "Your Jobscan-style report is ready.",
+          description: "Your customized resume is ready.",
         });
       } else {
         throw new Error("No data returned from the server. Please try again.");
       }
     } catch (error: any) {
-      let errorMsg = error?.message || "Failed to customize resume. Please try again.";
-
-      if (error?.response?.data?.detail) {
-        errorMsg = error.response.data.detail;
-      } else if (error?.detail) {
-        errorMsg = error.detail;
-      }
-
       toast({
         variant: "destructive",
         title: "Error",
-        description: errorMsg,
+        description: error.message || "Failed to customize resume. Please try again.",
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (loadingUsage) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 flex justify-center items-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-  
-  if (!user || !subscriptionStatus) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 flex justify-center items-center">
-        <div className="text-center text-red-500">
-          <FileText className="w-16 h-16 mx-auto mb-4 opacity-50" />
-          <p>You are not logged in. Please log in again.</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       {/* Header */}
       <div className="bg-white/80 backdrop-blur-sm shadow-lg border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -209,24 +122,24 @@ const ResumeCustomizer = () => {
                 Back
               </Button>
               <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
-                  <FileCheck className="w-6 h-6 text-white" />
+                <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
+                  <FileEdit className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900">Resume Customizer</h1>
-                  <p className="text-gray-600">Tailor your resume to match specific job requirements</p>
+                  <p className="text-gray-600">Tailor your resume to specific job descriptions for a competitive edge</p>
                 </div>
               </div>
             </div>
             
             <div className="flex items-center space-x-2">
-              <Badge variant="outline" className="border-purple-200 text-purple-700">
+              <Badge variant="outline" className="border-blue-200 text-blue-700">
                 <Brain className="w-3 h-3 mr-1" />
                 AI Powered
               </Badge>
-              <Badge variant="outline" className="border-blue-200 text-blue-700">
-                <BarChart3 className="w-3 h-3 mr-1" />
-                Match Analytics
+              <Badge variant="outline" className="border-indigo-200 text-indigo-700">
+                <Star className="w-3 h-3 mr-1" />
+                ATS Ready
               </Badge>
             </div>
           </div>
@@ -237,13 +150,13 @@ const ResumeCustomizer = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Input Form */}
           <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm">
-            <div className="h-2 bg-gradient-to-r from-purple-500 to-blue-500"></div>
+            <div className="h-2 bg-gradient-to-r from-blue-500 to-indigo-500"></div>
             <CardHeader>
               <CardTitle className="flex items-center gap-3 text-xl">
-                <Target className="w-6 h-6 text-purple-600" />
-                Upload & Configure
+                <Target className="w-6 h-6 text-blue-600" />
+                Customize Your Resume
               </CardTitle>
-              <p className="text-gray-600">Upload your resume and job requirements for AI customization</p>
+              <p className="text-gray-600">Upload your resume and a job description to tailor your resume</p>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -253,102 +166,52 @@ const ResumeCustomizer = () => {
                   </Label>
                   <ResumeFileUploader onFileSelected={handleFileSelected} disabled={isLoading} />
                   {resumeFile && (
-                    <div className="mt-2 p-3 bg-green-50 rounded-lg border border-green-200">
-                      <div className="flex items-center gap-2 text-green-800">
-                        <CheckCircle className="w-4 h-4" />
-                        <span className="text-sm font-medium">{resumeFile.name}</span>
+                    <div className="mt-3 p-4 bg-green-50 rounded-lg border border-green-200">
+                      <div className="flex items-center gap-3">
+                        <CheckCircle className="w-5 h-5 text-green-600" />
+                        <div>
+                          <p className="font-medium text-green-800">{resumeFile.name}</p>
+                          <p className="text-sm text-green-600">Ready for customization</p>
+                        </div>
                       </div>
                     </div>
                   )}
                 </div>
                 
                 <div>
-                  <Label htmlFor="jdInputType" className="text-base font-medium">
-                    Job Description Input Method
+                  <Label htmlFor="jobDescription" className="text-base font-medium">
+                    Job Description
                   </Label>
-                  <div className="flex gap-4 mt-3 p-1 bg-gray-100 rounded-lg">
-                    <label className="flex-1">
-                      <input
-                        type="radio"
-                        name="jdInputType"
-                        value="text"
-                        checked={jdInputType === "text"}
-                        onChange={() => setJdInputType("text")}
-                        disabled={isLoading}
-                        className="sr-only"
-                      />
-                      <div className={`p-3 text-center rounded-lg cursor-pointer transition-all ${
-                        jdInputType === "text" 
-                          ? "bg-white shadow-md text-purple-700 border-2 border-purple-200" 
-                          : "text-gray-600 hover:bg-gray-50"
-                      }`}>
-                        <FileText className="w-5 h-5 mx-auto mb-1" />
-                        <span className="text-sm font-medium">Paste Text</span>
-                      </div>
-                    </label>
-                    <label className="flex-1">
-                      <input
-                        type="radio"
-                        name="jdInputType"
-                        value="file"
-                        checked={jdInputType === "file"}
-                        onChange={() => setJdInputType("file")}
-                        disabled={isLoading}
-                        className="sr-only"
-                      />
-                      <div className={`p-3 text-center rounded-lg cursor-pointer transition-all ${
-                        jdInputType === "file" 
-                          ? "bg-white shadow-md text-purple-700 border-2 border-purple-200" 
-                          : "text-gray-600 hover:bg-gray-50"
-                      }`}>
-                        <Download className="w-5 h-5 mx-auto mb-1" />
-                        <span className="text-sm font-medium">Upload File</span>
-                      </div>
-                    </label>
-                  </div>
+                  <Textarea
+                    id="jobDescription"
+                    placeholder="Paste the job description here..."
+                    value={jobDescription}
+                    onChange={(e) => setJobDescription(e.target.value)}
+                    className="min-h-[150px] mt-2 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  />
                 </div>
-                
-                {jdInputType === "text" ? (
-                  <div>
-                    <Label htmlFor="jobDescription" className="text-base font-medium">
-                      Job Description *
-                    </Label>
-                    <Textarea
-                      id="jobDescription"
-                      placeholder="Paste the complete job description here including requirements, responsibilities, and qualifications..."
-                      value={jobDescription}
-                      onChange={(e) => setJobDescription(e.target.value)}
-                      className="min-h-[200px] mt-2 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
-                      disabled={isLoading}
-                    />
-                  </div>
-                ) : (
-                  <div>
-                    <Label htmlFor="jobDescriptionFile" className="text-base font-medium">
-                      Job Description File *
-                    </Label>
-                    <Input
-                      id="jobDescriptionFile"
-                      type="file"
-                      accept=".txt,.pdf,.doc,.docx"
-                      onChange={handleJDFileSelected}
-                      disabled={isLoading}
-                      className="mt-2 border-gray-300 focus:border-purple-500 focus:ring-purple-500"
-                    />
-                    {jobDescriptionFile && (
-                      <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                        <div className="flex items-center gap-2 text-blue-800">
-                          <CheckCircle className="w-4 h-4" />
-                          <span className="text-sm font-medium">{jobDescriptionFile.name}</span>
+
+                <div>
+                  <Label htmlFor="jobDescriptionFile" className="text-base font-medium">
+                    Or Upload Job Description File
+                  </Label>
+                  <ResumeFileUploader onFileSelected={handleJobDescriptionFileSelected} disabled={isLoading} />
+                  {jobDescriptionFile && (
+                    <div className="mt-3 p-4 bg-green-50 rounded-lg border border-green-200">
+                      <div className="flex items-center gap-3">
+                        <CheckCircle className="w-5 h-5 text-green-600" />
+                        <div>
+                          <p className="font-medium text-green-800">{jobDescriptionFile.name}</p>
+                          <p className="text-sm text-green-600">Job description file uploaded</p>
                         </div>
                       </div>
-                    )}
-                  </div>
-                )}
+                    </div>
+                  )}
+                </div>
                 
                 <Button 
                   type="submit" 
-                  className="w-full py-6 text-lg bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 shadow-lg transform transition-all duration-200 hover:scale-105" 
+                  className="w-full py-6 text-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg transform transition-all duration-200 hover:scale-105" 
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -358,7 +221,7 @@ const ResumeCustomizer = () => {
                     </>
                   ) : (
                     <>
-                      <Sparkles className="w-5 h-5 mr-3" />
+                      <Wand2 className="w-5 h-5 mr-3" />
                       Customize My Resume
                     </>
                   )}
@@ -366,16 +229,17 @@ const ResumeCustomizer = () => {
               </form>
 
               {/* Tips */}
-              <div className="mt-6 p-4 bg-purple-50 rounded-lg border border-purple-200">
-                <h4 className="font-semibold text-purple-900 mb-2 flex items-center gap-2">
+              <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <h4 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
                   <Award className="w-4 h-4" />
-                  💡 Customization Tips:
+                  💡 Customization Features:
                 </h4>
-                <ul className="text-sm text-purple-800 space-y-1">
-                  <li>• Upload high-quality PDF resume for best results</li>
-                  <li>• Include complete job description with requirements</li>
-                  <li>• Review match score and implement suggestions</li>
-                  <li>• Use keywords from the job posting</li>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>• Targeted keyword optimization</li>
+                  <li>• Skills and experience alignment</li>
+                  <li>• Tailored summary and objective</li>
+                  <li>• Improved ATS compatibility</li>
+                  <li>• Enhanced readability and impact</li>
                 </ul>
               </div>
             </CardContent>
@@ -386,131 +250,110 @@ const ResumeCustomizer = () => {
             <div className="h-2 bg-gradient-to-r from-green-500 to-emerald-500"></div>
             <CardHeader>
               <CardTitle className="flex items-center gap-3 text-xl">
-                <BarChart3 className="w-6 h-6 text-green-600" />
-                Analysis Results
+                <TrendingUp className="w-6 h-6 text-green-600" />
+                Customization Report
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {/* Jobscan-style report rendering */}
-              {jobscanReport && !isLoading ? (
+              {/* Customization report rendering */}
+              {customizeReport && !isLoading ? (
                 <div className="space-y-6">
-                  <div className="mb-4">
-                    <h2 className="text-2xl font-bold mb-4 text-blue-900">Resume Match Analysis</h2>
-                    <div className="grid grid-cols-2 gap-4">
+                  <div className="mb-6">
+                    <h2 className="text-2xl font-bold mb-4 text-blue-900">Customized Resume Report</h2>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                       <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-4 text-white shadow-lg">
-                        <div className="text-sm font-medium opacity-90">Match Rate</div>
-                        <div className="text-2xl font-bold">{jobscanReport.matchRate ?? '--'}%</div>
+                        <div className="text-xs font-medium opacity-90">ATS Score</div>
+                        <div className="text-xl font-bold">{customizeReport.atsScore ?? '--'}%</div>
+                      </div>
+                      <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-lg p-4 text-white shadow-lg">
+                        <div className="text-xs font-medium opacity-90">Match Score</div>
+                        <div className="text-xl font-bold">{customizeReport.matchScore ?? '--'}%</div>
                       </div>
                       <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg p-4 text-white shadow-lg">
-                        <div className="text-sm font-medium opacity-90">ATS Score</div>
-                        <div className="text-2xl font-bold">{jobscanReport.atsScore ?? '--'}%</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                    <h3 className="font-semibold text-lg mb-2 text-green-800 flex items-center gap-2">
-                      <Users className="w-5 h-5" />
-                      Skills Match Analysis
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <span className="font-medium text-green-700">✅ Matched Skills:</span>
-                        <ul className="list-disc ml-4 text-green-600 text-sm mt-1">
-                          {jobscanReport.skillsMatch?.matchedSkills?.map((skill: string, idx: number) => (
-                            <li key={idx}>{skill}</li>
-                          )) || []}
-                        </ul>
-                      </div>
-                      <div>
-                        <span className="font-medium text-red-700">❌ Missing Skills:</span>
-                        <ul className="list-disc ml-4 text-red-600 text-sm mt-1">
-                          {jobscanReport.skillsMatch?.missingSkills?.map((skill: string, idx: number) => (
-                            <li key={idx}>{skill}</li>
-                          )) || []}
-                        </ul>
+                        <div className="text-xs font-medium opacity-90">Impact Score</div>
+                        <div className="text-xl font-bold">{customizeReport.impactScore ?? '--'}%</div>
                       </div>
                     </div>
                   </div>
 
                   <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
                     <h3 className="font-semibold text-lg mb-2 text-blue-800 flex items-center gap-2">
-                      <TrendingUp className="w-5 h-5" />
-                      Keyword Analysis
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <span className="font-medium text-green-700">Found Keywords:</span>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {jobscanReport.keywordAnalysis?.foundKeywords?.map((kw: string, idx: number) => (
-                            <Badge key={idx} variant="outline" className="text-xs border-green-300 text-green-700">
-                              {kw}
-                            </Badge>
-                          )) || []}
-                        </div>
-                      </div>
-                      <div>
-                        <span className="font-medium text-red-700">Missing Keywords:</span>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {jobscanReport.keywordAnalysis?.missingKeywords?.map((kw: string, idx: number) => (
-                            <Badge key={idx} variant="outline" className="text-xs border-red-300 text-red-700">
-                              {kw}
-                            </Badge>
-                          )) || []}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
-                    <h3 className="font-semibold text-lg mb-2 text-yellow-800 flex items-center gap-2">
-                      <Zap className="w-5 h-5" />
-                      Recommendations
+                      <Star className="w-5 h-5" />
+                      Key Improvements
                     </h3>
                     <ul className="list-disc ml-4 space-y-1">
-                      {jobscanReport.recommendations?.map((rec: string, idx: number) => (
-                        <li key={idx} className="text-yellow-700 text-sm">{rec}</li>
+                      {customizeReport.improvements?.map((rec: string, idx: number) => (
+                        <li key={idx} className="text-blue-700 text-sm">{rec}</li>
                       )) || []}
                     </ul>
                   </div>
 
                   <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                     <h3 className="font-semibold text-lg mb-2 text-gray-800">Executive Summary</h3>
-                    <p className="text-gray-700 text-sm leading-relaxed">{jobscanReport.summary}</p>
+                    <p className="text-gray-700 text-sm leading-relaxed">{customizeReport.summary}</p>
                   </div>
 
-                  {jobscanReport.sectionFeedback && (
-                    <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-                      <h3 className="font-semibold text-lg mb-2 text-purple-800">Section Feedback</h3>
-                      <div className="space-y-2">
-                        {Object.entries(jobscanReport.sectionFeedback).map(([section, feedback]: [string, string]) => (
-                          <div key={section} className="text-sm">
-                            <span className="font-medium text-purple-900">{section}:</span>
-                            <span className="text-purple-700 ml-1">{feedback}</span>
-                          </div>
-                        ))}
+                  {customizeReport.customizedContent && (
+                    <div className="bg-white rounded-lg p-4 border border-gray-300">
+                      <h3 className="font-semibold text-lg mb-2 text-gray-800 flex items-center gap-2">
+                        <FileText className="w-5 h-5" />
+                        Customized Resume Content
+                      </h3>
+                      <Textarea
+                        value={customizeReport.customizedContent}
+                        readOnly
+                        className="min-h-[200px] bg-gray-50 text-gray-800 border-gray-200"
+                      />
+                      <div className="flex gap-2 mt-3">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            navigator.clipboard.writeText(customizeReport.customizedContent);
+                            toast({ title: "Copied to clipboard" });
+                          }}
+                        >
+                          <Copy className="w-4 h-4 mr-2" />
+                          Copy
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const blob = new Blob([customizeReport.customizedContent], { type: 'text/plain' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'customized_resume.txt';
+                            a.click();
+                            URL.revokeObjectURL(url);
+                          }}
+                        >
+                          <Download className="w-4 h-4 mr-2" />
+                          Download
+                        </Button>
                       </div>
                     </div>
                   )}
                 </div>
               ) : !isLoading ? (
                 <div className="text-center py-16">
-                  <div className="w-16 h-16 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <FileCheck className="w-8 h-8 text-white" />
+                  <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <FileEdit className="w-8 h-8 text-white" />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Ready for Analysis</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Ready for Customization</h3>
                   <p className="text-gray-600 max-w-md mx-auto">
-                    Upload your resume and job description to get detailed match analysis and customization recommendations.
+                    Upload your resume and a job description to receive a tailored resume that matches the job requirements.
                   </p>
                 </div>
               ) : (
                 <div className="text-center py-16">
-                  <div className="w-16 h-16 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-4"></div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Analyzing Your Resume</h3>
-                  <p className="text-gray-600">Our AI is customizing your resume for maximum impact...</p>
+                  <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Customizing Your Resume</h3>
+                  <p className="text-gray-600">Our AI is tailoring your resume to match the job description...</p>
                   <div className="flex items-center justify-center space-x-2 text-sm text-gray-500 mt-4">
-                    <div className="w-2 h-2 bg-purple-600 rounded-full animate-pulse"></div>
-                    <span>Processing match analysis</span>
+                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
+                    <span>Analyzing job requirements</span>
                   </div>
                 </div>
               )}
@@ -519,28 +362,28 @@ const ResumeCustomizer = () => {
         </div>
 
         {/* Features Info */}
-        <Card className="mt-8 shadow-xl border-0 bg-gradient-to-r from-purple-600 to-blue-600 text-white">
+        <Card className="mt-8 shadow-xl border-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
           <CardContent className="p-8">
             <div className="text-center mb-6">
-              <Sparkles className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
+              <Wand2 className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
               <h3 className="text-2xl font-bold mb-2">Why Customize Your Resume?</h3>
-              <p className="text-purple-100 max-w-2xl mx-auto">
-                Tailored resumes receive 2.5x more interviews and pass ATS systems 40% more often.
+              <p className="text-blue-100 max-w-2xl mx-auto">
+                Customized resumes increase your chances of getting an interview by 40% and demonstrate your fit for the role.
               </p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
               <div className="space-y-2">
-                <div className="text-3xl font-bold">2.5x</div>
-                <p className="text-purple-100">More Interviews</p>
-              </div>
-              <div className="space-y-2">
                 <div className="text-3xl font-bold">40%</div>
-                <p className="text-purple-100">Better ATS Success</p>
+                <p className="text-blue-100">Increased Interview Chance</p>
               </div>
               <div className="space-y-2">
                 <div className="text-3xl font-bold">75%</div>
-                <p className="text-purple-100">Match Improvement</p>
+                <p className="text-blue-100">Better Role Alignment</p>
+              </div>
+              <div className="space-y-2">
+                <div className="text-3xl font-bold">90%</div>
+                <p className="text-blue-100">ATS Compatibility</p>
               </div>
             </div>
           </CardContent>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -78,9 +77,7 @@ const ResumeOptimizer = () => {
     }
     try {
       setIsLoading(true);
-      const { data, error } = await api.resume.optimize({
-        file: resumeFile
-      });
+      const { data, error } = await api.resume.optimize(resumeFile);
       if (error) throw new Error(error);
 
       if (data) {

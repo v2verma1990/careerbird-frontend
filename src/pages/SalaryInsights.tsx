@@ -103,7 +103,7 @@ const SalaryInsights = () => {
       if (educationLevel) payload.educationLevel = educationLevel;
       if (resumeFile) payload.resume = resumeFile;
 
-      const { data, error } = await api.resume.salaryinsights(payload);
+      const { data, error } = await api.resume.salaryInsights(payload);
       if (error) throw new Error(error);
 
       if (data) {
