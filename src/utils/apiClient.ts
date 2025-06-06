@@ -383,7 +383,7 @@ export const api = {
           headers,
           body: JSON.stringify({
             resumeData: params.resumeData,
-            templateId: params.templateId
+            TemplateId: params.templateId  // Changed from templateId to TemplateId to match backend expectation
           }),
           credentials: "include"
         });
