@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -86,9 +85,7 @@ const AtsScanner = () => {
     try {
       setIsLoading(true);
 
-      const { data, error } = await api.resume.scanAts({
-        file: resumeFile
-      });
+      const { data, error } = await api.resume.scanAts(resumeFile);
 
       if (error) {
         throw new Error(error);

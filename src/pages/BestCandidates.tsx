@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -80,7 +79,7 @@ const BestCandidates = () => {
 
       // Make API request to find best candidates
       const { data, error } = await api.jobs.findBestCandidates({
-        jobDescription,
+        description: jobDescription,
         candidateCount
       });
       

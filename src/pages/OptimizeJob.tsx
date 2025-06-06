@@ -68,7 +68,7 @@ const OptimizeJob = () => {
 
       // Make API request to optimize job description
       const { data, error } = await api.jobs.optimizeJobDescription({
-        jobDescription: fullJobDescription
+        description: fullJobDescription
       });
       
       if (error) {

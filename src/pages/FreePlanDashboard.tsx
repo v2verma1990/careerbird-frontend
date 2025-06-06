@@ -84,7 +84,7 @@ const FreePlanDashboard = () => {
       setIsLoading(true);
       
       // Call API to scan resume - pass file directly
-      const { data, error } = await api.resume.scanAts({ file: resumeFile });
+      const { data, error } = await api.resume.scanAts(resumeFile);
       
       if (error) {
         throw new Error(error);
@@ -132,7 +132,7 @@ const FreePlanDashboard = () => {
       setIsLoading(true);
       
       // Call API to scan resume - pass file directly
-      const { data, error } = await api.resume.scanAts({ file: resumeFile });
+      const { data, error } = await api.resume.scanAts(resumeFile);
       console.log("ATS scan response:", data, error);
       
       if (error) {
