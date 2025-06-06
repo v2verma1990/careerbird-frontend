@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 // Base URL for API calls
@@ -371,9 +370,11 @@ export const api = {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         
-        const headers: Record<string, string> = {
-          'Content-Type': 'application/json'
-        };
+        const formData = new FormData();
+        formData.append('resumeData', params.resumeData);
+        formData.append('TemplateId', params.templateId);
+        
+        const headers: Record<string, string> = {};
         if (session?.access_token) {
           headers["Authorization"] = `Bearer ${session.access_token}`;
         }
@@ -381,10 +382,7 @@ export const api = {
         const response = await fetch(`${API_BASE_URL}/resumebuilder/build`, {
           method: 'POST',
           headers,
-          body: JSON.stringify({
-            resumeData: params.resumeData,
-            TemplateId: params.templateId  // Changed from templateId to TemplateId to match backend expectation
-          }),
+          body: formData,
           credentials: "include"
         });
         
