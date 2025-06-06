@@ -70,21 +70,6 @@ async function apiCall<T>(
       return { data: null, error: `Request failed with status 401: Unauthorized access` };
     }
 
-    // if (!response.ok) {
-    //   // Try to parse error as JSON and extract detail
-    //   let errorMsg = `Request failed with status ${response.status}`;
-    //   try {
-    //     const errorJson = await response.json();
-    //     if (errorJson && errorJson.detail) {
-    //       errorMsg = errorJson.detail;
-    //     }
-    //   } catch {
-    //     // fallback to text if not JSON
-    //     const errorText = await response.text();
-    //     errorMsg = errorText;
-    //   }
-    //   return { data: null, error: errorMsg };
-    // }
     if (!response.ok) {
       let errorMsg = `Request failed with status ${response.status}`;
       try {
@@ -127,6 +112,15 @@ async function apiCall<T>(
     return { data, error: null };
   } catch (error) {
     console.error("API call failed:", error);
+    
+    // Check if it's a network error (common in Lovable preview environment)
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      return { 
+        data: null, 
+        error: "Cannot connect to local backend. This may be because you're running in Lovable's preview environment which cannot access your local server. Try running the app locally in VS Code." 
+      };
+    }
+    
     return { data: null, error: error instanceof Error ? error.message : "Unknown error" };
   }
 
@@ -177,6 +171,24 @@ export const api = {
         }
         
         console.log("Supabase login successful, user:", data.user?.id);
+        
+        // Skip backend call in preview environment or if backend is not available
+        const isPreviewEnv = window.location.hostname.includes('lovable.app');
+        if (isPreviewEnv) {
+          console.log("Preview environment detected, skipping backend authentication");
+          return { 
+            data: {
+              userId: data.user?.id,
+              email: data.user?.email,
+              accessToken: data.session?.access_token,
+              profile: { 
+                userType: data.user?.user_metadata?.user_type || userType || 'candidate',
+                subscriptionType: 'free'
+              }
+            }, 
+            error: null 
+          };
+        }
         
         // After successful Supabase login, authenticate with our backend
         if (data.session?.access_token) {
@@ -245,6 +257,19 @@ export const api = {
         }
         
         console.log("Supabase signup successful, user:", data.user?.id);
+        
+        // Skip backend call in preview environment
+        const isPreviewEnv = window.location.hostname.includes('lovable.app');
+        if (isPreviewEnv) {
+          console.log("Preview environment detected, skipping backend registration");
+          return { 
+            data: {
+              userId: data.user?.id,
+              email: data.user?.email
+            }, 
+            error: null 
+          };
+        }
         
         // After successful Supabase signup, register with our backend
         if (data.user?.id) {
@@ -341,8 +366,46 @@ export const api = {
   },
   resumeBuilder: {
     getTemplates: () => apiCall<any>("GET", "/resumebuilder/templates"),
+    extractResumeData: async (file: File) => {
+      try {
+        // Get the auth session
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        // Prepare headers
+        let headers: Record<string, string> = {};
+        
+        if (session?.access_token) {
+          headers["Authorization"] = `Bearer ${session.access_token}`;
+        }
+        
+        // Prepare form data
+        const formData = new FormData();
+        formData.append('resume', file);
+        
+        // Make the API request
+        const response = await fetch(`${API_BASE_URL}/resumebuilder/extract-data`, {
+          method: 'POST',
+          headers,
+          body: formData,
+          credentials: "include"
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          return { data: null, error: errorText };
+        }
+        
+        const data = await response.json();
+        return { data, error: null };
+      } catch (error) {
+        console.error("Extract resume data error:", error);
+        return { 
+          data: null, 
+          error: error instanceof Error ? error.message : "Failed to extract resume data" 
+        };
+      }
+    },
     buildResume: async (params: { file?: File, resumeData?: string, templateId: string }) => {
-      // Create a new implementation with better error handling
       try {
         // Log the parameters
         console.log("API Client - buildResume called with params:", {
@@ -581,259 +644,231 @@ export const api = {
         
         const contentType = response.headers.get('content-type');
         if (contentType && contentType.includes('application/json')) {
-          const json = await response.json();
-          return { data: json, error: null };
+          const data = await response.json();
+          return { data, error: null };
+        } else {
+          const text = await response.text();
+          return { data: { html: text }, error: null };
         }
-        
-        return { data: null, error: 'Unexpected response type' };
       } catch (error) {
-        return { data: null, error: 'Failed to connect to server' };
+        console.error("Optimize resume error:", error);
+        return { 
+          data: null, 
+          error: error instanceof Error ? error.message : "Failed to optimize resume" 
+        };
       }
     }
   },
   resume: {
-    analyze: (params: { resumeText: string, jobDescription: string }) => 
-      apiCall<any>("POST", "/resume/analyze", params),
-    customize: async (params: { file: File, jobDescription?: string, jobDescriptionFile?: File }) => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        let headers: Record<string, string> = {};
-        if (session?.access_token) {
-          headers["Authorization"] = `Bearer ${session.access_token}`;
-        }
-        const formData = new FormData();
-        formData.append('file', params.file);
-        if (params.jobDescriptionFile) {
-          formData.append('jobDescriptionFile', params.jobDescriptionFile);
-        } else if (params.jobDescription !== undefined) {
-          formData.append('jobDescription', params.jobDescription);
-        }
-        const response = await fetch(`${API_BASE_URL}/resume/customize`, {
-          method: 'POST',
-          headers,
-          body: formData,
-          credentials: "include"
-        });
-        if (!response.ok) {
-          const errorText = await response.text();
-          return { data: null, error: errorText };
-        }
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          const json = await response.json();
-          return { data: json, error: null };
-        }
-        return { data: null, error: 'Unexpected response type' };
-      } catch (error) {
-        return { data: null, error: 'Failed to connect to server' };
-      }
-    },
-    benchmark: (params: { resumeText: string, jobDescription: string }) => 
-      apiCall<any>("POST", "/resume/benchmark", params),
-    
-    optimize: async (params: { file: File }) => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        let headers: Record<string, string> = {};
-        if (session?.access_token) {
-          headers["Authorization"] = `Bearer ${session.access_token}`;
-        }
-        const formData = new FormData();
-        formData.append('file', params.file);
-        const response = await fetch(`${API_BASE_URL}/resume/optimize`, {
-          method: 'POST',
-          headers,
-          body: formData,
-          credentials: "include"
-        });
-        if (!response.ok) {
-          const errorText = await response.text();
-          return { data: null, error: errorText };
-        }
-        // Expect JSON Jobscan-style optimization report
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          const json = await response.json();
-          return { data: json, error: null };
-        }
-        return { data: null, error: 'Unexpected response type' };
-      } catch (error) {
-        return { data: null, error: 'Failed to connect to server' };
-      }
-    },
-    salaryinsights: async (form: {
-  jobTitle: string;
-  location: string;
-  industry: string;
-  yearsExperience: number | string;
-  educationLevel?: string;
-  resume?: File | null;
-}) => {
-  
-  
+    analyze: async (file: File, jobDescription: string, plan: string = "free") => {
+      const formData = new FormData();
+      formData.append('resume', file);
+      formData.append('job_description', jobDescription);
+      formData.append('plan', plan);
 
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
-        let headers: Record<string, string> = {};
-        if (session?.access_token) {
-          headers["Authorization"] = `Bearer ${session.access_token}`;
-        }
-        const formData = new FormData();
-        formData.append("JobTitle", form.jobTitle);
-        formData.append("Location", form.location);
-        formData.append("Industry", form.industry);
-        formData.append("YearsExperience", form.yearsExperience.toString());
-        if (form.educationLevel) formData.append("EducationLevel", form.educationLevel);
-        if (form.resume) formData.append("Resume", form.resume);
-      const response = await fetch(`${API_BASE_URL}/resume/salary-insights`, {
-          method: 'POST',
-          headers,
-          body: formData,
-          credentials: "include"
-        });
-        if (!response.ok) {
-          const errorText = await response.text();
-          return { data: null, error: errorText };
-        }
-        // Expect JSON Jobscan-style optimization report
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          const json = await response.json();
-          return { data: json, error: null };
-        }
-        return { data: null, error: 'Unexpected response type' };
-      } catch (error) {
-        return { data: null, error: 'Failed to connect to server' };
+      const response = await fetch('http://localhost:8080/api/candidate/analyze', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Analysis failed');
       }
+
+      return response.json();
     },
-    scanAts: async (params: { file: File }) => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        let headers: Record<string, string> = {};
-        if (session?.access_token) {
-          headers["Authorization"] = `Bearer ${session.access_token}`;
-        }
-        const formData = new FormData();
-        formData.append('file', params.file);
-        const response = await fetch(`${API_BASE_URL}/resume/scan-ats`, {
-          method: 'POST',
-          headers,
-          body: formData,
-          credentials: "include"
-        });
-        if (!response.ok) {
-          const errorText = await response.text();
-          return { data: null, error: errorText };
-        }
-        // Expect JSON Jobscan-style optimization report
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          const json = await response.json();
-          return { data: json, error: null };
-        }
-        return { data: null, error: 'Unexpected response type' };
-      } catch (error) {
-        return { data: null, error: 'Failed to connect to server' };
+    optimize: async (file: File, plan: string = "free") => {
+      const formData = new FormData();
+      formData.append('resume', file);
+      formData.append('plan', plan);
+
+      const response = await fetch('http://localhost:8080/api/candidate/optimize', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Optimization failed');
       }
+
+      return response.json();
+    },
+    customize: async (file: File, jobDescription?: string, jobDescriptionFile?: File, plan: string = "free") => {
+      const formData = new FormData();
+      formData.append('resume', file);
+      if (jobDescription) formData.append('job_description', jobDescription);
+      if (jobDescriptionFile) formData.append('job_description_file', jobDescriptionFile);
+      formData.append('plan', plan);
+
+      const response = await fetch('http://localhost:8080/api/candidate/customize', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Customization failed');
+      }
+
+      return response.json();
+    },
+    atsScan: async (file: File, plan: string = "free") => {
+      const formData = new FormData();
+      formData.append('resume', file);
+      formData.append('plan', plan);
+
+      const response = await fetch('http://localhost:8080/api/candidate/ats_scan', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('ATS scan failed');
+      }
+
+      return response.json();
+    },
+    benchmark: async (file: File, jobDescription: string, plan: string = "free") => {
+      const formData = new FormData();
+      formData.append('resume', file);
+      formData.append('job_description', jobDescription);
+      formData.append('plan', plan);
+
+      const response = await fetch('http://localhost:8080/api/candidate/benchmark', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Benchmarking failed');
+      }
+
+      return response.json();
+    },
+    salaryInsights: async (params: {
+      job_title: string;
+      location: string;
+      industry: string;
+      years_experience: number;
+      education_level?: string;
+      resume?: File;
+      plan?: string;
+    }) => {
+      const formData = new FormData();
+      formData.append('job_title', params.job_title);
+      formData.append('location', params.location);
+      formData.append('industry', params.industry);
+      formData.append('years_experience', params.years_experience.toString());
+      if (params.education_level) formData.append('education_level', params.education_level);
+      if (params.resume) formData.append('resume', params.resume);
+      formData.append('plan', params.plan || 'free');
+
+      const response = await fetch('http://localhost:8080/api/candidate/salary_insights', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Salary insights failed');
+      }
+
+      return response.json();
     }
   },
   jobs: {
-    findBestCandidates: (params: { jobDescription: string, candidateCount: number }) => 
-      apiCall<any>("POST", "/jobs/best-candidates", params),
-    optimizeJobDescription: (params: { jobDescription: string }) => 
-      apiCall<any>("POST", "/jobs/optimize", params)
+    searchJobs: (query: string, location?: string, company?: string) =>
+      apiCall<any>("GET", `/jobs/search?query=${encodeURIComponent(query)}&location=${encodeURIComponent(location || '')}&company=${encodeURIComponent(company || '')}`),
+    getJobDetails: (jobId: string) =>
+      apiCall<any>("GET", `/jobs/${jobId}`),
+    generateJobDescription: (params: { title: string, company: string, description: string }) =>
+      apiCall<any>("POST", "/jobs/generate-description", params),
+    optimizeJobDescription: (params: { description: string }) =>
+      apiCall<any>("POST", "/jobs/optimize-description", params)
   },
   interviews: {
-    generateQuestions: (params: { resumeText: string, jobDescription: string }) => 
-      apiCall<any>("POST", "/interviews/generate-questions", params)
+    generateQuestions: async (jobTitle: string, jobDescription: string, resumeFile?: File, plan: string = "free") => {
+      try {
+        // First extract resume text if file is provided
+        let resumeText = "";
+        if (resumeFile) {
+          const extractedData = await api.fileUtils.extractTextFromFile(resumeFile);
+          resumeText = extractedData || "";
+        }
+
+        const formData = new FormData();
+        formData.append('job_title', jobTitle);
+        formData.append('job_description', jobDescription);
+        formData.append('resume_text', resumeText);
+        formData.append('plan', plan);
+
+        console.log("Sending interview questions request with:", {
+          job_title: jobTitle,
+          job_description: jobDescription,
+          resume_text: resumeText.substring(0, 100) + "...",
+          plan
+        });
+
+        const response = await fetch('http://localhost:8080/api/candidate/generate_interview_questions', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Interview questions API error:", errorText);
+          throw new Error(`Interview questions generation failed: ${errorText}`);
+        }
+
+        const result = await response.json();
+        console.log("Interview questions result:", result);
+        return result;
+      } catch (error) {
+        console.error("Interview questions error:", error);
+        throw error;
+      }
+    }
   },
   coverLetters: {
-    generate: (params: { jobTitle: string, company: string, jobDescription: string }) => 
-      apiCall<any>("POST", "/cover-letters/generate", params)
+    generateCoverLetter: async (jobTitle: string, company: string, jobDescription: string) => {
+      const formData = new FormData();
+      formData.append('job_title', jobTitle);
+      formData.append('company', company);
+      formData.append('job_description', jobDescription);
+
+      const response = await fetch('http://localhost:8080/api/candidate/generate_cover_letter', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Cover letter generation failed');
+      }
+
+      return response.json();
+    }
   },
   fileUtils: {
-    exportToCSV: (data: any[], filename: string) => {
-      const csvContent = convertToCSV(data);
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', filename + '.csv');
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+    extractTextFromFile: async (file: File): Promise<string> => {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const response = await fetch('http://localhost:8080/api/extract-text', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error('Text extraction failed');
+        }
+
+        const result = await response.json();
+        return result.text || '';
+      } catch (error) {
+        console.error('Error extracting text from file:', error);
+        return '';
+      }
     }
   }
 };
 
-// Helper function to get the current user ID from storage
-function getStoredUserId(): string {
-  const user = api.auth.getCurrentUser();
-  return user?.userId || '';
-}
-
-// Helper function to convert data to CSV
-function convertToCSV(data: any[]): string {
-  if (data.length === 0) return '';
-  
-  // Get headers
-  const headers = Object.keys(data[0]).join(',');
-  
-  // Convert each row to CSV
-  const rows = data.map(row => {
-    return Object.values(row).map(value => {
-      // Handle strings with commas by wrapping in quotes
-      if (typeof value === 'string' && value.includes(',')) {
-        return `"${value}"`;
-      }
-      return value;
-    }).join(',');
-  });
-  
-  return [headers, ...rows].join('\n');
-}
-
-// Export utility function to log user activity
-export const logActivity = async (actionType: string, description?: string) => {
-  const userId = api.auth.getCurrentUser()?.userId;
-  if (!userId) return { data: null, error: "Not authenticated" };
-  
-  return api.usage.logActivity({ actionType, description });
-};
-
-// Export API client as default
 export default api;
-
-function getAccessToken() {
-  const storedSession = localStorage.getItem("supabase-auth");
-  if (!storedSession) return null;
-  
-  try {
-    // Parse the user session from Supabase-auth storage
-    const session = JSON.parse(storedSession);
-    if (!session?.currentSession?.access_token) return null;
-    
-    return session.currentSession.access_token;
-  } catch (e) {
-    console.error("Error parsing stored session", e);
-    return null;
-  }
-}
-
-// Helper to download a blob as a file
-function downloadBlob(blob: Blob, filename: string) {
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => {
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-  }, 100);
-}
-
-// Add or update in your apiClient.ts
-

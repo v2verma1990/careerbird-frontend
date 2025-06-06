@@ -9,7 +9,7 @@ import api from "@/utils/apiClient";
 const featureTypes = [
   { key: "resume_customization", title: "Resume Customization", icon: "📝", description: "Tailor your resume for each job application.", route: "/resume-customizer" },
   { key: "resume_optimization", title: "Resume Optimization", icon: "🚀", description: "Optimize your resume for better results.", route: "/resume-optimizer" },
-  { key: "resume_builder", title: "Resume Builder", icon: "📄", description: "Create professional resumes with templates.", route: "/resume-builder" },
+  { key: "resume_builder", title: "Resume Builder", icon: "📄", description: "Create professional resumes with templates.", route: "/resume-builder-app" },
   { key: "ats_scan", title: "ATS Scanner", icon: "🤖", description: "Scan your resume for ATS compatibility.", route: "/ats-scanner" },
   { key: "salary_insights", title: "Salary Insights", icon: "📊", description: "See salary and market trends.", route: "/salary-insights" },
   { key: "cover_letter", title: "Cover Letter Generator", icon: "✉️", description: "Generate a personalized cover letter.", route: "/cover-letter-generator" },
