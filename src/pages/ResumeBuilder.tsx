@@ -445,6 +445,7 @@ const ResumeBuilder = () => {
       
       // Create a clean data object with proper structure
       // Format the data for the API - using PascalCase for C# backend compatibility
+      // Make sure to create new arrays to avoid reference issues
       const dataToSend = {
         // Basic information - using PascalCase for C# backend
         Name: resumeData.name || "",
@@ -457,64 +458,96 @@ const ResumeBuilder = () => {
         Summary: resumeData.summary || "",
         
         // Ensure Experience is an array of objects with PascalCase properties
-        Experience: Array.isArray(resumeData.experience) 
-          ? resumeData.experience
-              .filter(exp => exp && typeof exp === 'object')
-              .filter(exp => exp.title || exp.company) // Less strict filtering
-              .map(exp => ({
-                Title: exp.title || "",
-                Company: exp.company || "",
-                Location: exp.location || "",
-                StartDate: exp.startDate || "",
-                EndDate: exp.endDate || "",
-                Description: exp.description || ""
-              }))
-          : [],
+        // Create a new array with only valid entries
+        Experience: (() => {
+          const validExperiences = [];
+          if (Array.isArray(resumeData.experience)) {
+            for (const exp of resumeData.experience) {
+              if (exp && typeof exp === 'object' && (exp.title || exp.company)) {
+                validExperiences.push({
+                  Title: exp.title || "",
+                  Company: exp.company || "",
+                  Location: exp.location || "",
+                  StartDate: exp.startDate || "",
+                  EndDate: exp.endDate || "",
+                  Description: exp.description || ""
+                });
+              }
+            }
+          }
+          return validExperiences;
+        })(),
         
         // Ensure Education is an array of objects with PascalCase properties
-        Education: Array.isArray(resumeData.education)
-          ? resumeData.education
-              .filter(edu => edu && typeof edu === 'object')
-              .filter(edu => edu.degree || edu.institution) // Less strict filtering
-              .map(edu => ({
-                Degree: edu.degree || "",
-                Institution: edu.institution || "",
-                Location: edu.location || "",
-                StartDate: edu.startDate || "",
-                EndDate: edu.endDate || "",
-                Description: edu.description || ""
-              }))
-          : [],
+        // Create a new array with only valid entries
+        Education: (() => {
+          const validEducation = [];
+          if (Array.isArray(resumeData.education)) {
+            for (const edu of resumeData.education) {
+              if (edu && typeof edu === 'object' && (edu.degree || edu.institution)) {
+                validEducation.push({
+                  Degree: edu.degree || "",
+                  Institution: edu.institution || "",
+                  Location: edu.location || "",
+                  StartDate: edu.startDate || "",
+                  EndDate: edu.endDate || "",
+                  Description: edu.description || ""
+                });
+              }
+            }
+          }
+          return validEducation;
+        })(),
         
         // Ensure Skills is an array of strings
-        Skills: Array.isArray(resumeData.skills) 
-          ? resumeData.skills
-              .filter(skill => skill && typeof skill === 'string')
-              .map(skill => skill.trim())
-              .filter(skill => skill !== "")
-          : [],
+        // Create a new array with only valid entries
+        Skills: (() => {
+          const validSkills = [];
+          if (Array.isArray(resumeData.skills)) {
+            for (const skill of resumeData.skills) {
+              if (skill && typeof skill === 'string' && skill.trim() !== "") {
+                validSkills.push(skill.trim());
+              }
+            }
+          }
+          return validSkills;
+        })(),
         
         // Ensure Certifications is an array of objects with PascalCase properties
-        Certifications: Array.isArray(resumeData.certifications) 
-          ? resumeData.certifications
-              .filter(cert => cert && typeof cert === 'object')
-              .map(cert => ({
-                Name: cert.name || "",
-                Issuer: cert.issuer || "",
-                Date: cert.date || ""
-              }))
-          : [],
+        // Create a new array with only valid entries
+        Certifications: (() => {
+          const validCertifications = [];
+          if (Array.isArray(resumeData.certifications)) {
+            for (const cert of resumeData.certifications) {
+              if (cert && typeof cert === 'object') {
+                validCertifications.push({
+                  Name: cert.name || "",
+                  Issuer: cert.issuer || "",
+                  Date: cert.date || ""
+                });
+              }
+            }
+          }
+          return validCertifications;
+        })(),
         
         // Ensure Projects is an array of objects with PascalCase properties
-        Projects: Array.isArray(resumeData.projects)
-          ? resumeData.projects
-              .filter(proj => proj && typeof proj === 'object')
-              .map(proj => ({
-                Name: proj.name || "",
-                Description: proj.description || "",
-                Technologies: proj.technologies || proj.date || "" // Fallback to date if technologies not available
-              }))
-          : []
+        // Create a new array with only valid entries
+        Projects: (() => {
+          const validProjects = [];
+          if (Array.isArray(resumeData.projects)) {
+            for (const proj of resumeData.projects) {
+              if (proj && typeof proj === 'object') {
+                validProjects.push({
+                  Name: proj.name || "",
+                  Description: proj.description || "",
+                  Technologies: proj.technologies || proj.date || "" // Fallback to date if technologies not available
+                });
+              }
+            }
+          }
+          return validProjects;
+        })()
       };
       
       // Ensure at least one field has data to prevent empty data detection
@@ -563,15 +596,15 @@ const ResumeBuilder = () => {
       
       console.log("Sending formatted data to API:", dataToSend);
       
-      // Check if the data has content
+      // Check if the data has content - make sure to check each field properly
       const formattedDataHasContent = 
-        dataToSend.Name || 
-        dataToSend.Email || 
-        dataToSend.Phone || 
-        dataToSend.Summary || 
-        (dataToSend.Skills && dataToSend.Skills.length > 0) || 
-        (dataToSend.Experience && dataToSend.Experience.length > 0) || 
-        (dataToSend.Education && dataToSend.Education.length > 0);
+        (dataToSend.Name && dataToSend.Name.trim() !== "") || 
+        (dataToSend.Email && dataToSend.Email.trim() !== "") || 
+        (dataToSend.Phone && dataToSend.Phone.trim() !== "") || 
+        (dataToSend.Summary && dataToSend.Summary.trim() !== "") || 
+        (Array.isArray(dataToSend.Skills) && dataToSend.Skills.length > 0) || 
+        (Array.isArray(dataToSend.Experience) && dataToSend.Experience.length > 0) || 
+        (Array.isArray(dataToSend.Education) && dataToSend.Education.length > 0);
       
       console.log("Data has content check:", formattedDataHasContent);
       
@@ -583,8 +616,21 @@ const ResumeBuilder = () => {
         });
         
         // Use the new API client
+        // Convert the data to a flat structure to avoid nested arrays
+        const flattenedData = {
+          ...dataToSend,
+          // Ensure these are proper arrays, not nested arrays
+          Skills: Array.isArray(dataToSend.Skills) ? dataToSend.Skills : [],
+          Experience: Array.isArray(dataToSend.Experience) ? dataToSend.Experience : [],
+          Education: Array.isArray(dataToSend.Education) ? dataToSend.Education : [],
+          Certifications: Array.isArray(dataToSend.Certifications) ? dataToSend.Certifications : [],
+          Projects: Array.isArray(dataToSend.Projects) ? dataToSend.Projects : []
+        };
+        
+        console.log("Sending flattened data to API:", flattenedData);
+        
         const result = await resumeBuilderApi.buildResume({
-          resumeData: JSON.stringify(dataToSend),
+          resumeData: JSON.stringify(flattenedData),
           templateId: selectedTemplate
         });
         

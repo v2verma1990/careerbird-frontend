@@ -35,11 +35,41 @@ namespace ResumeAI.API.Services
             
             Console.WriteLine($"Templates path: {_templatesPath}");
             Console.WriteLine($"HTML templates path: {_htmlTemplatesPath}");
+            Console.WriteLine($"Current directory: {Directory.GetCurrentDirectory()}");
             
             // Ensure directories exist
-            Directory.CreateDirectory(_templatesPath);
-            Directory.CreateDirectory(_htmlTemplatesPath);
-            Directory.CreateDirectory(Path.Combine(_templatesPath, "thumbnails"));
+            try {
+                if (!Directory.Exists(_templatesPath)) {
+                    Console.WriteLine($"Creating templates directory: {_templatesPath}");
+                    Directory.CreateDirectory(_templatesPath);
+                }
+                
+                if (!Directory.Exists(_htmlTemplatesPath)) {
+                    Console.WriteLine($"Creating HTML templates directory: {_htmlTemplatesPath}");
+                    Directory.CreateDirectory(_htmlTemplatesPath);
+                }
+                
+                string thumbnailsPath = Path.Combine(_templatesPath, "thumbnails");
+                if (!Directory.Exists(thumbnailsPath)) {
+                    Console.WriteLine($"Creating thumbnails directory: {thumbnailsPath}");
+                    Directory.CreateDirectory(thumbnailsPath);
+                }
+                
+                // List all template files for debugging
+                Console.WriteLine("Available template files:");
+                if (Directory.Exists(_htmlTemplatesPath)) {
+                    string[] templateFiles = Directory.GetFiles(_htmlTemplatesPath, "*.html");
+                    foreach (string file in templateFiles) {
+                        Console.WriteLine($"  - {Path.GetFileName(file)}");
+                    }
+                    Console.WriteLine($"Found {templateFiles.Length} template files");
+                } else {
+                    Console.WriteLine("HTML templates directory does not exist");
+                }
+            } catch (Exception ex) {
+                Console.WriteLine($"Error setting up template directories: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            }
             
             // Register Handlebars helpers
             Handlebars.RegisterHelper("debug", (writer, context, parameters) => {
@@ -483,11 +513,17 @@ namespace ResumeAI.API.Services
         {
             try
             {
+                // Log the request details
+                Console.WriteLine($"BuildResumeAsync called with templateId: {request.TemplateId}");
+                Console.WriteLine($"Has resume file: {request.ResumeFile != null}");
+                Console.WriteLine($"Has resume data: {!string.IsNullOrEmpty(request.ResumeData)}");
+                
                 // Get resume data either from file or from provided JSON
                 ResumeDataModel resumeData;
                 if (request.ResumeFile != null)
                 {
                     // Extract data from resume file using Python microservice
+                    Console.WriteLine($"Extracting data from resume file: {request.ResumeFile.FileName}");
                     resumeData = await ExtractResumeDataFromFileAsync(request.ResumeFile);
                 }
                 else if (!string.IsNullOrEmpty(request.ResumeData))
@@ -515,11 +551,12 @@ namespace ResumeAI.API.Services
                     catch (Exception jsonEx)
                     {
                         Console.WriteLine($"Error deserializing resume data: {jsonEx.Message}");
+                        Console.WriteLine($"Stack trace: {jsonEx.StackTrace}");
                         resumeData = new ResumeDataModel(); // Use empty model if deserialization fails
                     }
                     
                     // Log the parsed data
-                    Console.WriteLine($"Parsed resume data: Name={resumeData.Name}, Email={resumeData.Email}, Skills count={resumeData.Skills.Count}");
+                    Console.WriteLine($"Parsed resume data: Name={resumeData.Name}, Email={resumeData.Email}, Skills count={resumeData.Skills?.Count ?? 0}");
                 }
                 else
                 {
@@ -527,10 +564,16 @@ namespace ResumeAI.API.Services
                 }
 
                 // Get the template HTML
-                string templateHtml = await GetTemplateHtmlAsync(request.TemplateId);
-                
-                // Check if the resume data contains empty arrays
-                bool hasEmptyData = false;
+                Console.WriteLine($"Getting template HTML for templateId: {request.TemplateId}");
+                string templateHtml;
+                try {
+                    templateHtml = await GetTemplateHtmlAsync(request.TemplateId);
+                    Console.WriteLine($"Successfully retrieved template HTML, length: {templateHtml?.Length ?? 0} bytes");
+                } catch (Exception ex) {
+                    Console.WriteLine($"Error getting template HTML: {ex.Message}");
+                    Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                    throw;
+                }
                 
                 // Log the raw resume data for debugging
                 string rawDataJson = JsonConvert.SerializeObject(resumeData);
@@ -540,85 +583,45 @@ namespace ResumeAI.API.Services
                 // Log this to a file for debugging
                 File.WriteAllText(Path.Combine(Directory.GetCurrentDirectory(), "debug_resume_data.json"), rawDataJson);
                 
-                // Check if the data is in the specific format we're seeing in the issue
-                var jObj = JObject.Parse(rawDataJson);
+                // Simplified check for empty data
+                bool hasEmptyData = false;
                 
-                // Special check for the specific nested array structure we're seeing in the issue
-                if (jObj.TryGetValue("name", out JToken? nameToken) && nameToken is JArray nameArray && nameArray.Count == 0 &&
-                    jObj.TryGetValue("experience", out JToken? expToken) && expToken is JArray expArray && expArray.Count > 0 &&
-                    expArray[0] != null && expArray[0] is JArray expInnerArray && expInnerArray.Count > 0 &&
-                    expInnerArray[0] != null && expInnerArray[0] is JArray expInnerInnerArray && expInnerInnerArray.Count == 0)
+                // Check if the data is in PascalCase format (from frontend)
+                if (resumeData != null)
                 {
-                    Console.WriteLine("Detected specific nested empty array structure");
-                    hasEmptyData = true;
+                    // Check for Name, Email, Phone
+                    bool hasBasicInfo = 
+                        !string.IsNullOrWhiteSpace(resumeData.Name) || 
+                        !string.IsNullOrWhiteSpace(resumeData.Email) || 
+                        !string.IsNullOrWhiteSpace(resumeData.Phone);
                     
-                    // Log the structure for debugging
-                    File.WriteAllText(Path.Combine(Directory.GetCurrentDirectory(), "nested_array_structure.json"), rawDataJson);
+                    // Check for Experience
+                    bool hasExperience = resumeData.Experience != null && resumeData.Experience.Count > 0 && 
+                        resumeData.Experience.Any(e => 
+                            !string.IsNullOrWhiteSpace(e.Title) || 
+                            !string.IsNullOrWhiteSpace(e.Company) || 
+                            !string.IsNullOrWhiteSpace(e.Description));
+                    
+                    // Check for Education
+                    bool hasEducation = resumeData.Education != null && resumeData.Education.Count > 0 && 
+                        resumeData.Education.Any(e => 
+                            !string.IsNullOrWhiteSpace(e.Degree) || 
+                            !string.IsNullOrWhiteSpace(e.Institution));
+                    
+                    // Check for Skills
+                    bool hasSkills = resumeData.Skills != null && resumeData.Skills.Count > 0;
+                    
+                    // If any of these are true, we have data
+                    hasEmptyData = !(hasBasicInfo || hasExperience || hasEducation || hasSkills);
+                    
+                    Console.WriteLine($"Data check results: hasBasicInfo={hasBasicInfo}, hasExperience={hasExperience}, hasEducation={hasEducation}, hasSkills={hasSkills}");
                 }
-                    
-                    // Check if the data matches the empty structure pattern
-                    bool isEmptyStructure = true;
-                    
-                    // Check name, title, email, phone, location fields
-                    foreach (var field in new[] { "name", "title", "email", "phone", "location", "summary" })
-                    {
-                        if (jObj.TryGetValue(field, out JToken? value))
-                        {
-                            if (value is JArray arr)
-                            {
-                                // If it's not empty or contains non-empty values
-                                if (arr.Count > 0 && arr.Any(item => !IsEmptyValue(item)))
-                                {
-                                    isEmptyStructure = false;
-                                    break;
-                                }
-                            }
-                            else if (!IsEmptyValue(value))
-                            {
-                                isEmptyStructure = false;
-                                break;
-                            }
-                        }
-                    }
-                    
-                    // Check experience, education, skills arrays
-                    foreach (var field in new[] { "experience", "education", "skills" })
-                    {
-                        if (jObj.TryGetValue(field, out JToken? value) && value is JArray arr)
-                        {
-                            if (arr.Count > 0)
-                            {
-                                bool hasContent = false;
-                                
-                                // Check if any item in the array has content
-                                foreach (var item in arr)
-                                {
-                                    if (item is JArray innerArr)
-                                    {
-                                        if (innerArr.Count > 0 && innerArr.Any(i => !IsEmptyValue(i)))
-                                        {
-                                            hasContent = true;
-                                            break;
-                                        }
-                                    }
-                                    else if (!IsEmptyValue(item))
-                                    {
-                                        hasContent = true;
-                                        break;
-                                    }
-                                }
-                                
-                                if (hasContent)
-                                {
-                                    isEmptyStructure = false;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    
-                    hasEmptyData = isEmptyStructure;
-                    Console.WriteLine($"Data is empty: {hasEmptyData}");
+                else
+                {
+                    hasEmptyData = true;
+                }
+                
+                Console.WriteLine($"Data is empty: {hasEmptyData}");
                 
                 // If data is empty, return an empty HTML
                 if (hasEmptyData)
@@ -635,6 +638,13 @@ namespace ResumeAI.API.Services
                 }
                 
                 // Generate the resume HTML using Handlebars
+                // Add null check for templateHtml
+                if (templateHtml == null)
+                {
+                    Console.WriteLine("Warning: Template HTML is null. Using empty template.");
+                    templateHtml = "<html><body><p>No template available. Please select a different template.</p></body></html>";
+                }
+                
                 string resumeHtml = GenerateResumeHtml(templateHtml, resumeData ?? new object());
                 
                 // Log the first part of the generated HTML
@@ -1029,62 +1039,228 @@ namespace ResumeAI.API.Services
 
         private async Task<string> GetTemplateHtmlAsync(string templateId)
         {
-            string templatePath = Path.Combine(_htmlTemplatesPath, $"{templateId}.html");
-            Console.WriteLine($"Looking for template at: {templatePath}");
-            
-            // Check if the template exists in the html directory
-            if (File.Exists(templatePath))
+            try
             {
-                Console.WriteLine($"Found template at: {templatePath}");
-                return await File.ReadAllTextAsync(templatePath);
+                // Log the template ID and paths for debugging
+                Console.WriteLine($"GetTemplateHtmlAsync called with templateId: {templateId}");
+                Console.WriteLine($"HTML templates path: {_htmlTemplatesPath}");
+                Console.WriteLine($"Current directory: {Directory.GetCurrentDirectory()}");
+                
+                // Check if the templates directory exists
+                if (!Directory.Exists(_htmlTemplatesPath))
+                {
+                    Console.WriteLine($"WARNING: HTML templates directory does not exist: {_htmlTemplatesPath}");
+                    Directory.CreateDirectory(_htmlTemplatesPath);
+                    Console.WriteLine($"Created HTML templates directory: {_htmlTemplatesPath}");
+                }
+                
+                // List all available templates for debugging
+                Console.WriteLine("Available templates:");
+                try
+                {
+                    string[] templateFiles = Directory.GetFiles(_htmlTemplatesPath, "*.html");
+                    foreach (string file in templateFiles)
+                    {
+                        Console.WriteLine($"  - {Path.GetFileName(file)}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error listing template files: {ex.Message}");
+                }
+                
+                // Check if the template exists in the html directory
+                string templatePath = Path.Combine(_htmlTemplatesPath, $"{templateId}.html");
+                Console.WriteLine($"Looking for template at: {templatePath}");
+                
+                if (File.Exists(templatePath))
+                {
+                    Console.WriteLine($"Found template at: {templatePath}");
+                    string content = await File.ReadAllTextAsync(templatePath);
+                    Console.WriteLine($"Template content length: {content.Length} bytes");
+                    return content;
+                }
+                
+                // Check if the template exists in the current directory
+                string currentDirPath = Path.Combine(Directory.GetCurrentDirectory(), "html", $"{templateId}.html");
+                Console.WriteLine($"Checking current directory: {currentDirPath}");
+                
+                if (File.Exists(currentDirPath))
+                {
+                    Console.WriteLine($"Found template in current directory: {currentDirPath}");
+                    string content = await File.ReadAllTextAsync(currentDirPath);
+                    Console.WriteLine($"Template content length: {content.Length} bytes");
+                    return content;
+                }
+                
+                // If the requested template doesn't exist, use a default template
+                Console.WriteLine($"Template not found: {templateId}, using default template");
+                
+                // Try to use modern-clean as the default template
+                string defaultTemplatePath = Path.Combine(_htmlTemplatesPath, "modern-clean.html");
+                if (File.Exists(defaultTemplatePath))
+                {
+                    Console.WriteLine($"Using default template: modern-clean");
+                    string content = await File.ReadAllTextAsync(defaultTemplatePath);
+                    Console.WriteLine($"Default template content length: {content.Length} bytes");
+                    return content;
+                }
+                
+                // If modern-clean doesn't exist, try to use any available template
+                string[] availableTemplates = Directory.GetFiles(_htmlTemplatesPath, "*.html");
+                if (availableTemplates.Length > 0)
+                {
+                    string firstTemplate = availableTemplates[0];
+                    Console.WriteLine($"Using first available template: {Path.GetFileName(firstTemplate)}");
+                    string content = await File.ReadAllTextAsync(firstTemplate);
+                    Console.WriteLine($"First available template content length: {content.Length} bytes");
+                    return content;
+                }
+                
+                // Try to use our fixed template
+                string fixedTemplatePath = Path.Combine(Directory.GetCurrentDirectory(), "html", "fixed-template.html");
+                if (File.Exists(fixedTemplatePath))
+                {
+                    Console.WriteLine($"Using fixed template: {fixedTemplatePath}");
+                    string content = await File.ReadAllTextAsync(fixedTemplatePath);
+                    Console.WriteLine($"Fixed template content length: {content.Length} bytes");
+                    return content;
+                }
+                
+                // If no templates are found, throw an exception
+                Console.WriteLine("No templates found in any location");
+                throw new FileNotFoundException("No resume templates found. Please ensure at least one template HTML file exists.");
             }
-            
-            // Check if the template exists in the current directory
-            string currentDirPath = Path.Combine(Directory.GetCurrentDirectory(), "html", $"{templateId}.html");
-            Console.WriteLine($"Checking current directory: {currentDirPath}");
-            
-            if (File.Exists(currentDirPath))
+            catch (Exception ex)
             {
-                Console.WriteLine($"Found template in current directory: {currentDirPath}");
-                return await File.ReadAllTextAsync(currentDirPath);
+                Console.WriteLine($"Error in GetTemplateHtmlAsync: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                throw new Exception($"Error getting template HTML: {ex.Message}", ex);
             }
-            
-            // If the requested template doesn't exist, use a default template
-            Console.WriteLine($"Template not found: {templateId}, using default template");
-            
-            // Try to use modern-clean as the default template
-            string defaultTemplatePath = Path.Combine(_htmlTemplatesPath, "modern-clean.html");
-            if (File.Exists(defaultTemplatePath))
-            {
-                Console.WriteLine($"Using default template: modern-clean");
-                return await File.ReadAllTextAsync(defaultTemplatePath);
-            }
-            
-            // If modern-clean doesn't exist, try to use any available template
-            foreach (string templateFile in Directory.GetFiles(_htmlTemplatesPath, "*.html"))
-            {
-                Console.WriteLine($"Using available template: {Path.GetFileName(templateFile)}");
-                return await File.ReadAllTextAsync(templateFile);
-            }
-            
-            // If no templates are found, throw an exception
-            Console.WriteLine("No templates found");
-            throw new FileNotFoundException("No resume templates found. Please ensure at least one template HTML file exists.");
         }
 
-        private string GenerateResumeHtml(string templateHtml, object? data)
+        private string GenerateResumeHtml(string? templateHtml, object? data)
         {
             try
             {
                 // Ensure data is not null
                 data ??= new object();
                 
+                // Ensure templateHtml is not null
+                if (string.IsNullOrEmpty(templateHtml))
+                {
+                    Console.WriteLine("Warning: Empty template HTML provided to GenerateResumeHtml");
+                    templateHtml = "<html><body><p>No template available. Please select a different template.</p></body></html>";
+                }
+                
                 Console.WriteLine("Template HTML first 100 chars: " + templateHtml.Substring(0, Math.Min(100, templateHtml.Length)));
                 Console.WriteLine("Data type: " + data.GetType().Name);
                 
                 // Convert data to dictionary if it's a JObject
                 object templateData = data;
-                if (data is JObject jObject)
+                
+                // If data is a ResumeDataModel, convert it to a dictionary
+                if (data is ResumeDataModel resumeDataModel)
+                {
+                    Console.WriteLine("Converting ResumeDataModel to Dictionary");
+                    
+                    // Create a dictionary to store the processed data
+                    var processedDict = new Dictionary<string, object>();
+                    
+                    // Add basic information
+                    processedDict["name"] = resumeDataModel.Name ?? "";
+                    processedDict["title"] = resumeDataModel.Title ?? "";
+                    processedDict["email"] = resumeDataModel.Email ?? "";
+                    processedDict["phone"] = resumeDataModel.Phone ?? "";
+                    processedDict["location"] = resumeDataModel.Location ?? "";
+                    processedDict["linkedin"] = resumeDataModel.LinkedIn ?? "";
+                    processedDict["website"] = resumeDataModel.Website ?? "";
+                    processedDict["summary"] = resumeDataModel.Summary ?? "";
+                    
+                    // Add experience
+                    if (resumeDataModel.Experience != null && resumeDataModel.Experience.Count > 0)
+                    {
+                        processedDict["experience"] = resumeDataModel.Experience
+                            .Where(e => e != null)
+                            .Select(e => new Dictionary<string, object>
+                            {
+                                ["title"] = e.Title ?? "",
+                                ["company"] = e.Company ?? "",
+                                ["location"] = e.Location ?? "",
+                                ["startDate"] = e.StartDate ?? "",
+                                ["endDate"] = e.EndDate ?? "",
+                                ["description"] = e.Description ?? ""
+                            })
+                            .ToList();
+                    }
+                    else
+                    {
+                        processedDict["experience"] = new List<object>();
+                    }
+                    
+                    // Add education
+                    if (resumeDataModel.Education != null && resumeDataModel.Education.Count > 0)
+                    {
+                        processedDict["education"] = resumeDataModel.Education
+                            .Where(e => e != null)
+                            .Select(e => new Dictionary<string, object>
+                            {
+                                ["degree"] = e.Degree ?? "",
+                                ["institution"] = e.Institution ?? "",
+                                ["location"] = e.Location ?? "",
+                                ["startDate"] = e.StartDate ?? "",
+                                ["endDate"] = e.EndDate ?? "",
+                                ["gpa"] = e.GPA ?? ""
+                            })
+                            .ToList();
+                    }
+                    else
+                    {
+                        processedDict["education"] = new List<object>();
+                    }
+                    
+                    // Add skills
+                    processedDict["skills"] = resumeDataModel.Skills?.Where(s => !string.IsNullOrWhiteSpace(s)).ToList() ?? new List<string>();
+                    
+                    // Add certifications
+                    if (resumeDataModel.Certifications != null && resumeDataModel.Certifications.Count > 0)
+                    {
+                        processedDict["certifications"] = resumeDataModel.Certifications
+                            .Where(c => c != null)
+                            .Select(c => new Dictionary<string, object>
+                            {
+                                ["name"] = c.Name ?? "",
+                                ["issuer"] = c.Issuer ?? "",
+                                ["date"] = c.Date ?? ""
+                            })
+                            .ToList();
+                    }
+                    else
+                    {
+                        processedDict["certifications"] = new List<object>();
+                    }
+                    
+                    // Add projects
+                    if (resumeDataModel.Projects != null && resumeDataModel.Projects.Count > 0)
+                    {
+                        processedDict["projects"] = resumeDataModel.Projects
+                            .Where(p => p != null)
+                            .Select(p => new Dictionary<string, object>
+                            {
+                                ["name"] = p.Name ?? "",
+                                ["description"] = p.Description ?? "",
+                                ["technologies"] = p.Technologies ?? ""
+                            })
+                            .ToList();
+                    }
+                    else
+                    {
+                        processedDict["projects"] = new List<object>();
+                    }
+                    
+                    templateData = processedDict;
+                }
+                else if (data is JObject jObject)
                 {
                     Console.WriteLine("Converting JObject to Dictionary");
                     // Create a new dictionary to store the processed data
@@ -1102,7 +1278,7 @@ namespace ResumeAI.API.Services
                             Console.WriteLine($"Processing array: {key} with {jArray.Count} items");
                             
                             // Convert JArray to List<object> or List<string> based on content
-                            if (key == "skills" && jArray.Count > 0)
+                            if (key.ToLower() == "skills" && jArray.Count > 0)
                             {
                                 // For skills, convert to List<string>
                                 var skillsList = new List<string>();
@@ -1491,13 +1667,246 @@ namespace ResumeAI.API.Services
                     }
                 }
                 
-                // Compile the template
-                var template = Handlebars.Compile(templateHtml);
+                // Log the template data for debugging
+                Console.WriteLine($"Template data: {JsonConvert.SerializeObject(templateData).Substring(0, Math.Min(500, JsonConvert.SerializeObject(templateData).Length))}");
                 
-                // Generate HTML
-                string result = template(templateData);
-                Console.WriteLine("Generated HTML first 100 chars: " + result.Substring(0, Math.Min(100, result.Length)));
-                return result;
+                try {
+                    // Check if the template uses single braces instead of double braces for Handlebars
+                    if (templateHtml.Contains("<h1>{name}</h1>") || 
+                        templateHtml.Contains("<div class=\"title\">{title}</div>") ||
+                        templateHtml.Contains("<span>{email}</span>"))
+                    {
+                        Console.WriteLine("Converting single-brace template to Handlebars format");
+                        
+                        // Convert single braces to double braces for Handlebars
+                        templateHtml = templateHtml.Replace("{name}", "{{name}}");
+                        templateHtml = templateHtml.Replace("{title}", "{{title}}");
+                        templateHtml = templateHtml.Replace("{email}", "{{email}}");
+                        templateHtml = templateHtml.Replace("{phone}", "{{phone}}");
+                        templateHtml = templateHtml.Replace("{location}", "{{location}}");
+                        templateHtml = templateHtml.Replace("{summary}", "{{summary}}");
+                        
+                        // Also handle arrays and nested objects
+                        templateHtml = templateHtml.Replace("{experience.", "{{experience.");
+                        templateHtml = templateHtml.Replace("{education.", "{{education.");
+                        templateHtml = templateHtml.Replace("{skills.", "{{skills.");
+                        templateHtml = templateHtml.Replace("{certifications.", "{{certifications.");
+                        templateHtml = templateHtml.Replace("{projects.", "{{projects.");
+                        
+                        Console.WriteLine("Template converted to Handlebars format");
+                    }
+                    
+                    // Add Handlebars block helpers for collections if they don't exist
+                    if (!templateHtml.Contains("{{#each experience}}") && templateData is Dictionary<string, object> expDataDict && 
+                        expDataDict.ContainsKey("experience") && expDataDict["experience"] is System.Collections.ICollection expColl && expColl.Count > 0)
+                    {
+                        Console.WriteLine("Adding experience block helper to template");
+                        
+                        // Find a good insertion point - after the summary section
+                        int insertPoint = templateHtml.IndexOf("</div>", templateHtml.IndexOf("summary")) + 6;
+                        if (insertPoint < 6) // If summary not found
+                            insertPoint = templateHtml.IndexOf("</div>", templateHtml.IndexOf("container")) - 10; // Before container closing
+                            
+                        string experienceBlock = @"
+        {{#if experience}}
+        <div class=""section"">
+            <h2 class=""section-title"">Experience</h2>
+            {{#each experience}}
+            <div class=""experience-item"">
+                <div class=""experience-header"">
+                    <div>
+                        <div class=""job-title"">{{title}}</div>
+                        <div class=""company"">{{company}}</div>
+                    </div>
+                    <div class=""date-location"">
+                        {{startDate}} - {{endDate}}
+                        <br>{{location}}
+                    </div>
+                </div>
+                <div class=""description"">{{description}}</div>
+            </div>
+            {{/each}}
+        </div>
+        {{/if}}";
+                        
+                        templateHtml = templateHtml.Insert(insertPoint, experienceBlock);
+                    }
+                    
+                    // Add skills block if needed
+                    if (!templateHtml.Contains("{{#each skills}}") && templateData is Dictionary<string, object> skillsDataDict && 
+                        skillsDataDict.ContainsKey("skills") && skillsDataDict["skills"] is System.Collections.ICollection skillsColl && skillsColl.Count > 0)
+                    {
+                        Console.WriteLine("Adding skills block helper to template");
+                        
+                        // Find insertion point - before container closing
+                        int insertPoint = templateHtml.LastIndexOf("</div>", templateHtml.LastIndexOf("</body>"));
+                        
+                        string skillsBlock = @"
+        {{#if skills}}
+        <div class=""section"">
+            <h2 class=""section-title"">Skills</h2>
+            <div class=""skills-list"">
+                {{#each skills}}
+                <span class=""skill-tag"">{{this}}</span>
+                {{/each}}
+            </div>
+        </div>
+        {{/if}}";
+                        
+                        templateHtml = templateHtml.Insert(insertPoint, skillsBlock);
+                        
+                        // Add CSS for skills if not present
+                        if (!templateHtml.Contains(".skill-tag"))
+                        {
+                            int styleEnd = templateHtml.IndexOf("</style>");
+                            string skillsCSS = @"
+        .skills-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .skill-tag { background: #e2e8f0; padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.9rem; }";
+                            
+                            templateHtml = templateHtml.Insert(styleEnd, skillsCSS);
+                        }
+                    }
+                    
+                    // Compile the template
+                    var template = Handlebars.Compile(templateHtml);
+                    
+                    // Generate the HTML
+                    string result = template(templateData);
+                    
+                    // Log the first part of the generated HTML
+                    Console.WriteLine($"Generated HTML (first 100 chars): {result.Substring(0, Math.Min(100, result.Length))}");
+                    
+                    // Check if the HTML still has empty tags despite data being present
+                    if (result.Contains("<h1></h1>") && templateData is Dictionary<string, object> resultDataDict && !string.IsNullOrEmpty(resultDataDict["name"]?.ToString()))
+                    {
+                        Console.WriteLine("Warning: HTML still contains empty tags. Template might need additional fixes.");
+                        
+                        // We'll add proper Handlebars helpers and partials in a future update
+                        // For now, we'll return the result as is
+                    }
+                    
+                    return result;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error generating HTML: {ex.Message}");
+                    Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                    
+                    // Fallback to a simple HTML template
+                    if (templateData is Dictionary<string, object> fallbackDict)
+                    {
+                        string name = fallbackDict["name"]?.ToString() ?? "";
+                        string title = fallbackDict["title"]?.ToString() ?? "";
+                        string email = fallbackDict["email"]?.ToString() ?? "";
+                        string phone = fallbackDict["phone"]?.ToString() ?? "";
+                        string location = fallbackDict["location"]?.ToString() ?? "";
+                        string summary = fallbackDict["summary"]?.ToString() ?? "";
+                        
+                        string fallbackHtml = $@"<!DOCTYPE html>
+<html lang=""en"">
+<head>
+    <meta charset=""UTF-8"">
+    <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+    <title>{{name}} - Resume</title>
+    <style>
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{ font-family: 'Arial', sans-serif; line-height: 1.6; color: #333; background: #fff; }}
+        .container {{ max-width: 8.5in; margin: 0 auto; padding: 0.5in; min-height: 11in; }}
+        .header {{ background: linear-gradient(135deg, #1e3a8a, #3b82f6); color: white; padding: 2rem; text-align: center; margin-bottom: 2rem; }}
+        .header h1 {{ font-size: 2.5rem; font-weight: bold; margin-bottom: 0.5rem; }}
+        .header .title {{ font-size: 1.2rem; opacity: 0.9; margin-bottom: 1rem; }}
+        .contact-info {{ display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap; }}
+        .section {{ margin-bottom: 2rem; }}
+        .section-title {{ font-size: 1.4rem; color: #1e3a8a; border-bottom: 2px solid #3b82f6; padding-bottom: 0.5rem; margin-bottom: 1rem; font-weight: bold; }}
+        .summary {{ font-size: 1rem; line-height: 1.7; text-align: justify; }}
+        .experience-item {{ margin-bottom: 1.5rem; }}
+        .experience-header {{ display: flex; justify-content: space-between; margin-bottom: 0.5rem; }}
+        .job-title {{ font-weight: bold; font-size: 1.1rem; }}
+        .company {{ font-style: italic; }}
+        .date-location {{ text-align: right; font-size: 0.9rem; }}
+        .description {{ text-align: justify; }}
+        .skills-list {{ display: flex; flex-wrap: wrap; gap: 0.5rem; }}
+        .skill-tag {{ background: #e2e8f0; padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.9rem; }}
+    </style>
+</head>
+<body>
+    <div class=""container"">
+        <div class=""header"">
+            <h1>{{name}}</h1>
+            <div class=""title"">{{title}}</div>
+            <div class=""contact-info"">
+                <span>{{email}}</span>
+                <span>{{phone}}</span>
+                <span>{{location}}</span>
+            </div>
+        </div>
+
+        <div class=""section"">
+            <h2 class=""section-title"">Professional Summary</h2>
+            <p class=""summary"">{{summary}}</p>
+        </div>
+
+        {{#if experience}}
+        <div class=""section"">
+            <h2 class=""section-title"">Experience</h2>
+            {{#each experience}}
+            <div class=""experience-item"">
+                <div class=""experience-header"">
+                    <div>
+                        <div class=""job-title"">{{title}}</div>
+                        <div class=""company"">{{company}}</div>
+                    </div>
+                    <div class=""date-location"">
+                        {{startDate}} - {{endDate}}
+                        <br>{{location}}
+                    </div>
+                </div>
+                <div class=""description"">{{description}}</div>
+            </div>
+            {{/each}}
+        </div>
+        {{/if}}
+
+        {{#if education}}
+        <div class=""section"">
+            <h2 class=""section-title"">Education</h2>
+            {{#each education}}
+            <div class=""experience-item"">
+                <div class=""experience-header"">
+                    <div>
+                        <div class=""job-title"">{{degree}}</div>
+                        <div class=""company"">{{institution}}</div>
+                    </div>
+                    <div class=""date-location"">
+                        {{startDate}} - {{endDate}}
+                        <br>{{location}}
+                    </div>
+                </div>
+                {{#if gpa}}<div>GPA: {{gpa}}</div>{{/if}}
+            </div>
+            {{/each}}
+        </div>
+        {{/if}}
+
+        {{#if skills}}
+        <div class=""section"">
+            <h2 class=""section-title"">Skills</h2>
+            <div class=""skills-list"">
+                {{#each skills}}
+                <span class=""skill-tag"">{{this}}</span>
+                {{/each}}
+            </div>
+        </div>
+        {{/if}}
+    </div>
+</body>
+</html>";
+                        
+                        return fallbackHtml;
+                    }
+                    
+                    return "<html><body><p>Error generating resume. Please try again with a different template.</p></body></html>";
+                }
             }
             catch (Exception ex)
             {
@@ -1672,6 +2081,14 @@ namespace ResumeAI.API.Services
                     
                     // Generate the resume HTML using the updated data
                     string templateHtml = await GetTemplateHtmlAsync(templateId);
+                    
+                    // Add null check for templateHtml
+                    if (templateHtml == null)
+                    {
+                        Console.WriteLine("Warning: Template HTML is null. Using empty template.");
+                        templateHtml = "<html><body><p>No template available. Please select a different template.</p></body></html>";
+                    }
+                    
                     string resumeHtml = GenerateResumeHtml(templateHtml, updatedResumeData);
                     
                     // Normalize experience descriptions before returning to frontend

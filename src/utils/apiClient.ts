@@ -3,8 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 // Base URL for API calls
 const API_BASE_URL = "https://localhost:5001/api"; // Local development URL
 
-// Check if backend is running
-export const IS_BACKEND_RUNNING = false; // Set to false for demo mode
+// Backend is always running in production environment
+export const IS_BACKEND_RUNNING = true; // Set to true for production
 
 // Helper function for API calls
 async function apiCall<T>(
@@ -368,15 +368,33 @@ export const api = {
     },
     buildResume: async (params: { resumeData: string, templateId: string }) => {
       try {
+        console.log(`Building resume with template ID: ${params.templateId}`);
         const { data: { session } } = await supabase.auth.getSession();
         
         const formData = new FormData();
         formData.append('resumeData', params.resumeData);
-        formData.append('TemplateId', params.templateId);
+        formData.append('templateId', params.templateId);
         
         const headers: Record<string, string> = {};
         if (session?.access_token) {
           headers["Authorization"] = `Bearer ${session.access_token}`;
+        }
+        
+        console.log(`Sending request to ${API_BASE_URL}/resumebuilder/build`);
+        
+        // Log the form data being sent
+        for (const pair of formData.entries()) {
+          if (pair[0] === 'resumeData') {
+            console.log(`Form data - ${pair[0]}: (data length: ${pair[1].toString().length})`);
+            try {
+              const parsedData = JSON.parse(pair[1].toString());
+              console.log("Parsed resume data:", parsedData);
+            } catch (e) {
+              console.error("Could not parse resume data:", e);
+            }
+          } else {
+            console.log(`Form data - ${pair[0]}: ${pair[1]}`);
+          }
         }
         
         const response = await fetch(`${API_BASE_URL}/resumebuilder/build`, {
@@ -388,10 +406,27 @@ export const api = {
         
         if (!response.ok) {
           const errorText = await response.text();
+          console.error(`Resume build error (${response.status}): ${errorText}`);
           return { data: null, error: errorText };
         }
         
-        const data = await response.json();
+        const contentType = response.headers.get('content-type');
+        console.log(`Response content type: ${contentType}`);
+        
+        let data;
+        if (contentType && contentType.includes('application/json')) {
+          data = await response.json();
+          console.log(`Received JSON response with HTML length: ${data?.html?.length || 0}`);
+        } else {
+          const text = await response.text();
+          console.log(`Received non-JSON response with length: ${text.length}`);
+          try {
+            data = JSON.parse(text);
+          } catch (e) {
+            console.error('Failed to parse response as JSON:', e);
+            return { data: null, error: 'Invalid response format' };
+          }
+        }
         return { data, error: null };
       } catch (error) {
         console.error("Build resume error:", error);

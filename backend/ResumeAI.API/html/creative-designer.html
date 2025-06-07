@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{name}} - Creative Resume</title>
+    <title>{{#if Name}}{{Name}}{{else}}{{name}}{{/if}} - Creative Resume</title>
     <style>
         * {
             margin: 0;
@@ -178,77 +178,109 @@
         <div class="sidebar">
             <div class="profile-section">
                 <div class="profile-image">{{name.[0]}}</div>
-                <h1 class="name">{{name}}</h1>
-                <div class="title">{{title}}</div>
+                <h1 class="name">{{#if Name}}{{Name}}{{else}}{{name}}{{/if}}</h1>
+                <div class="title">{{#if Title}}{{Title}}{{else}}{{title}}{{/if}}</div>
             </div>
             
             <div class="sidebar-section">
                 <h3 class="sidebar-title">Contact</h3>
-                <div class="contact-item">{{email}}</div>
-                <div class="contact-item">{{phone}}</div>
-                <div class="contact-item">{{location}}</div>
-                {{#if linkedin}}<div class="contact-item">{{linkedin}}</div>{{/if}}
-                {{#if website}}<div class="contact-item">{{website}}</div>{{/if}}
+                <div class="contact-item">{{#if Email}}{{Email}}{{else}}{{email}}{{/if}}</div>
+                <div class="contact-item">{{#if Phone}}{{Phone}}{{else}}{{phone}}{{/if}}</div>
+                <div class="contact-item">{{#if Location}}{{Location}}{{else}}{{location}}{{/if}}</div>
+                {{#if LinkedIn}}<div class="contact-item">{{linkedin}}</div>{{else}}{{#if linkedin}}<div class="contact-item">{{linkedin}}</div>{{/if}}{{/if}}
+                {{#if Website}}<div class="contact-item">{{website}}</div>{{else}}{{#if website}}<div class="contact-item">{{website}}</div>{{/if}}{{/if}}
             </div>
             
-            {{#if skills}}
+            {{#if Skills.length}}
             <div class="sidebar-section">
                 <h3 class="sidebar-title">Skills</h3>
                 {{#each skills}}
                 <span class="skill-item">{{this}}</span>
                 {{/each}}
             </div>
-            {{/if}}
+            {{else}}{{#if skills.length}}
+            <div class="sidebar-section">
+                <h3 class="sidebar-title">Skills</h3>
+                {{#each skills}}
+                <span class="skill-item">{{this}}</span>
+                {{/each}}
+            </div>
+            {{/if}}{{/if}}
         </div>
         
         <div class="main-content">
-            {{#if summary}}
+            {{#if Summary}}
             <div class="section">
                 <h2 class="section-title">About Me</h2>
                 <div class="summary-text">{{summary}}</div>
             </div>
-            {{/if}}
+            {{else}}{{#if summary}}
+            <div class="section">
+                <h2 class="section-title">About Me</h2>
+                <div class="summary-text">{{summary}}</div>
+            </div>
+            {{/if}}{{/if}}
             
-            {{#if experience}}
+            {{#if Experience.length}}
             <div class="section">
                 <h2 class="section-title">Experience</h2>
                 {{#each experience}}
                 <div class="experience-item">
                     <div class="item-header">
-                        <div class="item-title">{{this.title}}</div>
-                        <div class="item-subtitle">{{this.company}}</div>
-                        <div class="item-meta">{{this.startDate}} - {{this.endDate}} | {{this.location}}</div>
+                        <div class="item-title">{{#if Title}}{{Title}}{{else}}{{title}}{{else}}{{#if experience.length}}
+            <div class="section">
+                <h2 class="section-title">Experience</h2>
+                {{#each experience}}
+                <div class="experience-item">
+                    <div class="item-header">
+                        <div class="item-title">{{#if Title}}{{Title}}{{else}}{{title}}{{/if}}{{/if}}</div>
+                        <div class="item-subtitle">{{company}}</div>
+                        <div class="item-meta">{{startDate}} - {{endDate}} | {{#if Location}}{{Location}}{{else}}{{location}}{{/if}}</div>
                     </div>
-                    <div class="item-description">{{this.description}}</div>
+                    <div class="item-description">{{description}}</div>
                 </div>
                 {{/each}}
             </div>
             {{/if}}
             
-            {{#if projects}}
+            {{#if Projects.length}}
             <div class="section">
                 <h2 class="section-title">Projects</h2>
                 {{#each projects}}
                 <div class="project-item">
                     <div class="item-header">
-                        <div class="item-title">{{this.name}}</div>
-                        <div class="item-meta">{{this.technologies}}</div>
+                        <div class="item-title">{{#if Name}}{{Name}}{{else}}{{name}}{{else}}{{#if projects.length}}
+            <div class="section">
+                <h2 class="section-title">Projects</h2>
+                {{#each projects}}
+                <div class="project-item">
+                    <div class="item-header">
+                        <div class="item-title">{{#if Name}}{{Name}}{{else}}{{name}}{{/if}}{{/if}}</div>
+                        <div class="item-meta">{{technologies}}</div>
                     </div>
-                    <div class="item-description">{{this.description}}</div>
+                    <div class="item-description">{{description}}</div>
                 </div>
                 {{/each}}
             </div>
             {{/if}}
             
-            {{#if education}}
+            {{#if Education.length}}
             <div class="section">
                 <h2 class="section-title">Education</h2>
                 {{#each education}}
                 <div class="education-item">
                     <div class="item-header">
-                        <div class="item-title">{{this.degree}}</div>
-                        <div class="item-subtitle">{{this.institution}}</div>
-                        <div class="item-meta">{{this.startDate}} - {{this.endDate}} | {{this.location}}</div>
+                        <div class="item-title">{{degree}}</div>
+                        <div class="item-subtitle">{{institution}}</div>
+                        <div class="item-meta">{{startDate}} - {{endDate}} | {{#if Location}}{{Location}}{{else}}{{location}}{{else}}{{#if education.length}}
+            <div class="section">
+                <h2 class="section-title">Education</h2>
+                {{#each education}}
+                <div class="education-item">
+                    <div class="item-header">
+                        <div class="item-title">{{degree}}</div>
+                        <div class="item-subtitle">{{institution}}</div>
+                        <div class="item-meta">{{startDate}} - {{endDate}} | {{#if Location}}{{Location}}{{else}}{{location}}{{/if}}{{/if}}</div>
                     </div>
                 </div>
                 {{/each}}

@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Download, Eye, Plus, Trash2, Upload, FileText } from "lucide-react";
 import api from "@/utils/apiClient";
+import "@/styles/ResumeBuilderApp.css";
 
 interface Template {
   id: string;
@@ -104,7 +105,25 @@ const ResumeBuilderApp = () => {
       if (result.error) {
         setTemplates(beautifulTemplates);
       } else {
-        setTemplates([...beautifulTemplates, ...(result.data || [])]);
+        // Create a map of template IDs to avoid duplicates
+        const templateMap = new Map();
+        
+        // Add hardcoded templates first
+        beautifulTemplates.forEach(template => {
+          templateMap.set(template.id, template);
+        });
+        
+        // Add API templates, overriding any duplicates
+        if (result.data && Array.isArray(result.data)) {
+          result.data.forEach(template => {
+            if (template.id && !templateMap.has(template.id)) {
+              templateMap.set(template.id, template);
+            }
+          });
+        }
+        
+        // Convert map back to array
+        setTemplates(Array.from(templateMap.values()));
       }
     } catch (error) {
       setTemplates(beautifulTemplates);
@@ -118,7 +137,7 @@ const ResumeBuilderApp = () => {
       id: "modern-executive",
       name: "Modern Executive",
       description: "Clean, professional design perfect for executives and senior roles",
-      thumbnail: "/resume-templates/thumbnails/modern-executive.png",
+      thumbnail: "/resume-templates/thumbnails/executive.PNG",
       category: "professional",
       color: "#1e3a8a"
     },
@@ -126,7 +145,15 @@ const ResumeBuilderApp = () => {
       id: "creative-designer",
       name: "Creative Designer",
       description: "Bold, creative layout ideal for designers and creative professionals",
-      thumbnail: "/resume-templates/thumbnails/creative-designer.png",
+      thumbnail: "/resume-templates/thumbnails/creative.png",
+      category: "creative",
+      color: "#7c3aed"
+    },
+    {
+      id: "creative-designer-simple",
+      name: "Creative Designer Simple",
+      description: "Simplified creative layout for designers and artists",
+      thumbnail: "/resume-templates/thumbnails/creative.png",
       category: "creative",
       color: "#7c3aed"
     },
@@ -134,7 +161,7 @@ const ResumeBuilderApp = () => {
       id: "tech-minimalist",
       name: "Tech Minimalist",
       description: "Clean, minimal design focusing on skills and experience",
-      thumbnail: "/resume-templates/thumbnails/tech-minimalist.png",
+      thumbnail: "/resume-templates/thumbnails/tech.PNG",
       category: "tech",
       color: "#059669"
     },
@@ -142,7 +169,7 @@ const ResumeBuilderApp = () => {
       id: "startup-founder",
       name: "Startup Founder",
       description: "Dynamic layout for entrepreneurs and startup professionals",
-      thumbnail: "/resume-templates/thumbnails/startup-founder.png",
+      thumbnail: "/resume-templates/thumbnails/professional.png",
       category: "professional",
       color: "#dc2626"
     },
@@ -150,7 +177,7 @@ const ResumeBuilderApp = () => {
       id: "academic-scholar",
       name: "Academic Scholar",
       description: "Traditional academic format for researchers and professors",
-      thumbnail: "/resume-templates/thumbnails/academic-scholar.png",
+      thumbnail: "/resume-templates/thumbnails/academic.PNG",
       category: "academic",
       color: "#1f2937"
     },
@@ -158,7 +185,7 @@ const ResumeBuilderApp = () => {
       id: "marketing-pro",
       name: "Marketing Pro",
       description: "Vibrant design perfect for marketing and sales professionals",
-      thumbnail: "/resume-templates/thumbnails/marketing-pro.png",
+      thumbnail: "/resume-templates/thumbnails/creative.png",
       category: "creative",
       color: "#ea580c"
     },
@@ -166,39 +193,39 @@ const ResumeBuilderApp = () => {
       id: "finance-expert",
       name: "Finance Expert",
       description: "Conservative, trustworthy design for finance professionals",
-      thumbnail: "/resume-templates/thumbnails/finance-expert.png",
+      thumbnail: "/resume-templates/thumbnails/professional.png",
       category: "professional",
       color: "#0f172a"
     },
     {
-      id: "healthcare-pro",
-      name: "Healthcare Professional",
-      description: "Clean, medical-focused design for healthcare workers",
-      thumbnail: "/resume-templates/thumbnails/healthcare-pro.png",
-      category: "specialized",
+      id: "modern-clean",
+      name: "Modern Clean",
+      description: "Clean, modern design with a professional look",
+      thumbnail: "/resume-templates/thumbnails/modern-clean.png",
+      category: "professional",
       color: "#0369a1"
     },
     {
       id: "entry-graduate",
       name: "Fresh Graduate",
       description: "Perfect for new graduates and entry-level professionals",
-      thumbnail: "/resume-templates/thumbnails/entry-graduate.png",
+      thumbnail: "/resume-templates/thumbnails/entry-level.PNG",
       category: "entry-level",
       color: "#16a34a"
     },
     {
-      id: "consultant-elite",
-      name: "Elite Consultant",
-      description: "Premium design for consultants and advisory professionals",
-      thumbnail: "/resume-templates/thumbnails/consultant-elite.png",
+      id: "elegant",
+      name: "Elegant",
+      description: "Elegant, sophisticated design for experienced professionals",
+      thumbnail: "/resume-templates/thumbnails/elegant.PNG",
       category: "professional",
       color: "#7c2d12"
     },
     {
-      id: "data-scientist",
-      name: "Data Scientist",
-      description: "Modern layout highlighting technical skills and projects",
-      thumbnail: "/resume-templates/thumbnails/data-scientist.png",
+      id: "minimal",
+      name: "Minimal",
+      description: "Clean, minimal design focusing on content",
+      thumbnail: "/resume-templates/thumbnails/minimal.png",
       category: "tech",
       color: "#4338ca"
     },
@@ -206,7 +233,7 @@ const ResumeBuilderApp = () => {
       id: "product-manager",
       name: "Product Manager",
       description: "Strategic design for product managers and project leads",
-      thumbnail: "/resume-templates/thumbnails/product-manager.png",
+      thumbnail: "/resume-templates/thumbnails/professional.png",
       category: "professional",
       color: "#0891b2"
     }
@@ -411,8 +438,31 @@ const ResumeBuilderApp = () => {
 
     try {
       setLoading(true);
+      console.log(`Generating resume with template: ${selectedTemplate}`);
+      console.log("Resume data being sent:", resumeData);
+      
+      // Make sure we're sending valid data in the format the backend expects
+      const dataToSend = {
+        // Personal information
+        name: resumeData.name || "",
+        title: resumeData.title || "",
+        email: resumeData.email || "",
+        phone: resumeData.phone || "",
+        location: resumeData.location || "",
+        linkedIn: resumeData.linkedin || "", // Note: backend expects 'linkedIn' with capital 'I'
+        website: resumeData.website || "",
+        summary: resumeData.summary || "",
+        
+        // Arrays
+        skills: resumeData.skills || [],
+        experience: resumeData.experience || [],
+        education: resumeData.education || [],
+        certifications: resumeData.certifications || [],
+        projects: resumeData.projects || []
+      };
+      
       const result = await api.resumeBuilder.buildResume({
-        resumeData: JSON.stringify(resumeData),
+        resumeData: JSON.stringify(dataToSend),
         templateId: selectedTemplate
       });
 
@@ -422,18 +472,36 @@ const ResumeBuilderApp = () => {
           description: result.error,
           variant: "destructive"
         });
+        console.error("Resume generation error:", result.error);
         return;
       }
 
-      if (result.data?.html) {
-        setPreviewHtml(result.data.html);
+      if (result.data) {
+        console.log("Resume data received:", result.data);
+        
+        // Just use the HTML directly from the backend
+        let htmlContent = result.data.html || "";
+        
+        console.log(`Resume HTML received, length: ${htmlContent.length} characters`);
+        console.log("First 200 characters of HTML:", htmlContent.substring(0, 200));
+        
+        // Just use the HTML directly from the backend without any modifications
+        setPreviewHtml(htmlContent);
         setShowPreview(true);
         toast({
           title: "Success",
           description: "Resume generated successfully!"
         });
+      } else {
+        console.error("No HTML content received in the response");
+        toast({
+          title: "Warning",
+          description: "Resume was generated but no content was received",
+          variant: "warning"
+        });
       }
     } catch (error) {
+      console.error("Resume generation error:", error);
       toast({
         title: "Error",
         description: "Failed to generate resume",
@@ -480,6 +548,23 @@ const ResumeBuilderApp = () => {
               srcDoc={previewHtml}
               className="w-full h-[800px] border-0"
               title="Resume Preview"
+              onLoad={(e) => {
+                // Ensure iframe content is properly sized
+                const iframe = e.target as HTMLIFrameElement;
+                if (iframe.contentDocument) {
+                  const iframeBody = iframe.contentDocument.body;
+                  if (iframeBody) {
+                    // Force styles to be applied
+                    iframeBody.style.margin = '0';
+                    iframeBody.style.padding = '0';
+                    iframeBody.style.height = '100%';
+                    iframeBody.style.width = '100%';
+                    
+                    // Log for debugging
+                    console.log('Resume preview iframe loaded successfully');
+                  }
+                }
+              }}
             />
           </div>
         </div>
@@ -524,8 +609,8 @@ const ResumeBuilderApp = () => {
                         onClick={() => setSelectedTemplate(template.id)}
                       >
                         <div 
-                          className="w-full h-24 rounded mb-2 flex items-center justify-center text-white font-semibold text-sm"
-                          style={{ backgroundColor: template.color || '#6b7280' }}
+                          className="w-full h-24 rounded mb-2 flex items-center justify-center text-white font-semibold text-sm template-color"
+                          style={{ "--template-color": template.color || '#6b7280' } as React.CSSProperties}
                         >
                           {template.name}
                         </div>
@@ -551,12 +636,16 @@ const ResumeBuilderApp = () => {
                       Resume Information
                     </CardTitle>
                     <div className="flex gap-2">
+                      <Label htmlFor="resume-upload" className="sr-only">
+                        Upload Resume File
+                      </Label>
                       <input
                         type="file"
                         accept=".pdf,.docx,.doc,.txt"
                         onChange={handleFileUpload}
                         className="hidden"
                         id="resume-upload"
+                        aria-label="Upload Resume File"
                       />
                       <Button
                         variant="outline"
@@ -837,8 +926,11 @@ const ResumeBuilderApp = () => {
                           <Badge key={index} variant="secondary" className="flex items-center gap-2">
                             {skill}
                             <button
+                              type="button"
                               onClick={() => removeSkill(index)}
                               className="ml-2 text-red-500 hover:text-red-700"
+                              aria-label={`Remove ${skill} skill`}
+                              title={`Remove ${skill}`}
                             >
                               <Trash2 className="w-3 h-3" />
                             </button>

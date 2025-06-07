@@ -282,6 +282,7 @@ export const AuthProvider = ({ children }) => {
           
           // Navigate based on user type and subscription after fetching subscription data
           if (data.profile?.userType === "recruiter") {
+            console.log("Navigating to recruiter dashboard");
             navigate("/dashboard", { replace: true });
           } else if (data.profile?.userType === "candidate") {
             const subType = subscriptionData?.subscription_type || 'free';
@@ -296,16 +297,21 @@ export const AuthProvider = ({ children }) => {
             // If subscription is active and not free, go to candidate dashboard
             // Otherwise go to free plan dashboard
             if (subType !== 'free' && isActive) {
+              console.log("Navigating to premium candidate dashboard");
               navigate("/candidate-dashboard", { replace: true });
             } else {
+              console.log("Navigating to free plan dashboard");
               navigate("/free-plan-dashboard", { replace: true });
             }
           } else {
             console.error("Unexpected userType:", data.profile?.userType);
+            // Default to free plan dashboard for security
+            console.log("Unknown user type, defaulting to free plan dashboard");
+            navigate("/free-plan-dashboard", { replace: true });
             toast({
               variant: "destructive",
-              title: "Error",
-              description: `Unknown userType: ${data.profile?.userType}`
+              title: "Warning",
+              description: `Unknown user type detected. Please contact support if this issue persists.`
             });
           }
         } catch (error) {
@@ -320,8 +326,10 @@ export const AuthProvider = ({ children }) => {
           
           // Navigate to a safe default
           if (data.profile?.userType === "recruiter") {
+            console.log("Error occurred, but still navigating to recruiter dashboard");
             navigate("/dashboard", { replace: true });
           } else {
+            console.log("Error occurred, navigating to free plan dashboard");
             navigate("/free-plan-dashboard", { replace: true });
           }
         } finally {

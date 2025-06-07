@@ -1,0 +1,114 @@
+{
+    "html": "<!DOCTYPE html>\r\n<html lang=\"en\">\r\n<head>\r\n    <meta charset=\"UTF-8\">\r\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\r\n    <title> - Resume</title>\r\n    <style>\r\n        * {\r\n            margin: 0;\r\n            padding: 0;\r\n            box-sizing: border-box;\r\n        }\r\n        \r\n        body {\r\n            font-family: 'Arial', sans-serif;\r\n            line-height: 1.6;\r\n            color: #333;\r\n            background: #fff;\r\n        }\r\n        \r\n        .container {\r\n            max-width: 8.5in;\r\n            margin: 0 auto;\r\n            padding: 0.5in;\r\n            min-height: 11in;\r\n        }\r\n        \r\n        .header {\r\n            background: linear-gradient(135deg, #1e3a8a, #3b82f6);\r\n            color: white;\r\n            padding: 2rem;\r\n            text-align: center;\r\n            margin-bottom: 2rem;\r\n        }\r\n        \r\n        .header h1 {\r\n            font-size: 2.5rem;\r\n            font-weight: bold;\r\n            margin-bottom: 0.5rem;\r\n        }\r\n        \r\n        .header .title {\r\n            font-size: 1.2rem;\r\n            opacity: 0.9;\r\n            margin-bottom: 1rem;\r\n        }\r\n        \r\n        .contact-info {\r\n            display: flex;\r\n            justify-content: center;\r\n            gap: 2rem;\r\n            flex-wrap: wrap;\r\n        }\r\n        \r\n        .section {\r\n            margin-bottom: 2rem;\r\n        }\r\n        \r\n        .section-title {\r\n            font-size: 1.4rem;\r\n            color: #1e3a8a;\r\n            border-bottom: 2px solid #3b82f6;\r\n            padding-bottom: 0.5rem;\r\n            margin-bottom: 1rem;\r\n            font-weight: bold;\r\n        }\r\n        \r\n        .summary {\r\n            font-size: 1rem;\r\n            line-height: 1.7;\r\n            text-align: justify;\r\n        }\r\n        \r\n        .experience-item, .education-item {\r\n            margin-bottom: 1.5rem;\r\n        }\r\n        \r\n        .experience-header {\r\n            display: flex;\r\n            justify-content: space-between;\r\n            margin-bottom: 0.5rem;\r\n        }\r\n        \r\n        .job-title {\r\n            font-weight: bold;\r\n            font-size: 1.1rem;\r\n            color: #1e3a8a;\r\n        }\r\n        \r\n        .company {\r\n            font-weight: 600;\r\n            color: #374151;\r\n        }\r\n        \r\n        .date-location {\r\n            color: #6b7280;\r\n            font-style: italic;\r\n        }\r\n        \r\n        .description {\r\n            margin-top: 0.5rem;\r\n            line-height: 1.6;\r\n        }\r\n        \r\n        .skills-grid {\r\n            display: grid;\r\n            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));\r\n            gap: 1rem;\r\n        }\r\n        \r\n        .skill-category {\r\n            background: #f8fafc;\r\n            padding: 1rem;\r\n            border-left: 4px solid #3b82f6;\r\n        }\r\n        \r\n        .skill-category h4 {\r\n            color: #1e3a8a;\r\n            margin-bottom: 0.5rem;\r\n        }\r\n        \r\n        .skills-list {\r\n            display: flex;\r\n            flex-wrap: wrap;\r\n            gap: 0.5rem;\r\n        }\r\n        \r\n        .skill-tag {\r\n            background: #e0f2fe;\r\n            color: #0369a1;\r\n            padding: 0.2rem 0.6rem;\r\n            border-radius: 1rem;\r\n            font-size: 0.85rem;\r\n        }\r\n        \r\n        @media print {\r\n            .container {\r\n                max-width: none;\r\n                padding: 0;\r\n            }\r\n        }\r\n    </style>\r\n</head>\r\n<body>\r\n    <div class=\"container\">\r\n        <div class=\"header\">\r\n            <h1></h1>\r\n            <div class=\"title\"></div>\r\n            <div class=\"contact-info\">\r\n                <span></span>\r\n                <span></span>\r\n                <span></span>\r\n                \r\n                \r\n            </div>\r\n        </div>\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n    </div>\r\n</body>\r\n</html>",
+    "data": {
+        "name": "Vishal Verma",
+        "title": "Cloud Architect",
+        "email": "v2verma1990@gmail.com",
+        "phone": "+917259577668 / +447880665787",
+        "location": "London, United Kingdom",
+        "linkedIn": "",
+        "website": "",
+        "summary": "Experienced Architect with over 14+ years of expertise in cloud architecture, specializing in Microsoft Azure services and solutions. Skilled in assessing and recommending public and hybrid Cloud solutions (IaaS, SaaS, PaaS) and advising customers on Cloud solution options. Adept at collaborating with cross-functional teams to define cloud strategies, roadmaps, and migration plans. Proven track record of architecture and implementing cloud-native solutions, microservices, serverless architectures, and containerized applications. Committed to continuous professional growth and driving innovation. Highly experienced in server/application migration to Azure Cloud.",
+        "skills": [
+            "Architectural Design",
+            "DevOps",
+            "Cloud Migration",
+            "Project Plan",
+            "C# / .Net",
+            "Cloud Architecture",
+            "Urban Code/Bamboo/Octopus",
+            "Cloud Strategy and Roadmapping",
+            "Pre Sales",
+            "Azure Data Factory",
+            "Python"
+        ],
+        "experience": [
+            {
+                "title": "Cloud Architect",
+                "company": "Cognizant",
+                "location": "London",
+                "startDate": "APRIL 2022",
+                "endDate": "PRESENT",
+                "description": "• As a Cloud Architect (SME) my responsibilities are: Advised customers on various Cloud solution options, discussed benefits and risks of each, and recommended solutions aligned with their business needs\n• Collaborated with cross-functional teams to define cloud strategies, roadmaps, and migration plans\n• Design and implemented cloud-native solutions, microservices, serverless architectures, and containerized applications\n• Worked with application teams and architects to map out their migration roadmaps and target architectures\n• Modernizing and migrating application to Azure Cloud\n• Implemented and managed Azure services like AppService, LogicApps, FunctionApps, RedisCache, Key Vault, Service Bus, Site Recovery, Blob Storage, and more"
+            },
+            {
+                "title": "Cloud Migration Architect",
+                "company": "Wipro",
+                "location": "",
+                "startDate": "OCTOBER 2018",
+                "endDate": "JULY 2020",
+                "description": "• As an Cloud Migration Architect, my responsibilities were to understand the application architecture, Propose the To-Be architecture to migrate it to cloud (Azure Stack / IBM) based on the customer's requirement\n• Lead the design, planning and implementation of complex IT infrastructure solutions in Lloyds Banking Group account\n• Perform application portfolio analysis to prepare the check-list and identify candidate applications and workloads for migration to the Cloud\n• Create migration project plans, and execute against them\n• Develop pricing and cost models for complex engagements as part of the To-Be design\n• To design, develop, document, test, and debug new and existing configuration management (Terraform) infrastructure as code\n• Support CI/CD pipeline and identify potential problems\n• Leverage Azure DevOps and Jenkins subject matter expertise to support CI/CD environment"
+            },
+            {
+                "title": "Lead Software Engineer",
+                "company": "Danske IT and Support Services India Private Limited",
+                "location": "Bangalore, India",
+                "startDate": "NOVEMBER 2016",
+                "endDate": "SEPTEMBER 2018",
+                "description": "• As a Lead Engineer, my responsibility include: Technical requirement gathering and estimation\n• Direct Interaction with business and customers following agile methodology\n• Designed and Developed the application in C#\n• Net 3\n• 5, ASP\n• Net, Classic ASP, Pl/SQL, WebAPI, Angular\n• Check In, Versioning control, for code review, creating a Work item, build management, Continuous integration using TFS\n• Whole responsibility to create a module to submit data to third party System (Danske Raadgiver)"
+            },
+            {
+                "title": "Software Engineer",
+                "company": "Wells Fargo India Solutions Private Ltd.",
+                "location": "Bangalore, India",
+                "startDate": "DECEMBER 2013",
+                "endDate": "OCTOBER 2016",
+                "description": "• Responsibilities include: Working as a\n• Net Developer to enhance functionality of Bank Intranet website\n• Responsible for debugging the bugs in the existing application and development of new modules\n• Developed a Maintenance Window (web application) using Asp\n• Net that enables the admin to maintain features (e\n• g\n• authentication, dB connection, modifying relationship between different parameters\n• ) in the bank website\n• Developed various modules for Bank to enhance the process flow including automated mailing system, document archiving system etc\n• Developed a Request/Response System (ADA tool) that provides a User Friendly GUI(using\n• Net, AJAX, JQuery) to user and enables them to submit their request (Indexes/pointers) to store data in database in xml form"
+            },
+            {
+                "title": "Technical Analyst",
+                "company": "Dell International Services India Private Ltd",
+                "location": "Noida, India",
+                "startDate": "APRIL 2011",
+                "endDate": "OCTOBER 2013",
+                "description": "• Responsibilities include: Developed a Web Service (WCF) to expose the functionality of CORE module to other third party\n• Also Developed an alerting System (database alerts) using Pl/SQL, MSMQ, C# that automatically alerts the support team for any error\n• Part of team that developed Authentication System for SHL application user (Window Service) that generates authentication token for users and passes it as an object to other interacting modules\n• Contributed in enhancement of RE Module in SHL (\n• Net 3\n• 5 Platform)\n• Developed tool for Data Extraction to cater regular demand of data extract from client\n• UI/front-end development, designed web pages using Ajax, Jscript, implement sitemap for primary/secondary page navigation, master pages"
+            }
+        ],
+        "education": [
+            {
+                "degree": "MBA",
+                "institution": "Amity University",
+                "location": "",
+                "startDate": "",
+                "endDate": "",
+                "gpa": ""
+            },
+            {
+                "degree": "B.Tech",
+                "institution": "Uttar Pradesh Technical University",
+                "location": "Noida, India",
+                "startDate": "APRIL 2007",
+                "endDate": "MARCH 2011",
+                "gpa": ""
+            }
+        ],
+        "certifications": [
+            {
+                "name": "Microsoft Certified: Azure Developer Associate",
+                "issuer": "Microsoft",
+                "date": ""
+            },
+            {
+                "name": "AZ-300 Microsoft Azure Architect Technologies",
+                "issuer": "Microsoft",
+                "date": ""
+            },
+            {
+                "name": "Microsoft Certified: Azure Security Engineer Associate",
+                "issuer": "Microsoft",
+                "date": ""
+            },
+            {
+                "name": "AZ 900: Microsoft Certified Azure Fundamentals",
+                "issuer": "Microsoft",
+                "date": ""
+            },
+            {
+                "name": "Professional Cloud Architect by Google",
+                "issuer": "Google",
+                "date": ""
+            }
+        ],
+        "projects": []
+    }
+}

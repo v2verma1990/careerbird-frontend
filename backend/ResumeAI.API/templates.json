@@ -1,6 +1,13 @@
 {
   "templates": [
     {
+      "id": "modern-executive",
+      "name": "Modern Executive",
+      "description": "A modern executive design with a professional look",
+      "thumbnail": "/resume-templates/thumbnails/modern-clean.png",
+      "category": "professional"
+    },
+    {
       "id": "modern-clean",
       "name": "Modern Clean",
       "description": "A clean, modern design with a professional look",
@@ -27,6 +34,91 @@
       "description": "A traditional professional resume layout",
       "thumbnail": "/resume-templates/thumbnails/professional.png",
       "category": "professional"
+    },
+    {
+      "id": "executive",
+      "name": "Executive",
+      "description": "An executive-level resume design",
+      "thumbnail": "/resume-templates/thumbnails/executive.png",
+      "category": "professional"
+    },
+    {
+      "id": "tech",
+      "name": "Tech",
+      "description": "A modern design for tech professionals",
+      "thumbnail": "/resume-templates/thumbnails/tech.png",
+      "category": "professional"
+    },
+    {
+      "id": "elegant",
+      "name": "Elegant",
+      "description": "An elegant design with a touch of sophistication",
+      "thumbnail": "/resume-templates/thumbnails/elegant.png",
+      "category": "professional"
+    },
+    {
+      "id": "academic",
+      "name": "Academic",
+      "description": "A design suited for academic and research positions",
+      "thumbnail": "/resume-templates/thumbnails/academic.png",
+      "category": "specialized"
+    },
+    {
+      "id": "entry-level",
+      "name": "Entry Level",
+      "description": "Perfect for recent graduates and entry-level positions",
+      "thumbnail": "/resume-templates/thumbnails/entry-level.png",
+      "category": "simple"
+    },
+    {
+      "id": "chronological",
+      "name": "Chronological",
+      "description": "A traditional chronological resume layout",
+      "thumbnail": "/resume-templates/thumbnails/chronological.png",
+      "category": "simple"
+    }
+  ,
+    {
+      "id": "academic-scholar",
+      "name": "Academic Scholar",
+      "description": "A comprehensive design for academic and research professionals",
+      "thumbnail": "/resume-templates/thumbnails/academic.png",
+      "category": "specialized"
+    },
+    {
+      "id": "creative-designer",
+      "name": "Creative Designer",
+      "description": "A creative design for designers and artists",
+      "thumbnail": "/resume-templates/thumbnails/creative.png",
+      "category": "creative"
+    },
+    {
+      "id": "finance-expert",
+      "name": "Finance Expert",
+      "description": "A professional design for finance professionals",
+      "thumbnail": "/resume-templates/thumbnails/professional.png",
+      "category": "professional"
+    },
+    {
+      "id": "marketing-pro",
+      "name": "Marketing Professional",
+      "description": "A modern design for marketing professionals",
+      "thumbnail": "/resume-templates/thumbnails/professional.png",
+      "category": "professional"
+    },
+    {
+      "id": "startup-founder",
+      "name": "Startup Founder",
+      "description": "A bold design for entrepreneurs and startup founders",
+      "thumbnail": "/resume-templates/thumbnails/tech.png",
+      "category": "professional"
+    },
+    {
+      "id": "tech-minimalist",
+      "name": "Tech Minimalist",
+      "description": "A clean, minimalist design for tech professionals",
+      "thumbnail": "/resume-templates/thumbnails/minimal.png",
+      "category": "minimal"
     }
   ]
 }

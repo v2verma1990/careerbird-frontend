@@ -1,0 +1,5 @@
+/* ResumeBuilderApp styles */
+
+.template-color {
+  background-color: var(--template-color, #6b7280);
+}
