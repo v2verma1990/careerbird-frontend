@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{#if Name}}{{Name}}{{else}}{{name}}{{/if}} - Curriculum Vitae</title>
+    <title>{{#if Name}}{{name}}{{else}}{{name}}{{/if}} - Curriculum Vitae</title>
     <style>
         * {
             margin: 0;
@@ -219,179 +218,90 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1 class="name">{{#if Name}}{{Name}}{{else}}{{name}}{{/if}}</h1>
-            <div class="title">{{#if Title}}{{Title}}{{else}}{{title}}{{/if}}</div>
+            <h1 class="name">{{#if Name}}{{name}}{{else}}{{name}}{{/if}}</h1>
+            <div class="title">{{#if Title}}{{title}}{{else}}{{title}}{{/if}}</div>
             <div class="contact-info">
-                {{#if Email}}{{Email}}{{else}}{{email}}{{/if}} • {{#if Phone}}{{Phone}}{{else}}{{phone}}{{/if}} • {{#if Location}}{{Location}}{{else}}{{location}}{{/if}}<br>
-                {{#if LinkedIn}}{{LinkedIn}}{{else}}{{#if linkedin}}{{linkedin}}{{/if}}{{/if}}{{#if Website}} • {{Website}}{{else}}{{#if website}} • {{website}}{{/if}}{{/if}}
+                {{#if Email}}{{email}}{{else}}{{email}}{{/if}} • {{#if Phone}}{{phone}}{{else}}{{phone}}{{/if}} • {{#if Location}}{{location}}{{else}}{{location}}{{/if}}<br>
+                {{#if LinkedIn}}{{linkedin}}{{else}}{{#if linkedin}}{{linkedin}}{{/if}}{{/if}}{{#if Website}} • {{website}}{{else}}{{#if website}} • {{website}}{{/if}}{{/if}}
             </div>
         </div>
 
-        {{#if Summary}}
-        <div class="section">
-            <h2 class="section-title">Research Interests</h2>
-            <div class="summary-text">{{Summary}}</div>
-        </div>
-        {{else}}
         {{#if summary}}
         <div class="section">
             <h2 class="section-title">Research Interests</h2>
             <div class="summary-text">{{summary}}</div>
         </div>
-        {{else}}{{#if summary}}
-        <div class="section">
-            <h2 class="section-title">Research Interests</h2>
-            <div class="summary-text">{{Summary}}</div>
-        </div>
-        {{else}}
-        {{#if summary}}
-        <div class="section">
-            <h2 class="section-title">Research Interests</h2>
-            <div class="summary-text">{{summary}}</div>
-        </div>
-        {{/if}}{{/if}}
         {{/if}}
 
-        {{#if Education.length}}
-        <div class="section">
-            <h2 class="section-title">Education</h2>
-            {{#each Education}}
-            <div class="cv-item">
-                <div class="item-header">
-                    <div class="item-title">{{#if this.Degree}}{{#if this.Degree}}{{this.Degree}}{{else}}{{this.degree}}{{/if}}{{else}}{{#if this.Degree}}{{this.Degree}}{{else}}{{this.degree}}{{/if}}{{/if}}</div>
-                    <div class="item-date">{{#if this.StartDate}}{{#if this.StartDate}}{{this.StartDate}}{{else}}{{this.startDate}}{{/if}}{{else}}{{#if this.StartDate}}{{this.StartDate}}{{else}}{{this.startDate}}{{/if}}{{/if}} - {{#if this.EndDate}}{{#if this.EndDate}}{{this.EndDate}}{{else}}{{this.endDate}}{{/if}}{{else}}{{#if this.EndDate}}{{this.EndDate}}{{else}}{{this.endDate}}{{/if}}{{/if}}</div>
-                </div>
-                <div class="item-subtitle">{{#if this.Institution}}{{#if this.Institution}}{{this.Institution}}{{else}}{{this.institution}}{{/if}}{{else}}{{#if this.Institution}}{{this.Institution}}{{else}}{{this.institution}}{{/if}}{{/if}}</div>
-                <div class="item-location">{{#if this.Location}}{{#if this.Location}}{{this.Location}}{{else}}{{this.location}}{{/if}}{{else}}{{#if this.Location}}{{this.Location}}{{else}}{{this.location}}{{/if}}{{/if}}</div>
-                {{#if this.GPA}}<div class="item-description">GPA: {{this.GPA}}</div>{{else}}{{#if this.gpa}}<div class="item-description">GPA: {{this.gpa}}</div>{{/if}}{{/if}}
-            </div>
-            {{/each}}
-        </div>
-        {{else}}
-        {{#if education.length}}
+        {{#if education}}
         <div class="section">
             <h2 class="section-title">Education</h2>
             {{#each education}}
             <div class="cv-item">
                 <div class="item-header">
-                    <div class="item-title">{{#if this.Degree}}{{#if this.Degree}}{{this.Degree}}{{else}}{{this.degree}}{{/if}}{{else}}{{#if this.Degree}}{{this.Degree}}{{else}}{{this.degree}}{{/if}}{{/if}}</div>
-                    <div class="item-date">{{#if this.StartDate}}{{#if this.StartDate}}{{this.StartDate}}{{else}}{{this.startDate}}{{/if}}{{else}}{{#if this.StartDate}}{{this.StartDate}}{{else}}{{this.startDate}}{{/if}}{{/if}} - {{#if this.EndDate}}{{#if this.EndDate}}{{this.EndDate}}{{else}}{{this.endDate}}{{/if}}{{else}}{{#if this.EndDate}}{{this.EndDate}}{{else}}{{this.endDate}}{{/if}}{{/if}}</div>
+                    <div class="item-title">{{degree}}</div>
+                    <div class="item-date">{{startDate}} - {{endDate}}</div>
                 </div>
-                <div class="item-subtitle">{{#if this.Institution}}{{#if this.Institution}}{{this.Institution}}{{else}}{{this.institution}}{{/if}}{{else}}{{#if this.Institution}}{{this.Institution}}{{else}}{{this.institution}}{{/if}}{{/if}}</div>
-                <div class="item-location">{{#if this.Location}}{{#if this.Location}}{{this.Location}}{{else}}{{this.location}}{{/if}}{{else}}{{#if this.Location}}{{this.Location}}{{else}}{{this.location}}{{/if}}{{/if}}</div>
-                {{#if this.GPA}}<div class="item-description">GPA: {{this.GPA}}</div>{{else}}{{#if this.gpa}}<div class="item-description">GPA: {{this.gpa}}</div>{{/if}}{{/if}}
+                <div class="item-subtitle">{{institution}}</div>
+                <div class="item-location">{{location}}</div>
+                {{#if gpa}}<div class="item-description">GPA: {{gpa}}</div>{{/if}}
             </div>
             {{/each}}
         </div>
-        {{/if}}
         {{/if}}
 
-        {{#if Experience.length}}
-        <div class="section">
-            <h2 class="section-title">Academic Positions</h2>
-            {{#each Experience}}
-            <div class="cv-item">
-                <div class="item-header">
-                    <div class="item-title">{{#if this.Title}}{{#if this.Title}}{{this.Title}}{{else}}{{this.title}}{{/if}}{{else}}{{#if this.Title}}{{this.Title}}{{else}}{{this.title}}{{/if}}{{/if}}</div>
-                    <div class="item-date">{{#if this.StartDate}}{{#if this.StartDate}}{{this.StartDate}}{{else}}{{this.startDate}}{{/if}}{{else}}{{#if this.StartDate}}{{this.StartDate}}{{else}}{{this.startDate}}{{/if}}{{/if}} - {{#if this.EndDate}}{{#if this.EndDate}}{{this.EndDate}}{{else}}{{this.endDate}}{{/if}}{{else}}{{#if this.EndDate}}{{this.EndDate}}{{else}}{{this.endDate}}{{/if}}{{/if}}</div>
-                </div>
-                <div class="item-subtitle">{{#if this.Company}}{{#if this.Company}}{{this.Company}}{{else}}{{this.company}}{{/if}}{{else}}{{#if this.Company}}{{this.Company}}{{else}}{{this.company}}{{/if}}{{/if}}</div>
-                <div class="item-location">{{#if this.Location}}{{#if this.Location}}{{this.Location}}{{else}}{{this.location}}{{/if}}{{else}}{{#if this.Location}}{{this.Location}}{{else}}{{this.location}}{{/if}}{{/if}}</div>
-                {{#if this.Description}}<div class="item-description">{{#if this.Description}}{{this.Description}}{{else}}{{this.description}}{{/if}}</div>{{else}}{{#if this.description}}<div class="item-description">{{#if this.Description}}{{this.Description}}{{else}}{{this.description}}{{/if}}</div>{{/if}}{{/if}}
-            </div>
-            {{/each}}
-        </div>
-        {{else}}
-        {{#if experience.length}}
+        {{#if experience}}
         <div class="section">
             <h2 class="section-title">Academic Positions</h2>
             {{#each experience}}
             <div class="cv-item">
                 <div class="item-header">
-                    <div class="item-title">{{#if this.Title}}{{#if this.Title}}{{this.Title}}{{else}}{{this.title}}{{/if}}{{else}}{{#if this.Title}}{{this.Title}}{{else}}{{this.title}}{{/if}}{{/if}}</div>
-                    <div class="item-date">{{#if this.StartDate}}{{#if this.StartDate}}{{this.StartDate}}{{else}}{{this.startDate}}{{/if}}{{else}}{{#if this.StartDate}}{{this.StartDate}}{{else}}{{this.startDate}}{{/if}}{{/if}} - {{#if this.EndDate}}{{#if this.EndDate}}{{this.EndDate}}{{else}}{{this.endDate}}{{/if}}{{else}}{{#if this.EndDate}}{{this.EndDate}}{{else}}{{this.endDate}}{{/if}}{{/if}}</div>
+                    <div class="item-title">{{title}}</div>
+                    <div class="item-date">{{startDate}} - {{endDate}}</div>
                 </div>
-                <div class="item-subtitle">{{#if this.Company}}{{#if this.Company}}{{this.Company}}{{else}}{{this.company}}{{/if}}{{else}}{{#if this.Company}}{{this.Company}}{{else}}{{this.company}}{{/if}}{{/if}}</div>
-                <div class="item-location">{{#if this.Location}}{{#if this.Location}}{{this.Location}}{{else}}{{this.location}}{{/if}}{{else}}{{#if this.Location}}{{this.Location}}{{else}}{{this.location}}{{/if}}{{/if}}</div>
-                {{#if this.Description}}<div class="item-description">{{#if this.Description}}{{this.Description}}{{else}}{{this.description}}{{/if}}</div>{{else}}{{#if this.description}}<div class="item-description">{{#if this.Description}}{{this.Description}}{{else}}{{this.description}}{{/if}}</div>{{/if}}{{/if}}
+                <div class="item-subtitle">{{company}}</div>
+                <div class="item-location">{{location}}</div>
+                {{#if description}}<div class="item-description">{{description}}</div>{{/if}}
             </div>
             {{/each}}
         </div>
-        {{/if}}
         {{/if}}
 
-        {{#if Projects.length}}
-        <div class="section">
-            <h2 class="section-title">Research Projects</h2>
-            {{#each Projects}}
-            <div class="cv-item">
-                <div class="item-title">{{#if this.Name}}{{#if this.Name}}{{this.Name}}{{else}}{{this.name}}{{/if}}{{else}}{{#if this.Name}}{{this.Name}}{{else}}{{this.name}}{{/if}}{{/if}}</div>
-                {{#if this.Technologies}}<div class="item-subtitle">{{#if this.Technologies}}{{this.Technologies}}{{else}}{{this.technologies}}{{/if}}</div>{{else}}{{#if this.technologies}}<div class="item-subtitle">{{#if this.Technologies}}{{this.Technologies}}{{else}}{{this.technologies}}{{/if}}</div>{{/if}}{{/if}}
-                <div class="item-description">{{#if this.Description}}{{#if this.Description}}{{this.Description}}{{else}}{{this.description}}{{/if}}{{else}}{{#if this.Description}}{{this.Description}}{{else}}{{this.description}}{{/if}}{{/if}}</div>
-            </div>
-            {{/each}}
-        </div>
-        {{else}}
-        {{#if projects.length}}
+        {{#if projects}}
         <div class="section">
             <h2 class="section-title">Research Projects</h2>
             {{#each projects}}
             <div class="cv-item">
-                <div class="item-title">{{#if this.Name}}{{#if this.Name}}{{this.Name}}{{else}}{{this.name}}{{/if}}{{else}}{{#if this.Name}}{{this.Name}}{{else}}{{this.name}}{{/if}}{{/if}}</div>
-                {{#if this.Technologies}}<div class="item-subtitle">{{#if this.Technologies}}{{this.Technologies}}{{else}}{{this.technologies}}{{/if}}</div>{{else}}{{#if this.technologies}}<div class="item-subtitle">{{#if this.Technologies}}{{this.Technologies}}{{else}}{{this.technologies}}{{/if}}</div>{{/if}}{{/if}}
-                <div class="item-description">{{#if this.Description}}{{#if this.Description}}{{this.Description}}{{else}}{{this.description}}{{/if}}{{else}}{{#if this.Description}}{{this.Description}}{{else}}{{this.description}}{{/if}}{{/if}}</div>
+                <div class="item-title">{{name}}</div>
+                {{#if technologies}}<div class="item-subtitle">{{technologies}}</div>{{/if}}
+                <div class="item-description">{{description}}</div>
             </div>
             {{/each}}
         </div>
-        {{/if}}
         {{/if}}
 
-        {{#if Certifications.length}}
-        <div class="section">
-            <h2 class="section-title">Awards & Honors</h2>
-            {{#each Certifications}}
-            <div class="certification-item">
-                <div>
-                    <div class="certification-name">{{#if this.Name}}{{#if this.Name}}{{this.Name}}{{else}}{{this.name}}{{/if}}{{else}}{{#if this.Name}}{{this.Name}}{{else}}{{this.name}}{{/if}}{{/if}}</div>
-                    <div class="certification-issuer">{{#if this.Issuer}}{{#if this.Issuer}}{{this.Issuer}}{{else}}{{this.issuer}}{{/if}}{{else}}{{#if this.Issuer}}{{this.Issuer}}{{else}}{{this.issuer}}{{/if}}{{/if}}</div>
-                </div>
-                <div class="certification-date">{{#if this.Date}}{{#if this.Date}}{{this.Date}}{{else}}{{this.date}}{{/if}}{{else}}{{#if this.Date}}{{this.Date}}{{else}}{{this.date}}{{/if}}{{/if}}</div>
-            </div>
-            {{/each}}
-        </div>
-        {{else}}
-        {{#if certifications.length}}
+        {{#if certifications}}
         <div class="section">
             <h2 class="section-title">Awards & Honors</h2>
             {{#each certifications}}
             <div class="certification-item">
                 <div>
-                    <div class="certification-name">{{#if this.Name}}{{#if this.Name}}{{this.Name}}{{else}}{{this.name}}{{/if}}{{else}}{{#if this.Name}}{{this.Name}}{{else}}{{this.name}}{{/if}}{{/if}}</div>
-                    <div class="certification-issuer">{{#if this.Issuer}}{{#if this.Issuer}}{{this.Issuer}}{{else}}{{this.issuer}}{{/if}}{{else}}{{#if this.Issuer}}{{this.Issuer}}{{else}}{{this.issuer}}{{/if}}{{/if}}</div>
+                    <div class="certification-name">{{name}}</div>
+                    <div class="certification-issuer">{{issuer}}</div>
                 </div>
-                <div class="certification-date">{{#if this.Date}}{{#if this.Date}}{{this.Date}}{{else}}{{this.date}}{{/if}}{{else}}{{#if this.Date}}{{this.Date}}{{else}}{{this.date}}{{/if}}{{/if}}</div>
+                <div class="certification-date">{{date}}</div>
             </div>
             {{/each}}
         </div>
         {{/if}}
-        {{/if}}
 
-        {{#if Skills.length}}
-        <div class="section">
-            <h2 class="section-title">Technical Skills</h2>
-            <div class="skill-list">
-                {{#each Skills}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}
-            </div>
-        </div>
-        {{else}}
-        {{#if skills.length}}
+        {{#if skills}}
         <div class="section">
             <h2 class="section-title">Technical Skills</h2>
             <div class="skill-list">
                 {{#each skills}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}
             </div>
         </div>
-        {{/if}}
         {{/if}}
     </div>
 </body>

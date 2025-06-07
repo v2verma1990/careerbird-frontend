@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using ResumeAI.API.Models;
 using ResumeAI.API.Services;
+using Newtonsoft.Json;
 
 namespace ResumeAI.API.Controllers
 {
@@ -134,6 +135,141 @@ namespace ResumeAI.API.Controllers
             }
             catch (Exception ex)
             {
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+        
+        [HttpPost("build-pdf")]
+        public async Task<IActionResult> BuildResumePdf([FromForm] ResumeBuilderRequestModel request)
+        {
+            try
+            {
+                string userId = _authService.ExtractUserIdFromAuthHeader(Request.Headers["Authorization"].ToString());
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized(new { error = "Invalid or missing authorization token" });
+
+                if (string.IsNullOrEmpty(request.TemplateId))
+                    return BadRequest(new { error = "Template ID is required" });
+
+                if (request.ResumeFile == null && string.IsNullOrEmpty(request.ResumeData))
+                    return BadRequest(new { error = "Either resume file or resume data must be provided" });
+
+                // Get user plan
+                var profile = await _userService.GetUserProfileAsync(userId);
+                var subscription = await _candidateSubscriptionService.GetCandidateSubscription(userId);
+                var plan = subscription?.subscription_type ?? "free";
+
+                // Check if user can use the resume builder feature
+                if (!await _userService.CanUseFeatureAsync(userId, "resume_builder"))
+                {
+                    return StatusCode(403, new { error = "Usage limit reached for resume builder feature" });
+                }
+
+                // Track feature usage
+                await _userService.TrackFeatureUsage(userId, "resume_builder");
+                
+                // Log activity
+                await _activityLogService.LogActivity(userId, "resume_built", "Resume built as PDF");
+
+                // Generate PDF directly
+                var pdfBytes = await _resumeBuilderService.BuildResumePdfAsync(request, userId);
+                
+                // Verify that we have PDF bytes
+                if (pdfBytes == null || pdfBytes.Length == 0)
+                {
+                    return StatusCode(500, new { error = "Failed to generate PDF file" });
+                }
+                
+                // Verify that the content is actually a PDF (starts with %PDF)
+                bool isPdf = false;
+                if (pdfBytes.Length > 4)
+                {
+                    string header = System.Text.Encoding.ASCII.GetString(pdfBytes, 0, 4);
+                    isPdf = header.StartsWith("%PDF");
+                }
+                
+                if (!isPdf)
+                {
+                    Console.WriteLine("Warning: Generated content does not appear to be a valid PDF");
+                    // Force generation of a simple PDF instead of returning non-PDF content
+                    using (var memoryStream = new MemoryStream())
+                    {
+                        var document = new PdfSharpCore.Pdf.PdfDocument();
+                        var page = document.AddPage();
+                        var gfx = PdfSharpCore.Drawing.XGraphics.FromPdfPage(page);
+                        var font = new PdfSharpCore.Drawing.XFont("Arial", 12);
+                        
+                        gfx.DrawString("Error generating PDF. Please try again.", font, 
+                            PdfSharpCore.Drawing.XBrushes.Black, 
+                            new PdfSharpCore.Drawing.XRect(50, 50, page.Width - 100, 50),
+                            PdfSharpCore.Drawing.XStringFormats.TopLeft);
+                        
+                        document.Save(memoryStream);
+                        pdfBytes = memoryStream.ToArray();
+                    }
+                }
+                
+                // Get the user's name for the filename if available
+                string userName = "resume";
+                if (!string.IsNullOrEmpty(request.ResumeData))
+                {
+                    try
+                    {
+                        var resumeData = JsonConvert.DeserializeObject<dynamic>(request.ResumeData);
+                        if (resumeData != null)
+                        {
+                            // Safely access the name property using dynamic
+                            string? nameValue = null;
+                            try
+                            {
+                                // Check if the name property exists and is not null
+                                // Use a safer approach to handle dynamic properties
+                                object? nameObj = null;
+                                try {
+                                    nameObj = resumeData.name;
+                                } catch {
+                                    // Property doesn't exist
+                                }
+                                
+                                if (nameObj != null)
+                                {
+                                    nameValue = nameObj.ToString();
+                                }
+                            }
+                            catch
+                            {
+                                // Property doesn't exist or is not accessible
+                            }
+
+                            if (!string.IsNullOrEmpty(nameValue))
+                            {
+                                userName = nameValue;
+                                // Replace spaces and special characters for a valid filename
+                                userName = string.Join("_", userName.Split(Path.GetInvalidFileNameChars()));
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error extracting name for PDF filename: {ex.Message}");
+                    }
+                }
+                
+                // Return the PDF file with a proper filename
+                return File(pdfBytes, "application/pdf", $"{userName.ToLower().Replace(" ", "_")}_resume_{DateTime.Now:yyyyMMdd}.pdf");
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { error = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in BuildResumePdf: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 return StatusCode(500, new { error = ex.Message });
             }
         }

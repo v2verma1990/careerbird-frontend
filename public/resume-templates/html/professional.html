@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{#if Name}}{{Name}}{{else}}{{name}}{{/if}} - Resume</title>
+  <title>{{#if Name}}{{name}}{{else}}{{name}}{{/if}} - Resume</title>
   <style>
     * {
       margin: 0;
@@ -122,21 +122,21 @@
 <body>
   <div class="resume-container">
     <div class="header">
-      <h1>{{#if Name}}{{Name}}{{else}}{{name}}{{/if}}</h1>
-      <p>{{#if Title}}{{Title}}{{else}}{{title}}{{/if}}</p>
+      <h1>{{#if Name}}{{name}}{{else}}{{name}}{{/if}}</h1>
+      <p>{{#if Title}}{{title}}{{else}}{{title}}{{/if}}</p>
       <div class="contact-info">
-        <span>{{#if Email}}{{Email}}{{else}}{{email}}{{/if}}</span>
-        <span>{{#if Phone}}{{Phone}}{{else}}{{phone}}{{/if}}</span>
-        <span>{{#if Location}}{{Location}}{{else}}{{location}}{{/if}}</span>
-        {{#if LinkedIn}}<span>{{LinkedIn}}</span>{{else}}{{#if linkedin}}<span>{{linkedin}}</span>{{/if}}{{/if}}
-        {{#if Website}}<span>{{Website}}</span>{{else}}{{#if website}}<span>{{website}}</span>{{/if}}{{/if}}
+        <span>{{#if Email}}{{email}}{{else}}{{email}}{{/if}}</span>
+        <span>{{#if Phone}}{{phone}}{{else}}{{phone}}{{/if}}</span>
+        <span>{{#if Location}}{{location}}{{else}}{{location}}{{/if}}</span>
+        {{#if LinkedIn}}<span>{{linkedin}}</span>{{else}}{{#if linkedin}}<span>{{linkedin}}</span>{{/if}}{{/if}}
+        {{#if Website}}<span>{{website}}</span>{{else}}{{#if website}}<span>{{website}}</span>{{/if}}{{/if}}
       </div>
     </div>
 
     {{#if Summary}}
     <div class="section">
       <h2 class="section-title">Professional Summary</h2>
-      <p class="item-description">{{Summary}}</p>
+      <p class="item-description">{{summary}}</p>
     </div>
     {{else}}
     {{#if summary}}
@@ -307,6 +307,8 @@
   </div>
 </body>
 </html>
+
+
 
 
 

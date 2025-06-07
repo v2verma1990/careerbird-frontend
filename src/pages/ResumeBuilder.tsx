@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import ResumeFileUploader from "@/components/ResumeFileUploader";
+import PDFViewer from "@/components/PDFViewer";
 import api from "@/utils/apiClient";
 import { resumeBuilderApi } from "@/utils/resumeBuilderApi";
 import { Loader2, Check, X } from "lucide-react";
@@ -386,6 +387,8 @@ const ResumeBuilder = () => {
     });
   };
 
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+
   const handleGenerateResume = async () => {
     if (!selectedTemplate) {
       toast({
@@ -629,6 +632,49 @@ const ResumeBuilder = () => {
         
         console.log("Sending flattened data to API:", flattenedData);
         
+        // First, generate the PDF for preview
+        try {
+          // Create form data for the PDF API request
+          const formData = new FormData();
+          formData.append('templateId', selectedTemplate);
+          formData.append('resumeData', JSON.stringify(flattenedData));
+          
+          // Use the new PDF endpoint
+          console.log("Calling PDF endpoint with template:", selectedTemplate);
+          const pdfResponse = await fetch('https://localhost:5001/api/resumebuilder/build-pdf', {
+            method: 'POST',
+            body: formData,
+            credentials: 'include'
+          });
+          
+          if (!pdfResponse.ok) {
+            const errorText = await pdfResponse.text();
+            try {
+              const errorJson = JSON.parse(errorText);
+              throw new Error(errorJson.error || `Failed to generate PDF: ${pdfResponse.statusText}`);
+            } catch (e) {
+              throw new Error(`Failed to generate PDF: ${pdfResponse.statusText}`);
+            }
+          }
+          
+          // Get the PDF blob
+          const pdfBlob = await pdfResponse.blob();
+          console.log("Received PDF blob:", pdfBlob.type, pdfBlob.size, "bytes");
+          
+          // Create a URL for the PDF blob
+          const url = URL.createObjectURL(pdfBlob);
+          console.log("Created PDF URL:", url);
+          
+          // Set the PDF URL for the viewer
+          setPdfUrl(url);
+          
+          console.log("PDF generated successfully:", url);
+        } catch (pdfError) {
+          console.error("Error generating PDF:", pdfError);
+          // Continue with HTML generation even if PDF fails
+        }
+        
+        // Also get the HTML version for data normalization and fallback
         const result = await resumeBuilderApi.buildResume({
           resumeData: JSON.stringify(flattenedData),
           templateId: selectedTemplate
@@ -1109,72 +1155,115 @@ const ResumeBuilder = () => {
     }
   };
 
-  const handleDownloadPdf = () => {
-    if (!resumeHtml) {
+  const handleDownloadPdf = async () => {
+    // If we already have a PDF URL, use it directly
+    if (pdfUrl) {
+      try {
+        // Create a download link
+        const downloadLink = document.createElement('a');
+        downloadLink.href = pdfUrl;
+        downloadLink.download = `${resumeData.name || 'resume'}-${new Date().toISOString().split('T')[0]}.pdf`;
+        
+        // Append to the document, click it, and remove it
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        
+        toast({
+          title: "Success",
+          description: "PDF downloaded successfully!",
+          variant: "default",
+        });
+        return;
+      } catch (error) {
+        console.error("Error downloading existing PDF:", error);
+        // Fall through to generate a new PDF
+      }
+    }
+    
+    if (!selectedTemplate) {
       toast({
         title: "Error",
-        description: "Please generate a resume first",
+        description: "Please select a template first",
         variant: "destructive",
       });
       return;
     }
 
     try {
-      // Create a new window with the resume HTML
-      const printWindow = window.open('', '_blank');
-      if (!printWindow) {
-        toast({
-          title: "Error",
-          description: "Pop-up blocked. Please allow pop-ups for this site.",
-          variant: "destructive",
-        });
-        return;
-      }
+      toast({
+        title: "Processing",
+        description: "Preparing your PDF for download...",
+      });
 
-      // Write the HTML to the new window
-      printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <title>${resumeData.name} - Resume</title>
-            <style>
-              @media print {
-                body {
-                  margin: 0;
-                  padding: 0;
-                }
-                @page {
-                  size: letter;
-                  margin: 0;
-                }
-              }
-            </style>
-          </head>
-          <body>
-            ${resumeHtml}
-            <script>
-              window.onload = function() {
-                setTimeout(function() {
-                  window.print();
-                  window.close();
-                }, 500);
-              };
-            </script>
-          </body>
-        </html>
-      `);
+      // Create a clean data object with proper structure
+      const dataToSend = {
+        // Basic information - using PascalCase for C# backend
+        Name: resumeData.name || "",
+        Title: resumeData.title || "",
+        Email: resumeData.email || "",
+        Phone: resumeData.phone || "",
+        Location: resumeData.location || "",
+        LinkedIn: resumeData.linkedin || "",
+        Website: resumeData.website || "",
+        Summary: resumeData.summary || "",
+        
+        // Arrays - make sure to create new arrays
+        Experience: resumeData.experience ? [...resumeData.experience] : [],
+        Education: resumeData.education ? [...resumeData.education] : [],
+        Skills: resumeData.skills ? [...resumeData.skills] : [],
+        Certifications: resumeData.certifications ? [...resumeData.certifications] : [],
+        Projects: resumeData.projects ? [...resumeData.projects] : []
+      };
       
-      printWindow.document.close();
+      // Create form data for the API request
+      const formData = new FormData();
+      formData.append('templateId', selectedTemplate);
+      formData.append('resumeData', JSON.stringify(dataToSend));
+      
+      // Use the new PDF endpoint
+      const response = await fetch('https://localhost:5001/api/resumebuilder/build-pdf', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        try {
+          const errorJson = JSON.parse(errorText);
+          throw new Error(errorJson.error || `Failed to generate PDF: ${response.statusText}`);
+        } catch (e) {
+          throw new Error(`Failed to generate PDF: ${response.statusText}`);
+        }
+      }
+      
+      // Get the PDF blob
+      const pdfBlob = await response.blob();
+      
+      // Create a URL for the PDF blob
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      
+      // Create a download link
+      const downloadLink = document.createElement('a');
+      downloadLink.href = pdfUrl;
+      downloadLink.download = `${resumeData.name || 'resume'}-${new Date().toISOString().split('T')[0]}.pdf`;
+      
+      // Append to the document, click it, and remove it
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
       
       toast({
         title: "Success",
-        description: "Preparing PDF for download...",
+        description: "PDF downloaded successfully!",
+        variant: "default",
       });
     } catch (error) {
       console.error("Error downloading PDF:", error);
       toast({
         title: "Error",
-        description: "Failed to download PDF. Try again later.",
+        description: error instanceof Error ? error.message : "Failed to download PDF. Try again later.",
         variant: "destructive",
       });
     }
@@ -1796,7 +1885,13 @@ const ResumeBuilder = () => {
             <div className="flex flex-col lg:flex-row gap-8">
               <div className="lg:w-3/4">
                 <div className="resume-preview-container">
-                  {resumeHtml ? (
+                  {pdfUrl ? (
+                    // Use the PDF viewer component
+                    <div className="pdf-container">
+                      <PDFViewer fileUrl={pdfUrl} />
+                    </div>
+                  ) : resumeHtml ? (
+                    // Fallback to HTML preview if PDF is not available
                     <iframe
                       className="resume-preview"
                       srcDoc={resumeHtml}
@@ -1833,7 +1928,7 @@ const ResumeBuilder = () => {
                     <CardDescription>Download your resume in different formats.</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <Button className="w-full" onClick={handleDownloadPdf} disabled={!resumeHtml}>
+                    <Button className="w-full" onClick={handleDownloadPdf} disabled={!resumeHtml && !pdfUrl}>
                       Download PDF
                     </Button>
                     <Button variant="outline" className="w-full" onClick={() => setActiveTab("edit")}>

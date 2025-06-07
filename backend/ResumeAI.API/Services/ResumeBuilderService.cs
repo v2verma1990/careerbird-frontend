@@ -13,6 +13,10 @@ using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
 using Handlebars = HandlebarsDotNet.Handlebars;
 using System.Net.Http.Headers;
+using PdfSharpCore.Pdf;
+using PdfSharpCore.Drawing;
+using System.Drawing;
+using System.Runtime.InteropServices;
 
 namespace ResumeAI.API.Services
 {
@@ -667,6 +671,388 @@ namespace ResumeAI.API.Services
             }
         }
 
+        public async Task<byte[]> BuildResumePdfAsync(ResumeBuilderRequestModel request, string userId)
+        {
+            try
+            {
+                // Log the request details
+                Console.WriteLine($"BuildResumePdfAsync called with templateId: {request.TemplateId}");
+                Console.WriteLine($"Has resume file: {request.ResumeFile != null}");
+                Console.WriteLine($"Has resume data: {!string.IsNullOrEmpty(request.ResumeData)}");
+                
+                // Get resume data either from file or from provided JSON
+                ResumeDataModel resumeData;
+                if (request.ResumeFile != null)
+                {
+                    // Extract data from resume file using Python microservice
+                    Console.WriteLine($"Extracting data from resume file: {request.ResumeFile.FileName}");
+                    resumeData = await ExtractResumeDataFromFileAsync(request.ResumeFile);
+                }
+                else if (!string.IsNullOrEmpty(request.ResumeData))
+                {
+                    // Use provided resume data
+                    Console.WriteLine($"Resume data from request: {request.ResumeData.Substring(0, Math.Min(500, request.ResumeData.Length))}");
+                    
+                    try
+                    {
+                        // Parse the JSON data with specific settings
+                        var settings = new JsonSerializerSettings
+                        {
+                            NullValueHandling = NullValueHandling.Ignore,
+                            DefaultValueHandling = DefaultValueHandling.Populate,
+                            ObjectCreationHandling = ObjectCreationHandling.Replace,
+                            Error = (sender, args) => {
+                                Console.WriteLine($"JSON Error: {args.ErrorContext.Error.Message}");
+                                args.ErrorContext.Handled = true;
+                            }
+                        };
+                        
+                        resumeData = JsonConvert.DeserializeObject<ResumeDataModel>(request.ResumeData, settings) ?? 
+                            new ResumeDataModel(); // Use empty model if deserialization fails
+                    }
+                    catch (Exception jsonEx)
+                    {
+                        Console.WriteLine($"Error deserializing resume data: {jsonEx.Message}");
+                        Console.WriteLine($"Stack trace: {jsonEx.StackTrace}");
+                        resumeData = new ResumeDataModel(); // Use empty model if deserialization fails
+                    }
+                    
+                    // Log the parsed data
+                    Console.WriteLine($"Parsed resume data: Name={resumeData.Name}, Email={resumeData.Email}, Skills count={resumeData.Skills?.Count ?? 0}");
+                }
+                else
+                {
+                    throw new ArgumentException("Either resume file or resume data must be provided");
+                }
+
+                // Get the template HTML
+                Console.WriteLine($"Getting template HTML for templateId: {request.TemplateId}");
+                string templateHtml;
+                try {
+                    templateHtml = await GetTemplateHtmlAsync(request.TemplateId);
+                    Console.WriteLine($"Successfully retrieved template HTML, length: {templateHtml?.Length ?? 0} bytes");
+                } catch (Exception ex) {
+                    Console.WriteLine($"Error getting template HTML: {ex.Message}");
+                    Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                    throw;
+                }
+                
+                // Check if we have any data
+                bool hasEmptyData = false;
+                
+                if (resumeData != null)
+                {
+                    // Check for basic information
+                    bool hasBasicInfo = !string.IsNullOrWhiteSpace(resumeData.Name) || 
+                                       !string.IsNullOrWhiteSpace(resumeData.Email) || 
+                                       !string.IsNullOrWhiteSpace(resumeData.Phone);
+                    
+                    // Check for Experience
+                    bool hasExperience = resumeData.Experience != null && resumeData.Experience.Count > 0 && 
+                        resumeData.Experience.Any(e => 
+                            !string.IsNullOrWhiteSpace(e.Title) || 
+                            !string.IsNullOrWhiteSpace(e.Company) || 
+                            !string.IsNullOrWhiteSpace(e.Description));
+                    
+                    // Check for Education
+                    bool hasEducation = resumeData.Education != null && resumeData.Education.Count > 0 && 
+                        resumeData.Education.Any(e => 
+                            !string.IsNullOrWhiteSpace(e.Degree) || 
+                            !string.IsNullOrWhiteSpace(e.Institution));
+                    
+                    // Check for Skills
+                    bool hasSkills = resumeData.Skills != null && resumeData.Skills.Count > 0;
+                    
+                    // If any of these are true, we have data
+                    hasEmptyData = !(hasBasicInfo || hasExperience || hasEducation || hasSkills);
+                }
+                else
+                {
+                    hasEmptyData = true;
+                }
+                
+                // If data is empty, throw an exception
+                if (hasEmptyData)
+                {
+                    throw new ArgumentException("No resume data available. Please fill in your resume details.");
+                }
+                
+                // Generate the resume HTML using Handlebars
+                if (templateHtml == null)
+                {
+                    Console.WriteLine("Warning: Template HTML is null. Using empty template.");
+                    templateHtml = "<html><body><p>No template available. Please select a different template.</p></body></html>";
+                }
+                
+                string resumeHtml = GenerateResumeHtml(templateHtml, resumeData ?? new object());
+                
+                // Generate a PDF from the HTML
+                // Since we don't have a PDF library integrated directly, we'll use a workaround
+                // We'll add proper PDF metadata and structure to the HTML
+                
+                // Add PDF-specific CSS for better printing
+                string pdfCss = @"
+                @page {
+                    size: letter;
+                    margin: 0.5in;
+                }
+                body {
+                    font-family: Arial, sans-serif;
+                    line-height: 1.5;
+                    color: #333;
+                    margin: 0;
+                    padding: 0;
+                }
+                .resume-container {
+                    max-width: 100%;
+                    margin: 0 auto;
+                }
+                ";
+                
+                // Check if there's already a style tag
+                if (resumeHtml.Contains("<style>"))
+                {
+                    // Insert our PDF CSS into the existing style tag
+                    resumeHtml = resumeHtml.Replace("<style>", "<style>" + pdfCss);
+                }
+                else
+                {
+                    // Add a new style tag with our PDF CSS
+                    resumeHtml = resumeHtml.Replace("<head>", "<head><style>" + pdfCss + "</style>");
+                }
+                
+                // Add PDF metadata
+                string pdfMetadata = $@"
+                <meta name=""pdfkit-page-size"" content=""Letter""/>
+                <meta name=""pdfkit-orientation"" content=""Portrait""/>
+                <meta name=""pdfkit-title"" content=""{resumeData?.Name ?? "Resume"} - Resume""/>
+                <meta name=""pdfkit-author"" content=""{resumeData?.Name ?? "User"}""/>
+                <meta name=""pdfkit-subject"" content=""Resume""/>
+                <meta name=""pdfkit-keywords"" content=""resume, cv, job application""/>
+                ";
+                
+                // Insert metadata into head
+                if (resumeHtml.Contains("<head>"))
+                {
+                    resumeHtml = resumeHtml.Replace("<head>", "<head>" + pdfMetadata);
+                }
+                
+                // Create a more comprehensive PDF using PdfSharpCore
+                using (var memoryStream = new MemoryStream())
+                {
+                    try
+                    {
+                        // Create a PDF document
+                        var document = new PdfSharpCore.Pdf.PdfDocument();
+                        document.Info.Title = resumeData?.Name != null ? $"{resumeData.Name} - Resume" : "Resume";
+                        document.Info.Author = resumeData?.Name ?? "User";
+                        document.Info.Subject = "Resume";
+                        document.Info.Keywords = "resume, cv, job application";
+                        
+                        // Create a PDF page
+                        var page = document.AddPage();
+                        page.Size = PdfSharpCore.PageSize.Letter;
+                        page.Orientation = PdfSharpCore.PageOrientation.Portrait;
+                        
+                        // Create a graphics object for drawing
+                        var gfx = PdfSharpCore.Drawing.XGraphics.FromPdfPage(page);
+                        
+                        // Create fonts
+                        var titleFont = new PdfSharpCore.Drawing.XFont("Arial", 24, PdfSharpCore.Drawing.XFontStyle.Bold);
+                        var subtitleFont = new PdfSharpCore.Drawing.XFont("Arial", 16, PdfSharpCore.Drawing.XFontStyle.Italic);
+                        var headerFont = new PdfSharpCore.Drawing.XFont("Arial", 14, PdfSharpCore.Drawing.XFontStyle.Bold);
+                        var normalFont = new PdfSharpCore.Drawing.XFont("Arial", 12);
+                        var smallFont = new PdfSharpCore.Drawing.XFont("Arial", 10);
+                        
+                        // Set margins
+                        double marginLeft = 50;
+                        double marginTop = 50;
+                        double contentWidth = page.Width - (marginLeft * 2);
+                        
+                        // Current Y position for drawing
+                        double currentY = marginTop;
+                        
+                        // Draw name
+                        string name = resumeData?.Name ?? "Resume";
+                        gfx.DrawString(name, titleFont, PdfSharpCore.Drawing.XBrushes.Black, 
+                            new PdfSharpCore.Drawing.XRect(marginLeft, currentY, contentWidth, 30), 
+                            PdfSharpCore.Drawing.XStringFormats.TopLeft);
+                        currentY += 40;
+                        
+                        // Draw title/position
+                        if (!string.IsNullOrEmpty(resumeData?.Title))
+                        {
+                            gfx.DrawString(resumeData.Title, subtitleFont, PdfSharpCore.Drawing.XBrushes.Black, 
+                                new PdfSharpCore.Drawing.XRect(marginLeft, currentY, contentWidth, 20), 
+                                PdfSharpCore.Drawing.XStringFormats.TopLeft);
+                            currentY += 30;
+                        }
+                        
+                        // Draw contact info
+                        var contactInfo = new StringBuilder();
+                        if (!string.IsNullOrEmpty(resumeData?.Email))
+                            contactInfo.Append($"Email: {resumeData.Email}  ");
+                        if (!string.IsNullOrEmpty(resumeData?.Phone))
+                            contactInfo.Append($"Phone: {resumeData.Phone}  ");
+                        if (!string.IsNullOrEmpty(resumeData?.Location))
+                            contactInfo.Append($"Location: {resumeData.Location}");
+                            
+                        if (contactInfo.Length > 0)
+                        {
+                            gfx.DrawString(contactInfo.ToString(), normalFont, PdfSharpCore.Drawing.XBrushes.Black, 
+                                new PdfSharpCore.Drawing.XRect(marginLeft, currentY, contentWidth, 20), 
+                                PdfSharpCore.Drawing.XStringFormats.TopLeft);
+                            currentY += 30;
+                        }
+                        
+                        // Draw summary if available
+                        if (!string.IsNullOrEmpty(resumeData?.Summary))
+                        {
+                            // Draw section header
+                            gfx.DrawString("SUMMARY", headerFont, PdfSharpCore.Drawing.XBrushes.Black, 
+                                new PdfSharpCore.Drawing.XRect(marginLeft, currentY, contentWidth, 20), 
+                                PdfSharpCore.Drawing.XStringFormats.TopLeft);
+                            currentY += 25;
+                            
+                            // Draw summary text (with word wrapping)
+                            var summaryText = resumeData.Summary;
+                            var summaryLines = WrapText(summaryText, normalFont, contentWidth);
+                            foreach (var line in summaryLines)
+                            {
+                                gfx.DrawString(line, normalFont, PdfSharpCore.Drawing.XBrushes.Black, 
+                                    new PdfSharpCore.Drawing.XRect(marginLeft, currentY, contentWidth, 20), 
+                                    PdfSharpCore.Drawing.XStringFormats.TopLeft);
+                                currentY += 20;
+                            }
+                            currentY += 10;
+                        }
+                        
+                        // Draw experience section if available
+                        if (resumeData?.Experience != null && resumeData.Experience.Count > 0)
+                        {
+                            // Draw section header
+                            gfx.DrawString("EXPERIENCE", headerFont, PdfSharpCore.Drawing.XBrushes.Black, 
+                                new PdfSharpCore.Drawing.XRect(marginLeft, currentY, contentWidth, 20), 
+                                PdfSharpCore.Drawing.XStringFormats.TopLeft);
+                            currentY += 25;
+                            
+                            // Draw each experience item
+                            foreach (var exp in resumeData.Experience)
+                            {
+                                // Check if we need a new page
+                                if (currentY > page.Height - 100)
+                                {
+                                    page = document.AddPage();
+                                    gfx = PdfSharpCore.Drawing.XGraphics.FromPdfPage(page);
+                                    currentY = marginTop;
+                                }
+                                
+                                // Draw job title and company
+                                string jobInfo = $"{exp.Title ?? ""} at {exp.Company ?? ""}";
+                                gfx.DrawString(jobInfo, normalFont, PdfSharpCore.Drawing.XBrushes.Black, 
+                                    new PdfSharpCore.Drawing.XRect(marginLeft, currentY, contentWidth, 20), 
+                                    PdfSharpCore.Drawing.XStringFormats.TopLeft);
+                                currentY += 20;
+                                
+                                // Draw dates and location
+                                string dateLocation = $"{exp.StartDate ?? ""} - {exp.EndDate ?? ""}, {exp.Location ?? ""}";
+                                gfx.DrawString(dateLocation, smallFont, PdfSharpCore.Drawing.XBrushes.Black, 
+                                    new PdfSharpCore.Drawing.XRect(marginLeft, currentY, contentWidth, 20), 
+                                    PdfSharpCore.Drawing.XStringFormats.TopLeft);
+                                currentY += 20;
+                                
+                                // Draw description if available
+                                if (!string.IsNullOrEmpty(exp.Description))
+                                {
+                                    var descLines = WrapText(exp.Description, normalFont, contentWidth);
+                                    foreach (var line in descLines)
+                                    {
+                                        // Check if we need a new page
+                                        if (currentY > page.Height - 100)
+                                        {
+                                            page = document.AddPage();
+                                            gfx = PdfSharpCore.Drawing.XGraphics.FromPdfPage(page);
+                                            currentY = marginTop;
+                                        }
+                                        
+                                        gfx.DrawString(line, normalFont, PdfSharpCore.Drawing.XBrushes.Black, 
+                                            new PdfSharpCore.Drawing.XRect(marginLeft, currentY, contentWidth, 20), 
+                                            PdfSharpCore.Drawing.XStringFormats.TopLeft);
+                                        currentY += 20;
+                                    }
+                                }
+                                
+                                currentY += 10;
+                            }
+                        }
+                        
+                        // Save the document to the memory stream
+                        document.Save(memoryStream);
+                        
+                        // Return the PDF bytes
+                        return memoryStream.ToArray();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error generating PDF with PdfSharpCore: {ex.Message}");
+                        Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                        
+                        // Use a simpler PDF generation approach as fallback
+                        Console.WriteLine("Using fallback PDF generation method");
+                        
+                        try 
+                        {
+                            // Create a new PDF document with a simpler approach
+                            using (var fallbackMemoryStream = new MemoryStream())
+                            {
+                                var fallbackDocument = new PdfDocument();
+                                var fallbackPage = fallbackDocument.AddPage();
+                                var fallbackGfx = PdfSharpCore.Drawing.XGraphics.FromPdfPage(fallbackPage);
+                                
+                                // Create fonts
+                                var titleFont = new PdfSharpCore.Drawing.XFont("Arial", 18, PdfSharpCore.Drawing.XFontStyle.Bold);
+                                var normalFont = new PdfSharpCore.Drawing.XFont("Arial", 12, PdfSharpCore.Drawing.XFontStyle.Regular);
+                                
+                                // Add a title
+                                fallbackGfx.DrawString("Resume", titleFont, PdfSharpCore.Drawing.XBrushes.Black, 
+                                    new PdfSharpCore.Drawing.XRect(50, 50, fallbackPage.Width - 100, 30), 
+                                    PdfSharpCore.Drawing.XStringFormats.TopLeft);
+                                
+                                // Add a note about using the HTML version
+                                fallbackGfx.DrawString("PDF generation encountered an issue. Please use the HTML version for better results.", 
+                                    normalFont, PdfSharpCore.Drawing.XBrushes.Black, 
+                                    new PdfSharpCore.Drawing.XRect(50, 100, fallbackPage.Width - 100, 30), 
+                                    PdfSharpCore.Drawing.XStringFormats.TopLeft);
+                                
+                                // Add name if available
+                                if (resumeData != null && !string.IsNullOrEmpty(resumeData.Name))
+                                {
+                                    fallbackGfx.DrawString($"Name: {resumeData.Name}", 
+                                        normalFont, PdfSharpCore.Drawing.XBrushes.Black, 
+                                        new PdfSharpCore.Drawing.XRect(50, 150, fallbackPage.Width - 100, 30), 
+                                        PdfSharpCore.Drawing.XStringFormats.TopLeft);
+                                }
+                                
+                                fallbackDocument.Save(fallbackMemoryStream);
+                                return fallbackMemoryStream.ToArray();
+                            }
+                        }
+                        catch (Exception fallbackEx)
+                        {
+                            Console.WriteLine($"Fallback PDF generation also failed: {fallbackEx.Message}");
+                            throw new Exception("Unable to generate PDF document", fallbackEx);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error building resume PDF: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                throw new Exception($"Error building resume PDF: {ex.Message}", ex);
+            }
+        }
+        
         public async Task<ResumeDataModel> ExtractResumeDataFromFileAsync(IFormFile resumeFile)
         {
             try
@@ -1127,9 +1513,189 @@ namespace ResumeAI.API.Services
                     return content;
                 }
                 
-                // If no templates are found, throw an exception
-                Console.WriteLine("No templates found in any location");
-                throw new FileNotFoundException("No resume templates found. Please ensure at least one template HTML file exists.");
+                // If no templates are found, use a built-in default template
+                Console.WriteLine("No templates found in any location, using built-in default template");
+                
+                // Create a basic default template
+                string defaultTemplate = @"<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='UTF-8'>
+    <title>Resume</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+            line-height: 1.5;
+        }
+        .resume-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 30px;
+            border: 1px solid #eee;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .name {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .contact-info {
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+            margin: 20px 0 10px;
+        }
+        .experience-item, .education-item {
+            margin-bottom: 15px;
+        }
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        .item-title {
+            font-weight: bold;
+        }
+        .item-date {
+            color: #666;
+        }
+        .item-subtitle {
+            font-style: italic;
+            margin-bottom: 5px;
+        }
+        .skills-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .skill-item {
+            background-color: #f0f0f0;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class='resume-container'>
+        <div class='header'>
+            <div class='name'>{{name}}</div>
+            <div class='contact-info'>
+                {{#if email}}{{email}} | {{/if}}
+                {{#if phone}}{{phone}} | {{/if}}
+                {{#if location}}{{location}}{{/if}}
+                {{#if linkedin}}<br>{{linkedin}}{{/if}}
+                {{#if website}}{{#if linkedin}} | {{/if}}{{website}}{{/if}}
+            </div>
+        </div>
+
+        {{#if summary}}
+        <div class='section'>
+            <div class='section-title'>Summary</div>
+            <div>{{summary}}</div>
+        </div>
+        {{/if}}
+
+        {{#if experience.length}}
+        <div class='section'>
+            <div class='section-title'>Experience</div>
+            {{#each experience}}
+            <div class='experience-item'>
+                <div class='item-header'>
+                    <div class='item-title'>{{title}}</div>
+                    <div class='item-date'>{{startDate}} - {{endDate}}</div>
+                </div>
+                <div class='item-subtitle'>{{company}}{{#if location}} | {{location}}{{/if}}</div>
+                <div>{{description}}</div>
+            </div>
+            {{/each}}
+        </div>
+        {{/if}}
+
+        {{#if education.length}}
+        <div class='section'>
+            <div class='section-title'>Education</div>
+            {{#each education}}
+            <div class='education-item'>
+                <div class='item-header'>
+                    <div class='item-title'>{{degree}}</div>
+                    <div class='item-date'>{{startDate}} - {{endDate}}</div>
+                </div>
+                <div class='item-subtitle'>{{institution}}{{#if location}} | {{location}}{{/if}}</div>
+                {{#if description}}<div>{{description}}</div>{{/if}}
+            </div>
+            {{/each}}
+        </div>
+        {{/if}}
+
+        {{#if skills.length}}
+        <div class='section'>
+            <div class='section-title'>Skills</div>
+            <div class='skills-list'>
+                {{#each skills}}
+                <div class='skill-item'>{{this}}</div>
+                {{/each}}
+            </div>
+        </div>
+        {{/if}}
+
+        {{#if certifications.length}}
+        <div class='section'>
+            <div class='section-title'>Certifications</div>
+            {{#each certifications}}
+            <div class='certification-item'>
+                <div class='item-title'>{{name}}</div>
+                <div class='item-subtitle'>{{issuer}}{{#if date}} | {{date}}{{/if}}</div>
+            </div>
+            {{/each}}
+        </div>
+        {{/if}}
+
+        {{#if projects.length}}
+        <div class='section'>
+            <div class='section-title'>Projects</div>
+            {{#each projects}}
+            <div class='project-item'>
+                <div class='item-title'>{{name}}</div>
+                <div>{{description}}</div>
+                {{#if technologies}}<div><strong>Technologies:</strong> {{technologies}}</div>{{/if}}
+            </div>
+            {{/each}}
+        </div>
+        {{/if}}
+    </div>
+</body>
+</html>";
+
+                // Create the template file if it doesn't exist
+                string builtInTemplatePath = Path.Combine(_htmlTemplatesPath, "default-template.html");
+                try
+                {
+                    // Create the directory if it doesn't exist
+                    Directory.CreateDirectory(_htmlTemplatesPath);
+                    
+                    // Write the default template to a file
+                    await File.WriteAllTextAsync(builtInTemplatePath, defaultTemplate);
+                    Console.WriteLine($"Created default template at: {builtInTemplatePath}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error creating default template file: {ex.Message}");
+                }
+                
+                return defaultTemplate;
             }
             catch (Exception ex)
             {
@@ -2116,6 +2682,71 @@ namespace ResumeAI.API.Services
                 Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 throw new Exception($"Error optimizing resume: {ex.Message}", ex);
             }
+        }
+        
+        // Helper method to wrap text for PDF generation
+        private List<string> WrapText(string text, XFont font, double maxWidth)
+        {
+            var result = new List<string>();
+            if (string.IsNullOrEmpty(text))
+                return result;
+                
+            // Split the text into words
+            var words = text.Split(' ');
+            var currentLine = new StringBuilder();
+            
+            foreach (var word in words)
+            {
+                // Check if adding this word would exceed the max width
+                string testLine = currentLine.Length == 0 ? word : currentLine.ToString() + " " + word;
+                var size = MeasureString(testLine, font);
+                
+                if (size.Width <= maxWidth)
+                {
+                    // Add the word to the current line
+                    if (currentLine.Length > 0)
+                        currentLine.Append(" ");
+                    currentLine.Append(word);
+                }
+                else
+                {
+                    // Line is full, add it to the result and start a new line
+                    if (currentLine.Length > 0)
+                    {
+                        result.Add(currentLine.ToString());
+                        currentLine.Clear();
+                    }
+                    
+                    // If the word itself is too long, we need to break it
+                    if (MeasureString(word, font).Width > maxWidth)
+                    {
+                        // For simplicity, just add the word as is
+                        // In a real implementation, you might want to break the word
+                        result.Add(word);
+                    }
+                    else
+                    {
+                        currentLine.Append(word);
+                    }
+                }
+            }
+            
+            // Add the last line if there's anything left
+            if (currentLine.Length > 0)
+                result.Add(currentLine.ToString());
+                
+            return result;
+        }
+        
+        // Helper method to measure string width for PDF generation
+        private XSize MeasureString(string text, XFont font)
+        {
+            // Use PdfSharpCore's built-in text measurement
+            // This is an approximation based on the font metrics
+            double width = text.Length * font.Size * 0.6; // Approximate width based on character count
+            double height = font.Size * 1.2; // Approximate height based on font size
+            
+            return new XSize(width, height);
         }
         
         // Helper method to check if a JToken is empty

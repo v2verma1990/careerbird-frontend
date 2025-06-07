@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{#if Name}}{{Name}}{{else}}{{name}}{{/if}} - Resume</title>
+    <title>{{#if Name}}{{name}}{{else}}{{name}}{{/if}} - Resume</title>
     <style>
         * {
             margin: 0;
@@ -187,15 +187,15 @@
         <div class="terminal-content">
             <div class="terminal-line">
                 <span class="prompt">name:</span> 
-                <span class="name-display">{{#if Name}}{{Name}}{{else}}{{name}}{{/if}}</span>
+                <span class="name-display">{{name}}</span>
             </div>
             <div class="terminal-line">
                 <span class="prompt">role:</span> 
-                <span class="title-display">{{#if Title}}{{Title}}{{else}}{{title}}{{/if}}</span>
+                <span class="title-display">{{title}}</span>
             </div>
             <div class="terminal-line">
                 <span class="prompt">contact:</span> 
-                <span class="contact-display">{{#if Email}}{{Email}}{{else}}{{email}}{{/if}} | {{#if Phone}}{{Phone}}{{else}}{{phone}}{{/if}} | {{#if Location}}{{Location}}{{else}}{{location}}{{/if}}</span>
+                <span class="contact-display">{{email}} | {{phone}} | {{location}}</span>
             </div>
             {{#if linkedin}}
             <div class="terminal-line">
@@ -211,49 +211,32 @@
             {{/if}}
         </div>
 
-        {{#if Summary}}
+        {{#if summary}}
         <div class="section">
             <div class="section-header">// ABOUT</div>
             <div class="code-block">{{summary}}</div>
         </div>
-        {{else}}{{#if summary}}
-        <div class="section">
-            <div class="section-header">// ABOUT</div>
-            <div class="code-block">{{summary}}</div>
-        </div>
-        {{/if}}{{/if}}
+        {{/if}}
 
-        {{#if Skills.length}}
+        {{#if skills}}
         <div class="section">
             <div class="section-header">// TECHNICAL_SKILLS</div>
             <div class="code-block"><span class="keyword">const</span> <span class="variable">skills</span> = [
 {{#each skills}}  <span class="string">"{{this}}"</span>,
 {{/each}}];</div>
         </div>
-        {{else}}{{#if skills.length}}
-        <div class="section">
-            <div class="section-header">// TECHNICAL_SKILLS</div>
-            <div class="code-block"><span class="keyword">const</span> <span class="variable">skills</span> = [
-{{#each skills}}  <span class="string">"{{this}}"</span>,
-{{/each}}];</div>
-        </div>
-        {{/if}}{{/if}}
+        {{/if}}
 
-        {{#if Experience.length}}
+        {{#if experience}}
         <div class="section">
             <div class="section-header">// EXPERIENCE</div>
             {{#each experience}}
             <div class="experience-item">
-                <div class="function-signature">{{#if Title}}{{Title}}{{else}}{{title}}{{else}}{{#if experience.length}}
-        <div class="section">
-            <div class="section-header">// EXPERIENCE</div>
-            {{#each experience}}
-            <div class="experience-item">
-                <div class="function-signature">{{#if Title}}{{Title}}{{else}}{{title}}{{/if}}{{/if}}() {</div>
+                <div class="function-signature">{{title}}() {</div>
                 <div class="item-meta">
                     <span class="comment">// Company: {{company}}</span><br>
                     <span class="comment">// Duration: {{startDate}} - {{endDate}}</span><br>
-                    <span class="comment">// Location: {{#if Location}}{{Location}}{{else}}{{location}}{{/if}}</span>
+                    <span class="comment">// Location: {{location}}</span>
                 </div>
                 <div style="margin: 0.5rem 0; padding-left: 1rem;">{{description}}</div>
                 <div>}</div>
@@ -262,17 +245,12 @@
         </div>
         {{/if}}
 
-        {{#if Projects.length}}
+        {{#if projects}}
         <div class="section">
             <div class="section-header">// PROJECTS</div>
             {{#each projects}}
             <div class="project-item">
-                <div class="function-signature">{{#if Name}}{{Name}}{{else}}{{name}}{{else}}{{#if projects.length}}
-        <div class="section">
-            <div class="section-header">// PROJECTS</div>
-            {{#each projects}}
-            <div class="project-item">
-                <div class="function-signature">{{#if Name}}{{Name}}{{else}}{{name}}{{/if}}{{/if}}() {</div>
+                <div class="function-signature">{{name}}() {</div>
                 <div class="item-meta">
                     <span class="comment">// Tech Stack: {{technologies}}</span>
                 </div>
@@ -283,19 +261,13 @@
         </div>
         {{/if}}
 
-        {{#if Education.length}}
+        {{#if education}}
         <div class="section">
             <div class="section-header">// EDUCATION</div>
             {{#each education}}
             <div class="education-item">
                 <div class="item-title">{{degree}}</div>
-                <div class="item-meta">{{institution}} | {{startDate}} - {{endDate}} | {{#if Location}}{{Location}}{{else}}{{location}}{{else}}{{#if education.length}}
-        <div class="section">
-            <div class="section-header">// EDUCATION</div>
-            {{#each education}}
-            <div class="education-item">
-                <div class="item-title">{{degree}}</div>
-                <div class="item-meta">{{institution}} | {{startDate}} - {{endDate}} | {{#if Location}}{{Location}}{{else}}{{location}}{{/if}}{{/if}}</div>
+                <div class="item-meta">{{institution}} | {{startDate}} - {{endDate}} | {{location}}</div>
                 {{#if gpa}}<div class="item-meta">GPA: {{gpa}}</div>{{/if}}
             </div>
             {{/each}}
@@ -304,6 +276,8 @@
     </div>
 </body>
 </html>
+
+
 
 
 

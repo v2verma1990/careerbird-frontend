@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{#if Name}}{{Name}}{{else}}{{name}}{{/if}} - Resume</title>
+  <title>{{#if Name}}{{name}}{{else}}{{name}}{{/if}} - Resume</title>
   <style>
     * {
       margin: 0;
@@ -161,22 +161,22 @@
       <div class="profile-img">
         {{name.[0]}}
       </div>
-      <h1>{{#if Name}}{{Name}}{{else}}{{name}}{{/if}}</h1>
-      <p class="title">{{#if Title}}{{Title}}{{else}}{{title}}{{/if}}</p>
+      <h1>{{#if Name}}{{name}}{{else}}{{name}}{{/if}}</h1>
+      <p class="title">{{#if Title}}{{title}}{{else}}{{title}}{{/if}}</p>
       
       <div class="contact-info">
         <h3 class="sidebar-title">Contact</h3>
         <div class="contact-item">
           <span class="contact-icon">✉</span>
-          <span>{{#if Email}}{{Email}}{{else}}{{email}}{{/if}}</span>
+          <span>{{#if Email}}{{email}}{{else}}{{email}}{{/if}}</span>
         </div>
         <div class="contact-item">
           <span class="contact-icon">☎</span>
-          <span>{{#if Phone}}{{Phone}}{{else}}{{phone}}{{/if}}</span>
+          <span>{{#if Phone}}{{phone}}{{else}}{{phone}}{{/if}}</span>
         </div>
         <div class="contact-item">
           <span class="contact-icon">📍</span>
-          <span>{{#if Location}}{{Location}}{{else}}{{location}}{{/if}}</span>
+          <span>{{#if Location}}{{location}}{{else}}{{location}}{{/if}}</span>
         </div>
         {{#if linkedin}}
         <div class="contact-item">
@@ -284,6 +284,8 @@
   </div>
 </body>
 </html>
+
+
 
 
 

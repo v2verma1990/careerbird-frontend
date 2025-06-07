@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{#if Name}}{{Name}}{{else}}{{name}}{{/if}} - Product Manager Resume</title>
+  <title>{{#if Name}}{{name}}{{else}}{{name}}{{/if}} - Product Manager Resume</title>
   <style>
     * {
       margin: 0;
@@ -154,16 +154,16 @@
     <div class="header">
       <div class="header-content">
         <div class="header-left">
-          <h1>{{#if Name}}{{Name}}{{else}}{{name}}{{/if}}</h1>
-          <p>{{#if Title}}{{Title}}{{else}}{{title}}{{/if}}</p>
+          <h1>{{#if Name}}{{name}}{{else}}{{name}}{{/if}}</h1>
+          <p>{{#if Title}}{{title}}{{else}}{{title}}{{/if}}</p>
         </div>
         <div class="header-right">
           <div class="contact-info">
-            {{#if Email}}{{Email}}{{else}}{{email}}{{/if}}<br>
-            {{#if Phone}}{{Phone}}{{else}}{{phone}}{{/if}}<br>
-            {{#if Location}}{{Location}}{{else}}{{location}}{{/if}}<br>
-            {{#if LinkedIn}}{{LinkedIn}}{{else}}{{#if linkedin}}{{linkedin}}{{/if}}{{/if}}<br>
-            {{#if Website}}{{Website}}{{else}}{{#if website}}{{website}}{{/if}}{{/if}}
+            {{#if Email}}{{email}}{{else}}{{email}}{{/if}}<br>
+            {{#if Phone}}{{phone}}{{else}}{{phone}}{{/if}}<br>
+            {{#if Location}}{{location}}{{else}}{{location}}{{/if}}<br>
+            {{#if LinkedIn}}{{linkedin}}{{else}}{{#if linkedin}}{{linkedin}}{{/if}}{{/if}}<br>
+            {{#if Website}}{{website}}{{else}}{{#if website}}{{website}}{{/if}}{{/if}}
           </div>
         </div>
       </div>
@@ -172,7 +172,7 @@
     <div class="main-content">
       {{#if Summary}}
       <div class="summary">
-        {{Summary}}
+        {{summary}}
       </div>
       {{else}}{{#if summary}}
       <div class="summary">
@@ -260,3 +260,4 @@
   </div>
 </body>
 </html>
+
