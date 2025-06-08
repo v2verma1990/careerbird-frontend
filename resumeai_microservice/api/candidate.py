@@ -3,7 +3,7 @@ from typing import Optional
 from services.candidate_service import (
     analyze_resume_service, optimize_resume_service, customize_resume_service, benchmark_resume_service, 
     ats_scan_service, generate_cover_letter_service, extract_resume_text, salary_insights_service,
-    extract_resume_data_service
+    extract_resume_data_service, download_resume_service
 )
 from fastapi.responses import JSONResponse
 
@@ -17,10 +17,21 @@ async def analyze(resume: UploadFile = File(...), job_description: str = Form(..
 @router.post("/optimize")
 async def optimize(
     resume: UploadFile = File(...),    
-    plan: str = Form("free")
+    plan: str = Form("free"),
+    download_format: Optional[str] = Form(None)
 ):       
-    result = await optimize_resume_service(resume, plan)
+    result = await optimize_resume_service(resume, plan, download_format)
     return result
+
+@router.post("/download-resume")
+async def download_resume(
+    resume_text: str = Form(...),
+    format: str = Form("docx")
+):
+    """
+    Download a resume in the specified format (docx or pdf)
+    """
+    return await download_resume_service(resume_text, format)
 
 
 
@@ -29,10 +40,11 @@ async def customize(
     resume: UploadFile = File(...),
     job_description: Optional[str] = Form(None),
     job_description_file: Optional[UploadFile] = File(None),
-    plan: str = Form("free")
+    plan: str = Form("free"),
+    download_format: Optional[str] = Form(None)
 ):
         
-    result = await customize_resume_service(resume, job_description,job_description_file, plan)
+    result = await customize_resume_service(resume, job_description, job_description_file, plan, download_format)
     return result
 
 @router.post("/ats_scan")

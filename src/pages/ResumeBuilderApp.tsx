@@ -10,7 +10,10 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Download, Eye, Plus, Trash2, Upload, FileText } from "lucide-react";
 import api from "@/utils/apiClient";
+import { supabase } from "@/integrations/supabase/client";
 import "@/styles/ResumeBuilderApp.css";
+
+const API_BASE_URL = "http://localhost:5001/api"; // Match the URL used in apiClient.ts
 
 interface Template {
   id: string;
@@ -87,6 +90,7 @@ const ResumeBuilderApp = () => {
     projects: []
   });
   const [loading, setLoading] = useState(false);
+  const [downloadLoading, setDownloadLoading] = useState<string | null>(null);
   const [extracting, setExtracting] = useState(false);
   const [templatesLoading, setTemplatesLoading] = useState(true);
   const [previewHtml, setPreviewHtml] = useState<string>("");
@@ -512,18 +516,174 @@ const ResumeBuilderApp = () => {
     }
   };
 
-  const downloadResume = () => {
+  // New: Generate Best AI Resume
+  const generateBestAIResume = async () => {
+    if (!selectedTemplate) {
+      toast({
+        title: "Error",
+        description: "Please select a template first",
+        variant: "destructive"
+      });
+      return;
+    }
+    try {
+      setLoading(true);
+      // Call the optimize_resume_service API (or similar)
+      const dataToSend = {
+        name: resumeData.name || "",
+        title: resumeData.title || "",
+        email: resumeData.email || "",
+        phone: resumeData.phone || "",
+        location: resumeData.location || "",
+        linkedIn: resumeData.linkedin || "",
+        website: resumeData.website || "",
+        summary: resumeData.summary || "",
+        skills: resumeData.skills || [],
+        experience: resumeData.experience || [],
+        education: resumeData.education || [],
+        certifications: resumeData.certifications || [],
+        projects: resumeData.projects || []
+      };
+      // Use the optimize endpoint (assume api.resumeBuilder.optimizeResume exists)
+      const result = await api.resumeBuilder.optimizeResumeForResumeBuilder({
+        resumeData: JSON.stringify(dataToSend),
+        templateId: selectedTemplate
+      });
+      if (result.error) {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive"
+        });
+        return;
+      }
+      if (result.data && result.data.optimized) {
+        // Use the optimized HTML for preview
+        setPreviewHtml(result.data.optimized);
+        setShowPreview(true);
+        toast({
+          title: "Success",
+          description: "Best AI Resume generated successfully!"
+        });
+      } else {
+        toast({
+          title: "Warning",
+          description: "No optimized resume content received",
+          variant: "warning"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate best AI resume",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const downloadResume = async (format: 'docx' | 'pdf' | 'html' = 'docx') => {
     if (!previewHtml) return;
 
-    const blob = new Blob([previewHtml], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${resumeData.name || 'resume'}.html`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    try {
+      // For HTML format, handle directly in the browser
+      if (format === 'html') {
+        const blob = new Blob([previewHtml], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${resumeData.name || 'resume'}.html`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        toast({
+          title: "Success",
+          description: "Resume downloaded as HTML"
+        });
+        return;
+      }
+      
+        // const result = await api.resumeBuilder.buildResume({
+  //       resumeData: JSON.stringify(dataToSend),
+  //       templateId: selectedTemplate
+  //     });
+
+      // For DOCX and PDF, use the .NET backend API
+      setDownloadLoading(format);
+      try {
+        // Use the .NET backend endpoint
+        const { data: { session } } = await supabase.auth.getSession();
+        const response = await api.resumeBuilder.downloadResume({
+          resumeText: previewHtml,
+          format: format,
+          accessToken: session?.access_token || ''
+        });
+        console.log(response);
+        // const response = await fetch(`${API_BASE_URL}/resumebuilder/download`, {
+        //   method: 'POST',
+        //   headers: {
+        //     'Content-Type': 'application/json',
+        //     ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {})
+        //   },
+        //   body: JSON.stringify({
+        //     resumeText: previewHtml,
+        //     format: format
+        //   }),
+        //   credentials: 'include'
+        // });
+
+        if (response.ok) {
+          // Get the blob from the response
+          const blob = await response.blob();
+          const url = URL.createObjectURL(blob);
+          // Create a link and trigger the download
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${resumeData.name || 'resume'}.${format}`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+
+          toast({
+            title: "Success",
+            description: `Resume downloaded as ${format.toUpperCase()}`
+          });
+          return;
+        } else {
+          throw new Error(`API returned status: ${response.status}`);
+        }
+      } catch (apiError) {
+        console.error("API download attempt failed:", apiError);
+        // Only fallback to HTML if backend fails
+        const blob = new Blob([previewHtml], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${resumeData.name || 'resume'}.html`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        toast({
+          title: "HTML Downloaded",
+          description: `The resume was downloaded as HTML because the ${format.toUpperCase()} conversion service is currently unavailable. You can open this HTML file in Word or Google Docs and save it as ${format.toUpperCase()} manually.`,
+          variant: "default"
+        });
+      }
+    } catch (error) {
+      console.error('Error downloading resume:', error);
+      toast({
+        title: "Error",
+        description: `Failed to download resume`,
+        variant: "destructive"
+      });
+    } finally {
+      setDownloadLoading(null);
+    }
   };
 
   if (showPreview && previewHtml) {
@@ -537,10 +697,44 @@ const ResumeBuilderApp = () => {
                 <FileText className="w-4 h-4 mr-2" />
                 Back to Editor
               </Button>
-              <Button onClick={downloadResume}>
-                <Download className="w-4 h-4 mr-2" />
-                Download HTML
-              </Button>
+              <div className="flex gap-2">
+                {/* <Button 
+                  onClick={() => downloadResume('docx')} 
+                  variant="default"
+                  disabled={downloadLoading !== null}
+                >
+                  {downloadLoading === 'docx' ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4 mr-2" />
+                  )}
+                  Download DOCX
+                </Button> */}
+                <Button 
+                  onClick={() => downloadResume('pdf')} 
+                  variant="outline"
+                  disabled={downloadLoading !== null}
+                >
+                  {downloadLoading === 'pdf' ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4 mr-2" />
+                  )}
+                  Download PDF
+                </Button>
+                <Button 
+                  onClick={() => downloadResume('html')} 
+                  variant="outline"
+                  disabled={downloadLoading !== null}
+                >
+                  {downloadLoading === 'html' ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4 mr-2" />
+                  )}
+                  Download HTML
+                </Button>
+              </div>
             </div>
           </div>
           <div className="bg-white rounded-lg shadow-lg p-4">
@@ -1064,6 +1258,21 @@ const ResumeBuilderApp = () => {
                         <Eye className="w-4 h-4 mr-2" />
                       )}
                       Generate Resume
+                    </Button>
+                    {/* New: Best AI Resume Button */}
+                    <Button
+                      onClick={generateBestAIResume}
+                      disabled={loading || !selectedTemplate}
+                      className="flex-1"
+                      size="lg"
+                      variant="secondary"
+                    >
+                      {loading ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Eye className="w-4 h-4 mr-2" />
+                      )}
+                      Generate Best AI Resume
                     </Button>
                   </div>
                 </CardContent>

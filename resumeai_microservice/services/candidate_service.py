@@ -1,4 +1,5 @@
 from fastapi import UploadFile, File, Form, HTTPException
+from fastapi.responses import FileResponse, StreamingResponse
 from utils.cache import get_cached_response, set_cached_response, hash_inputs, cache_if_successful
 from utils.openai_utils import (
     analyze_resume, optimize_resume_jobscan_style, customize_resume, benchmark_resume, 
@@ -7,7 +8,12 @@ from utils.openai_utils import (
 )
 import logging
 import io
+import tempfile
 from docx import Document
+from docx.shared import Pt
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.oxml.ns import qn
+from docx.oxml import OxmlElement
 import pdfplumber
 import tiktoken
 import os
@@ -15,6 +21,7 @@ import httpx
 from openai import OpenAI
 import json
 import re
+from bs4 import BeautifulSoup
 
 logger = logging.getLogger("candidate_service")
 
@@ -74,7 +81,8 @@ def normalize_resume_highlights(result):
 
 async def optimize_resume_service(
     resume: UploadFile,   
-    plan: str = "free"
+    plan: str = "free",
+    download_format: str = None
 ):
     logger.info("optimize_resume_service called (optimize_resume_jobscan)")
     try:
@@ -92,15 +100,24 @@ async def optimize_resume_service(
         cache_key = hash_inputs(resume_text,plan,"optimize_resume_service")
         cached = get_cached_response("optimize", cache_key)
         logger.info(f"Cached value for key {cache_key}: {cached}")
+        
+        # Process the result (either from cache or newly generated)
         if cached:
             logger.info("Cache hit for optimize (optimize_resume_jobscan)")
-            return cached
-        result = optimize_resume_jobscan_style(resume_text, plan=plan)
-        logger.info(f"RAW OpenAI result: {result}")
-        logger.info(f"Type of resumeHighlights: {type(result.get('resumeHighlights', None))}, Value: {result.get('resumeHighlights', None)}")
-        result = normalize_resume_highlights(result)
-        cache_if_successful("optimize", cache_key, result)
-        logger.info("Cache miss for optimize, called OpenAI (optimize_resume_jobscan)")
+            result = cached
+        else:
+            result = optimize_resume_jobscan_style(resume_text, plan=plan)
+            logger.info(f"RAW OpenAI result: {result}")
+            logger.info(f"Type of resumeHighlights: {type(result.get('resumeHighlights', None))}, Value: {result.get('resumeHighlights', None)}")
+            result = normalize_resume_highlights(result)
+            cache_if_successful("optimize", cache_key, result)
+            logger.info("Cache miss for optimize, called OpenAI (optimize_resume_jobscan)")
+        
+        # If download format is specified, return the file for download
+        if download_format and result.get("optimized"):
+            return await download_resume_service(result.get("optimized"), download_format)
+        
+        # Otherwise return the JSON result
         return result
     except HTTPException as e:
         logger.error(f"optimize_resume_service failed: {e.detail}")
@@ -115,7 +132,8 @@ async def customize_resume_service(
     resume: UploadFile,
     job_description: str = None,
     job_description_file: UploadFile = None,
-    plan: str = "free"
+    plan: str = "free",
+    download_format: str = None
 ):
     logger.info("customize_resume_service called (Jobscan-style)")
     try:
@@ -139,12 +157,21 @@ async def customize_resume_service(
 
         cache_key = hash_inputs(resume_text, jd_text, plan,"customize_resume_service")
         cached = get_cached_response("customize", cache_key)
+        
+        # Process the result (either from cache or newly generated)
         if cached:
             logger.info("Cache hit for customize_resume (Jobscan-style)")
-            return cached
-        result = jobscan_style_report(resume_text, jd_text, plan=plan)
-        cache_if_successful("customize", cache_key, result)
-        logger.info("Cache miss for customize_resume, called OpenAI (Jobscan-style)")
+            result = cached
+        else:
+            result = jobscan_style_report(resume_text, jd_text, plan=plan)
+            cache_if_successful("customize", cache_key, result)
+            logger.info("Cache miss for customize_resume, called OpenAI (Jobscan-style)")
+        
+        # If download format is specified, return the file for download
+        if download_format and result.get("customized"):
+            return await download_resume_service(result.get("customized"), download_format)
+        
+        # Otherwise return the JSON result
         return result
     except HTTPException as e:
         logger.error(f"customize_resume_service failed: {e.detail}")
@@ -457,4 +484,218 @@ async def extract_resume_data_service(resume: UploadFile, plan: str = "free"):
             "certifications": [],
             "projects": []
         }
+
+def create_docx_from_text(text, filename="optimized_resume.docx"):
+    """Create a DOCX file from text and return the file path"""
+    doc = Document()
+    
+    # Add the text to the document
+    paragraphs = text.split('\n')
+    for para in paragraphs:
+        if para.strip():  # Skip empty lines
+            p = doc.add_paragraph()
+            p.add_run(para)
+    
+    # Save the document to a temporary file
+    temp_file = os.path.join(tempfile.gettempdir(), filename)
+    doc.save(temp_file)
+    return temp_file
+
+def create_pdf_from_text(text, filename="optimized_resume.pdf"):
+    """
+    Create a PDF file from HTML text
+    """
+    try:
+        import weasyprint
+        # Create a temporary HTML file
+        html_path = os.path.join(tempfile.gettempdir(), "temp_resume.html")
+        with open(html_path, "w", encoding="utf-8") as html_file:
+            html_file.write(text)
+        # Define the output PDF path
+        pdf_path = os.path.join(tempfile.gettempdir(), filename)
+        
+        # Convert HTML to PDF using WeasyPrint
+        weasyprint.HTML(filename=html_path).write_pdf(pdf_path)
+        
+        return pdf_path
+    except ImportError:
+        logger.error("WeasyPrint is not installed. Cannot generate PDF.")
+        raise RuntimeError("WeasyPrint is required for PDF generation. Please install it with 'pip install weasyprint'.")
+
+def html_to_docx_with_mammoth(html_str, filename="optimized_resume.docx"):
+    """Convert HTML to DOCX using mammoth, return file path."""
+    import mammoth
+    import tempfile
+    import os
+    # Write HTML to a temp file
+    html_path = os.path.join(tempfile.gettempdir(), "temp_resume_for_mammoth.html")
+    with open(html_path, "w", encoding="utf-8") as f:
+        f.write(html_str)
+    # Output DOCX path
+    docx_path = os.path.join(tempfile.gettempdir(), filename)
+    # Use mammoth.convert_to_html to parse HTML, then use python-docx to write to docx
+    with open(html_path, "rb") as html_file:
+        # Mammoth expects DOCX input, not HTML. So fallback to basic text dump if not supported.
+        # Instead, use a simple HTML parser to extract text and write to docx
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(html_str, "html.parser")
+        doc = Document()
+        for elem in soup.find_all(['h1','h2','h3','h4','h5','h6','p','li']):
+            text = elem.get_text(strip=True)
+            if text:
+                doc.add_paragraph(text)
+        doc.save(docx_path)
+    return docx_path
+
+def html_to_docx_preserve_formatting(html_str, filename="optimized_resume.docx"):
+    """Convert HTML to DOCX, preserving basic formatting, color, and nested inline styles recursively."""
+    from docx.shared import RGBColor
+    soup = BeautifulSoup(html_str, "html.parser")
+    doc = Document()
+
+    def parse_style(style_str):
+        style = {}
+        if not style_str:
+            return style
+        for part in style_str.split(';'):
+            if ':' in part:
+                k, v = part.split(':', 1)
+                style[k.strip().lower()] = v.strip()
+        return style
+
+    def merge_styles(parent, child):
+        """Merge two style dicts, child overrides parent."""
+        merged = dict(parent) if parent else {}
+        merged.update(child or {})
+        return merged
+
+    def apply_run_styles(run, tag, style_dict):
+        if tag in ["b", "strong"] or style_dict.get("font-weight", "") in ["bold", "700"]:
+            run.bold = True
+        if tag in ["i", "em"] or style_dict.get("font-style", "") == "italic":
+            run.italic = True
+        if tag == "u" or style_dict.get("text-decoration", "") == "underline":
+            run.underline = True
+        color = style_dict.get("color")
+        if color:
+            if color.startswith('#') and len(color) == 7:
+                try:
+                    run.font.color.rgb = RGBColor.from_string(color[1:].upper())
+                except Exception:
+                    pass
+            elif color.lower() == "red":
+                run.font.color.rgb = RGBColor(0xFF, 0x00, 0x00)
+            elif color.lower() == "blue":
+                run.font.color.rgb = RGBColor(0x00, 0x00, 0xFF)
+            elif color.lower() == "green":
+                run.font.color.rgb = RGBColor(0x00, 0x80, 0x00)
+
+    def process_inline(node, paragraph, parent_tag=None, parent_style=None):
+        # If node is a tag
+        if hasattr(node, 'name') and node.name is not None:
+            style_dict = merge_styles(parent_style, parse_style(node.get('style', '')))
+            for child in node.children:
+                process_inline(child, paragraph, node.name, style_dict)
+        # If node is a text node
+        else:
+            text = str(node)
+            if text.strip():
+                run = paragraph.add_run(text)
+                apply_run_styles(run, parent_tag, parent_style or {})
+
+    def process_elem(elem):
+        # Headings
+        if elem.name in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']:
+            level = int(elem.name[1]) if elem.name[1].isdigit() else 1
+            doc.add_heading(elem.get_text(strip=True), level=level)
+        # Paragraph
+        elif elem.name == 'p' or (elem.name is None and str(elem).strip()):
+            p = doc.add_paragraph()
+            for child in elem.children if hasattr(elem, 'children') else []:
+                process_inline(child, p)
+            if elem.name is None:
+                process_inline(elem, p)
+        # Lists
+        elif elem.name == 'ul':
+            for li in elem.find_all('li', recursive=False):
+                p = doc.add_paragraph(style='List Bullet')
+                for child in li.children:
+                    process_inline(child, p)
+        elif elem.name == 'ol':
+            for li in elem.find_all('li', recursive=False):
+                p = doc.add_paragraph(style='List Number')
+                for child in li.children:
+                    process_inline(child, p)
+        # Table
+        elif elem.name == 'table':
+            rows = elem.find_all('tr')
+            if rows:
+                cols = rows[0].find_all(['td', 'th'])
+                table = doc.add_table(rows=len(rows), cols=len(cols))
+                for i, row in enumerate(rows):
+                    cells = row.find_all(['td', 'th'])
+                    for j, cell in enumerate(cells):
+                        table.cell(i, j).text = cell.get_text(strip=True)
+        # Other containers (div, section, body, etc.)
+        elif elem.name in ['div', 'section', 'body', 'main', 'article', 'span'] or elem.name is None:
+            for child in elem.children if hasattr(elem, 'children') else []:
+                process_elem(child)
+        # Fallback: treat as paragraph
+        else:
+            if elem.get_text(strip=True):
+                p = doc.add_paragraph()
+                p.add_run(elem.get_text(strip=True))
+
+    # Start from <body> or the root
+    root = soup.body if soup.body else soup
+    for elem in root.children:
+        process_elem(elem)
+
+    docx_path = os.path.join(tempfile.gettempdir(), filename)
+    doc.save(docx_path)
+    return docx_path
+
+async def download_resume_service(resume_text, format="docx"):
+    """Service to download resume in specified format"""
+    try:
+        logger.info(f"Downloading resume in format: {format}")
+        is_html = resume_text.strip().lower().startswith(("<!doctype", "<html"))
+        logger.info(f"Content appears to be HTML: {is_html}")
+        if format.lower() == "docx":
+            if is_html:
+                logger.info("Converting HTML to DOCX with formatting preservation")
+                file_path = html_to_docx_preserve_formatting(resume_text)
+            else:
+                file_path = create_docx_from_text(resume_text)
+            return FileResponse(
+                path=file_path,
+                filename="resume.docx",
+                media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            )
+        elif format.lower() == "pdf":
+            if is_html:
+                logger.info("Converting HTML to PDF using WeasyPrint")
+                file_path = create_pdf_from_text(resume_text)
+            else:
+                file_path = create_pdf_from_text(resume_text)
+            return FileResponse(
+                path=file_path,
+                filename="resume.pdf",
+                media_type="application/pdf"
+            )
+        elif format.lower() == "html":
+            logger.info("Returning HTML content")
+            html_path = os.path.join(tempfile.gettempdir(), "resume.html")
+            with open(html_path, "w", encoding="utf-8") as html_file:
+                html_file.write(resume_text)
+            return FileResponse(
+                path=html_path,
+                filename="resume.html",
+                media_type="text/html"
+            )
+        else:
+            raise HTTPException(status_code=400, detail=f"Unsupported format: {format}")
+    except Exception as e:
+        logger.error(f"download_resume_service failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 

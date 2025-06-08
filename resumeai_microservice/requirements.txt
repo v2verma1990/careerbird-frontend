@@ -12,3 +12,7 @@ openai
 tiktoken
 jsonschema
 json-validator
+weasyprint
+mammoth
+beautifulsoup4
+requests

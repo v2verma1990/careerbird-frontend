@@ -1,10 +1,13 @@
-# FastAPI app for resume analysis, optimization, customization, benchmarking, and ATS scan
+import sys
+print("Python executable:", sys.executable)# FastAPI app for resume analysis, optimization, customization, benchmarking, and ATS scan
 import os
 import logging
+import tempfile
 from fastapi import FastAPI, UploadFile, File, Form, Request
-from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.responses import JSONResponse, HTMLResponse, FileResponse, StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from utils.cache import get_cached_response, set_cached_response, hash_inputs,cache_if_successful
+from utils.cache import get_cached_response, set_cached_response, hash_inputs, cache_if_successful
 from utils.openai_utils import (
     analyze_resume, optimize_resume_jobscan_style, customize_resume, benchmark_resume, ats_scan_jobscan_style, jobscan_style_report,
     optimize_job_description, find_best_candidates, generate_interview_questions, generate_cover_letter,salary_insights
@@ -22,6 +25,15 @@ logger = logging.getLogger("resumeai_microservice")
 load_dotenv()
 
 app = FastAPI()
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
@@ -189,10 +201,48 @@ def root():
     logger.info("Root endpoint called.")
     return """
     <html>
-        <head><title>ResumeAI</title></head>
+        <head>
+            <title>ResumeAI</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 0; padding: 20px; line-height: 1.6; }
+                .container { max-width: 800px; margin: 0 auto; }
+                h1 { color: #333; }
+                .card { border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+                .btn { display: inline-block; background: #4CAF50; color: white; padding: 10px 15px; 
+                       text-decoration: none; border-radius: 4px; margin-right: 10px; }
+                .btn:hover { background: #45a049; }
+            </style>
+        </head>
         <body>
-            <h1>Hello, ResumeAI!</h1>
-            <p>Visit <a href='/docs'>/docs</a> for the API documentation.</p>
+            <div class="container">
+                <h1>ResumeAI Document Services</h1>
+                
+                <div class="card">
+                    <h2>API Documentation</h2>
+                    <p>Visit the API documentation to explore all available endpoints.</p>
+                    <a href='/docs' class="btn">API Docs</a>
+                </div>
+                
+                <div class="card">
+                    <h2>Resume Optimization</h2>
+                    <p>Upload your resume to optimize it and download in your preferred format.</p>
+                    <p>You can download your optimized resume as a PDF or Word document.</p>
+                    <form action="/candidate/optimize" method="post" enctype="multipart/form-data">
+                        <div style="margin-bottom: 15px;">
+                            <label for="resume">Upload Resume:</label><br>
+                            <input type="file" id="resume" name="resume" required>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label>Download Format:</label><br>
+                            <input type="radio" id="docx" name="download_format" value="docx" checked>
+                            <label for="docx">Word Document (.docx)</label><br>
+                            <input type="radio" id="pdf" name="download_format" value="pdf">
+                            <label for="pdf">PDF Document (.pdf)</label>
+                        </div>
+                        <button type="submit" class="btn">Optimize & Download</button>
+                    </form>
+                </div>
+            </div>
         </body>
     </html>
     """

@@ -85,7 +85,7 @@ const AtsScanner = () => {
     try {
       setIsLoading(true);
 
-      const { data, error } = await api.resume.scanAts(resumeFile);
+      const { data, error } = await api.resume.atsScan(resumeFile);
 
       if (error) {
         throw new Error(error);
@@ -279,7 +279,7 @@ const AtsScanner = () => {
                       Your resume's compatibility with ATS systems
                     </p>
                   </div>
-
+{/* 
                   <div className="flex justify-center space-x-4 mt-6">
                     <Button variant="outline" size="sm">
                       <Download className="w-4 h-4 mr-2" />
@@ -289,7 +289,7 @@ const AtsScanner = () => {
                       <Eye className="w-4 h-4 mr-2" />
                       View Details
                     </Button>
-                  </div>
+                  </div> */}
                 </CardContent>
               </Card>
 

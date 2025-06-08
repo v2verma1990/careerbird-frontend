@@ -88,14 +88,30 @@ async function apiCall<T>(
     return { data, error: null };
   } catch (error) {
     console.error("API call failed:", error);
-    
-    if (error instanceof TypeError && error.message.includes('fetch')) {
-      return { 
-        data: null, 
-        error: "Cannot connect to local backend. This may be because you're running in Lovable's preview environment which cannot access your local server. Try running the app locally in VS Code." 
-      };
+    let isPreviewEnv = false;
+    let isLocalhost = false;
+    if (typeof window !== 'undefined' && window.location) {
+      isPreviewEnv = window.location.hostname.includes('lovable.app');
+      isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     }
-    
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      if (isPreviewEnv) {
+        return {
+          data: null,
+          error: "Cannot connect to local backend. This may be because you're running in Lovable's preview environment which cannot access your local server. Try running the app locally in VS Code."
+        };
+      } else if (isLocalhost) {
+        return {
+          data: null,
+          error: "Cannot connect to your local backend. Make sure your backend server is running and accessible at the configured API_BASE_URL (http://localhost:5001/api)."
+        };
+      } else {
+        return {
+          data: null,
+          error: "Cannot connect to backend. Please check your network connection and backend server status."
+        };
+      }
+    }
     return { data: null, error: error instanceof Error ? error.message : "Unknown error" };
   }
 }
@@ -435,19 +451,114 @@ export const api = {
           error: error instanceof Error ? error.message : "Failed to build resume" 
         };
       }
+    },
+    downloadResume: async ({
+      resumeText,
+      format,
+      accessToken
+    }: {
+      resumeText: string;
+      format: string;
+      accessToken?: string;
+    }) => {
+      const response = await fetch(`${API_BASE_URL}/resumebuilder/download`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {})
+        },
+        body: JSON.stringify({ resumeText, format }),
+        credentials: "include"
+      });
+      return response;
+    },
+    optimizeResumeForResumeBuilder: async (params: { resumeData: string; templateId: string; accessToken?: string; }) => {
+      try {
+        // Always get the current session's access token if not provided
+        let accessToken = params.accessToken;
+        if (!accessToken) {
+          const { data: { session } } = await supabase.auth.getSession();
+          accessToken = session?.access_token;
+        }
+        console.log(`Building resume with template ID: ${params.templateId}`);
+        const response = await fetch(`${API_BASE_URL}/resumebuilder/optimize-ai`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {})
+          },
+          body: JSON.stringify(params),
+          credentials: "include"
+        });
+        const data = await response.json();
+        return { data, error: data.error || null };
+      } catch (error) {
+        return { data: null, error: error instanceof Error ? error.message : String(error) };
+      }
     }
   },
   resume: {
     analyze: (file: File, jobDescription: string, plan?: string) =>
       apiCall<any>("POST", "/resume/analyze", { file, jobDescription, plan }),
-    optimize: (file: File, plan?: string) =>
-      apiCall<any>("POST", "/resume/optimize", { file, plan }),
-    customize: (file: File, jobDescription?: string, jobDescriptionFile?: File, plan?: string) =>
-      apiCall<any>("POST", "/resume/customize", { file, jobDescription, jobDescriptionFile, plan }),
-    atsScan: (file: File, plan?: string) =>
-      apiCall<any>("POST", "/resume/ats-scan", { file, plan }),
-    scanAts: (file: File, plan?: string) =>
-      apiCall<any>("POST", "/resume/ats-scan", { file, plan }),
+    optimize: async (file: File, plan?: string) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const formData = new FormData();
+      formData.append("File", file);
+      if (plan) formData.append("plan", plan);
+      const headers: Record<string, string> = {};
+      if (session?.access_token) {
+        headers["Authorization"] = `Bearer ${session.access_token}`;
+      }
+      return fetch(`${API_BASE_URL}/resume/optimize`, {
+        method: "POST",
+        headers,
+        body: formData,
+        credentials: "include"
+      }).then(async response => {
+        const data = await response.json();
+        return response.ok ? { data, error: null } : { data: null, error: data?.error || "Error optimizing resume" };
+      });
+    },
+    customize: async (file: File, jobDescription?: string, jobDescriptionFile?: File, plan?: string) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const formData = new FormData();
+      formData.append("File", file); // Backend expects 'File' (capital F)
+      if (jobDescription) formData.append("JobDescription", jobDescription);
+      if (jobDescriptionFile) formData.append("JobDescriptionFile", jobDescriptionFile);
+      if (plan) formData.append("plan", plan);
+      const headers: Record<string, string> = {};
+      if (session?.access_token) {
+        headers["Authorization"] = `Bearer ${session.access_token}`;
+      }
+      return fetch(`${API_BASE_URL}/resume/customize`, {
+        method: "POST",
+        headers,
+        body: formData,
+        credentials: "include"
+      }).then(async response => {
+        const data = await response.json();
+        return response.ok ? { data, error: null } : { data: null, error: data?.error || "Error customizing resume" };
+      });
+    },
+    atsScan: async (file: File, plan?: string) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const formData = new FormData();
+      formData.append("File", file);
+      if (plan) formData.append("plan", plan);
+      const headers: Record<string, string> = {};
+      if (session?.access_token) {
+        headers["Authorization"] = `Bearer ${session.access_token}`;
+      }
+      return fetch(`${API_BASE_URL}/resume/scan-ats`, {
+        method: "POST",
+        headers,
+        body: formData,
+        credentials: "include"
+      }).then(async response => {
+        const data = await response.json();
+        return response.ok ? { data, error: null } : { data: null, error: data?.error || "Error scanning resume with ATS" };
+      });
+    },
     benchmark: (file: File, plan?: string) =>
       apiCall<any>("POST", "/resume/benchmark", { file, plan }),
     salaryInsights: async (formData: FormData, plan?: string) => {

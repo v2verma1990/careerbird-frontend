@@ -243,7 +243,13 @@ const ResumeOptimizer = () => {
                 <div className="space-y-6">
                   <div className="mb-6">
                     <h2 className="text-2xl font-bold mb-4 text-blue-900">ATS-Optimized Resume Report</h2>
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+                      {typeof optimizeReport.matchRate === 'number' && (
+                        <div className="bg-gradient-to-r from-cyan-500 to-cyan-600 rounded-lg p-4 text-white shadow-lg">
+                          <div className="text-xs font-medium opacity-90">Match Rate</div>
+                          <div className="text-xl font-bold">{optimizeReport.matchRate ?? '--'}%</div>
+                        </div>
+                      )}
                       <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-4 text-white shadow-lg">
                         <div className="text-xs font-medium opacity-90">ATS Score</div>
                         <div className="text-xl font-bold">{optimizeReport.atsScore ?? '--'}%</div>
@@ -391,6 +397,34 @@ const ResumeOptimizer = () => {
                       </div>
                     </div>
                   )}
+
+                  {/* Skills Match Section - always render, robust to any structure */}
+                  <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-200">
+                    <h3 className="font-semibold text-lg mb-2 text-indigo-800 flex items-center gap-2">
+                      <Award className="w-5 h-5" />
+                      Skills Match
+                    </h3>
+                    {optimizeReport.skillsMatch && Object.keys(optimizeReport.skillsMatch).length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {Object.entries(optimizeReport.skillsMatch).map(([key, value]: [string, any]) => (
+                          <div key={key}>
+                            <span className="font-medium text-blue-700">{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:</span>
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {Array.isArray(value) && value.length > 0 ? (
+                                value.map((item: string, i: number) => (
+                                  <Badge key={i} variant="outline" className="text-xs border-blue-300 text-blue-700">{item}</Badge>
+                                ))
+                              ) : (
+                                <span className="text-gray-500 ml-2">None</span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-gray-500 text-sm">No skills match data available.</div>
+                    )}
+                  </div>
                 </div>
               ) : !isLoading ? (
                 <div className="text-center py-16">

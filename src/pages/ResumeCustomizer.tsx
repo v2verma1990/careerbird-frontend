@@ -267,12 +267,9 @@ const ResumeCustomizer = () => {
                       </div>
                       <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-lg p-4 text-white shadow-lg">
                         <div className="text-xs font-medium opacity-90">Match Score</div>
-                        <div className="text-xl font-bold">{customizeReport.matchScore ?? '--'}%</div>
+                        <div className="text-xl font-bold">{customizeReport.matchRate ?? '--'}%</div>
                       </div>
-                      <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg p-4 text-white shadow-lg">
-                        <div className="text-xs font-medium opacity-90">Impact Score</div>
-                        <div className="text-xl font-bold">{customizeReport.impactScore ?? '--'}%</div>
-                      </div>
+                     
                     </div>
                   </div>
 
@@ -293,48 +290,216 @@ const ResumeCustomizer = () => {
                     <p className="text-gray-700 text-sm leading-relaxed">{customizeReport.summary}</p>
                   </div>
 
-                  {customizeReport.customizedContent && (
-                    <div className="bg-white rounded-lg p-4 border border-gray-300">
-                      <h3 className="font-semibold text-lg mb-2 text-gray-800 flex items-center gap-2">
-                        <FileText className="w-5 h-5" />
-                        Customized Resume Content
-                      </h3>
-                      <Textarea
-                        value={customizeReport.customizedContent}
-                        readOnly
-                        className="min-h-[200px] bg-gray-50 text-gray-800 border-gray-200"
-                      />
-                      <div className="flex gap-2 mt-3">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            navigator.clipboard.writeText(customizeReport.customizedContent);
-                            toast({ title: "Copied to clipboard" });
-                          }}
-                        >
-                          <Copy className="w-4 h-4 mr-2" />
-                          Copy
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            const blob = new Blob([customizeReport.customizedContent], { type: 'text/plain' });
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = 'customized_resume.txt';
-                            a.click();
-                            URL.revokeObjectURL(url);
-                          }}
-                        >
-                          <Download className="w-4 h-4 mr-2" />
-                          Download
-                        </Button>
+                  {/* Skills Match Section - always render */}
+                  <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-200">
+                    <h3 className="font-semibold text-lg mb-2 text-indigo-800 flex items-center gap-2">
+                      <Award className="w-5 h-5" />
+                      Skills Match
+                    </h3>
+                    {customizeReport.skillsMatch ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <span className="font-medium text-green-700">Matched Skills:</span>
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {Array.isArray(customizeReport.skillsMatch.matchedSkills) && customizeReport.skillsMatch.matchedSkills.length > 0 ? (
+                              customizeReport.skillsMatch.matchedSkills.map((skill: string, idx: number) => (
+                                <Badge key={idx} variant="outline" className="text-xs border-green-300 text-green-700">{skill}</Badge>
+                              ))
+                            ) : (
+                              <span className="text-gray-500 ml-2">None</span>
+                            )}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="font-medium text-red-700">Missing Skills:</span>
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {Array.isArray(customizeReport.skillsMatch.missingSkills) && customizeReport.skillsMatch.missingSkills.length > 0 ? (
+                              customizeReport.skillsMatch.missingSkills.map((skill: string, idx: number) => (
+                                <Badge key={idx} variant="outline" className="text-xs border-red-300 text-red-700">{skill}</Badge>
+                              ))
+                            ) : (
+                              <span className="text-gray-500 ml-2">None</span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    ) : (
+                      <div className="text-gray-500 text-sm">No skills match data available.</div>
+                    )}
+                  </div>
+
+                  {/* Download Button always visible below Customized Resume Content */}
+                  <div className="flex gap-2 mt-8 justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        const { jsPDF } = await import('jspdf');
+                        const doc = new jsPDF();
+                        let y = 10;
+                        if (customizeReport) {
+                          doc.setFontSize(16);
+                          doc.text('Resume Customization Report', 10, y);
+                          y += 10;
+                          doc.setFontSize(12);
+                          doc.text(`ATS Score: ${customizeReport.atsScore ?? '--'}%`, 10, y);
+                          y += 8;
+                          doc.text(`Match Score: ${customizeReport.matchRate ?? '--'}%`, 10, y);
+                          y += 10;
+                          if (Array.isArray(customizeReport.improvements) && customizeReport.improvements.length > 0) {
+                            doc.setFont(undefined, 'bold');
+                            doc.text('Key Improvements:', 10, y);
+                            doc.setFont(undefined, 'normal');
+                            y += 7;
+                            customizeReport.improvements.forEach((imp) => {
+                              doc.text(`• ${imp}`, 12, y);
+                              y += 6;
+                            });
+                            y += 2;
+                          }
+                          if (customizeReport.summary) {
+                            doc.setFont(undefined, 'bold');
+                            doc.text('Executive Summary:', 10, y);
+                            doc.setFont(undefined, 'normal');
+                            y += 7;
+                            doc.text(doc.splitTextToSize(customizeReport.summary, 180), 12, y);
+                            y += 12;
+                          }
+                          if (customizeReport.skillsMatch) {
+                            doc.setFont(undefined, 'bold');
+                            doc.text('Matched Skills:', 10, y);
+                            doc.setFont(undefined, 'normal');
+                            y += 7;
+                            doc.text((customizeReport.skillsMatch.matchedSkills || []).join(', ') || 'None', 12, y);
+                            y += 7;
+                            doc.setFont(undefined, 'bold');
+                            doc.text('Missing Skills:', 10, y);
+                            doc.setFont(undefined, 'normal');
+                            y += 7;
+                            doc.text((customizeReport.skillsMatch.missingSkills || []).join(', ') || 'None', 12, y);
+                            y += 10;
+                          }
+                          if (Array.isArray(customizeReport.atsTips) && customizeReport.atsTips.length > 0) {
+                            doc.setFont(undefined, 'bold');
+                            doc.text('ATS Tips:', 10, y);
+                            doc.setFont(undefined, 'normal');
+                            y += 7;
+                            customizeReport.atsTips.forEach((tip) => {
+                              doc.text(`• ${tip}`, 12, y);
+                              y += 6;
+                            });
+                            y += 2;
+                          }
+                          if (Array.isArray(customizeReport.recommendations) && customizeReport.recommendations.length > 0) {
+                            doc.setFont(undefined, 'bold');
+                            doc.text('Recommendations:', 10, y);
+                            doc.setFont(undefined, 'normal');
+                            y += 7;
+                            customizeReport.recommendations.forEach((rec) => {
+                              doc.text(`• ${rec}`, 12, y);
+                              y += 6;
+                            });
+                            y += 2;
+                          }
+                          if (Array.isArray(customizeReport.resumeHighlights) && customizeReport.resumeHighlights.length > 0) {
+                            doc.setFont(undefined, 'bold');
+                            doc.text('Resume Highlights:', 10, y);
+                            doc.setFont(undefined, 'normal');
+                            y += 7;
+                            customizeReport.resumeHighlights.forEach((h) => {
+                              doc.text(`• ${h.text || h}`, 12, y);
+                              y += 6;
+                            });
+                            y += 2;
+                          }
+                          if (customizeReport.sectionFeedback && Object.keys(customizeReport.sectionFeedback).length > 0) {
+                            doc.setFont(undefined, 'bold');
+                            doc.text('Section Feedback:', 10, y);
+                            doc.setFont(undefined, 'normal');
+                            y += 7;
+                            Object.entries(customizeReport.sectionFeedback).forEach(([section, feedback]) => {
+                              doc.text(`• ${section}: ${feedback}`, 12, y);
+                              y += 6;
+                            });
+                          }
+                        } else {
+                          doc.text('No customization report available.', 10, y);
+                        }
+                        doc.save('resume_customization_report.pdf');
+                      }}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Download PDF Report
+                    </Button>
+                  </div>
+
+                  {/* ATS Tips Section */}
+                  <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
+                    <h3 className="font-semibold text-lg mb-2 text-yellow-800 flex items-center gap-2">
+                      <Zap className="w-5 h-5" />
+                      ATS Tips
+                    </h3>
+                    {Array.isArray(customizeReport.atsTips) && customizeReport.atsTips.length > 0 ? (
+                      <ul className="list-disc ml-4 space-y-1">
+                        {customizeReport.atsTips.map((tip: string, idx: number) => (
+                          <li key={idx} className="text-yellow-700 text-sm">{tip}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <div className="text-gray-500 text-sm">No ATS tips available.</div>
+                    )}
+                  </div>
+
+                  {/* Recommendations Section */}
+                  <div className="bg-cyan-50 rounded-lg p-4 border border-cyan-200">
+                    <h3 className="font-semibold text-lg mb-2 text-cyan-800 flex items-center gap-2">
+                      <Star className="w-5 h-5" />
+                      Recommendations
+                    </h3>
+                    {Array.isArray(customizeReport.recommendations) && customizeReport.recommendations.length > 0 ? (
+                      <ul className="list-disc ml-4 space-y-1">
+                        {customizeReport.recommendations.map((rec: string, idx: number) => (
+                          <li key={idx} className="text-cyan-700 text-sm">{rec}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <div className="text-gray-500 text-sm">No recommendations available.</div>
+                    )}
+                  </div>
+
+                  {/* Resume Highlights Section */}
+                  <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-200">
+                    <h3 className="font-semibold text-lg mb-2 text-emerald-800 flex items-center gap-2">
+                      <TrendingUp className="w-5 h-5" />
+                      Resume Highlights
+                    </h3>
+                    {Array.isArray(customizeReport.resumeHighlights) && customizeReport.resumeHighlights.length > 0 ? (
+                      <ul className="list-disc ml-4 space-y-1">
+                        {customizeReport.resumeHighlights.map((highlight: any, idx: number) => (
+                          <li key={idx} className="text-emerald-700 text-sm">{highlight.text || highlight}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <div className="text-gray-500 text-sm">No highlights found.</div>
+                    )}
+                  </div>
+
+                  {/* Section Feedback Section */}
+                  <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+                    <h3 className="font-semibold text-lg mb-2 text-purple-800">Section Feedback</h3>
+                    {customizeReport.sectionFeedback && Object.keys(customizeReport.sectionFeedback).length > 0 ? (
+                      <div className="space-y-2">
+                        {Object.entries(customizeReport.sectionFeedback).map(([section, feedback]: [string, string]) => (
+                          <div key={section} className="text-sm">
+                            <span className="font-medium text-purple-900">{section}:</span>
+                            <span className="text-purple-700 ml-1">{feedback}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-gray-500 text-sm">No section-specific feedback.</div>
+                    )}
+                  </div>
                 </div>
               ) : !isLoading ? (
                 <div className="text-center py-16">

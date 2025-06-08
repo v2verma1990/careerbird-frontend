@@ -2901,6 +2901,30 @@ namespace ResumeAI.API.Services
             return updatedResumeData;
         }
 
+        internal async Task<(byte[] fileBytes, string fileName, string contentType)> DownloadResumeAsync(string resumeText, string format, string userId)
+        {
+            // Prepare the request to the Python microservice
+            var requestContent = new MultipartFormDataContent();
+            requestContent.Add(new StringContent(resumeText), "resume_text");
+            requestContent.Add(new StringContent(format), "format");
+
+            // Build the Python API URL
+            var pythonUrl = $"{_pythonApiBaseUrl}/candidate/download-resume";
+            using var response = await _httpClient.PostAsync(pythonUrl, requestContent);
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                throw new Exception($"Python download-resume failed: {error}");
+            }
+
+            var fileBytes = await response.Content.ReadAsByteArrayAsync();
+            var contentType = response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream";
+            var contentDisposition = response.Content.Headers.ContentDisposition?.FileName ?? null;
+            string fileName = contentDisposition ?? $"resume_{userId}.{format}";
+            fileName = fileName.Trim('"');
+            return (fileBytes, fileName, contentType);
+        }
+
         private class TemplatesData
         {
             [JsonProperty("templates")]
