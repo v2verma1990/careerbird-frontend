@@ -1,1363 +1,538 @@
-import React, { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/hooks/use-toast";
-import { Loader2, Download, Eye, Plus, Trash2, Upload, FileText } from "lucide-react";
-import api from "@/utils/apiClient";
-import { supabase } from "@/integrations/supabase/client";
-import "@/styles/ResumeBuilderApp.css";
 
-const API_BASE_URL = "http://localhost:5001/api"; // Match the URL used in apiClient.ts
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useAuth } from '@/contexts/auth/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import api from '@/utils/apiClient';
+import TopNavigation from '@/components/TopNavigation';
+import { 
+  Upload, 
+  Download, 
+  Eye, 
+  FileText, 
+  Sparkles, 
+  CheckCircle,
+  AlertCircle,
+  Crown,
+  Target,
+  Zap,
+  Palette,
+  Search,
+  Filter
+} from 'lucide-react';
 
 interface Template {
   id: string;
   name: string;
+  category: string;
   description: string;
   thumbnail: string;
-  category: string;
-  color: string;
-}
-
-interface ExperienceItem {
-  title: string;
-  company: string;
-  location: string;
-  startDate: string;
-  endDate: string;
-  description: string;
-}
-
-interface EducationItem {
-  degree: string;
-  institution: string;
-  location: string;
-  startDate: string;
-  endDate: string;
-  gpa?: string;
-}
-
-interface CertificationItem {
-  name: string;
-  issuer: string;
-  date: string;
-}
-
-interface ProjectItem {
-  name: string;
-  description: string;
-  technologies: string;
-}
-
-interface ResumeData {
-  name: string;
-  title: string;
-  email: string;
-  phone: string;
-  location: string;
-  linkedin: string;
-  website: string;
-  summary: string;
-  skills: string[];
-  experience: ExperienceItem[];
-  education: EducationItem[];
-  certifications: CertificationItem[];
-  projects: ProjectItem[];
+  premium: boolean;
+  popular: boolean;
 }
 
 const ResumeBuilderApp = () => {
+  const { user, subscriptionStatus } = useAuth();
   const { toast } = useToast();
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const [selectedTemplate, setSelectedTemplate] = useState<string>("");
-  const [resumeData, setResumeData] = useState<ResumeData>({
-    name: "",
-    title: "",
-    email: "",
-    phone: "",
-    location: "",
-    linkedin: "",
-    website: "",
-    summary: "",
-    skills: [],
-    experience: [],
-    education: [],
-    certifications: [],
-    projects: []
-  });
-  const [loading, setLoading] = useState(false);
-  const [downloadLoading, setDownloadLoading] = useState<string | null>(null);
-  const [extracting, setExtracting] = useState(false);
-  const [templatesLoading, setTemplatesLoading] = useState(true);
-  const [previewHtml, setPreviewHtml] = useState<string>("");
-  const [showPreview, setShowPreview] = useState(false);
-  const [newSkill, setNewSkill] = useState("");
+  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [extractedData, setExtractedData] = useState<any>(null);
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [previewHtml, setPreviewHtml] = useState<string>('');
 
-  // Load templates
-  useEffect(() => {
-    loadTemplates();
-  }, []);
-
-  const loadTemplates = async () => {
-    try {
-      setTemplatesLoading(true);
-      const result = await api.resumeBuilder.getTemplates();
-      if (result.error) {
-        setTemplates(beautifulTemplates);
-      } else {
-        // Create a map of template IDs to avoid duplicates
-        const templateMap = new Map();
-        
-        // Add hardcoded templates first
-        beautifulTemplates.forEach(template => {
-          templateMap.set(template.id, template);
-        });
-        
-        // Add API templates, overriding any duplicates
-        if (result.data && Array.isArray(result.data)) {
-          result.data.forEach(template => {
-            if (template.id && !templateMap.has(template.id)) {
-              templateMap.set(template.id, template);
-            }
-          });
-        }
-        
-        // Convert map back to array
-        setTemplates(Array.from(templateMap.values()));
-      }
-    } catch (error) {
-      setTemplates(beautifulTemplates);
-    } finally {
-      setTemplatesLoading(false);
-    }
-  };
-
-  const beautifulTemplates: Template[] = [
-    {
-      id: "modern-executive",
-      name: "Modern Executive",
-      description: "Clean, professional design perfect for executives and senior roles",
-      thumbnail: "/resume-templates/thumbnails/executive.PNG",
-      category: "professional",
-      color: "#1e3a8a"
-    },
-    {
-      id: "creative-designer",
-      name: "Creative Designer",
-      description: "Bold, creative layout ideal for designers and creative professionals",
-      thumbnail: "/resume-templates/thumbnails/creative.png",
-      category: "creative",
-      color: "#7c3aed"
-    },
-    {
-      id: "creative-designer-simple",
-      name: "Creative Designer Simple",
-      description: "Simplified creative layout for designers and artists",
-      thumbnail: "/resume-templates/thumbnails/creative.png",
-      category: "creative",
-      color: "#7c3aed"
-    },
-    {
-      id: "tech-minimalist",
-      name: "Tech Minimalist",
-      description: "Clean, minimal design focusing on skills and experience",
-      thumbnail: "/resume-templates/thumbnails/tech.PNG",
-      category: "tech",
-      color: "#059669"
-    },
-    {
-      id: "startup-founder",
-      name: "Startup Founder",
-      description: "Dynamic layout for entrepreneurs and startup professionals",
-      thumbnail: "/resume-templates/thumbnails/professional.png",
-      category: "professional",
-      color: "#dc2626"
-    },
-    {
-      id: "academic-scholar",
-      name: "Academic Scholar",
-      description: "Traditional academic format for researchers and professors",
-      thumbnail: "/resume-templates/thumbnails/academic.PNG",
-      category: "academic",
-      color: "#1f2937"
-    },
-    {
-      id: "marketing-pro",
-      name: "Marketing Pro",
-      description: "Vibrant design perfect for marketing and sales professionals",
-      thumbnail: "/resume-templates/thumbnails/creative.png",
-      category: "creative",
-      color: "#ea580c"
-    },
-    {
-      id: "finance-expert",
-      name: "Finance Expert",
-      description: "Conservative, trustworthy design for finance professionals",
-      thumbnail: "/resume-templates/thumbnails/professional.png",
-      category: "professional",
-      color: "#0f172a"
-    },
-    {
-      id: "modern-clean",
-      name: "Modern Clean",
-      description: "Clean, modern design with a professional look",
-      thumbnail: "/resume-templates/thumbnails/modern-clean.png",
-      category: "professional",
-      color: "#0369a1"
-    },
-    {
-      id: "entry-graduate",
-      name: "Fresh Graduate",
-      description: "Perfect for new graduates and entry-level professionals",
-      thumbnail: "/resume-templates/thumbnails/entry-level.PNG",
-      category: "entry-level",
-      color: "#16a34a"
-    },
-    {
-      id: "elegant",
-      name: "Elegant",
-      description: "Elegant, sophisticated design for experienced professionals",
-      thumbnail: "/resume-templates/thumbnails/elegant.PNG",
-      category: "professional",
-      color: "#7c2d12"
-    },
-    {
-      id: "minimal",
-      name: "Minimal",
-      description: "Clean, minimal design focusing on content",
-      thumbnail: "/resume-templates/thumbnails/minimal.png",
-      category: "tech",
-      color: "#4338ca"
-    },
-    {
-      id: "product-manager",
-      name: "Product Manager",
-      description: "Strategic design for product managers and project leads",
-      thumbnail: "/resume-templates/thumbnails/professional.png",
-      category: "professional",
-      color: "#0891b2"
-    }
+  // Mock templates data
+  const templates: Template[] = [
+    { id: '1', name: 'Modern Executive', category: 'executive', description: 'Perfect for senior positions', thumbnail: '/placeholder.svg', premium: false, popular: true },
+    { id: '2', name: 'Tech Professional', category: 'technology', description: 'Designed for tech roles', thumbnail: '/placeholder.svg', premium: false, popular: false },
+    { id: '3', name: 'Creative Designer', category: 'creative', description: 'Showcase your creativity', thumbnail: '/placeholder.svg', premium: true, popular: false },
+    { id: '4', name: 'Academic Scholar', category: 'academic', description: 'For research and academia', thumbnail: '/placeholder.svg', premium: true, popular: false },
+    { id: '5', name: 'Startup Founder', category: 'startup', description: 'Entrepreneurial focused', thumbnail: '/placeholder.svg', premium: false, popular: true },
+    { id: '6', name: 'Finance Expert', category: 'finance', description: 'Professional finance template', thumbnail: '/placeholder.svg', premium: true, popular: false }
   ];
 
-  const handleInputChange = (field: keyof ResumeData, value: string) => {
-    setResumeData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
+  const categories = [
+    { id: 'all', name: 'All Templates', count: templates.length },
+    { id: 'executive', name: 'Executive', count: templates.filter(t => t.category === 'executive').length },
+    { id: 'technology', name: 'Technology', count: templates.filter(t => t.category === 'technology').length },
+    { id: 'creative', name: 'Creative', count: templates.filter(t => t.category === 'creative').length },
+    { id: 'academic', name: 'Academic', count: templates.filter(t => t.category === 'academic').length },
+    { id: 'startup', name: 'Startup', count: templates.filter(t => t.category === 'startup').length },
+    { id: 'finance', name: 'Finance', count: templates.filter(t => t.category === 'finance').length }
+  ];
 
-  const addSkill = () => {
-    if (newSkill.trim()) {
-      setResumeData(prev => ({
-        ...prev,
-        skills: [...prev.skills, newSkill.trim()]
-      }));
-      setNewSkill("");
-    }
-  };
+  const filteredTemplates = templates.filter(template => {
+    const matchesSearch = template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         template.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'all' || template.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
 
-  const removeSkill = (index: number) => {
-    setResumeData(prev => ({
-      ...prev,
-      skills: prev.skills.filter((_, i) => i !== index)
-    }));
-  };
-
-  const addExperience = () => {
-    setResumeData(prev => ({
-      ...prev,
-      experience: [...prev.experience, {
-        title: "",
-        company: "",
-        location: "",
-        startDate: "",
-        endDate: "",
-        description: ""
-      }]
-    }));
-  };
-
-  const updateExperience = (index: number, field: keyof ExperienceItem, value: string) => {
-    setResumeData(prev => ({
-      ...prev,
-      experience: prev.experience.map((exp, i) => 
-        i === index ? { ...exp, [field]: value } : exp
-      )
-    }));
-  };
-
-  const removeExperience = (index: number) => {
-    setResumeData(prev => ({
-      ...prev,
-      experience: prev.experience.filter((_, i) => i !== index)
-    }));
-  };
-
-  const addEducation = () => {
-    setResumeData(prev => ({
-      ...prev,
-      education: [...prev.education, {
-        degree: "",
-        institution: "",
-        location: "",
-        startDate: "",
-        endDate: "",
-        gpa: ""
-      }]
-    }));
-  };
-
-  const updateEducation = (index: number, field: keyof EducationItem, value: string) => {
-    setResumeData(prev => ({
-      ...prev,
-      education: prev.education.map((edu, i) => 
-        i === index ? { ...edu, [field]: value } : edu
-      )
-    }));
-  };
-
-  const removeEducation = (index: number) => {
-    setResumeData(prev => ({
-      ...prev,
-      education: prev.education.filter((_, i) => i !== index)
-    }));
-  };
-
-  const addCertification = () => {
-    setResumeData(prev => ({
-      ...prev,
-      certifications: [...prev.certifications, {
-        name: "",
-        issuer: "",
-        date: ""
-      }]
-    }));
-  };
-
-  const updateCertification = (index: number, field: keyof CertificationItem, value: string) => {
-    setResumeData(prev => ({
-      ...prev,
-      certifications: prev.certifications.map((cert, i) => 
-        i === index ? { ...cert, [field]: value } : cert
-      )
-    }));
-  };
-
-  const removeCertification = (index: number) => {
-    setResumeData(prev => ({
-      ...prev,
-      certifications: prev.certifications.filter((_, i) => i !== index)
-    }));
-  };
-
-  const addProject = () => {
-    setResumeData(prev => ({
-      ...prev,
-      projects: [...prev.projects, {
-        name: "",
-        description: "",
-        technologies: ""
-      }]
-    }));
-  };
-
-  const updateProject = (index: number, field: keyof ProjectItem, value: string) => {
-    setResumeData(prev => ({
-      ...prev,
-      projects: prev.projects.map((proj, i) => 
-        i === index ? { ...proj, [field]: value } : proj
-      )
-    }));
-  };
-
-  const removeProject = (index: number) => {
-    setResumeData(prev => ({
-      ...prev,
-      projects: prev.projects.filter((_, i) => i !== index)
-    }));
-  };
-
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
-
-    try {
-      setExtracting(true);
-      const result = await api.resumeBuilder.extractResumeData(file);
-      
-      if (result.error) {
-        toast({
-          title: "Error",
-          description: result.error,
-          variant: "destructive"
-        });
-        return;
-      }
-
-      if (result.data) {
-        setResumeData({
-          name: result.data.name || "",
-          title: result.data.title || "",
-          email: result.data.email || "",
-          phone: result.data.phone || "",
-          location: result.data.location || "",
-          linkedin: result.data.linkedin || "",
-          website: result.data.website || "",
-          summary: result.data.summary || "",
-          skills: result.data.skills || [],
-          experience: result.data.experience || [],
-          education: result.data.education || [],
-          certifications: result.data.certifications || [],
-          projects: result.data.projects || []
-        });
-        toast({
-          title: "Success",
-          description: "Resume data extracted successfully!"
-        });
-      }
-    } catch (error) {
+    if (file && file.type === 'application/pdf') {
+      setResumeFile(file);
       toast({
-        title: "Error",
-        description: "Failed to extract resume data",
+        title: "File uploaded successfully",
+        description: "Ready to extract resume data",
+      });
+    } else {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload a PDF file",
         variant: "destructive"
       });
-    } finally {
-      setExtracting(false);
     }
   };
 
-  const generateResume = async () => {
+  const handleExtractResume = async () => {
+    if (!resumeFile) {
+      toast({
+        title: "No file selected",
+        description: "Please upload a resume first",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsExtracting(true);
+    try {
+      const response = await api.resumeBuilder.extractResumeData(resumeFile);
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      setExtractedData(response.data);
+      toast({
+        title: "Resume extracted successfully",
+        description: "Your resume data has been processed",
+      });
+    } catch (error) {
+      console.error('Error extracting resume:', error);
+      toast({
+        title: "Extraction failed",
+        description: "Failed to extract resume data. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsExtracting(false);
+    }
+  };
+
+  const handleGenerateResume = async () => {
     if (!selectedTemplate) {
       toast({
-        title: "Error",
+        title: "No template selected",
         description: "Please select a template first",
         variant: "destructive"
       });
       return;
     }
 
-    try {
-      setLoading(true);
-      console.log(`Generating resume with template: ${selectedTemplate}`);
-      console.log("Resume data being sent:", resumeData);
-      
-      // Make sure we're sending valid data in the format the backend expects
-      const dataToSend = {
-        // Personal information
-        name: resumeData.name || "",
-        title: resumeData.title || "",
-        email: resumeData.email || "",
-        phone: resumeData.phone || "",
-        location: resumeData.location || "",
-        linkedIn: resumeData.linkedin || "", // Note: backend expects 'linkedIn' with capital 'I'
-        website: resumeData.website || "",
-        summary: resumeData.summary || "",
-        
-        // Arrays
-        skills: resumeData.skills || [],
-        experience: resumeData.experience || [],
-        education: resumeData.education || [],
-        certifications: resumeData.certifications || [],
-        projects: resumeData.projects || []
-      };
-      
-      const result = await api.resumeBuilder.buildResume({
-        resumeData: JSON.stringify(dataToSend),
-        templateId: selectedTemplate
-      });
-
-      if (result.error) {
-        toast({
-          title: "Error",
-          description: result.error,
-          variant: "destructive"
-        });
-        console.error("Resume generation error:", result.error);
-        return;
-      }
-
-      if (result.data) {
-        console.log("Resume data received:", result.data);
-        
-        // Just use the HTML directly from the backend
-        let htmlContent = result.data.html || "";
-        
-        console.log(`Resume HTML received, length: ${htmlContent.length} characters`);
-        console.log("First 200 characters of HTML:", htmlContent.substring(0, 200));
-        
-        // Just use the HTML directly from the backend without any modifications
-        setPreviewHtml(htmlContent);
-        setShowPreview(true);
-        toast({
-          title: "Success",
-          description: "Resume generated successfully!"
-        });
-      } else {
-        console.error("No HTML content received in the response");
-        toast({
-          title: "Warning",
-          description: "Resume was generated but no content was received",
-          variant: "warning"
-        });
-      }
-    } catch (error) {
-      console.error("Resume generation error:", error);
+    if (!extractedData) {
       toast({
-        title: "Error",
-        description: "Failed to generate resume",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // New: Generate Best AI Resume
-  const generateBestAIResume = async () => {
-    if (!selectedTemplate) {
-      toast({
-        title: "Error",
-        description: "Please select a template first",
+        title: "No resume data",
+        description: "Please extract resume data first",
         variant: "destructive"
       });
       return;
     }
-    try {
-      setLoading(true);
-      const dataToSend = {
-        name: resumeData.name || "",
-        title: resumeData.title || "",
-        email: resumeData.email || "",
-        phone: resumeData.phone || "",
-        location: resumeData.location || "",
-        linkedIn: resumeData.linkedin || "",
-        website: resumeData.website || "",
-        summary: resumeData.summary || "",
-        skills: resumeData.skills || [],
-        experience: resumeData.experience || [],
-        education: resumeData.education || [],
-        certifications: resumeData.certifications || [],
-        projects: resumeData.projects || []
-      };
-      const result = await api.resumeBuilder.optimizeResumeForResumeBuilder({
-        resumeData: JSON.stringify(dataToSend),
-        templateId: selectedTemplate
-      });
 
-      if (result.error) {
-        toast({
-          title: "Error",
-          description: result.error,
-          variant: "destructive"
-        });
-        return;
+    setIsGenerating(true);
+    try {
+      // Transform data to include both formats for template compatibility
+      const transformedData = {
+        ...extractedData,
+        Name: extractedData.name || extractedData.Name || '',
+        Email: extractedData.email || extractedData.Email || '',
+        Phone: extractedData.phone || extractedData.Phone || '',
+        Address: extractedData.address || extractedData.Address || '',
+        Summary: extractedData.summary || extractedData.Summary || '',
+        Experience: extractedData.experience || extractedData.Experience || [],
+        Education: extractedData.education || extractedData.Education || [],
+        Skills: extractedData.skills || extractedData.Skills || [],
+        name: extractedData.name || extractedData.Name || '',
+        email: extractedData.email || extractedData.Email || '',
+        phone: extractedData.phone || extractedData.Phone || '',
+        address: extractedData.address || extractedData.Address || '',
+        summary: extractedData.summary || extractedData.Summary || '',
+        experience: extractedData.experience || extractedData.Experience || [],
+        education: extractedData.education || extractedData.Education || [],
+        skills: extractedData.skills || extractedData.Skills || []
+      };
+
+      const response = await api.resumeBuilder.generateResume(transformedData, selectedTemplate.id);
+      if (response.error) {
+        throw new Error(response.error);
       }
-      // Use the optimized HTML for preview (from backend, with template and AI suggestions)
-      if (result.data && result.data.html) {
-        setPreviewHtml(result.data.html);
-        setShowPreview(true);
-        toast({
-          title: "Success",
-          description: "Best AI Resume generated successfully!"
-        });
-      } else {
-        toast({
-          title: "Warning",
-          description: "No optimized resume content received",
-          variant: "warning"
-        });
-      }
-    } catch (error) {
+      
+      setPreviewHtml(response.data.html);
       toast({
-        title: "Error",
-        description: "Failed to generate best AI resume",
+        title: "Resume generated successfully",
+        description: `Your resume has been created using the ${selectedTemplate.name} template`,
+      });
+    } catch (error) {
+      console.error('Error generating resume:', error);
+      toast({
+        title: "Generation failed",
+        description: "Failed to generate resume. Please try again.",
         variant: "destructive"
       });
     } finally {
-      setLoading(false);
+      setIsGenerating(false);
     }
   };
 
-  // New: Generate AI Enhanced Resume (100% ATS)
-  const generateAIEnhancedResumeATS100 = async () => {
-    if (!selectedTemplate) {
+  const handleTemplateSelect = (template: Template) => {
+    if (template.premium && subscriptionStatus?.type === 'free') {
       toast({
-        title: "Error",
-        description: "Please select a template first",
+        title: "Premium Template",
+        description: "This template requires a premium subscription",
         variant: "destructive"
       });
       return;
     }
-    try {
-      setLoading(true);
-      const dataToSend = {
-        name: resumeData.name || "",
-        title: resumeData.title || "",
-        email: resumeData.email || "",
-        phone: resumeData.phone || "",
-        location: resumeData.location || "",
-        linkedIn: resumeData.linkedin || "",
-        website: resumeData.website || "",
-        summary: resumeData.summary || "",
-        skills: resumeData.skills || [],
-        experience: resumeData.experience || [],
-        education: resumeData.education || [],
-        certifications: resumeData.certifications || [],
-        projects: resumeData.projects || []
-      };
-      const result = await api.resumeBuilder.enhanceResumeForResumeBuilder({
-        resumeData: JSON.stringify(dataToSend),
-        templateId: selectedTemplate
-      });
-      if (result.error) {
-        toast({
-          title: "Error",
-          description: result.error,
-          variant: "destructive"
-        });
-        return;
-      }
-      if (result.data && result.data.html) {
-        setPreviewHtml(result.data.html);
-        setShowPreview(true);
-        toast({
-          title: "Success",
-          description: "AI Enhanced Resume (100% ATS) generated successfully!"
-        });
-      } else {
-        toast({
-          title: "Warning",
-          description: "No enhanced resume content received",
-          variant: "warning"
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to generate AI Enhanced Resume (100% ATS)",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
+    setSelectedTemplate(template);
+    toast({
+      title: "Template selected",
+      description: `${template.name} template is now active`,
+    });
   };
 
-  const downloadResume = async (format: 'docx' | 'pdf' | 'html' = 'docx') => {
-    if (!previewHtml) return;
-
-    try {
-      // For HTML format, handle directly in the browser
-      if (format === 'html') {
-        const blob = new Blob([previewHtml], { type: 'text/html' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${resumeData.name || 'resume'}.html`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        
-        toast({
-          title: "Success",
-          description: "Resume downloaded as HTML"
-        });
-        return;
-      }
-      
-        // const result = await api.resumeBuilder.buildResume({
-  //       resumeData: JSON.stringify(dataToSend),
-  //       templateId: selectedTemplate
-  //     });
-
-      // For DOCX and PDF, use the .NET backend API
-      setDownloadLoading(format);
-      try {
-        // Use the .NET backend endpoint
-        const { data: { session } } = await supabase.auth.getSession();
-        const response = await api.resumeBuilder.downloadResume({
-          resumeText: previewHtml,
-          format: format,
-          accessToken: session?.access_token || ''
-        });
-        console.log(response);
-        // const response = await fetch(`${API_BASE_URL}/resumebuilder/download`, {
-        //   method: 'POST',
-        //   headers: {
-        //     'Content-Type': 'application/json',
-        //     ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {})
-        //   },
-        //   body: JSON.stringify({
-        //     resumeText: previewHtml,
-        //     format: format
-        //   }),
-        //   credentials: 'include'
-        // });
-
-        if (response.ok) {
-          // Get the blob from the response
-          const blob = await response.blob();
-          const url = URL.createObjectURL(blob);
-          // Create a link and trigger the download
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `${resumeData.name || 'resume'}.${format}`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
-
-          toast({
-            title: "Success",
-            description: `Resume downloaded as ${format.toUpperCase()}`
-          });
-          return;
-        } else {
-          throw new Error(`API returned status: ${response.status}`);
-        }
-      } catch (apiError) {
-        console.error("API download attempt failed:", apiError);
-        // Only fallback to HTML if backend fails
-        const blob = new Blob([previewHtml], { type: 'text/html' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${resumeData.name || 'resume'}.html`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        toast({
-          title: "HTML Downloaded",
-          description: `The resume was downloaded as HTML because the ${format.toUpperCase()} conversion service is currently unavailable. You can open this HTML file in Word or Google Docs and save it as ${format.toUpperCase()} manually.`,
-          variant: "default"
-        });
-      }
-    } catch (error) {
-      console.error('Error downloading resume:', error);
-      toast({
-        title: "Error",
-        description: `Failed to download resume`,
-        variant: "destructive"
-      });
-    } finally {
-      setDownloadLoading(null);
-    }
-  };
-
-  if (showPreview && previewHtml) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold">Resume Preview</h1>
-            <div className="flex gap-4">
-              <Button variant="outline" onClick={() => setShowPreview(false)}>
-                <FileText className="w-4 h-4 mr-2" />
-                Back to Editor
-              </Button>
-              <div className="flex gap-2">
-                {/* <Button 
-                  onClick={() => downloadResume('docx')} 
-                  variant="default"
-                  disabled={downloadLoading !== null}
-                >
-                  {downloadLoading === 'docx' ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Download className="w-4 h-4 mr-2" />
-                  )}
-                  Download DOCX
-                </Button> */}
-                <Button 
-                  onClick={() => downloadResume('pdf')} 
-                  variant="outline"
-                  disabled={downloadLoading !== null}
-                >
-                  {downloadLoading === 'pdf' ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Download className="w-4 h-4 mr-2" />
-                  )}
-                  Download PDF
-                </Button>
-                <Button 
-                  onClick={() => downloadResume('html')} 
-                  variant="outline"
-                  disabled={downloadLoading !== null}
-                >
-                  {downloadLoading === 'html' ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Download className="w-4 h-4 mr-2" />
-                  )}
-                  Download HTML
-                </Button>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-lg shadow-lg p-4">
-            <iframe
-              srcDoc={previewHtml}
-              className="w-full h-[800px] border-0"
-              title="Resume Preview"
-              onLoad={(e) => {
-                // Ensure iframe content is properly sized
-                const iframe = e.target as HTMLIFrameElement;
-                if (iframe.contentDocument) {
-                  const iframeBody = iframe.contentDocument.body;
-                  if (iframeBody) {
-                    // Force styles to be applied
-                    iframeBody.style.margin = '0';
-                    iframeBody.style.padding = '0';
-                    iframeBody.style.height = '100%';
-                    iframeBody.style.width = '100%';
-                    
-                    // Log for debugging
-                    console.log('Resume preview iframe loaded successfully');
-                  }
-                }
-              }}
-            />
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const canGenerateResume = selectedTemplate && extractedData;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-4">Professional Resume Builder</h1>
-          <p className="text-xl text-gray-600">Create stunning resumes with our AI-powered builder and beautiful templates</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <TopNavigation />
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            AI-Powered Resume Builder
+          </h1>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            Transform your existing resume with professional templates and AI optimization
+          </p>
         </div>
 
-        {templatesLoading ? (
-          <div className="flex justify-center items-center h-64">
-            <Loader2 className="w-8 h-8 animate-spin" />
-            <span className="ml-2">Loading templates...</span>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            {/* Template Selection */}
-            <div className="lg:col-span-1">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Eye className="w-5 h-5" />
-                    Choose Template
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 gap-4 max-h-96 overflow-y-auto">
-                    {templates.map((template) => (
-                      <div
-                        key={template.id}
-                        className={`border rounded-lg p-3 cursor-pointer transition-all ${
-                          selectedTemplate === template.id
-                            ? "border-blue-500 bg-blue-50 shadow-md"
-                            : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
-                        }`}
-                        onClick={() => setSelectedTemplate(template.id)}
-                      >
-                        <div 
-                          className="w-full h-24 rounded mb-2 flex items-center justify-center text-white font-semibold text-sm template-color"
-                          style={{ "--template-color": template.color || '#6b7280' } as React.CSSProperties}
-                        >
-                          {template.name}
-                        </div>
-                        <h3 className="font-semibold text-sm">{template.name}</h3>
-                        <p className="text-xs text-gray-600 mb-2">{template.description}</p>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Template Selection Sidebar */}
+          <div className="lg:col-span-1">
+            <Card className="sticky top-24">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Palette className="w-5 h-5 text-blue-600" />
+                  Choose Template
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Search */}
+                <div className="relative">
+                  <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
+                  <Input
+                    placeholder="Search templates..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+
+                {/* Categories */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">Categories</Label>
+                  {categories.map(category => (
+                    <button
+                      key={category.id}
+                      onClick={() => setSelectedCategory(category.id)}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                        selectedCategory === category.id 
+                          ? 'bg-blue-100 text-blue-700 font-medium' 
+                          : 'hover:bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center">
+                        <span>{category.name}</span>
                         <Badge variant="secondary" className="text-xs">
-                          {template.category}
+                          {category.count}
                         </Badge>
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                    </button>
+                  ))}
+                </div>
 
-            {/* Form */}
-            <div className="lg:col-span-3">
-              <Card>
-                <CardHeader>
-                  <div className="flex justify-between items-center">
-                    <CardTitle className="flex items-center gap-2">
-                      <FileText className="w-5 h-5" />
-                      Resume Information
-                    </CardTitle>
-                    <div className="flex gap-2">
-                      <Label htmlFor="resume-upload" className="sr-only">
-                        Upload Resume File
-                      </Label>
-                      <input
-                        type="file"
-                        accept=".pdf,.docx,.doc,.txt"
-                        onChange={handleFileUpload}
-                        className="hidden"
-                        id="resume-upload"
-                        aria-label="Upload Resume File"
-                      />
-                      <Button
-                        variant="outline"
-                        onClick={() => document.getElementById('resume-upload')?.click()}
-                        disabled={extracting}
-                        size="sm"
-                      >
-                        {extracting ? (
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        ) : (
-                          <Upload className="w-4 h-4 mr-2" />
+                {/* Selected Template Info */}
+                {selectedTemplate && (
+                  <div className="border-t pt-4">
+                    <Label className="text-sm font-medium text-gray-700">Selected Template</Label>
+                    <div className="mt-2 p-3 bg-blue-50 rounded-lg">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-medium text-blue-900">{selectedTemplate.name}</h3>
+                        {selectedTemplate.premium && (
+                          <Crown className="w-4 h-4 text-yellow-500" />
                         )}
-                        Extract from Resume
+                      </div>
+                      <p className="text-sm text-blue-700">{selectedTemplate.description}</p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Main Content */}
+          <div className="lg:col-span-3 space-y-8">
+            {/* Template Selection Alert */}
+            {!selectedTemplate && (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Please select a template from the sidebar to continue with resume generation.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Templates Grid */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <Target className="w-5 h-5 text-blue-600" />
+                    Professional Templates ({filteredTemplates.length})
+                  </span>
+                  <Badge variant="outline">
+                    {selectedCategory === 'all' ? 'All Categories' : categories.find(c => c.id === selectedCategory)?.name}
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredTemplates.map(template => (
+                    <Card 
+                      key={template.id}
+                      className={`cursor-pointer transition-all duration-200 hover:shadow-lg ${
+                        selectedTemplate?.id === template.id 
+                          ? 'ring-2 ring-blue-500 shadow-lg' 
+                          : 'hover:shadow-md'
+                      }`}
+                      onClick={() => handleTemplateSelect(template)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="aspect-[3/4] bg-gray-100 rounded-lg mb-4 relative overflow-hidden">
+                          <img 
+                            src={template.thumbnail} 
+                            alt={template.name}
+                            className="w-full h-full object-cover"
+                          />
+                          {template.premium && (
+                            <Badge className="absolute top-2 right-2 bg-yellow-500 text-white">
+                              <Crown className="w-3 h-3 mr-1" />
+                              Premium
+                            </Badge>
+                          )}
+                          {template.popular && (
+                            <Badge className="absolute top-2 left-2 bg-blue-500 text-white">
+                              Popular
+                            </Badge>
+                          )}
+                          {selectedTemplate?.id === template.id && (
+                            <div className="absolute inset-0 bg-blue-500/20 flex items-center justify-center">
+                              <CheckCircle className="w-8 h-8 text-blue-600" />
+                            </div>
+                          )}
+                        </div>
+                        <h3 className="font-semibold text-gray-900 mb-1">{template.name}</h3>
+                        <p className="text-sm text-gray-600">{template.description}</p>
+                        <div className="mt-2 flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs">
+                            {template.category}
+                          </Badge>
+                          {template.premium && subscriptionStatus?.type === 'free' && (
+                            <Badge variant="outline" className="text-xs text-orange-600 border-orange-300">
+                              Upgrade Required
+                            </Badge>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Resume Upload and Extraction */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Upload className="w-5 h-5 text-blue-600" />
+                  Upload & Extract Resume
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* File Upload */}
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors">
+                  <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <div className="space-y-2">
+                    <Label htmlFor="resume-upload" className="text-lg font-medium text-gray-700 cursor-pointer">
+                      Upload your existing resume
+                    </Label>
+                    <p className="text-gray-500">PDF files only, max 10MB</p>
+                    <Input
+                      id="resume-upload"
+                      type="file"
+                      accept=".pdf"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                    <Button 
+                      onClick={() => document.getElementById('resume-upload')?.click()}
+                      variant="outline"
+                      className="mt-4"
+                    >
+                      Choose File
+                    </Button>
+                  </div>
+                </div>
+
+                {resumeFile && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div className="flex items-center gap-3">
+                      <FileText className="w-5 h-5 text-green-600" />
+                      <div className="flex-1">
+                        <p className="font-medium text-green-900">{resumeFile.name}</p>
+                        <p className="text-sm text-green-700">
+                          {(resumeFile.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
+                      <Button 
+                        onClick={handleExtractResume}
+                        disabled={isExtracting}
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                      >
+                        {isExtracting ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                            Extracting...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-4 h-4 mr-2" />
+                            Extract Data
+                          </>
+                        )}
                       </Button>
                     </div>
                   </div>
+                )}
+
+                {extractedData && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <CheckCircle className="w-5 h-5 text-blue-600" />
+                      <h3 className="font-medium text-blue-900">Resume data extracted successfully</h3>
+                    </div>
+                    <p className="text-sm text-blue-700">
+                      Your resume information is ready for template generation
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Action Buttons */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Zap className="w-5 h-5 text-blue-600" />
+                  Generate Resume
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Button 
+                    onClick={handleGenerateResume}
+                    disabled={!canGenerateResume || isGenerating}
+                    className={`flex-1 h-12 text-base font-medium ${
+                      canGenerateResume 
+                        ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                  >
+                    {isGenerating ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                        Generating Resume...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-5 h-5 mr-2" />
+                        Generate Resume
+                      </>
+                    )}
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    disabled={!previewHtml}
+                    className={`${!previewHtml ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    Preview
+                  </Button>
+                  
+                  <Button 
+                    variant="outline"
+                    disabled={!previewHtml}
+                    className={`${!previewHtml ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Download PDF
+                  </Button>
+                </div>
+
+                {!canGenerateResume && (
+                  <Alert className="mt-4">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      To generate a resume, please: 
+                      {!selectedTemplate && " select a template"}
+                      {!selectedTemplate && !extractedData && " and"}
+                      {!extractedData && " upload and extract your resume data"}
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Preview Section */}
+            {previewHtml && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Eye className="w-5 h-5 text-blue-600" />
+                    Resume Preview
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <Tabs defaultValue="personal" className="w-full">
-                    <TabsList className="grid w-full grid-cols-5">
-                      <TabsTrigger value="personal">Personal</TabsTrigger>
-                      <TabsTrigger value="experience">Experience</TabsTrigger>
-                      <TabsTrigger value="education">Education</TabsTrigger>
-                      <TabsTrigger value="skills">Skills</TabsTrigger>
-                      <TabsTrigger value="additional">Additional</TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value="personal" className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="name">Full Name *</Label>
-                          <Input
-                            id="name"
-                            value={resumeData.name}
-                            onChange={(e) => handleInputChange('name', e.target.value)}
-                            placeholder="John Doe"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="title">Job Title *</Label>
-                          <Input
-                            id="title"
-                            value={resumeData.title}
-                            onChange={(e) => handleInputChange('title', e.target.value)}
-                            placeholder="Software Developer"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="email">Email *</Label>
-                          <Input
-                            id="email"
-                            type="email"
-                            value={resumeData.email}
-                            onChange={(e) => handleInputChange('email', e.target.value)}
-                            placeholder="john@example.com"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="phone">Phone</Label>
-                          <Input
-                            id="phone"
-                            value={resumeData.phone}
-                            onChange={(e) => handleInputChange('phone', e.target.value)}
-                            placeholder="+1 234 567 8900"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="location">Location</Label>
-                          <Input
-                            id="location"
-                            value={resumeData.location}
-                            onChange={(e) => handleInputChange('location', e.target.value)}
-                            placeholder="New York, NY"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="linkedin">LinkedIn</Label>
-                          <Input
-                            id="linkedin"
-                            value={resumeData.linkedin}
-                            onChange={(e) => handleInputChange('linkedin', e.target.value)}
-                            placeholder="linkedin.com/in/johndoe"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <Label htmlFor="website">Website</Label>
-                        <Input
-                          id="website"
-                          value={resumeData.website}
-                          onChange={(e) => handleInputChange('website', e.target.value)}
-                          placeholder="johndoe.com"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="summary">Professional Summary</Label>
-                        <Textarea
-                          id="summary"
-                          value={resumeData.summary}
-                          onChange={(e) => handleInputChange('summary', e.target.value)}
-                          placeholder="Brief professional summary highlighting your key achievements and skills..."
-                          rows={4}
-                        />
-                      </div>
-                    </TabsContent>
-
-                    <TabsContent value="experience" className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <h3 className="text-lg font-semibold">Work Experience</h3>
-                        <Button onClick={addExperience} size="sm">
-                          <Plus className="w-4 h-4 mr-2" />
-                          Add Experience
-                        </Button>
-                      </div>
-                      {resumeData.experience.map((exp, index) => (
-                        <Card key={index}>
-                          <CardContent className="pt-6">
-                            <div className="flex justify-between items-start mb-4">
-                              <h4 className="font-semibold">Experience {index + 1}</h4>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => removeExperience(index)}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div>
-                                <Label>Job Title</Label>
-                                <Input
-                                  value={exp.title}
-                                  onChange={(e) => updateExperience(index, 'title', e.target.value)}
-                                  placeholder="Software Developer"
-                                />
-                              </div>
-                              <div>
-                                <Label>Company</Label>
-                                <Input
-                                  value={exp.company}
-                                  onChange={(e) => updateExperience(index, 'company', e.target.value)}
-                                  placeholder="Company Name"
-                                />
-                              </div>
-                              <div>
-                                <Label>Location</Label>
-                                <Input
-                                  value={exp.location}
-                                  onChange={(e) => updateExperience(index, 'location', e.target.value)}
-                                  placeholder="City, State"
-                                />
-                              </div>
-                              <div className="grid grid-cols-2 gap-2">
-                                <div>
-                                  <Label>Start Date</Label>
-                                  <Input
-                                    value={exp.startDate}
-                                    onChange={(e) => updateExperience(index, 'startDate', e.target.value)}
-                                    placeholder="Jan 2020"
-                                  />
-                                </div>
-                                <div>
-                                  <Label>End Date</Label>
-                                  <Input
-                                    value={exp.endDate}
-                                    onChange={(e) => updateExperience(index, 'endDate', e.target.value)}
-                                    placeholder="Present"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                            <div className="mt-4">
-                              <Label>Description</Label>
-                              <Textarea
-                                value={exp.description}
-                                onChange={(e) => updateExperience(index, 'description', e.target.value)}
-                                placeholder="Describe your responsibilities and achievements..."
-                                rows={3}
-                              />
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </TabsContent>
-
-                    <TabsContent value="education" className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <h3 className="text-lg font-semibold">Education</h3>
-                        <Button onClick={addEducation} size="sm">
-                          <Plus className="w-4 h-4 mr-2" />
-                          Add Education
-                        </Button>
-                      </div>
-                      {resumeData.education.map((edu, index) => (
-                        <Card key={index}>
-                          <CardContent className="pt-6">
-                            <div className="flex justify-between items-start mb-4">
-                              <h4 className="font-semibold">Education {index + 1}</h4>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => removeEducation(index)}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div>
-                                <Label>Degree</Label>
-                                <Input
-                                  value={edu.degree}
-                                  onChange={(e) => updateEducation(index, 'degree', e.target.value)}
-                                  placeholder="Bachelor of Science"
-                                />
-                              </div>
-                              <div>
-                                <Label>Institution</Label>
-                                <Input
-                                  value={edu.institution}
-                                  onChange={(e) => updateEducation(index, 'institution', e.target.value)}
-                                  placeholder="University Name"
-                                />
-                              </div>
-                              <div>
-                                <Label>Location</Label>
-                                <Input
-                                  value={edu.location}
-                                  onChange={(e) => updateEducation(index, 'location', e.target.value)}
-                                  placeholder="City, State"
-                                />
-                              </div>
-                              <div>
-                                <Label>GPA (Optional)</Label>
-                                <Input
-                                  value={edu.gpa || ''}
-                                  onChange={(e) => updateEducation(index, 'gpa', e.target.value)}
-                                  placeholder="3.8"
-                                />
-                              </div>
-                              <div>
-                                <Label>Start Date</Label>
-                                <Input
-                                  value={edu.startDate}
-                                  onChange={(e) => updateEducation(index, 'startDate', e.target.value)}
-                                  placeholder="2016"
-                                />
-                              </div>
-                              <div>
-                                <Label>End Date</Label>
-                                <Input
-                                  value={edu.endDate}
-                                  onChange={(e) => updateEducation(index, 'endDate', e.target.value)}
-                                  placeholder="2020"
-                                />
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </TabsContent>
-
-                    <TabsContent value="skills" className="space-y-4">
-                      <div>
-                        <Label htmlFor="new-skill">Add Skills</Label>
-                        <div className="flex gap-2">
-                          <Input
-                            id="new-skill"
-                            value={newSkill}
-                            onChange={(e) => setNewSkill(e.target.value)}
-                            placeholder="Enter a skill"
-                            onKeyPress={(e) => e.key === 'Enter' && addSkill()}
-                          />
-                          <Button onClick={addSkill}>Add</Button>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {resumeData.skills.map((skill, index) => (
-                          <Badge key={index} variant="secondary" className="flex items-center gap-2">
-                            {skill}
-                            <button
-                              type="button"
-                              onClick={() => removeSkill(index)}
-                              className="ml-2 text-red-500 hover:text-red-700"
-                              aria-label={`Remove ${skill} skill`}
-                              title={`Remove ${skill}`}
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </button>
-                          </Badge>
-                        ))}
-                      </div>
-                    </TabsContent>
-
-                    <TabsContent value="additional" className="space-y-6">
-                      {/* Certifications */}
-                      <div>
-                        <div className="flex justify-between items-center mb-4">
-                          <h3 className="text-lg font-semibold">Certifications</h3>
-                          <Button onClick={addCertification} size="sm">
-                            <Plus className="w-4 h-4 mr-2" />
-                            Add Certification
-                          </Button>
-                        </div>
-                        {resumeData.certifications.map((cert, index) => (
-                          <Card key={index}>
-                            <CardContent className="pt-6">
-                              <div className="flex justify-between items-start mb-4">
-                                <h4 className="font-semibold">Certification {index + 1}</h4>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => removeCertification(index)}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                  <Label>Name</Label>
-                                  <Input
-                                    value={cert.name}
-                                    onChange={(e) => updateCertification(index, 'name', e.target.value)}
-                                    placeholder="Certification Name"
-                                  />
-                                </div>
-                                <div>
-                                  <Label>Issuer</Label>
-                                  <Input
-                                    value={cert.issuer}
-                                    onChange={(e) => updateCertification(index, 'issuer', e.target.value)}
-                                    placeholder="Issuing Organization"
-                                  />
-                                </div>
-                                <div>
-                                  <Label>Date</Label>
-                                  <Input
-                                    value={cert.date}
-                                    onChange={(e) => updateCertification(index, 'date', e.target.value)}
-                                    placeholder="Month Year"
-                                  />
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-
-                      <Separator />
-
-                      {/* Projects */}
-                      <div>
-                        <div className="flex justify-between items-center mb-4">
-                          <h3 className="text-lg font-semibold">Projects</h3>
-                          <Button onClick={addProject} size="sm">
-                            <Plus className="w-4 h-4 mr-2" />
-                            Add Project
-                          </Button>
-                        </div>
-                        {resumeData.projects.map((project, index) => (
-                          <Card key={index}>
-                            <CardContent className="pt-6">
-                              <div className="flex justify-between items-start mb-4">
-                                <h4 className="font-semibold">Project {index + 1}</h4>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => removeProject(index)}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                  <Label>Project Name</Label>
-                                  <Input
-                                    value={project.name}
-                                    onChange={(e) => updateProject(index, 'name', e.target.value)}
-                                    placeholder="Project Name"
-                                  />
-                                </div>
-                                <div>
-                                  <Label>Technologies</Label>
-                                  <Input
-                                    value={project.technologies}
-                                    onChange={(e) => updateProject(index, 'technologies', e.target.value)}
-                                    placeholder="React, Node.js, MongoDB"
-                                  />
-                                </div>
-                              </div>
-                              <div className="mt-4">
-                                <Label>Description</Label>
-                                <Textarea
-                                  value={project.description}
-                                  onChange={(e) => updateProject(index, 'description', e.target.value)}
-                                  placeholder="Describe your project..."
-                                  rows={3}
-                                />
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    </TabsContent>
-                  </Tabs>
-
-                  <div className="flex gap-4 mt-8">
-                    <Button
-                      onClick={generateResume}
-                      disabled={loading || !selectedTemplate}
-                      className="flex-1"
-                      size="lg"
-                    >
-                      {loading ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      ) : (
-                        <Eye className="w-4 h-4 mr-2" />
-                      )}
-                      Generate Resume
-                    </Button>
-                    {/* New: Best AI Resume Button */}
-                    <Button
-                      onClick={generateBestAIResume}
-                      disabled={loading || !selectedTemplate}
-                      className="flex-1"
-                      size="lg"
-                      variant="secondary"
-                    >
-                      {loading ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      ) : (
-                        <Eye className="w-4 h-4 mr-2" />
-                      )}
-                      Generate Best AI Resume
-                    </Button>
-                    {/* New: AI Enhanced Resume (100% ATS) Button */}
-                    <Button
-                      onClick={generateAIEnhancedResumeATS100}
-                      disabled={loading || !selectedTemplate}
-                      className="flex-1"
-                      size="lg"
-                      variant="secondary"
-                    >
-                      {loading ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      ) : (
-                        <Eye className="w-4 h-4 mr-2" />
-                      )}
-                      Generate AI Enhanced Resume (100% ATS)
-                    </Button>
+                  <div className="border rounded-lg overflow-hidden bg-white">
+                    <iframe
+                      srcDoc={previewHtml}
+                      className="w-full h-[800px] border-0"
+                      title="Resume Preview"
+                    />
                   </div>
                 </CardContent>
               </Card>
-            </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

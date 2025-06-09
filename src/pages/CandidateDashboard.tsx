@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,7 +26,11 @@ import {
   Award,
   Briefcase,
   Users,
-  ChevronRight
+  ChevronRight,
+  Activity,
+  Calendar,
+  Download,
+  Plus
 } from "lucide-react";
 
 const featureTypes = [
@@ -103,28 +108,11 @@ const featureTypes = [
 
 const CandidateDashboard = () => {
   const navigate = useNavigate();
-  const { user, subscriptionStatus, subscriptionLoading, cancelSubscription } = useAuth();
+  const { user, subscriptionStatus, subscriptionLoading } = useAuth();
   const [featureUsage, setFeatureUsage] = useState<Record<string, { usageCount: number; usageLimit: number }>>({});
   const [loadingUsage, setLoadingUsage] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [upgradePrompt, setUpgradePrompt] = useState<string | null>(null);
-  const [cancelLoading, setCancelLoading] = useState(false);
-
-  // Calculate remaining days in subscription
-  const getRemainingDays = () => {
-    if (!subscriptionStatus?.endDate) return null;
-    
-    const endDate = new Date(subscriptionStatus.endDate);
-    const today = new Date();
-    const diffTime = endDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (subscriptionStatus.originalDaysRemaining && subscriptionStatus.cancelled) {
-      return subscriptionStatus.originalDaysRemaining;
-    }
-    
-    return diffDays > 0 ? diffDays : 0;
-  };
 
   // Fetch feature usage
   useEffect(() => {
@@ -160,24 +148,6 @@ const CandidateDashboard = () => {
 
     return () => clearTimeout(timeout);
   }, [user, subscriptionStatus, subscriptionLoading, featureUsage]);
-
-  // Handler for cancel subscription
-  const handleCancelSubscription = async () => {
-    if (!user) return;
-    
-    if (!window.confirm("Are you sure you want to cancel your subscription? You will be downgraded to the free plan at the end of your billing period.")) {
-      return;
-    }
-    
-    setCancelLoading(true);
-    try {
-      await cancelSubscription();
-    } catch (error) {
-      console.error("Error cancelling subscription:", error);
-    } finally {
-      setCancelLoading(false);
-    }
-  };
   
   // Handler for feature button click
   const handleFeatureClick = (feature: any) => {
@@ -191,24 +161,15 @@ const CandidateDashboard = () => {
     navigate(feature.route);
   };
 
-  // Group features by category
-  const groupedFeatures = featureTypes.reduce((acc, feature) => {
-    if (!acc[feature.category]) {
-      acc[feature.category] = [];
-    }
-    acc[feature.category].push(feature);
-    return acc;
-  }, {} as Record<string, typeof featureTypes>);
-
   // Loading and error states
   if (subscriptionLoading || loadingUsage) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
         <TopNavigation />
         <div className="flex justify-center items-center h-96">
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600 font-medium">Loading your dashboard...</p>
+            <p className="text-gray-600 font-medium">Loading your workspace...</p>
           </div>
         </div>
       </div>
@@ -217,7 +178,7 @@ const CandidateDashboard = () => {
 
   if (!user || !subscriptionStatus) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
         <TopNavigation />
         <div className="flex justify-center items-center h-96">
           <div className="text-center text-red-500">
@@ -231,7 +192,7 @@ const CandidateDashboard = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
         <TopNavigation />
         <div className="flex justify-center items-center h-96">
           <div className="text-center text-red-500">
@@ -244,70 +205,79 @@ const CandidateDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
       <TopNavigation />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Hero Section */}
-        <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 rounded-2xl p-8 mb-8 text-white relative overflow-hidden">
-          <div className="absolute inset-0 bg-black/10"></div>
-          <div className="relative z-10">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-              <div className="mb-6 lg:mb-0">
-                <h1 className="text-4xl font-bold mb-2">Welcome back!</h1>
-                <p className="text-blue-100 text-lg mb-4">
-                  Ready to advance your career with AI-powered tools?
-                </p>
-                <div className="flex items-center space-x-4">
-                  <Badge className="bg-white/20 text-white border-0">
-                    <Brain className="w-3 h-3 mr-1" />
-                    AI-Powered Platform
-                  </Badge>
-                  <Badge className="bg-white/20 text-white border-0">
-                    <Shield className="w-3 h-3 mr-1" />
-                    Enterprise Grade
-                  </Badge>
-                </div>
-              </div>
-              
-              {subscriptionStatus?.type !== "premium" && (
-                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 min-w-80">
-                  <h3 className="font-semibold mb-2 flex items-center">
-                    <Crown className="w-5 h-5 mr-2 text-yellow-300" />
-                    Unlock Premium Features
-                  </h3>
-                  <p className="text-blue-100 text-sm mb-4">
-                    Get unlimited access to all AI tools and advanced features.
-                  </p>
-                  <Button 
-                    className="w-full bg-white text-blue-700 hover:bg-gray-100"
-                    onClick={() => navigate("/upgrade")}
-                  >
-                    <TrendingUp className="w-4 h-4 mr-2" />
-                    Upgrade Now
-                  </Button>
-                </div>
-              )}
-            </div>
+        {/* Welcome Section */}
+        <div className="mb-8">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+              Welcome back, <span className="text-blue-600">{user?.email?.split('@')[0] || 'User'}</span>! 👋
+            </h1>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Ready to accelerate your career? Choose from our AI-powered tools to create outstanding applications.
+            </p>
           </div>
         </div>
 
-        {/* Quick Stats */}
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-0 hover:shadow-xl transition-all duration-300 cursor-pointer" onClick={() => navigate('/resume-builder-app')}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Quick Start</h3>
+                  <p className="text-blue-100">Build a new resume</p>
+                </div>
+                <Plus className="w-8 h-8 text-blue-200" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-r from-green-600 to-emerald-600 text-white border-0 hover:shadow-xl transition-all duration-300 cursor-pointer" onClick={() => navigate('/ats-scanner')}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Scan Resume</h3>
+                  <p className="text-green-100">Check ATS compatibility</p>
+                </div>
+                <Activity className="w-8 h-8 text-green-200" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-r from-purple-600 to-pink-600 text-white border-0 hover:shadow-xl transition-all duration-300 cursor-pointer" onClick={() => navigate('/upgrade')}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Go Premium</h3>
+                  <p className="text-purple-100">Unlock all features</p>
+                </div>
+                <Crown className="w-8 h-8 text-purple-200" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           {[
-            { label: "Tools Available", value: featureTypes.length, icon: Briefcase, color: "text-blue-600" },
-            { label: "Premium Features", value: featureTypes.filter(f => f.premium).length, icon: Crown, color: "text-purple-600" },
-            { label: "Current Plan", value: subscriptionStatus?.type?.charAt(0).toUpperCase() + subscriptionStatus?.type?.slice(1), icon: Star, color: "text-green-600" },
-            { label: "Usage This Month", value: Object.values(featureUsage).reduce((sum, usage) => sum + usage.usageCount, 0), icon: BarChart3, color: "text-orange-600" }
+            { label: "Total Tools", value: featureTypes.length, icon: Briefcase, color: "text-blue-600", bg: "bg-blue-50" },
+            { label: "Premium Features", value: featureTypes.filter(f => f.premium).length, icon: Crown, color: "text-purple-600", bg: "bg-purple-50" },
+            { label: "Current Plan", value: subscriptionStatus?.type?.charAt(0).toUpperCase() + subscriptionStatus?.type?.slice(1), icon: Star, color: "text-green-600", bg: "bg-green-50" },
+            { label: "Monthly Usage", value: Object.values(featureUsage).reduce((sum, usage) => sum + usage.usageCount, 0), icon: BarChart3, color: "text-orange-600", bg: "bg-orange-50" }
           ].map((stat, index) => (
-            <Card key={index} className="bg-white shadow-sm border-0 hover:shadow-md transition-shadow">
+            <Card key={index} className="bg-white shadow-sm border-0 hover:shadow-lg transition-all duration-200">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600 mb-1">{stat.label}</p>
                     <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
                   </div>
-                  <stat.icon className={`w-8 h-8 ${stat.color}`} />
+                  <div className={`w-12 h-12 ${stat.bg} rounded-xl flex items-center justify-center`}>
+                    <stat.icon className={`w-6 h-6 ${stat.color}`} />
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -316,151 +286,151 @@ const CandidateDashboard = () => {
 
         {/* Upgrade Prompt */}
         {upgradePrompt && (
-          <Card className="mb-8 border-orange-200 bg-gradient-to-r from-orange-50 to-amber-50 shadow-lg">
+          <Card className="mb-8 border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 shadow-lg">
             <CardContent className="flex items-center gap-4 p-6">
-              <AlertTriangle className="w-8 h-8 text-orange-600 flex-shrink-0" />
+              <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-6 h-6 text-amber-600" />
+              </div>
               <div className="flex-1">
-                <p className="text-orange-800 font-medium">{upgradePrompt}</p>
+                <h3 className="font-semibold text-amber-900 mb-1">Usage Limit Reached</h3>
+                <p className="text-amber-800">{upgradePrompt}</p>
               </div>
               <Button 
                 onClick={() => navigate("/upgrade")}
-                className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600"
+                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 shrink-0"
               >
+                <TrendingUp className="w-4 h-4 mr-2" />
                 Upgrade Now
               </Button>
             </CardContent>
           </Card>
         )}
 
-        {/* Features Grid */}
+        {/* Tools Grid */}
         <div className="space-y-8">
-          {Object.entries(groupedFeatures).map(([category, features]) => (
-            <div key={category}>
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 capitalize">
-                    {category.replace('_', ' ')} Tools
-                  </h2>
-                  <p className="text-gray-600 mt-1">
-                    Professional tools to enhance your career journey
-                  </p>
-                </div>
-                <Button variant="ghost" className="text-blue-600 hover:text-blue-700">
-                  View All <ChevronRight className="w-4 h-4 ml-1" />
-                </Button>
-              </div>
+          <div className="text-center">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Professional Career Tools</h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Powerful AI-driven tools designed to help you stand out in today's competitive job market
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {featureTypes.map((feature, index) => {
+              const usage = featureUsage[feature.key] || { usageCount: 0, usageLimit: 0 };
+              const isBlocked = (subscriptionStatus.type === "free" && usage.usageCount >= usage.usageLimit) || (subscriptionStatus.type === "basic" && usage.usageCount >= usage.usageLimit);
+              const isUnlimited = usage.usageLimit === 0 || subscriptionStatus.type === "premium";
+              const IconComponent = feature.icon;
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {features.map((feature, index) => {
-                  const usage = featureUsage[feature.key] || { usageCount: 0, usageLimit: 0 };
-                  const isBlocked = (subscriptionStatus.type === "free" && usage.usageCount >= usage.usageLimit) || (subscriptionStatus.type === "basic" && usage.usageCount >= usage.usageLimit);
-                  const isUnlimited = usage.usageLimit === 0 || subscriptionStatus.type === "premium";
-                  const IconComponent = feature.icon;
+              return (
+                <Card key={index} className="group hover:shadow-2xl transition-all duration-300 border-0 bg-white overflow-hidden relative transform hover:-translate-y-1">
+                  {/* Status Indicators */}
+                  <div className="absolute top-4 right-4 flex gap-2">
+                    {feature.premium && subscriptionStatus.type === "free" && (
+                      <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 text-xs">
+                        <Crown className="w-3 h-3 mr-1" />
+                        Premium
+                      </Badge>
+                    )}
+                    {isBlocked && (
+                      <Badge variant="outline" className="border-red-300 text-red-600 bg-red-50 text-xs">
+                        Limit Reached
+                      </Badge>
+                    )}
+                  </div>
                   
-                  return (
-                    <Card key={index} className="group hover:shadow-xl transition-all duration-300 border-0 bg-white hover:bg-white overflow-hidden relative">
-                      {/* Gradient Top Border */}
-                      <div className={`h-1 bg-gradient-to-r ${feature.color}`}></div>
+                  <CardHeader className="pb-4 pt-6">
+                    <div className="flex items-start gap-4">
+                      <div className={`w-16 h-16 bg-gradient-to-r ${feature.color} rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                        <IconComponent className="w-8 h-8 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-xl text-gray-900 group-hover:text-blue-600 transition-colors leading-tight">
+                          {feature.title}
+                        </CardTitle>
+                        <p className="text-sm text-gray-600 mt-2 leading-relaxed">{feature.description}</p>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  
+                  <CardContent className="py-0">
+                    <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                      <div className="flex items-center justify-between text-sm mb-2">
+                        <span className="text-gray-600 font-medium">Usage Status</span>
+                        <div className="flex items-center gap-2">
+                          {isUnlimited ? (
+                            <Badge className="bg-green-100 text-green-700 border-green-200">
+                              <CheckCircle2 className="w-3 h-3 mr-1" />
+                              Unlimited
+                            </Badge>
+                          ) : (
+                            <span className={`font-semibold ${isBlocked ? 'text-red-600' : 'text-gray-700'}`}>
+                              {usage.usageCount}/{usage.usageLimit}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                       
-                      {/* Premium Badge */}
-                      {feature.premium && subscriptionStatus.type === "free" && (
-                        <div className="absolute top-3 right-3 z-10">
-                          <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 text-xs">
-                            <Crown className="w-3 h-3 mr-1" />
-                            Premium
-                          </Badge>
+                      {!isUnlimited && (
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className={`h-2 rounded-full transition-all duration-300 bg-gradient-to-r ${
+                              isBlocked ? 'from-red-400 to-red-500' : feature.color
+                            }`}
+                            style={{ width: `${Math.min((usage.usageCount / usage.usageLimit) * 100, 100)}%` }}
+                          ></div>
                         </div>
                       )}
-                      
-                      <CardHeader className="pb-4">
-                        <div className="flex items-start gap-4">
-                          <div className={`w-12 h-12 bg-gradient-to-r ${feature.color} rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}>
-                            <IconComponent className="w-6 h-6 text-white" />
-                          </div>
-                          <div className="flex-1">
-                            <CardTitle className="text-lg text-gray-900 group-hover:text-blue-600 transition-colors">
-                              {feature.title}
-                            </CardTitle>
-                            <p className="text-sm text-gray-600 mt-2 line-clamp-2">{feature.description}</p>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      
-                      <CardContent className="py-0">
-                        <div className="flex items-center justify-between text-sm mb-3">
-                          <span className="text-gray-500 font-medium">Usage</span>
-                          <div className="flex items-center gap-2">
-                            {isUnlimited ? (
-                              <Badge variant="outline" className="border-green-300 text-green-600 bg-green-50">
-                                <CheckCircle2 className="w-3 h-3 mr-1" />
-                                Unlimited
-                              </Badge>
-                            ) : (
-                              <span className={`font-semibold ${isBlocked ? 'text-red-600' : 'text-gray-700'}`}>
-                                {usage.usageCount}/{usage.usageLimit}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        
-                        {!isUnlimited && (
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div 
-                              className={`h-2 rounded-full transition-all duration-300 bg-gradient-to-r ${
-                                isBlocked ? 'from-red-400 to-red-500' : feature.color
-                              }`}
-                              style={{ width: `${Math.min((usage.usageCount / usage.usageLimit) * 100, 100)}%` }}
-                            ></div>
-                          </div>
-                        )}
-                      </CardContent>
-                      
-                      <CardFooter className="pt-6">
-                        <Button 
-                          className={`w-full transition-all duration-200 ${
-                            isBlocked 
-                              ? 'bg-gray-400 hover:bg-gray-500' 
-                              : `bg-gradient-to-r ${feature.color} hover:shadow-lg transform hover:scale-[1.02]`
-                          }`}
-                          onClick={() => handleFeatureClick(feature)} 
-                          disabled={isBlocked || loadingUsage}
-                        >
-                          {isBlocked ? (
-                            <>
-                              <Clock className="w-4 h-4 mr-2" />
-                              Limit Reached
-                            </>
-                          ) : (
-                            <>
-                              <Sparkles className="w-4 h-4 mr-2" />
-                              Launch Tool
-                              <ArrowRight className="w-4 h-4 ml-2" />
-                            </>
-                          )}
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
+                    </div>
+                  </CardContent>
+                  
+                  <CardFooter className="pt-4 pb-6">
+                    <Button 
+                      className={`w-full transition-all duration-200 h-12 text-base font-medium ${
+                        isBlocked 
+                          ? 'bg-gray-300 hover:bg-gray-400 text-gray-600' 
+                          : `bg-gradient-to-r ${feature.color} hover:shadow-lg transform hover:scale-[1.02] text-white`
+                      }`}
+                      onClick={() => handleFeatureClick(feature)} 
+                      disabled={isBlocked || loadingUsage}
+                    >
+                      {isBlocked ? (
+                        <>
+                          <Clock className="w-5 h-5 mr-2" />
+                          Upgrade Required
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-5 h-5 mr-2" />
+                          Launch Tool
+                          <ArrowRight className="w-5 h-5 ml-2" />
+                        </>
+                      )}
+                    </Button>
+                  </CardFooter>
+                </Card>
+              );
+            })}
+          </div>
         </div>
 
         {/* AI Disclaimer */}
-        <Card className="mt-12 border-gray-200 bg-gray-50/50">
-          <CardContent className="p-6">
-            <div className="flex items-start gap-4">
-              <div className="w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center flex-shrink-0">
-                <AlertTriangle className="w-4 h-4 text-white" />
+        <Card className="mt-16 border-gray-200 bg-gradient-to-r from-gray-50 to-slate-50">
+          <CardContent className="p-8">
+            <div className="flex items-start gap-6">
+              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <Brain className="w-6 h-6 text-gray-600" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-gray-900 mb-2">AI-Generated Content Disclaimer</h3>
-                <p className="text-sm text-gray-600 leading-relaxed">
-                  Our AI-powered tools provide intelligent suggestions and automated content generation to enhance your professional profile. 
-                  While our algorithms are continuously improved and trained on extensive data, all AI-generated content should be reviewed 
-                  and verified for accuracy, relevance, and appropriateness to your specific situation. We recommend treating AI outputs as 
-                  starting points that benefit from human review and customization to ensure they authentically represent your professional profile.
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">AI-Powered Career Tools</h3>
+                <p className="text-gray-700 leading-relaxed mb-4">
+                  Our advanced AI technology provides intelligent suggestions and automated content generation to enhance your professional profile. 
+                  While our algorithms are continuously refined using extensive industry data, we recommend reviewing all AI-generated content 
+                  to ensure it accurately reflects your unique experience and career goals.
+                </p>
+                <p className="text-sm text-gray-600">
+                  <strong>Please note:</strong> AI-generated content should serve as a foundation for your professional materials. 
+                  We encourage personalizing and verifying all suggestions to best represent your individual qualifications and achievements.
                 </p>
               </div>
             </div>
