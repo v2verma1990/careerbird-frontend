@@ -528,7 +528,6 @@ const ResumeBuilderApp = () => {
     }
     try {
       setLoading(true);
-      // Call the optimize_resume_service API (or similar)
       const dataToSend = {
         name: resumeData.name || "",
         title: resumeData.title || "",
@@ -544,11 +543,11 @@ const ResumeBuilderApp = () => {
         certifications: resumeData.certifications || [],
         projects: resumeData.projects || []
       };
-      // Use the optimize endpoint (assume api.resumeBuilder.optimizeResume exists)
       const result = await api.resumeBuilder.optimizeResumeForResumeBuilder({
         resumeData: JSON.stringify(dataToSend),
         templateId: selectedTemplate
       });
+
       if (result.error) {
         toast({
           title: "Error",
@@ -557,9 +556,9 @@ const ResumeBuilderApp = () => {
         });
         return;
       }
-      if (result.data && result.data.optimized) {
-        // Use the optimized HTML for preview
-        setPreviewHtml(result.data.optimized);
+      // Use the optimized HTML for preview (from backend, with template and AI suggestions)
+      if (result.data && result.data.html) {
+        setPreviewHtml(result.data.html);
         setShowPreview(true);
         toast({
           title: "Success",
@@ -576,6 +575,70 @@ const ResumeBuilderApp = () => {
       toast({
         title: "Error",
         description: "Failed to generate best AI resume",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // New: Generate AI Enhanced Resume (100% ATS)
+  const generateAIEnhancedResumeATS100 = async () => {
+    if (!selectedTemplate) {
+      toast({
+        title: "Error",
+        description: "Please select a template first",
+        variant: "destructive"
+      });
+      return;
+    }
+    try {
+      setLoading(true);
+      const dataToSend = {
+        name: resumeData.name || "",
+        title: resumeData.title || "",
+        email: resumeData.email || "",
+        phone: resumeData.phone || "",
+        location: resumeData.location || "",
+        linkedIn: resumeData.linkedin || "",
+        website: resumeData.website || "",
+        summary: resumeData.summary || "",
+        skills: resumeData.skills || [],
+        experience: resumeData.experience || [],
+        education: resumeData.education || [],
+        certifications: resumeData.certifications || [],
+        projects: resumeData.projects || []
+      };
+      const result = await api.resumeBuilder.enhanceResumeForResumeBuilder({
+        resumeData: JSON.stringify(dataToSend),
+        templateId: selectedTemplate
+      });
+      if (result.error) {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive"
+        });
+        return;
+      }
+      if (result.data && result.data.html) {
+        setPreviewHtml(result.data.html);
+        setShowPreview(true);
+        toast({
+          title: "Success",
+          description: "AI Enhanced Resume (100% ATS) generated successfully!"
+        });
+      } else {
+        toast({
+          title: "Warning",
+          description: "No enhanced resume content received",
+          variant: "warning"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate AI Enhanced Resume (100% ATS)",
         variant: "destructive"
       });
     } finally {
@@ -1273,6 +1336,21 @@ const ResumeBuilderApp = () => {
                         <Eye className="w-4 h-4 mr-2" />
                       )}
                       Generate Best AI Resume
+                    </Button>
+                    {/* New: AI Enhanced Resume (100% ATS) Button */}
+                    <Button
+                      onClick={generateAIEnhancedResumeATS100}
+                      disabled={loading || !selectedTemplate}
+                      className="flex-1"
+                      size="lg"
+                      variant="secondary"
+                    >
+                      {loading ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Eye className="w-4 h-4 mr-2" />
+                      )}
+                      Generate AI Enhanced Resume (100% ATS)
                     </Button>
                   </div>
                 </CardContent>

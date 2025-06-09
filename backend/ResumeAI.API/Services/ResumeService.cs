@@ -43,14 +43,17 @@ namespace ResumeAI.API.Services
             return result;
         }
 
-        public async Task<ResumeOptimizationResult> OptimizeResume(IFormFile file, string plan, string userId, string featureType, Subscription? subscription = null)
+        public async Task<ResumeOptimizationResult> OptimizeResume(IFormFile file, string plan, string userId, string? featureType, Subscription? subscription = null)
         {
             if (file == null || file.Length == 0)
                 throw new ArgumentException("Resume file is required", nameof(file));
+            if( string.IsNullOrWhiteSpace(featureType))
+                featureType = "resume_optimization"; // Default feature type if not provided
             var form = new MultipartFormDataContent
             {
                 { new StreamContent(file.OpenReadStream()), "resume", file.FileName },
-                { new StringContent(plan), "plan" }
+                { new StringContent(plan), "plan" },
+                { new StringContent(featureType), "feature_type" }
             };
             HttpResponseMessage response = await _httpClient.PostAsync($"{_pythonApiBaseUrl}/optimize", form);
             response.EnsureSuccessStatusCode();
@@ -80,7 +83,11 @@ namespace ResumeAI.API.Services
             if (result == null)
                 throw new Exception("Failed to parse response from resume customization service.");
 
+            if(featureType == "resume_optimization")
+            {
             await _activityLogService.TrackFeatureUsage(userId, featureType, subscription);
+            }
+            
             return result;
         }
 
@@ -327,7 +334,7 @@ namespace ResumeAI.API.Services
         public Dictionary<string, string>? SectionFeedback { get; set; } = new Dictionary<string, string>();
         public List<ResumeHighlight>? ResumeHighlights { get; set; }
         // Add any other fields as needed from the Python response
-        public string? AdditionalInsights { get; set; } = string.Empty;
+        public object? AdditionalInsights { get; set; }
         public int ActionabilityAssessment { get; set; }
     }
 

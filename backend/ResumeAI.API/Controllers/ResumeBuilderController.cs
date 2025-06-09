@@ -279,6 +279,7 @@ namespace ResumeAI.API.Controllers
         {
             try
             {
+                //string feature = "resume_builder_ai_optimization";
                 string userId = _authService.ExtractUserIdFromAuthHeader(Request.Headers["Authorization"].ToString());
                 if (string.IsNullOrEmpty(userId))
                     return Unauthorized(new { error = "Invalid or missing authorization token" });
@@ -294,17 +295,17 @@ namespace ResumeAI.API.Controllers
                 var subscription = await _candidateSubscriptionService.GetCandidateSubscription(userId);
                 var plan = subscription?.subscription_type ?? "free";
 
-                // Check if user can use the resume optimization feature
-                if (!await _userService.CanUseFeatureAsync(userId, "resume_optimization"))
-                {
-                    return StatusCode(403, new { error = "Usage limit reached for resume optimization feature" });
-                }
+                // // Check if user can use the resume optimization feature
+                // if (!await _userService.CanUseFeatureAsync(userId, "resume_builder_ai_optimization"))
+                // {
+                //     return StatusCode(403, new { error = "Usage limit reached for resume optimization feature" });
+                // }
 
                 // Track feature usage
-                await _userService.TrackFeatureUsage(userId, "resume_optimization");
+               // await _userService.TrackFeatureUsage(userId, "resume_optimization");
                 
                 // Log activity
-                await _activityLogService.LogActivity(userId, "resume_optimized", "Resume optimized with AI suggestions");
+                await _activityLogService.LogActivity(userId, "resume_builder_ai_optimization", "Resume optimized with AI suggestions");
 
                 var result = await _resumeBuilderService.OptimizeResumeAsync(request.ResumeData, request.TemplateId, userId, plan);
                 return Ok(result);
@@ -320,6 +321,48 @@ namespace ResumeAI.API.Controllers
             catch (Exception ex)
             {
                 Console.WriteLine($"Error optimizing resume: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        [HttpPost("enhance-ai")]
+        public async Task<IActionResult> EnhanceResumeForResumeBuilder([FromBody] ResumeOptimizeRequestModel request)
+        {
+            try
+            {
+                string userId = _authService.ExtractUserIdFromAuthHeader(Request.Headers["Authorization"].ToString());
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized(new { error = "Invalid or missing authorization token" });
+
+                if (string.IsNullOrEmpty(request.TemplateId))
+                    return BadRequest(new { error = "Template ID is required" });
+
+                if (string.IsNullOrEmpty(request.ResumeData))
+                    return BadRequest(new { error = "Resume data is required" });
+
+                // Get user plan
+                var profile = await _userService.GetUserProfileAsync(userId);
+                var subscription = await _candidateSubscriptionService.GetCandidateSubscription(userId);
+                var plan = subscription?.subscription_type ?? "free";
+
+                // Log activity
+                await _activityLogService.LogActivity(userId, "resume_builder_ai_enhance", "Resume enhanced for 100% ATS with AI");
+
+                var result = await _resumeBuilderService.EnhanceResumeAsync(request.ResumeData, request.TemplateId, userId, plan);
+                return Ok(result);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { error = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error enhancing resume: {ex.Message}");
                 Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 return StatusCode(500, new { error = ex.Message });
             }

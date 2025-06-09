@@ -474,7 +474,6 @@ export const api = {
     },
     optimizeResumeForResumeBuilder: async (params: { resumeData: string; templateId: string; accessToken?: string; }) => {
       try {
-        // Always get the current session's access token if not provided
         let accessToken = params.accessToken;
         if (!accessToken) {
           const { data: { session } } = await supabase.auth.getSession();
@@ -482,6 +481,29 @@ export const api = {
         }
         console.log(`Building resume with template ID: ${params.templateId}`);
         const response = await fetch(`${API_BASE_URL}/resumebuilder/optimize-ai`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {})
+          },
+          body: JSON.stringify(params),
+          credentials: "include"
+        });
+        const data = await response.json();
+        return { data, error: data.error || null };
+      } catch (error) {
+        return { data: null, error: error instanceof Error ? error.message : String(error) };
+      }
+    },
+    enhanceResumeForResumeBuilder: async (params: { resumeData: string; templateId: string; accessToken?: string; }) => {
+      try {
+        let accessToken = params.accessToken;
+        if (!accessToken) {
+          const { data: { session } } = await supabase.auth.getSession();
+          accessToken = session?.access_token;
+        }
+        console.log(`Enhancing resume (100% ATS) with template ID: ${params.templateId}`);
+        const response = await fetch(`${API_BASE_URL}/resumebuilder/enhance-ai`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

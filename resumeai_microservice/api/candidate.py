@@ -3,7 +3,7 @@ from typing import Optional
 from services.candidate_service import (
     analyze_resume_service, optimize_resume_service, customize_resume_service, benchmark_resume_service, 
     ats_scan_service, generate_cover_letter_service, extract_resume_text, salary_insights_service,
-    extract_resume_data_service, download_resume_service
+    extract_resume_data_service, download_resume_service, enhance_resume_ats100_service
 )
 from fastapi.responses import JSONResponse
 
@@ -18,9 +18,11 @@ async def analyze(resume: UploadFile = File(...), job_description: str = Form(..
 async def optimize(
     resume: UploadFile = File(...),    
     plan: str = Form("free"),
+    feature_type: Optional[str] = Form(None),
     download_format: Optional[str] = Form(None)
 ):       
-    result = await optimize_resume_service(resume, plan, download_format)
+    # Route to the correct async service based on feature_type
+    result = await optimize_resume_service(resume, plan, feature_type, download_format)
     return result
 
 @router.post("/download-resume")
@@ -92,5 +94,15 @@ async def extract_resume_data(resume: UploadFile = File(...), plan: str = Form("
     This endpoint parses a resume and returns structured data that can be used in resume templates.
     """
     return await extract_resume_data_service(resume, plan)
+
+@router.post("/enhance-ats100")
+async def enhance_ats100(
+    resume: UploadFile = File(...),    
+    plan: str = Form("free"),
+    feature_type: Optional[str] = Form(None),
+    download_format: Optional[str] = Form(None)
+):
+    result = await enhance_resume_ats100_service(resume, plan, feature_type, download_format)
+    return result
 
 

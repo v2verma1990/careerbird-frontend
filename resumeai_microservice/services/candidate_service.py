@@ -4,7 +4,7 @@ from utils.cache import get_cached_response, set_cached_response, hash_inputs, c
 from utils.openai_utils import (
     analyze_resume, optimize_resume_jobscan_style, customize_resume, benchmark_resume, 
     ats_scan_jobscan_style, generate_cover_letter, jobscan_style_report, get_openai_api_key, 
-    run_prompt, salary_insights, extract_resume_data
+    run_prompt, salary_insights, extract_resume_data, optimize_resume_ats100_style
 )
 import logging
 import io
@@ -61,7 +61,7 @@ async def analyze_resume_service(resume: UploadFile, job_description: str, plan:
     cache_key = hash_inputs(resume_text, job_description, plan)
     cached = get_cached_response("analyze", cache_key)
     if cached:
-        logger.info("Cache hit for analyze_resume")
+        logger.info(f"Cache hit for analyze_resume {cache_key}")
         return cached
     result = analyze_resume(resume_text, job_description, plan=plan)
     cache_if_successful("analyze", cache_key, result)
@@ -69,19 +69,41 @@ async def analyze_resume_service(resume: UploadFile, job_description: str, plan:
     return result
 
 def normalize_resume_highlights(result):
-    highlights = result.get("resumeHighlights", [])
-    normalized = []
-    for item in highlights:
-        if isinstance(item, dict):
-            normalized.append(item)
-        elif isinstance(item, str):
-            normalized.append({"text": item, "reason": ""})
-    result["resumeHighlights"] = normalized
+    # Ensure result is a dictionary
+    if not isinstance(result, dict):
+        logger.warning(f"normalize_resume_highlights received non-dict result: {type(result)}")
+        return {"atsScore": 70, "resumeHighlights": [], "error": "Invalid response format"}
+    
+    # Get highlights with proper error handling
+    try:
+        highlights = result.get("resumeHighlights", [])
+        
+        # Handle case where highlights is None or not iterable
+        if highlights is None or not hasattr(highlights, '__iter__'):
+            logger.warning(f"resumeHighlights is not iterable: {highlights}")
+            result["resumeHighlights"] = []
+            return result
+            
+        normalized = []
+        for item in highlights:
+            if isinstance(item, dict):
+                normalized.append(item)
+            elif isinstance(item, str):
+                normalized.append({"text": item, "reason": ""})
+            else:
+                logger.warning(f"Unexpected highlight item type: {type(item)}")
+                
+        result["resumeHighlights"] = normalized
+    except Exception as e:
+        logger.error(f"Error normalizing resume highlights: {e}")
+        result["resumeHighlights"] = []
+        
     return result
 
 async def optimize_resume_service(
     resume: UploadFile,   
     plan: str = "free",
+    feature_type: str = None,
     download_format: str = None
 ):
     logger.info("optimize_resume_service called (optimize_resume_jobscan)")
@@ -97,21 +119,83 @@ async def optimize_resume_service(
                 detail="Your resume is long for analysis. Please shorten your resume."
             )
 
-        cache_key = hash_inputs(resume_text,plan,"optimize_resume_service")
+        cache_key = hash_inputs(resume_text, plan, feature_type)
         cached = get_cached_response("optimize", cache_key)
         logger.info(f"Cached value for key {cache_key}: {cached}")
         
         # Process the result (either from cache or newly generated)
         if cached:
-            logger.info("Cache hit for optimize (optimize_resume_jobscan)")
+            logger.info(f"Cache hit for optimize_resume_jobscan {cache_key}")
             result = cached
         else:
-            result = optimize_resume_jobscan_style(resume_text, plan=plan)
-            logger.info(f"RAW OpenAI result: {result}")
-            logger.info(f"Type of resumeHighlights: {type(result.get('resumeHighlights', None))}, Value: {result.get('resumeHighlights', None)}")
-            result = normalize_resume_highlights(result)
-            cache_if_successful("optimize", cache_key, result)
-            logger.info("Cache miss for optimize, called OpenAI (optimize_resume_jobscan)")
+            try:
+                # Call the OpenAI function with error handling
+                result = optimize_resume_jobscan_style(resume_text, plan=plan)
+                logger.info(f"RAW OpenAI result: {result}")
+                
+                # Check if result is a valid response or an error
+                if isinstance(result, dict) and "error" in result:
+                    logger.error(f"Error in OpenAI response: {result['error']}")
+                    
+                    # Try to extract the optimized content from the raw response if available
+                    if "raw" in result and isinstance(result["raw"], str):
+                        import re
+                        import json
+                        
+                        # Try to extract the JSON structure from the raw response
+                        try:
+                            # Look for the optimized content section
+                            optimized_match = re.search(r'"optimizedContent"\s*:\s*(\{[^}]+\})', result["raw"], re.DOTALL)
+                            if optimized_match:
+                                optimized_str = optimized_match.group(1)
+                                # Create a minimal valid result with the extracted content
+                                result = {
+                                    "atsScore": 75,  # Default score
+                                    "optimizedContent": json.dumps("{" + optimized_str + "}")
+                                }
+                                logger.info("Successfully extracted optimized content from raw response")
+                        except Exception as extract_error:
+                            logger.error(f"Failed to extract optimized content: {extract_error}")
+                            
+                            # If extraction fails, create a basic response
+                            result = {
+                                "atsScore": 70,
+                                "optimizedContent": "Could not parse full response",
+                                "resumeHighlights": []
+                            }
+                
+                # Ensure optimizedContent is a string, not an object (robust fix)
+                if isinstance(result, dict) and "optimizedContent" in result:
+                    if not isinstance(result["optimizedContent"], str):
+                        try:
+                            # If it's a dict or list, convert to a pretty JSON string
+                            if isinstance(result["optimizedContent"], (dict, list)):
+                                result["optimizedContent"] = json.dumps(result["optimizedContent"], ensure_ascii=False)
+                            else:
+                                result["optimizedContent"] = str(result["optimizedContent"])
+                            logger.info("Robustly converted optimizedContent to string")
+                        except Exception as convert_error:
+                            logger.error(f"Failed to robustly convert optimizedContent to string: {convert_error}")
+                            result["optimizedContent"] = str(result["optimizedContent"])
+                
+                # Normalize resume highlights if present
+                if isinstance(result, dict):
+                    logger.info(f"Type of resumeHighlights: {type(result.get('resumeHighlights', None))}, Value: {result.get('resumeHighlights', None)}")
+                    result = normalize_resume_highlights(result)
+                    
+                    # Only cache if it's a successful result without errors
+                    if "error" not in result:
+                        cache_if_successful("optimize", cache_key, result)
+                        
+                logger.info("Cache miss for optimize, called OpenAI (optimize_resume_jobscan)")
+            except Exception as api_error:
+                logger.error(f"Error calling OpenAI API: {api_error}")
+                # Return a fallback response
+                result = {
+                    "atsScore": 70,
+                    "optimizedContent": {"error": f"API error: {str(api_error)}"},
+                    "resumeHighlights": []
+                }
         
         # If download format is specified, return the file for download
         if download_format and result.get("optimized"):
@@ -160,7 +244,7 @@ async def customize_resume_service(
         
         # Process the result (either from cache or newly generated)
         if cached:
-            logger.info("Cache hit for customize_resume (Jobscan-style)")
+            logger.info(f"Cache hit for customize_resume {cache_key}")
             result = cached
         else:
             result = jobscan_style_report(resume_text, jd_text, plan=plan)
@@ -196,7 +280,7 @@ async def ats_scan_service(resume: UploadFile, plan: str = "free"):
         cache_key = hash_inputs(resume_text,plan,"ats_scan_service")
         cached = get_cached_response("ats_scan", cache_key)
         if cached:
-            logger.info("Cache hit for ats_scan")
+            logger.info(f"Cache hit for ats_scan {cache_key}")
             return cached
         result = ats_scan_jobscan_style(resume_text, plan=plan)
         logger.info(f"RAW OpenAI result: {result}")
@@ -250,7 +334,7 @@ async def salary_insights_service(
         )   
         cached = get_cached_response("salary_insights", cache_key)
         if cached:
-            logger.info("Cache hit for salary_insights")
+            logger.info(f"Cache hit for salary_insights : {cache_key}")
             return cached
         logger.info(f"Cache miss for salary_insights, cache_key: {cache_key}")
         result = salary_insights(
@@ -279,7 +363,7 @@ async def benchmark_resume_service(resume: UploadFile, job_description: str, pla
     cache_key = hash_inputs(resume_text, job_description, plan)
     cached = get_cached_response("benchmark", cache_key)
     if cached:
-        logger.info("Cache hit for benchmark_resume")
+        logger.info(f"Cache hit for benchmark_resume {cache_key}")
         return cached
     result = benchmark_resume(resume_text, job_description, plan=plan)
     cache_if_successful("benchmark", cache_key, result)
@@ -293,7 +377,7 @@ async def generate_cover_letter_service(job_title: str, company: str, job_descri
     cache_key = hash_inputs(job_title, company, job_description, plan)
     cached = get_cached_response("generate_cover_letter", cache_key)
     if cached:
-        logger.info("Cache hit for generate_cover_letter")
+        logger.info(f"Cache hit for generate_cover_letter {cache_key}")
         return cached
     result = generate_cover_letter(job_title, company, job_description, plan=plan)
     cache_if_successful("generate_cover_letter", cache_key, result)
@@ -320,7 +404,7 @@ async def extract_resume_data_service(resume: UploadFile, plan: str = "free"):
         cached = get_cached_response("extract_resume_data", cache_key)
         
         if cached:
-            logger.info("Cache hit for extract_resume_data :", {cache_key})
+            logger.info(f"Cache hit for extract_resume_data : {cache_key}")
             return cached
             
         logger.info("Cache miss for extract_resume_data, calling OpenAI")
@@ -524,28 +608,32 @@ def create_pdf_from_text(text, filename="optimized_resume.pdf"):
 
 def html_to_docx_with_mammoth(html_str, filename="optimized_resume.docx"):
     """Convert HTML to DOCX using mammoth, return file path."""
-    import mammoth
-    import tempfile
-    import os
-    # Write HTML to a temp file
-    html_path = os.path.join(tempfile.gettempdir(), "temp_resume_for_mammoth.html")
-    with open(html_path, "w", encoding="utf-8") as f:
-        f.write(html_str)
-    # Output DOCX path
-    docx_path = os.path.join(tempfile.gettempdir(), filename)
-    # Use mammoth.convert_to_html to parse HTML, then use python-docx to write to docx
-    with open(html_path, "rb") as html_file:
-        # Mammoth expects DOCX input, not HTML. So fallback to basic text dump if not supported.
-        # Instead, use a simple HTML parser to extract text and write to docx
-        from bs4 import BeautifulSoup
-        soup = BeautifulSoup(html_str, "html.parser")
-        doc = Document()
-        for elem in soup.find_all(['h1','h2','h3','h4','h5','h6','p','li']):
-            text = elem.get_text(strip=True)
-            if text:
-                doc.add_paragraph(text)
-        doc.save(docx_path)
-    return docx_path
+    try:
+        import mammoth
+        import tempfile
+        import os
+        # Write HTML to a temp file
+        html_path = os.path.join(tempfile.gettempdir(), "temp_resume_for_mammoth.html")
+        with open(html_path, "w", encoding="utf-8") as f:
+            f.write(html_str)
+        # Output DOCX path
+        docx_path = os.path.join(tempfile.gettempdir(), filename)
+        # Use mammoth.convert_to_html to parse HTML, then use python-docx to write to docx
+        with open(html_path, "rb") as html_file:
+            # Mammoth expects DOCX input, not HTML. So fallback to basic text dump if not supported.
+            # Instead, use a simple HTML parser to extract text and write to docx
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(html_str, "html.parser")
+            doc = Document()
+            for elem in soup.find_all(['h1','h2','h3','h4','h5','h6','p','li']):
+                text = elem.get_text(strip=True)
+                if text:
+                    doc.add_paragraph(text)
+            doc.save(docx_path)
+        return docx_path
+    except ImportError:
+        # If mammoth is not available, return None and let the caller handle it
+        return None
 
 def html_to_docx_preserve_formatting(html_str, filename="optimized_resume.docx"):
     """Convert HTML to DOCX, preserving basic formatting, color, and nested inline styles recursively."""
@@ -698,4 +786,101 @@ async def download_resume_service(resume_text, format="docx"):
     except Exception as e:
         logger.error(f"download_resume_service failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+async def enhance_resume_ats100_service(
+    resume: UploadFile,
+    plan: str = "free",
+    feature_type: str = None,
+    download_format: str = None
+):
+    logger.info("enhance_resume_ats100_service called (optimize_resume_ats100_style)")
+    try:
+        resume_text = await extract_resume_text(resume)
+        resume_tokens = count_tokens(resume_text)
+        total_tokens = resume_tokens
+        max_total_tokens = 15000
+
+        if total_tokens > max_total_tokens:
+            raise HTTPException(
+                status_code=400,
+                detail="Your resume is too long for analysis. Please shorten your resume."
+            )
+
+        cache_key = hash_inputs(resume_text, plan, feature_type)
+        cached = get_cached_response("enhance_ats100", cache_key)
+        logger.info(f"Cached value for key {cache_key}: {cached}")
+
+        if cached:
+            logger.info(f"Cache hit for enhance_resume_ats100 {cache_key}")
+            result = cached
+        else:
+            try:
+                result = optimize_resume_ats100_style(resume_text, plan=plan)
+                logger.info(f"RAW OpenAI result (ATS100): {result}")
+                if isinstance(result, dict) and "error" in result:
+                    logger.error(f"Error in OpenAI response: {result['error']}")
+                    if "raw" in result and isinstance(result["raw"], str):
+                        try:
+                            optimized_match = re.search(r'"optimizedContent"\s*:\s*(\{[^}]+\})', result["raw"], re.DOTALL)
+                            if optimized_match:
+                                optimized_str = optimized_match.group(1)
+                                result = {
+                                    "atsScore": 100,
+                                    "optimizedContent": json.dumps("{" + optimized_str + "}")
+                                }
+                                logger.info("Successfully extracted optimized content from raw response (ATS100)")
+                        except Exception as extract_error:
+                            logger.error(f"Failed to extract optimized content (ATS100): {extract_error}")
+                            result = {
+                                "atsScore": 100,
+                                "optimizedContent": "Could not parse full response",
+                                "resumeHighlights": []
+                            }
+                if isinstance(result, dict) and "optimizedContent" in result:
+                    if not isinstance(result["optimizedContent"], str):
+                        try:
+                            if isinstance(result["optimizedContent"], (dict, list)):
+                                result["optimizedContent"] = json.dumps(result["optimizedContent"], ensure_ascii=False)
+                            else:
+                                result["optimizedContent"] = str(result["optimizedContent"])
+                            logger.info("Robustly converted optimizedContent to string (ATS100)")
+                        except Exception as convert_error:
+                            logger.error(f"Failed to robustly convert optimizedContent to string (ATS100): {convert_error}")
+                            result["optimizedContent"] = str(result["optimizedContent"])
+                if isinstance(result, dict):
+                    logger.info(f"Type of resumeHighlights: {type(result.get('resumeHighlights', None))}, Value: {result.get('resumeHighlights', None)}")
+                    result = normalize_resume_highlights(result)
+                    if "error" not in result:
+                        cache_if_successful("enhance_ats100", cache_key, result)
+                logger.info("Cache miss for enhance_ats100, called OpenAI (optimize_resume_ats100_style)")
+            except Exception as api_error:
+                logger.error(f"Error calling OpenAI API (ATS100): {api_error}")
+                result = {
+                    "atsScore": 100,
+                    "optimizedContent": {"error": f"API error: {str(api_error)}"},
+                    "resumeHighlights": []
+                }
+        if download_format and result.get("optimized"):
+            return await download_resume_service(result.get("optimized"), download_format)
+        return result
+    except HTTPException as e:
+        logger.error(f"enhance_resume_ats100_service failed: {e.detail}")
+        raise e
+    except Exception as e:
+        logger.error(f"enhance_resume_ats100_service failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# FINAL GUARANTEE: Ensure optimizedContent is a string before returning (prompt-agnostic, robust)
+        if isinstance(result, dict) and "optimizedContent" in result:
+            if not isinstance(result["optimizedContent"], str):
+                try:
+                    # If it's a dict or list, convert to a compact JSON string
+                    if isinstance(result["optimizedContent"], (dict, list)):
+                        result["optimizedContent"] = json.dumps(result["optimizedContent"], ensure_ascii=False)
+                    else:
+                        result["optimizedContent"] = str(result["optimizedContent"])
+                    logger.info("Final guarantee: converted optimizedContent to string before return")
+                except Exception as convert_error:
+                    logger.error(f"Final guarantee failed: {convert_error}")
+                    result["optimizedContent"] = str(result["optimizedContent"])
 

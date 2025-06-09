@@ -980,9 +980,9 @@ def run_prompt(prompt_key, plan, custom_prompt=None, **kwargs):
     # Create a more explicit system prompt for JSON responses
     enhanced_system_prompt = p["system"]
     
-    # Only add JSON formatting instructions for prompts that require JSON output
+    # Add JSON formatting instructions for all prompts that require JSON output
     # if not already included in the custom prompt
-    if prompt_key in ["extract_resume_data", "analyze_resume", "benchmark_resume"] and "IMPORTANT JSON FORMATTING" not in enhanced_system_prompt:
+    if prompt_key in ["extract_resume_data", "analyze_resume", "benchmark_resume", "optimize_resume_jobscan", "ats_scan_jobscan_style"] and "IMPORTANT JSON FORMATTING" not in enhanced_system_prompt:
         enhanced_system_prompt += """
 IMPORTANT: Your response MUST be valid JSON. Follow these rules:
 1. Do NOT include markdown formatting or code blocks
@@ -1002,10 +1002,10 @@ IMPORTANT: Your response MUST be valid JSON. Follow these rules:
     
     # Make the API call with enhanced instructions - ONLY ONCE
     # Using temperature=0.0 for maximum consistency in responses
-    # For extract_resume_data, we use a slightly higher max_tokens to ensure complete extraction
+    # For certain prompts, we use a slightly higher max_tokens and force JSON response format
     try:
-        if prompt_key == "extract_resume_data":
-            # For resume data extraction, we need more tokens to ensure complete extraction
+        if prompt_key in ["extract_resume_data", "optimize_resume_jobscan", "ats_scan_jobscan_style"]:
+            # For these prompts, we need more tokens to ensure complete extraction
             # Also force JSON response format
             content, usage, cost = call_openai(
                 messages, 
@@ -1482,3 +1482,11 @@ Resume:
             "certifications": [],
             "projects": []
         }
+
+def optimize_resume_ats100_style(resume_text, plan="free"):
+    # This prompt is more aggressive for ATS
+    return run_prompt(
+        "optimize_resume_ats100",
+        plan,
+        resume_text=resume_text
+    )

@@ -1955,20 +1955,19 @@ namespace ResumeAI.API.Services
                         var expList = new List<object>();
                         foreach (var item in expArray)
                         {
-                            if (item is JObject itemObj)
+                            if (item is JObject jObj)
                             {
-                                var expItem = itemObj.ToObject<Dictionary<string, object>>();
-                                if (expItem != null)
-                                {
-                                    expList.Add(expItem);
-                                }
-                                else
-                                {
-                                    expList.Add(new Dictionary<string, object>());
-                                }
+                                var expDictObj = jObj.ToObject<Dictionary<string, object>>();
+                                if (expDictObj != null)
+                                    expList.Add(expDictObj);
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Experience item is of unexpected type: {item?.GetType().Name ?? "null"}");
                             }
                         }
                         dict["experience"] = expList;
+                        Console.WriteLine($"Converted experience to List<Dictionary<string, object>>, count: {expList.Count}");
                     }
                     
                     // Ensure education is an array
@@ -1983,20 +1982,15 @@ namespace ResumeAI.API.Services
                         var eduList = new List<object>();
                         foreach (var item in eduArray)
                         {
-                            if (item is JObject itemObj)
+                            if (item is JObject jObj)
                             {
-                                var eduItem = itemObj.ToObject<Dictionary<string, object>>();
-                                if (eduItem != null)
-                                {
-                                    eduList.Add(eduItem);
-                                }
-                                else
-                                {
-                                    eduList.Add(new Dictionary<string, object>());
-                                }
+                                var eduDictObj = jObj.ToObject<Dictionary<string, object>>();
+                                if (eduDictObj != null)
+                                    eduList.Add(eduDictObj);
                             }
                         }
                         dict["education"] = eduList;
+                        Console.WriteLine($"Converted education to List<Dictionary<string, object>>, count: {eduList.Count}");
                     }
                     
                     // Ensure skills is an array
@@ -2028,17 +2022,11 @@ namespace ResumeAI.API.Services
                         var certList = new List<object>();
                         foreach (var item in certArray)
                         {
-                            if (item is JObject itemObj)
+                            if (item is JObject jObj)
                             {
-                                var certItem = itemObj.ToObject<Dictionary<string, object>>();
-                                if (certItem != null)
-                                {
-                                    certList.Add(certItem);
-                                }
-                                else
-                                {
-                                    certList.Add(new Dictionary<string, object>());
-                                }
+                                var certDictObj = jObj.ToObject<Dictionary<string, object>>();
+                                if (certDictObj != null)
+                                    certList.Add(certDictObj);
                             }
                         }
                         dict["certifications"] = certList;
@@ -2056,180 +2044,14 @@ namespace ResumeAI.API.Services
                         var projList = new List<object>();
                         foreach (var item in projArray)
                         {
-                            if (item is JObject itemObj)
+                            if (item is JObject jObj)
                             {
-                                var projItem = itemObj.ToObject<Dictionary<string, object>>();
-                                if (projItem != null)
-                                {
-                                    projList.Add(projItem);
-                                }
-                                else
-                                {
-                                    projList.Add(new Dictionary<string, object>());
-                                }
+                                var projDictObj = jObj.ToObject<Dictionary<string, object>>();
+                                if (projDictObj != null)
+                                    projList.Add(projDictObj);
                             }
                         }
                         dict["projects"] = projList;
-                    }
-                }
-                
-                // Log the data being passed to the template
-                string dataJson = JsonConvert.SerializeObject(templateData, Formatting.Indented);
-                Console.WriteLine("Template data (first 500 chars): " + dataJson.Substring(0, Math.Min(500, dataJson.Length)));
-                
-                // Log specific sections to verify they're properly formatted
-                if (templateData is Dictionary<string, object> dataDict)
-                {
-                    // Log experience section
-                    if (dataDict.ContainsKey("experience"))
-                    {
-                        Console.WriteLine($"Experience type: {dataDict["experience"].GetType().Name}");
-                        if (dataDict["experience"] is System.Collections.ICollection expColl)
-                        {
-                            Console.WriteLine($"Experience count: {expColl.Count}");
-                            
-                            // Log the first experience item if available
-                            if (expColl.Count > 0)
-                            {
-                                var expArray = dataDict["experience"] as System.Collections.IList;
-                                if (expArray != null && expArray.Count > 0)
-                                {
-                                    Console.WriteLine($"First experience item type: {expArray[0]?.GetType().Name ?? "null"}");
-                                    Console.WriteLine($"First experience item: {JsonConvert.SerializeObject(expArray[0])}");
-                                }
-                            }
-                            
-                            // Ensure experience is properly formatted for Handlebars
-                            if (expColl.Count > 0 && !(dataDict["experience"] is List<Dictionary<string, object>>))
-                            {
-                                // Convert to the correct format
-                                var expList = new List<Dictionary<string, object>>();
-                                foreach (var item in (System.Collections.IEnumerable)dataDict["experience"])
-                                {
-                                    if (item is Dictionary<string, object> expDict)
-                                    {
-                                        expList.Add(expDict);
-                                    }
-                                    else if (item is JObject jObj)
-                                    {
-                                        var expDictObj = jObj.ToObject<Dictionary<string, object>>();
-                                        if (expDictObj != null)
-                                            expList.Add(expDictObj);
-                                    }
-                                    else
-                                    {
-                                        Console.WriteLine($"Experience item is of unexpected type: {item?.GetType().Name ?? "null"}");
-                                    }
-                                }
-                                dataDict["experience"] = expList;
-                                Console.WriteLine($"Converted experience to List<Dictionary<string, object>>, count: {expList.Count}");
-                            }
-                        }
-                    }
-                    
-                    // Log education section
-                    if (dataDict.ContainsKey("education"))
-                    {
-                        Console.WriteLine($"Education type: {dataDict["education"].GetType().Name}");
-                        if (dataDict["education"] is System.Collections.ICollection eduColl)
-                        {
-                            Console.WriteLine($"Education count: {eduColl.Count}");
-                            
-                            // Ensure education is properly formatted for Handlebars
-                            if (eduColl.Count > 0 && !(dataDict["education"] is List<Dictionary<string, object>>))
-                            {
-                                // Convert to the correct format
-                                var eduList = new List<Dictionary<string, object>>();
-                                foreach (var item in (System.Collections.IEnumerable)dataDict["education"])
-                                {
-                                    if (item is Dictionary<string, object> eduDict)
-                                    {
-                                        eduList.Add(eduDict);
-                                    }
-                                    else if (item is JObject jObj)
-                                    {
-                                        var eduDictObj = jObj.ToObject<Dictionary<string, object>>();
-                                        if (eduDictObj != null)
-                                            eduList.Add(eduDictObj);
-                                    }
-                                }
-                                dataDict["education"] = eduList;
-                                Console.WriteLine($"Converted education to List<Dictionary<string, object>>, count: {eduList.Count}");
-                            }
-                        }
-                    }
-                    
-                    // Log skills section
-                    if (dataDict.ContainsKey("skills"))
-                    {
-                        Console.WriteLine($"Skills type: {dataDict["skills"].GetType().Name}");
-                        if (dataDict["skills"] is System.Collections.ICollection skillsColl)
-                        {
-                            Console.WriteLine($"Skills count: {skillsColl.Count}");
-                            
-                            // Ensure skills is properly formatted for Handlebars
-                            if (skillsColl.Count > 0 && !(dataDict["skills"] is List<string>))
-                            {
-                                // Convert to the correct format
-                                var skillsList = new List<string>();
-                                foreach (var item in (System.Collections.IEnumerable)dataDict["skills"])
-                                {
-                                    skillsList.Add(item?.ToString() ?? "");
-                                }
-                                dataDict["skills"] = skillsList;
-                                Console.WriteLine($"Converted skills to List<string>, count: {skillsList.Count}");
-                            }
-                        }
-                    }
-                    
-                    // Ensure certifications is properly formatted
-                    if (dataDict.ContainsKey("certifications") && dataDict["certifications"] is System.Collections.ICollection certColl && certColl.Count > 0)
-                    {
-                        if (!(dataDict["certifications"] is List<Dictionary<string, object>>))
-                        {
-                            // Convert to the correct format
-                            var certList = new List<Dictionary<string, object>>();
-                            foreach (var item in (System.Collections.IEnumerable)dataDict["certifications"])
-                            {
-                                if (item is Dictionary<string, object> certDict)
-                                {
-                                    certList.Add(certDict);
-                                }
-                                else if (item is JObject jObj)
-                                {
-                                    var certDictObj = jObj.ToObject<Dictionary<string, object>>();
-                                    if (certDictObj != null)
-                                        certList.Add(certDictObj);
-                                }
-                            }
-                            dataDict["certifications"] = certList;
-                            Console.WriteLine($"Converted certifications to List<Dictionary<string, object>>, count: {certList.Count}");
-                        }
-                    }
-                    
-                    // Ensure projects is properly formatted
-                    if (dataDict.ContainsKey("projects") && dataDict["projects"] is System.Collections.ICollection projColl && projColl.Count > 0)
-                    {
-                        if (!(dataDict["projects"] is List<Dictionary<string, object>>))
-                        {
-                            // Convert to the correct format
-                            var projList = new List<Dictionary<string, object>>();
-                            foreach (var item in (System.Collections.IEnumerable)dataDict["projects"])
-                            {
-                                if (item is Dictionary<string, object> projDict)
-                                {
-                                    projList.Add(projDict);
-                                }
-                                else if (item is JObject jObj)
-                                {
-                                    var projDictObj = jObj.ToObject<Dictionary<string, object>>();
-                                    if (projDictObj != null)
-                                        projList.Add(projDictObj);
-                                }
-                            }
-                            dataDict["projects"] = projList;
-                            Console.WriteLine($"Converted projects to List<Dictionary<string, object>>, count: {projList.Count}");
-                        }
                     }
                 }
                 
@@ -2640,7 +2462,7 @@ namespace ResumeAI.API.Services
                     };
                     
                     // Call the ResumeService to optimize the resume
-                    var optimizationResult = await _resumeService.OptimizeResume(formFile, plan, userId, "resume_optimization");
+                    var optimizationResult = await _resumeService.OptimizeResume(formFile, plan, userId, "resume_builder_ai_optimization");
                     
                     // Apply the optimization suggestions to the resume data
                     var updatedResumeData = ApplyOptimizationSuggestions(resumeDataObj, optimizationResult);
@@ -2681,6 +2503,218 @@ namespace ResumeAI.API.Services
                 Console.WriteLine($"Error optimizing resume: {ex.Message}");
                 Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 throw new Exception($"Error optimizing resume: {ex.Message}", ex);
+            }
+        }
+        
+        public async Task<object> EnhanceResumeAsync(string resumeData, string templateId, string userId, string plan)
+        {
+            // This is a copy of OptimizeResumeAsync, but with a new prompt/featureType for 100% ATS
+            // 1. Parse resumeData as before
+            // 2. Write resume text to temp file as before
+            // 3. Call _resumeService.OptimizeResume with featureType = "resume_builder_ai_enhance_100_ats"
+            // 4. In the Python microservice, use a prompt like:
+            //    "Rewrite and enhance this resume to maximize ATS score to 100%. Use all relevant keywords, optimize formatting, and ensure it is tailored for ATS systems. Do not remove any important information."
+            // 5. Apply suggestions and render as HTML with the selected template (same as OptimizeResumeAsync)
+            // 6. Return the result (html, data, optimizationReport)
+            // (You can copy-paste OptimizeResumeAsync and adjust the featureType and comments)
+            
+            try
+            {
+                // Parse the resume data
+                var resumeDataObj = JsonConvert.DeserializeObject<Dictionary<string, object>>(resumeData) ?? 
+                    throw new ArgumentException("Invalid resume data JSON format");
+                
+                // Create a temporary file with the resume content
+                string tempFilePath = Path.GetTempFileName();
+                try
+                {
+                    // Generate a simple text version of the resume for optimization
+                    StringBuilder resumeText = new StringBuilder();
+                    
+                    // Add personal information
+                    if (resumeDataObj.TryGetValue("name", out var name) && name != null)
+                        resumeText.AppendLine($"Name: {name}");
+                    
+                    if (resumeDataObj.TryGetValue("title", out var title) && title != null)
+                        resumeText.AppendLine($"Title: {title}");
+                    
+                    if (resumeDataObj.TryGetValue("email", out var email) && email != null)
+                        resumeText.AppendLine($"Email: {email}");
+                    
+                    if (resumeDataObj.TryGetValue("phone", out var phone) && phone != null)
+                        resumeText.AppendLine($"Phone: {phone}");
+                    
+                    if (resumeDataObj.TryGetValue("location", out var location) && location != null)
+                        resumeText.AppendLine($"Location: {location}");
+                    
+                    // Add summary
+                    if (resumeDataObj.TryGetValue("summary", out var summary) && summary != null)
+                    {
+                        resumeText.AppendLine("\nSUMMARY");
+                        resumeText.AppendLine(summary.ToString());
+                    }
+                    
+                    // Add experience
+                    if (resumeDataObj.TryGetValue("experience", out var experienceObj) && experienceObj != null)
+                    {
+                        resumeText.AppendLine("\nEXPERIENCE");
+                        if (experienceObj is JArray experienceArray)
+                        {
+                            foreach (var exp in experienceArray)
+                            {
+                                if (exp is JObject expObj)
+                                {
+                                    string jobTitle = expObj["title"]?.ToString() ?? "";
+                                    string company = expObj["company"]?.ToString() ?? "";
+                                    string expLocation = expObj["location"]?.ToString() ?? "";
+                                    string startDate = expObj["startDate"]?.ToString() ?? "";
+                                    string endDate = expObj["endDate"]?.ToString() ?? "";
+                                    string description = expObj["description"]?.ToString() ?? "";
+                                    
+                                    resumeText.AppendLine($"{jobTitle} at {company}, {expLocation}");
+                                    resumeText.AppendLine($"{startDate} - {endDate}");
+                                    resumeText.AppendLine(description);
+                                    resumeText.AppendLine();
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Add education
+                    if (resumeDataObj.TryGetValue("education", out var educationObj) && educationObj != null)
+                    {
+                        resumeText.AppendLine("\nEDUCATION");
+                        if (educationObj is JArray educationArray)
+                        {
+                            foreach (var edu in educationArray)
+                            {
+                                if (edu is JObject eduObj)
+                                {
+                                    string degree = eduObj["degree"]?.ToString() ?? "";
+                                    string institution = eduObj["institution"]?.ToString() ?? "";
+                                    string eduLocation = eduObj["location"]?.ToString() ?? "";
+                                    string startDate = eduObj["startDate"]?.ToString() ?? "";
+                                    string endDate = eduObj["endDate"]?.ToString() ?? "";
+                                    string description = eduObj["description"]?.ToString() ?? "";
+                                    
+                                    resumeText.AppendLine($"{degree} at {institution}, {eduLocation}");
+                                    resumeText.AppendLine($"{startDate} - {endDate}");
+                                    if (!string.IsNullOrEmpty(description))
+                                        resumeText.AppendLine(description);
+                                    resumeText.AppendLine();
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Add skills
+                    if (resumeDataObj.TryGetValue("skills", out var skillsObj) && skillsObj != null)
+                    {
+                        resumeText.AppendLine("\nSKILLS");
+                        if (skillsObj is JArray skillsArray)
+                        {
+                            foreach (var skill in skillsArray)
+                            {
+                                resumeText.AppendLine($"- {skill}");
+                            }
+                        }
+                    }
+                    
+                    // Add certifications
+                    if (resumeDataObj.TryGetValue("certifications", out var certificationsObj) && certificationsObj != null)
+                    {
+                        resumeText.AppendLine("\nCERTIFICATIONS");
+                        if (certificationsObj is JArray certificationsArray)
+                        {
+                            foreach (var cert in certificationsArray)
+                            {
+                                if (cert is JObject certObj)
+                                {
+                                    string certName = certObj["name"]?.ToString() ?? "";
+                                    string issuer = certObj["issuer"]?.ToString() ?? "";
+                                    string date = certObj["date"]?.ToString() ?? "";
+                                    
+                                    resumeText.AppendLine($"{certName} from {issuer}, {date}");
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Add projects
+                    if (resumeDataObj.TryGetValue("projects", out var projectsObj) && projectsObj != null)
+                    {
+                        resumeText.AppendLine("\nPROJECTS");
+                        if (projectsObj is JArray projectsArray)
+                        {
+                            foreach (var proj in projectsArray)
+                            {
+                                if (proj is JObject projObj)
+                                {
+                                    string projName = projObj["name"]?.ToString() ?? "";
+                                    string date = projObj["date"]?.ToString() ?? "";
+                                    string description = projObj["description"]?.ToString() ?? "";
+                                    
+                                    resumeText.AppendLine($"{projName}, {date}");
+                                    resumeText.AppendLine(description);
+                                    resumeText.AppendLine();
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Write the resume text to the temporary file
+                    await System.IO.File.WriteAllTextAsync(tempFilePath, resumeText.ToString());
+                    
+                    // Create a FormFile from the temporary file
+                    using var fileStream = new FileStream(tempFilePath, FileMode.Open, FileAccess.Read);
+                    var formFile = new FormFile(fileStream, 0, fileStream.Length, "resume", "resume.txt")
+                    {
+                        Headers = new HeaderDictionary(),
+                        ContentType = "text/plain"
+                    };
+                    
+                    // Call the ResumeService to optimize the resume
+                    var optimizationResult = await _resumeService.OptimizeResume(formFile, plan, userId, "resume_builder_ai_enhance_100_ats");
+                    
+                    // Apply the optimization suggestions to the resume data
+                    var updatedResumeData = ApplyOptimizationSuggestions(resumeDataObj, optimizationResult);
+                    
+                    // Generate the resume HTML using the updated data
+                    string templateHtml = await GetTemplateHtmlAsync(templateId);
+                    
+                    // Add null check for templateHtml
+                    if (templateHtml == null)
+                    {
+                        Console.WriteLine("Warning: Template HTML is null. Using empty template.");
+                        templateHtml = "<html><body><p>No template available. Please select a different template.</p></body></html>";
+                    }
+                    
+                    string resumeHtml = GenerateResumeHtml(templateHtml, updatedResumeData);
+                    
+                    // Normalize experience descriptions before returning to frontend
+                    var normalizedData = NormalizeResumeData(updatedResumeData);
+                    
+                    return new
+                    {
+                        html = resumeHtml,
+                        data = normalizedData,
+                        optimizationReport = optimizationResult
+                    };
+                }
+                finally
+                {
+                    // Clean up the temporary file
+                    if (System.IO.File.Exists(tempFilePath))
+                    {
+                        System.IO.File.Delete(tempFilePath);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error enhancing resume: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                throw new Exception($"Error enhancing resume: {ex.Message}", ex);
             }
         }
         
