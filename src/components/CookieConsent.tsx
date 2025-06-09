@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { X, Cookie } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -9,20 +8,15 @@ const CookieConsent = () => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    // Check if user has already accepted cookies
-    const hasAccepted = localStorage.getItem('cookieConsent');
-    if (!hasAccepted) {
+    // Check if user has already seen the cookie notice
+    const hasSeenNotice = localStorage.getItem('cookieNoticeShown');
+    if (!hasSeenNotice) {
       setIsVisible(true);
     }
   }, []);
 
-  const acceptCookies = () => {
-    localStorage.setItem('cookieConsent', 'accepted');
-    setIsVisible(false);
-  };
-
-  const declineCookies = () => {
-    localStorage.setItem('cookieConsent', 'declined');
+  const dismissNotice = () => {
+    localStorage.setItem('cookieNoticeShown', 'true');
     setIsVisible(false);
   };
 
@@ -37,41 +31,23 @@ const CookieConsent = () => {
           </div>
           <div className="flex-1">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              We use cookies to enhance your experience
+              Cookie Notice
             </h3>
-            <p className="text-gray-600 text-sm mb-4">
-              We use cookies to provide you with the best possible experience on our website. 
-              These cookies help us understand how you use our site and improve our services. 
-              By continuing to use our site, you consent to our use of cookies.{" "}
-              <Link to="/privacy-policy" className="text-blue-600 hover:underline">
+            <p className="text-gray-600 text-sm mb-2">
+              We use cookies to enhance your browsing experience, provide personalized content, and analyze our traffic. 
+              By continuing to use our website, you consent to our use of cookies.{" "}
+              <Link to="/privacy" className="text-blue-600 hover:underline">
                 Learn more in our Privacy Policy
               </Link>
             </p>
-            <div className="flex flex-wrap gap-3">
-              <Button 
-                onClick={acceptCookies}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                Accept All Cookies
-              </Button>
-              <Button 
-                onClick={declineCookies}
-                variant="outline"
-                className="border-gray-300 text-gray-700 hover:bg-gray-50"
-              >
-                Decline
-              </Button>
-              <Link to="/privacy-policy">
-                <Button variant="ghost" className="text-blue-600 hover:text-blue-700">
-                  Cookie Settings
-                </Button>
-              </Link>
-            </div>
+            <p className="text-xs text-gray-500">
+              Your continued use of this site indicates your acceptance of our cookie policy.
+            </p>
           </div>
           <button
-            onClick={declineCookies}
+            onClick={dismissNotice}
             className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600 transition-colors"
-            aria-label="Close cookie consent"
+            aria-label="Dismiss cookie notice"
           >
             <X className="w-5 h-5" />
           </button>
