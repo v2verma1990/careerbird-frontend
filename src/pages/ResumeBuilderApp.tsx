@@ -18,13 +18,34 @@ import {
   AlertCircle,
   Wand2,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Briefcase,
+  GraduationCap,
+  Award
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 const ResumeBuilderApp = () => {
   const { user } = useAuth();
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [extractedData, setExtractedData] = useState<any>(null);
+  const [manualData, setManualData] = useState<any>({
+    name: '',
+    email: '',
+    phone: '',
+    location: '',
+    title: '',
+    summary: '',
+    skills: '',
+    experience: [{ title: '', company: '', location: '', startDate: '', endDate: '', description: '' }],
+    education: [{ degree: '', institution: '', location: '', startDate: '', endDate: '', gpa: '' }]
+  });
   const [generatedResume, setGeneratedResume] = useState<string | null>(null);
   const [templates, setTemplates] = useState<any[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
@@ -33,6 +54,7 @@ const ResumeBuilderApp = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isTemplateLoading, setIsTemplateLoading] = useState(true);
   const [showPreview, setShowPreview] = useState(false);
+  const [dataSource, setDataSource] = useState<'upload' | 'manual'>('upload');
 
   useEffect(() => {
     const fetchTemplates = async () => {
@@ -41,19 +63,21 @@ const ResumeBuilderApp = () => {
         const { data, error } = await resumeBuilderApi.getTemplates();
         if (error) {
           console.error('Error fetching templates:', error);
-          toast({
-            variant: "destructive",
-            title: "Template Load Failed",
-            description: "Failed to load resume templates. Please try again."
-          });
-          // Set fallback templates
+          // Set fallback templates when API fails
           const fallbackTemplates = [
             { id: 'minimal', name: 'Minimal', description: 'Clean and simple design' },
             { id: 'modern-clean', name: 'Modern Clean', description: 'Contemporary professional look' },
-            { id: 'professional', name: 'Professional', description: 'Traditional business style' }
+            { id: 'professional', name: 'Professional', description: 'Traditional business style' },
+            { id: 'creative', name: 'Creative', description: 'Creative design for design professionals' },
+            { id: 'executive', name: 'Executive', description: 'Executive-level resume design' },
+            { id: 'tech', name: 'Tech', description: 'Modern design for tech professionals' }
           ];
           setTemplates(fallbackTemplates);
           setSelectedTemplate(fallbackTemplates[0]);
+          toast({
+            title: "Templates Loaded",
+            description: "Using default templates. Some features may be limited."
+          });
         } else if (data && data.length > 0) {
           setTemplates(data);
           setSelectedTemplate(data[0]);
@@ -61,11 +85,14 @@ const ResumeBuilderApp = () => {
         }
       } catch (error) {
         console.error('Error fetching templates:', error);
-        toast({
-          variant: "destructive",
-          title: "Template Load Failed",
-          description: "Failed to load resume templates. Please try again."
-        });
+        // Fallback templates
+        const fallbackTemplates = [
+          { id: 'minimal', name: 'Minimal', description: 'Clean and simple design' },
+          { id: 'modern-clean', name: 'Modern Clean', description: 'Contemporary professional look' },
+          { id: 'professional', name: 'Professional', description: 'Traditional business style' }
+        ];
+        setTemplates(fallbackTemplates);
+        setSelectedTemplate(fallbackTemplates[0]);
       } finally {
         setIsTemplateLoading(false);
       }
@@ -74,12 +101,13 @@ const ResumeBuilderApp = () => {
     fetchTemplates();
   }, []);
 
-  const handleFileSelect = (file: File | null) => {
+  const handleFileSelected = (file: File | null) => {
     setResumeFile(file);
     if (!file) {
       setExtractedData(null);
       setGeneratedResume(null);
     }
+    setDataSource('upload');
   };
 
   const handleDataExtracted = (data: any) => {
@@ -88,6 +116,36 @@ const ResumeBuilderApp = () => {
       title: "Data Extracted!",
       description: "Resume data has been successfully extracted."
     });
+  };
+
+  const handleManualDataChange = (field: string, value: any) => {
+    setManualData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleExperienceChange = (index: number, field: string, value: string) => {
+    const newExperience = [...manualData.experience];
+    newExperience[index] = { ...newExperience[index], [field]: value };
+    setManualData(prev => ({ ...prev, experience: newExperience }));
+  };
+
+  const addExperience = () => {
+    setManualData(prev => ({
+      ...prev,
+      experience: [...prev.experience, { title: '', company: '', location: '', startDate: '', endDate: '', description: '' }]
+    }));
+  };
+
+  const handleEducationChange = (index: number, field: string, value: string) => {
+    const newEducation = [...manualData.education];
+    newEducation[index] = { ...newEducation[index], [field]: value };
+    setManualData(prev => ({ ...prev, education: newEducation }));
+  };
+
+  const addEducation = () => {
+    setManualData(prev => ({
+      ...prev,
+      education: [...prev.education, { degree: '', institution: '', location: '', startDate: '', endDate: '', gpa: '' }]
+    }));
   };
 
   const handleTemplateSelect = (template: any, index: number) => {
@@ -120,11 +178,12 @@ const ResumeBuilderApp = () => {
       return;
     }
 
-    if (!extractedData) {
+    const resumeData = dataSource === 'upload' ? extractedData : manualData;
+    if (!resumeData) {
       toast({
         variant: "destructive", 
         title: "Resume Data Required",
-        description: "Please extract resume data first before generating."
+        description: "Please extract resume data or fill in manual data before generating."
       });
       return;
     }
@@ -135,7 +194,7 @@ const ResumeBuilderApp = () => {
       
       const { data, error } = await resumeBuilderApi.buildResume({
         templateId: selectedTemplate.id,
-        resumeData: JSON.stringify(extractedData)
+        resumeData: JSON.stringify(resumeData)
       });
 
       if (error) {
@@ -185,7 +244,10 @@ const ResumeBuilderApp = () => {
     });
   };
 
-  const canGenerateResume = selectedTemplate && extractedData;
+  const canGenerateResume = selectedTemplate && (
+    (dataSource === 'upload' && extractedData) || 
+    (dataSource === 'manual' && manualData.name && manualData.email)
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -297,38 +359,258 @@ const ResumeBuilderApp = () => {
           </CardContent>
         </Card>
 
+        {/* Data Source Selection */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Choose Data Source</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-4 mb-4">
+              <Button
+                variant={dataSource === 'upload' ? 'default' : 'outline'}
+                onClick={() => setDataSource('upload')}
+                className="flex-1"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Upload Resume
+              </Button>
+              <Button
+                variant={dataSource === 'manual' ? 'default' : 'outline'}
+                onClick={() => setDataSource('manual')}
+                className="flex-1"
+              >
+                <User className="w-4 h-4 mr-2" />
+                Manual Entry
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Left Column: File Upload and Data Extraction */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Upload className="w-5 h-5 text-blue-600" />
-                Upload & Extract Resume Data
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResumeFileUploader 
-                onFileSelected={handleFileSelect}
-                onDataExtracted={handleDataExtracted} 
-                setIsExtracting={setIsExtracting}
-              />
-              
-              <div className="mt-4 flex gap-2">
-                {extractedData && (
-                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Data Extracted Successfully
-                  </Badge>
-                )}
-                {isExtracting && (
-                  <Badge variant="secondary" className="bg-blue-50 text-blue-700">
-                    <Wand2 className="w-4 h-4 mr-2 animate-spin" />
-                    Extracting Data...
-                  </Badge>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          {/* Left Column: Data Input */}
+          <div className="space-y-8">
+            {dataSource === 'upload' ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Upload className="w-5 h-5 text-blue-600" />
+                    Upload & Extract Resume Data
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResumeFileUploader 
+                    onFileSelected={handleFileSelected}
+                    onDataExtracted={handleDataExtracted} 
+                    setIsExtracting={setIsExtracting}
+                  />
+                  
+                  <div className="mt-4 flex gap-2">
+                    {extractedData && (
+                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Data Extracted Successfully
+                      </Badge>
+                    )}
+                    {isExtracting && (
+                      <Badge variant="secondary" className="bg-blue-50 text-blue-700">
+                        <Wand2 className="w-4 h-4 mr-2 animate-spin" />
+                        Extracting Data...
+                      </Badge>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="w-5 h-5 text-blue-600" />
+                    Manual Resume Data Entry
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Personal Information */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <User className="w-4 h-4" />
+                      Personal Information
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="name">Full Name</Label>
+                        <Input
+                          id="name"
+                          value={manualData.name}
+                          onChange={(e) => handleManualDataChange('name', e.target.value)}
+                          placeholder="Your full name"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="email">Email</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={manualData.email}
+                          onChange={(e) => handleManualDataChange('email', e.target.value)}
+                          placeholder="your.email@example.com"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="phone">Phone</Label>
+                        <Input
+                          id="phone"
+                          value={manualData.phone}
+                          onChange={(e) => handleManualDataChange('phone', e.target.value)}
+                          placeholder="(555) 123-4567"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="location">Location</Label>
+                        <Input
+                          id="location"
+                          value={manualData.location}
+                          onChange={(e) => handleManualDataChange('location', e.target.value)}
+                          placeholder="City, State"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="title">Professional Title</Label>
+                      <Input
+                        id="title"
+                        value={manualData.title}
+                        onChange={(e) => handleManualDataChange('title', e.target.value)}
+                        placeholder="e.g., Software Engineer, Marketing Manager"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="summary">Professional Summary</Label>
+                      <Textarea
+                        id="summary"
+                        value={manualData.summary}
+                        onChange={(e) => handleManualDataChange('summary', e.target.value)}
+                        placeholder="Brief description of your professional background and key achievements"
+                        rows={4}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="skills">Skills (comma-separated)</Label>
+                      <Textarea
+                        id="skills"
+                        value={manualData.skills}
+                        onChange={(e) => handleManualDataChange('skills', e.target.value)}
+                        placeholder="JavaScript, React, Node.js, Python, Project Management"
+                        rows={2}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Experience Section */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold flex items-center gap-2">
+                        <Briefcase className="w-4 h-4" />
+                        Work Experience
+                      </h3>
+                      <Button onClick={addExperience} variant="outline" size="sm">
+                        Add Experience
+                      </Button>
+                    </div>
+                    {manualData.experience.map((exp, index) => (
+                      <div key={index} className="p-4 border rounded-lg space-y-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <Input
+                            placeholder="Job Title"
+                            value={exp.title}
+                            onChange={(e) => handleExperienceChange(index, 'title', e.target.value)}
+                          />
+                          <Input
+                            placeholder="Company Name"
+                            value={exp.company}
+                            onChange={(e) => handleExperienceChange(index, 'company', e.target.value)}
+                          />
+                          <Input
+                            placeholder="Location"
+                            value={exp.location}
+                            onChange={(e) => handleExperienceChange(index, 'location', e.target.value)}
+                          />
+                          <div className="grid grid-cols-2 gap-2">
+                            <Input
+                              placeholder="Start Date"
+                              value={exp.startDate}
+                              onChange={(e) => handleExperienceChange(index, 'startDate', e.target.value)}
+                            />
+                            <Input
+                              placeholder="End Date"
+                              value={exp.endDate}
+                              onChange={(e) => handleExperienceChange(index, 'endDate', e.target.value)}
+                            />
+                          </div>
+                        </div>
+                        <Textarea
+                          placeholder="Job description and achievements"
+                          value={exp.description}
+                          onChange={(e) => handleExperienceChange(index, 'description', e.target.value)}
+                          rows={3}
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Education Section */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold flex items-center gap-2">
+                        <GraduationCap className="w-4 h-4" />
+                        Education
+                      </h3>
+                      <Button onClick={addEducation} variant="outline" size="sm">
+                        Add Education
+                      </Button>
+                    </div>
+                    {manualData.education.map((edu, index) => (
+                      <div key={index} className="p-4 border rounded-lg space-y-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <Input
+                            placeholder="Degree"
+                            value={edu.degree}
+                            onChange={(e) => handleEducationChange(index, 'degree', e.target.value)}
+                          />
+                          <Input
+                            placeholder="Institution"
+                            value={edu.institution}
+                            onChange={(e) => handleEducationChange(index, 'institution', e.target.value)}
+                          />
+                          <Input
+                            placeholder="Location"
+                            value={edu.location}
+                            onChange={(e) => handleEducationChange(index, 'location', e.target.value)}
+                          />
+                          <div className="grid grid-cols-3 gap-2">
+                            <Input
+                              placeholder="Start Date"
+                              value={edu.startDate}
+                              onChange={(e) => handleEducationChange(index, 'startDate', e.target.value)}
+                            />
+                            <Input
+                              placeholder="End Date"
+                              value={edu.endDate}
+                              onChange={(e) => handleEducationChange(index, 'endDate', e.target.value)}
+                            />
+                            <Input
+                              placeholder="GPA"
+                              value={edu.gpa}
+                              onChange={(e) => handleEducationChange(index, 'gpa', e.target.value)}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
 
           {/* Right Column: Generate and Preview Resume */}
           <Card>
@@ -396,10 +678,16 @@ const ResumeBuilderApp = () => {
                           Select a template above
                         </li>
                       )}
-                      {!extractedData && (
+                      {dataSource === 'upload' && !extractedData && (
                         <li className="flex items-center gap-2">
                           <AlertCircle className="w-3 h-3" />
                           Upload and extract resume data
+                        </li>
+                      )}
+                      {dataSource === 'manual' && (!manualData.name || !manualData.email) && (
+                        <li className="flex items-center gap-2">
+                          <AlertCircle className="w-3 h-3" />
+                          Fill in at least name and email
                         </li>
                       )}
                     </ul>
