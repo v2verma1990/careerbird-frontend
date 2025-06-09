@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 // Base URL for API calls
@@ -194,3 +195,6 @@ export const resumeBuilderApi = {
     }
   }
 };
+
+// Export as default for backward compatibility
+export default resumeBuilderApi;

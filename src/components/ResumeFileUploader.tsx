@@ -1,3 +1,4 @@
+
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, FileIcon, X } from "lucide-react";
@@ -5,13 +6,17 @@ import { useToast } from "@/hooks/use-toast";
 
 interface ResumeFileUploaderProps {
   onFileSelected: (file: File) => void;
+  onDataExtracted?: (data: any) => void;
+  setIsExtracting?: (isExtracting: boolean) => void;
   disabled?: boolean;
   accept?: string;
   maxSize?: number; // in MB
 }
 
 const ResumeFileUploader = ({ 
-  onFileSelected, 
+  onFileSelected,
+  onDataExtracted,
+  setIsExtracting,
   disabled = false,
   accept = ".pdf,.docx,.doc,.txt",
   maxSize = 5
@@ -21,7 +26,7 @@ const ResumeFileUploader = ({
   const [fileName, setFileName] = useState<string | null>(null);
   const [fileSize, setFileSize] = useState<string | null>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     
@@ -53,6 +58,57 @@ const ResumeFileUploader = ({
     setFileName(file.name);
     setFileSize((file.size / 1024 / 1024).toFixed(2) + " MB");
     onFileSelected(file);
+
+    // Auto-extract data if callbacks are provided
+    if (onDataExtracted && setIsExtracting) {
+      try {
+        setIsExtracting(true);
+        
+        // Simulate data extraction (replace with actual API call)
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Mock extracted data
+        const mockData = {
+          name: "John Doe",
+          email: "john.doe@email.com",
+          phone: "(555) 123-4567",
+          location: "New York, NY",
+          title: "Software Engineer",
+          summary: "Experienced software engineer with 5+ years of experience...",
+          skills: ["JavaScript", "React", "Node.js", "Python"],
+          experience: [
+            {
+              title: "Senior Software Engineer",
+              company: "Tech Corp",
+              location: "New York, NY",
+              startDate: "2020-01",
+              endDate: "Present",
+              description: "Led development of web applications..."
+            }
+          ],
+          education: [
+            {
+              degree: "Bachelor of Science in Computer Science",
+              institution: "University of Technology",
+              location: "New York, NY",
+              startDate: "2015-09",
+              endDate: "2019-05",
+              gpa: "3.8"
+            }
+          ]
+        };
+        
+        onDataExtracted(mockData);
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Extraction Failed",
+          description: "Failed to extract data from the resume file.",
+        });
+      } finally {
+        setIsExtracting(false);
+      }
+    }
   };
 
   const triggerFileInput = () => {
@@ -65,6 +121,7 @@ const ResumeFileUploader = ({
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+    onFileSelected(null as any);
   };
 
   return (
@@ -79,13 +136,17 @@ const ResumeFileUploader = ({
         aria-label="Upload resume file"
       />
       <div 
-        className="border-2 border-dashed rounded-md p-6 text-center cursor-pointer transition-colors border-gray-300 hover:border-primary/50 hover:bg-gray-50" 
+        className={`border-2 border-dashed rounded-md p-6 text-center cursor-pointer transition-colors ${
+          disabled 
+            ? 'border-gray-200 bg-gray-50 cursor-not-allowed' 
+            : 'border-gray-300 hover:border-blue-500 hover:bg-blue-50'
+        }`}
         onClick={disabled ? undefined : triggerFileInput}
       >
         {fileName ? (
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <FileIcon className="h-8 w-8 text-primary mr-2" />
+              <FileIcon className="h-8 w-8 text-blue-600 mr-2" />
               <div className="text-left">
                 <p className="text-sm font-medium">{fileName}</p>
                 {fileSize && <p className="text-xs text-gray-500">{fileSize}</p>}
