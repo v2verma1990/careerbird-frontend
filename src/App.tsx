@@ -54,8 +54,8 @@ const queryClient = new QueryClient();
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Router>
+      <Router>
+        <AuthProvider>
           <div className="App">
             <Navbar />
             <Routes>
@@ -210,8 +210,8 @@ const App = () => {
             <Toaster />
             <CookieConsent />
           </div>
-        </Router>
-      </AuthProvider>
+        </AuthProvider>
+      </Router>
     </QueryClientProvider>
   );
 };
