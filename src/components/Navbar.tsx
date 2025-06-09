@@ -1,11 +1,11 @@
+
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/auth/AuthContext';
-import { Badge } from '@/components/ui/badge';
 
 const Navbar = () => {
-  const { user, userType, profile, subscriptionStatus, signOut, restoringSession } = useAuth();
+  const { user, userType, signOut, restoringSession } = useAuth();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const location = useLocation();
 
@@ -17,12 +17,6 @@ const Navbar = () => {
       setIsLoggedIn(!!user);
     }
   }, [user, restoringSession]);
-  
-  // Get subscription display name
-  const getSubscriptionDisplay = () => {
-    if (!subscriptionStatus || !subscriptionStatus.type) return '';
-    return subscriptionStatus.type.charAt(0).toUpperCase() + subscriptionStatus.type.slice(1);
-  };
 
   // Clear auth state completely on logout
   const handleLogout = async () => {
@@ -31,6 +25,15 @@ const Navbar = () => {
     // Force a page reload to ensure all state is cleared
     window.location.href = '/';
   };
+
+  // Don't show navbar on dashboard pages (they have TopNavigation)
+  const isDashboardPage = location.pathname.includes('/candidate-dashboard') || 
+                          location.pathname.includes('/dashboard') || 
+                          location.pathname.includes('/free-plan-dashboard');
+
+  if (isDashboardPage && isLoggedIn) {
+    return null;
+  }
 
   return (
     <nav className="bg-gray-800 text-white p-4">
@@ -45,21 +48,7 @@ const Navbar = () => {
             </div>
           ) : isLoggedIn && user ? (
             <>
-              <div className="hidden md:flex items-center mr-4">
-                <Badge 
-                  className={`${
-                    subscriptionStatus && subscriptionStatus.type === 'premium' ? 'bg-green-500' : 
-                    subscriptionStatus && subscriptionStatus.type === 'basic' ? 'bg-blue-500' : 
-                    'bg-gray-500'
-                  }`}
-                >
-                  {subscriptionStatus && subscriptionStatus.type ? getSubscriptionDisplay() + ' Plan' : 'Loading...'}
-                </Badge>
-              </div>
-              <Link to={userType === 'candidate' ? 
-                (subscriptionStatus && subscriptionStatus.type === 'free' ? '/free-plan-dashboard' : '/candidate-dashboard') : 
-                (userType === 'recruiter' ? '/dashboard' : '/')
-              }>
+              <Link to={userType === 'candidate' ? '/candidate-dashboard' : '/dashboard'}>
                 <Button variant="ghost">Dashboard</Button>
               </Link>
               <Link to="/upgrade">
