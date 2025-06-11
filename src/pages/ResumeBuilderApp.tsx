@@ -867,7 +867,7 @@ const ResumeBuilderApp = () => {
                       >
                         <div 
                           className="w-full h-24 rounded mb-2 flex items-center justify-center text-white font-semibold text-sm template-color"
-                          style={{ "--template-color": template.color || '#6b7280' } as React.CSSProperties}
+                          data-template-color={template.color || '#6b7280'}
                         >
                           {template.name}
                         </div>

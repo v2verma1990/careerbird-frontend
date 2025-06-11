@@ -4,9 +4,16 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/auth/AuthContext";
+import { useResume } from "@/contexts/resume/ResumeContext";
 import { Badge } from "@/components/ui/badge";
 import api from "@/utils/apiClient";
 import TopNavigation from "@/components/TopNavigation";
+import DefaultResumeUploader from "@/components/DefaultResumeUploader";
+import ProfileMetadataEditor from "@/components/ProfileMetadataEditor";
+// Make sure the file exists at src/components/ProfileCompletionSteps.tsx
+// If the file is named differently or in another folder, update the path accordingly.
+import ProfileCompletionSteps from "../components/ProfileCompletionSteps";
+import "../styles/CandidateDashboard.css";
 import { 
   BarChart3, 
   Shield,
@@ -32,6 +39,44 @@ import {
   Download,
   Plus
 } from "lucide-react";
+
+// Helper function to convert Tailwind gradient classes to CSS class names
+const getProgressColorClass = (colorClass: string): string => {
+  // Check if colorClass is undefined or not a gradient class
+  if (!colorClass || !colorClass.includes('from-')) {
+    return 'progress-blue-cyan'; // Default fallback
+  }
+  
+  try {
+    const colors = colorClass.split(' ');
+    // Find the 'from-' and 'to-' parts
+    const fromPart = colors.find(c => c.startsWith('from-'));
+    const toPart = colors.find(c => c.startsWith('to-'));
+    
+    if (!fromPart || !toPart) {
+      return 'progress-blue-cyan'; // Default fallback if parts not found
+    }
+    
+    const fromColor = fromPart.replace('from-', '');
+    const toColor = toPart.replace('to-', '');
+    
+    // Map color combinations to the corresponding CSS classes
+    const colorMap: Record<string, string> = {
+      'blue-500 cyan-500': 'progress-blue-cyan',
+      'green-500 emerald-500': 'progress-green-emerald',
+      'purple-500 pink-500': 'progress-purple-pink',
+      'orange-500 red-500': 'progress-orange-red',
+      'indigo-500 purple-500': 'progress-indigo-purple',
+      'cyan-500 blue-500': 'progress-cyan-blue',
+      'pink-500 rose-500': 'progress-pink-rose'
+    };
+    
+    return colorMap[`${fromColor} ${toColor}`] || 'progress-blue-cyan'; // Default fallback
+  } catch (error) {
+    console.error('Error parsing color class:', error);
+    return 'progress-blue-cyan'; // Default fallback on error
+  }
+};
 
 const featureTypes = [
   { 
@@ -109,6 +154,7 @@ const featureTypes = [
 const CandidateDashboard = () => {
   const navigate = useNavigate();
   const { user, subscriptionStatus, subscriptionLoading } = useAuth();
+  const { defaultResume, profileStatus } = useResume();
   const [featureUsage, setFeatureUsage] = useState<Record<string, { usageCount: number; usageLimit: number }>>({});
   const [loadingUsage, setLoadingUsage] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -259,6 +305,72 @@ const CandidateDashboard = () => {
             </CardContent>
           </Card>
         </div>
+        
+        {/* Resume Reminder - Show for all users, with different content based on resume status */}
+        <div className="mb-8">
+          <Card className={`shadow-md ${
+            profileStatus && !profileStatus.hasResume 
+              ? "border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50" 
+              : "border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50"
+          }`}>
+            <CardContent className="p-6">
+              {profileStatus && !profileStatus.hasResume ? (
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <FileText className="w-6 h-6 text-amber-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-amber-800 mb-1">Get Started: Upload Your Resume</h3>
+                      <p className="text-amber-700">
+                        Upload your resume once to unlock all features and get personalized recommendations.
+                        Your resume will be available across all tools without having to upload it each time.
+                      </p>
+                    </div>
+                  </div>
+                  <Button 
+                    className="bg-amber-600 hover:bg-amber-700 text-white"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      // Open a modal or drawer instead of navigating away
+                      // For now, we'll just navigate but we should implement a modal in the future
+                      navigate('/account', { state: { returnTo: '/dashboard' } });
+                    }}
+                  >
+                    Upload Resume
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <CheckCircle2 className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-blue-800 mb-1">Resume Ready</h3>
+                      <p className="text-blue-700">
+                        Your default resume is set and ready to use with all our tools.
+                        You can manage or update your resume in the Account section.
+                      </p>
+                    </div>
+                  </div>
+                  <Button 
+                    variant="outline"
+                    className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      // Open a modal or drawer instead of navigating away
+                      // For now, we'll just navigate but we should implement a modal in the future
+                      navigate('/account', { state: { returnTo: '/dashboard' } });
+                    }}
+                  >
+                    Manage Resume
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -308,9 +420,9 @@ const CandidateDashboard = () => {
 
         {/* Tools Grid */}
         <div className="space-y-8">
-          <div className="text-center">
+          <div>
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Professional Career Tools</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
+            <p className="text-gray-600 max-w-3xl">
               Powerful AI-driven tools designed to help you stand out in today's competitive job market
             </p>
           </div>
@@ -372,12 +484,9 @@ const CandidateDashboard = () => {
                       </div>
                       
                       {!isUnlimited && (
-                        <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="usage-progress-bar">
                           <div 
-                            className={`h-2 rounded-full transition-all duration-300 bg-gradient-to-r ${
-                              isBlocked ? 'from-red-400 to-red-500' : feature.color
-                            }`}
-                            style={{ width: `${Math.min((usage.usageCount / usage.usageLimit) * 100, 100)}%` }}
+                            className={`usage-progress-indicator ${isBlocked ? 'blocked' : getProgressColorClass(feature.color)} progress-width-${Math.min(Math.floor((usage.usageCount / usage.usageLimit) * 10) * 10, 100)}`}
                           ></div>
                         </div>
                       )}

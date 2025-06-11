@@ -24,6 +24,8 @@ namespace ResumeAI.API.Models
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
         [JsonPropertyName("email")]
         public string Email { get; set; } = string.Empty;
+        [JsonPropertyName("default_resume_blob_name")]
+        public string? DefaultResumeBlobName { get; set; } = string.Empty;
         // New fields to track usage limits
     
     }

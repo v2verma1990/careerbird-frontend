@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth/AuthContext";
+import { useResume } from "@/contexts/resume/ResumeContext";
 import api from "@/utils/apiClient";
 import ResumeFileUploader from "@/components/ResumeFileUploader";
 import { 
@@ -35,12 +36,22 @@ const ResumeCustomizer = () => {
   const [featureUsage, setFeatureUsage] = useState<{ usageCount: number; usageLimit: number }>({ usageCount: 0, usageLimit: 0 });
   const [loadingUsage, setLoadingUsage] = useState(true);
   const [customizeReport, setCustomizeReport] = useState<any>(null);
+  const [useDefaultResume, setUseDefaultResume] = useState(false);
   const { toast } = useToast();
   const { user, subscriptionStatus, incrementUsageCount } = useAuth();
+  const { defaultResume } = useResume();
 
-  const handleFileSelected = async (file: File) => {
+  const handleFileSelected = async (file: File | null) => {
     setResumeFile(file);
-    setResumeText("[PDF text will be extracted here]");
+    if (file) {
+      setResumeText("[PDF text will be extracted here]");
+    } else {
+      setResumeText("");
+    }
+  };
+  
+  const handleUseDefaultResumeChange = (useDefault: boolean) => {
+    setUseDefaultResume(useDefault);
   };
 
   const handleJobDescriptionFileSelected = async (file: File) => {
@@ -62,11 +73,20 @@ const ResumeCustomizer = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!resumeFile) {
+    if (!resumeFile && !useDefaultResume) {
       toast({
         variant: "destructive",
         title: "Missing resume file",
-        description: "Please upload your resume as a PDF file.",
+        description: "Please upload your resume or use your default resume.",
+      });
+      return;
+    }
+    
+    if (useDefaultResume && !defaultResume) {
+      toast({
+        variant: "destructive",
+        title: "Default Resume Not Found",
+        description: "Your default resume could not be found. Please upload a resume file.",
       });
       return;
     }
@@ -164,7 +184,12 @@ const ResumeCustomizer = () => {
                   <Label htmlFor="resumeFile" className="text-base font-medium">
                     Your Resume *
                   </Label>
-                  <ResumeFileUploader onFileSelected={handleFileSelected} disabled={isLoading} />
+                  <ResumeFileUploader 
+                    onFileSelected={handleFileSelected} 
+                    onUseDefaultResumeChange={handleUseDefaultResumeChange}
+                    disabled={isLoading} 
+                    showDefaultResumeOption={true}
+                  />
                   {resumeFile && (
                     <div className="mt-3 p-4 bg-green-50 rounded-lg border border-green-200">
                       <div className="flex items-center gap-3">
@@ -172,6 +197,17 @@ const ResumeCustomizer = () => {
                         <div>
                           <p className="font-medium text-green-800">{resumeFile.name}</p>
                           <p className="text-sm text-green-600">Ready for customization</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {useDefaultResume && defaultResume && (
+                    <div className="mt-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="flex items-center gap-3">
+                        <CheckCircle className="w-5 h-5 text-blue-600" />
+                        <div>
+                          <p className="font-medium text-blue-800">Using your default resume</p>
+                          <p className="text-sm text-blue-600">{defaultResume.fileName}</p>
                         </div>
                       </div>
                     </div>

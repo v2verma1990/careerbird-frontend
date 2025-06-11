@@ -1,6 +1,10 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, SUPABASE_URL } from "@/integrations/supabase/client";
+
+// Re-export the SUPABASE_URL for use in other files
+export { SUPABASE_URL };
 
 // Base URL for API calls
+// Try HTTP if HTTPS is causing certificate issues
 const API_BASE_URL = "https://localhost:5001/api"; // Local development URL
 
 // Backend is always running in production environment
@@ -52,24 +56,52 @@ async function apiCall<T>(
 
     if (!response.ok) {
       let errorMsg = `Request failed with status ${response.status}`;
+      let errorDetails = '';
+      
       try {
-        const errorJson = await response.json();
-        if (errorJson?.error) {
-          try {
-            const nestedError = JSON.parse(errorJson.error);
-            if (nestedError?.detail) {
-              errorMsg = nestedError.detail;
+        // Try to get the response as JSON first
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const errorJson = await response.json();
+          console.error("API error response (JSON):", errorJson);
+          
+          if (errorJson?.error) {
+            try {
+              const nestedError = JSON.parse(errorJson.error);
+              if (nestedError?.detail) {
+                errorMsg = nestedError.detail;
+                errorDetails = JSON.stringify(nestedError);
+              }
+            } catch {
+              errorMsg = errorJson.error;
+              errorDetails = JSON.stringify(errorJson);
             }
-          } catch {
-            errorMsg = errorJson.error;
+          } else if (errorJson?.detail) {
+            errorMsg = errorJson.detail;
+            errorDetails = JSON.stringify(errorJson);
+          } else if (errorJson?.message) {
+            errorMsg = errorJson.message;
+            errorDetails = JSON.stringify(errorJson);
+          } else {
+            errorDetails = JSON.stringify(errorJson);
           }
-        } else if (errorJson?.detail) {
-          errorMsg = errorJson.detail;
+        } else {
+          // If not JSON, get as text
+          const errorText = await response.text();
+          console.error("API error response (Text):", errorText);
+          errorMsg = errorText || errorMsg;
+          errorDetails = errorText;
         }
-      } catch {
-        errorMsg = await response.text();
+      } catch (parseError) {
+        console.error("Error parsing error response:", parseError);
+        try {
+          errorMsg = await response.text() || errorMsg;
+        } catch {
+          // If all else fails, just use the status code message
+        }
       }
-
+      
+      console.error(`API Error (${response.status}):`, errorMsg, errorDetails ? `Details: ${errorDetails}` : '');
       return { data: null, error: errorMsg };
     }
 
@@ -118,6 +150,390 @@ async function apiCall<T>(
 
 // Create API client with methods for different endpoints
 export const api = {
+  profileMetadata: {
+    // Get the user's default resume
+    getDefaultResume: async () => {
+      try {
+        console.log(`[${new Date().toISOString()}] API CALL: GET /ProfileMetadata`);
+        // Use the REST API endpoint instead of direct Supabase query
+        const { data, error } = await apiCall<any>("GET", "/ProfileMetadata");
+        
+        if (error) {
+          console.error("Error from ProfileMetadata API:", error);
+          return { data: null, error };
+        }
+        
+        console.log("Raw ProfileMetadata response:", data);
+        
+        if (!data || data.exists === false) {
+          console.log("No profile metadata exists");
+          return { 
+            data: null, 
+            error: null,
+            profileStatus: data?.profileStatus || {
+              hasResume: false,
+              hasBasicInfo: false,
+              hasDetailedInfo: false,
+              completionPercentage: 0
+            }
+          };
+        }
+        
+        // Handle array response
+        const responseData = Array.isArray(data) ? data[0] : data;
+        console.log("Profile metadata response content:", JSON.stringify(data));
+        
+        if (!responseData) {
+          console.log("No profile metadata exists after processing");
+          return { 
+            data: null, 
+            error: null,
+            profileStatus: {
+              hasResume: false,
+              hasBasicInfo: false,
+              hasDetailedInfo: false,
+              completionPercentage: 0
+            }
+          };
+        }
+        
+        // Extract the metadata from the response
+        const metadataObj = responseData.metadata || responseData;
+        
+        // Check if we have resume file information
+        const hasResumeFile = metadataObj.fileName || metadataObj.file_name;
+        const blobPath = metadataObj.blobPath || metadataObj.blob_path;
+        
+        console.log("Resume file check:", { 
+          fileName: metadataObj.fileName || metadataObj.file_name, 
+          blobPath: blobPath,
+          hasResumeFile
+        });
+        
+        // Construct a proper fileUrl if it's missing but we have a blobPath
+        let fileUrl = metadataObj.fileUrl || metadataObj.file_url;
+        
+        if (!fileUrl && blobPath) {
+          console.log("API Client: No fileUrl found, constructing from blobPath:", blobPath);
+          
+          if (blobPath.startsWith('http')) {
+            // If it's already a full URL
+            fileUrl = blobPath;
+          } else if (blobPath.includes('storage/')) {
+            // If it's a Supabase storage path
+            // Use the imported SUPABASE_URL constant
+            fileUrl = `${SUPABASE_URL}/storage/v1/object/public/${blobPath}`;
+          } else {
+            // Default API endpoint
+            fileUrl = `/api/files/${blobPath}`;
+          }
+          
+          console.log("API Client: Constructed fileUrl:", fileUrl);
+        }
+        
+        // Transform the data to match the expected format
+        const transformedData = {
+          fileUrl: fileUrl,
+          fileName: metadataObj.fileName || metadataObj.file_name,
+          fileSize: metadataObj.fileSize || metadataObj.file_size,
+          uploadDate: metadataObj.uploadDate || metadataObj.upload_date,
+          blobPath: blobPath,
+          metadata: {
+            jobTitle: metadataObj.jobTitle || metadataObj.job_title || '',
+            currentCompany: metadataObj.currentCompany || metadataObj.current_company || '',
+            yearsOfExperience: metadataObj.yearsOfExperience || metadataObj.years_of_experience || '',
+            professionalBio: metadataObj.professionalBio || metadataObj.professional_bio || '',
+            location: metadataObj.location || '',
+            phoneNumber: metadataObj.phoneNumber || metadataObj.phone_number || '',
+            skills: metadataObj.skills || [],
+            lastUpdated: metadataObj.lastUpdated || metadataObj.last_updated || new Date().toISOString()
+          }
+        };
+        
+        console.log("Transformed resume data:", transformedData);
+        
+        return { 
+          data: hasResumeFile ? transformedData : null, 
+          error: null,
+          profileStatus: responseData.profileStatus
+        };
+      } catch (error) {
+        console.error("Error fetching default resume:", error);
+        return { data: null, error: "Failed to fetch default resume" };
+      }
+    },
+    
+    // Upload a new default resume
+    uploadDefaultResume: async (file: File) => {
+      try {
+        // Get the user ID properly by awaiting the Promise
+        const { data: userData } = await supabase.auth.getUser();
+        const userId = userData?.user?.id;
+        
+        if (!userId) {
+          return { data: null, error: "User not authenticated" };
+        }
+        
+        // Create a fixed file path structure that NEVER changes for a user
+        // This ensures we always replace the same file and don't create new ones
+        // Extract file extension to preserve it for proper content-type detection
+        const fileExtension = file.name.split('.').pop()?.toLowerCase() || '';
+        const filePath = `${userId}_default_resume.${fileExtension || 'pdf'}`;
+        
+        console.log(`Using fixed file path: ${filePath}`);
+        
+        // First, check if there's an existing resume to delete
+        const { data: profileData, error: getError } = await apiCall<any>("GET", "/ProfileMetadata");
+        
+        // If there's an existing file, delete it first
+        if (profileData?.blobPath) {
+          console.log(`Deleting existing file from path: ${profileData.blobPath}`);
+          
+          try {
+            const { error: deleteError } = await supabase.storage
+              .from('user-resumes')
+              .remove([profileData.blobPath]);
+              
+            if (deleteError) {
+              console.error("Error deleting existing file from storage:", deleteError);
+              // Continue anyway, as we'll upload a new file
+            } else {
+              console.log("Existing file deleted successfully from storage");
+            }
+          } catch (storageError) {
+            console.error("Exception deleting existing file from storage:", storageError);
+            // Continue anyway, as we'll upload a new file
+          }
+        }
+        
+        // Wait a moment to ensure deletion is processed
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        console.log(`Uploading file to path: ${filePath}`);
+        
+        // First try to delete the file if it exists (as a safety measure)
+        try {
+          await supabase.storage
+            .from('user-resumes')
+            .remove([filePath]);
+          console.log("Cleaned up any existing file at the target path");
+        } catch (error) {
+          // Ignore errors here, as the file might not exist
+        }
+        
+        // Now upload the new file
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('user-resumes')
+          .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: true
+          });
+        
+        if (uploadError) {
+          return { data: null, error: uploadError.message };
+        }
+        
+        // Get the public URL for the file
+        const { data: urlData } = await supabase.storage
+          .from('user-resumes')
+          .getPublicUrl(filePath);
+        
+        const fileUrl = urlData?.publicUrl;
+        
+        // Prepare the request payload
+        const fileInfoPayload = {
+          blobPath: filePath,
+          fileName: file.name,
+          fileSize: Math.floor(file.size), // Ensure fileSize is an integer
+          fileUrl: fileUrl
+        };
+        
+        console.log("Sending file info update request:", JSON.stringify(fileInfoPayload));
+        
+        // Update the file info using the API endpoint
+        const { data: result, error: updateError } = await apiCall<any>("PATCH", "/ProfileMetadata/file-info", fileInfoPayload);
+        
+        if (updateError) {
+          console.error("Error updating file info:", updateError);
+          
+          // If there was an error saving the metadata, delete the uploaded file
+          try {
+            await supabase.storage
+              .from('user-resumes')
+              .remove([filePath]);
+            console.log("Cleaned up uploaded file after metadata update failure");
+          } catch (cleanupError) {
+            console.error("Error cleaning up file after failed metadata update:", cleanupError);
+          }
+          
+          return { 
+            data: null, 
+            error: `Failed to update file metadata: ${updateError}. Please try again or contact support if the issue persists.` 
+          };
+        }
+        
+        // Make sure we have a valid fileUrl
+        if (!fileUrl) {
+          console.error("No fileUrl returned from Supabase");
+          return { 
+            data: null, 
+            error: "Failed to get file URL. Please try again or contact support." 
+          };
+        }
+        
+        // Transform the data to match the expected format
+        const transformedData = {
+          fileUrl: fileUrl,
+          fileName: file.name,
+          fileSize: file.size,
+          uploadDate: new Date().toISOString(),
+          blobPath: filePath,
+          metadata: {
+            jobTitle: result.jobTitle || "",
+            currentCompany: result.currentCompany || "",
+            yearsOfExperience: result.yearsOfExperience || "",
+            professionalBio: result.professionalBio || "",
+            location: result.location || "",
+            phoneNumber: result.phoneNumber || "",
+            skills: result.skills || [],
+            lastUpdated: result.lastUpdated || new Date().toISOString()
+          }
+        };
+        
+        // Log the transformed data to help with debugging
+        console.log("Resume data after upload:", JSON.stringify({
+          fileUrl: transformedData.fileUrl,
+          fileName: transformedData.fileName,
+          blobPath: transformedData.blobPath
+        }));
+        
+        return { data: transformedData, error: null };
+      } catch (error) {
+        console.error("Error uploading default resume:", error);
+        return { data: null, error: "Failed to upload default resume" };
+      }
+    },
+    
+    // Delete the user's default resume
+    deleteDefaultResume: async () => {
+      try {
+        // First get the current profile metadata to get the blob path
+        const { data: profileData, error: getError } = await apiCall<any>("GET", "/ProfileMetadata");
+        
+        if (getError) {
+          return { error: getError };
+        }
+        
+        // Delete the file from storage
+        if (profileData.blobPath) {
+          console.log(`Deleting file from path: ${profileData.blobPath}`);
+          
+          try {
+            const { data, error } = await supabase.storage
+              .from('user-resumes')
+              .remove([profileData.blobPath]);
+              
+            if (error) {
+              console.error("Error deleting file from storage:", error);
+            } else {
+              console.log("File deleted successfully from storage");
+            }
+          } catch (storageError) {
+            console.error("Exception deleting file from storage:", storageError);
+          }
+        }
+        
+        // Delete the metadata record using the API
+        const { data, error: deleteError } = await apiCall<any>("DELETE", "/ProfileMetadata");
+        
+        if (deleteError) {
+          return { error: deleteError };
+        }
+        
+        return { error: null };
+      } catch (error) {
+        console.error("Error deleting default resume:", error);
+        return { error: "Failed to delete default resume" };
+      }
+    },
+    
+    // Alias for deleteDefaultResume to maintain compatibility with existing code
+    clearDefaultResume: async () => {
+      console.log(`[${new Date().toISOString()}] API CALL: clearDefaultResume (delegating to deleteDefaultResume)`);
+      return await api.profileMetadata.deleteDefaultResume();
+    },
+    
+    // Update resume metadata
+    updateResumeMetadata: async (metadata: Record<string, any>) => {
+      try {
+        // If no metadata fields are provided, just get the current metadata
+        if (Object.keys(metadata).length === 0) {
+          console.log("No metadata fields provided, getting current metadata");
+          return await api.profileMetadata.getDefaultResume();
+        }
+        
+        // Use the specific metadata update endpoint with PATCH method
+        // This endpoint is designed to update just the metadata fields
+        const { data: result, error } = await apiCall<any>("PATCH", "/ProfileMetadata/metadata", {
+          // Include only the metadata fields being updated
+          jobTitle: metadata.jobTitle,
+          currentCompany: metadata.currentCompany,
+          yearsOfExperience: metadata.yearsOfExperience,
+          professionalBio: metadata.professionalBio,
+          location: metadata.location,
+          phoneNumber: metadata.phoneNumber,
+          skills: metadata.skills
+        });
+        
+        if (error) {
+          return { data: null, error };
+        }
+        
+        console.log("Profile metadata update response:", JSON.stringify(result));
+        
+        // Handle array response
+        const responseData = Array.isArray(result) ? result[0] : result;
+        
+        if (!responseData) {
+          console.log("No data returned from metadata update, using provided metadata");
+          // If no response data, use the provided metadata
+          return { 
+            data: { 
+              metadata: {
+                ...metadata,
+                lastUpdated: new Date().toISOString()
+              }
+            }, 
+            error: null 
+          };
+        }
+        
+        // Extract the metadata object from the response
+        const metadataObj = responseData.metadata || responseData;
+        console.log("Metadata object from update:", JSON.stringify(metadataObj, null, 2));
+        
+        // Transform the data to match the expected format
+        const transformedData = {
+          metadata: {
+            jobTitle: metadataObj.jobTitle || metadataObj.job_title || metadata.jobTitle || '',
+            currentCompany: metadataObj.currentCompany || metadataObj.current_company || metadata.currentCompany || '',
+            yearsOfExperience: metadataObj.yearsOfExperience || metadataObj.years_of_experience || metadata.yearsOfExperience || '',
+            professionalBio: metadataObj.professionalBio || metadataObj.professional_bio || metadata.professionalBio || '',
+            location: metadataObj.location || metadata.location || '',
+            phoneNumber: metadataObj.phoneNumber || metadataObj.phone_number || metadata.phoneNumber || '',
+            skills: metadataObj.skills || metadata.skills || [],
+            lastUpdated: metadataObj.lastUpdated || metadataObj.last_updated || new Date().toISOString()
+          }
+        };
+        
+        return { data: transformedData, error: null };
+      } catch (error) {
+        console.error("Error updating resume metadata:", error);
+        return { data: null, error: "Failed to update resume metadata" };
+      }
+    }
+  },
+  
   auth: {
     // ... keep existing code (auth methods)
     getCurrentUser: () => {
@@ -520,17 +936,66 @@ export const api = {
     }
   },
   resume: {
-    analyze: (file: File, jobDescription: string, plan?: string) =>
-      apiCall<any>("POST", "/resume/analyze", { file, jobDescription, plan }),
-    optimize: async (file: File, plan?: string) => {
+    // Default resume management
+    getDefaultResume: () => apiCall<any>("GET", "/resume/default"),
+    
+    uploadDefaultResume: async (file: File) => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        const headers: Record<string, string> = {};
+        if (session?.access_token) {
+          headers["Authorization"] = `Bearer ${session.access_token}`;
+        }
+        
+        const response = await fetch(`${API_BASE_URL}/resume/default`, {
+          method: 'POST',
+          headers,
+          body: formData,
+          credentials: "include"
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          return { data: null, error: errorText };
+        }
+        
+        const data = await response.json();
+        return { data, error: null };
+      } catch (error) {
+        console.error("Default resume upload error:", error);
+        return { 
+          data: null, 
+          error: error instanceof Error ? error.message : "Failed to upload default resume" 
+        };
+      }
+    },
+    
+    deleteDefaultResume: () => apiCall<any>("DELETE", "/resume/default"),
+    
+    // Existing resume methods
+    analyze: (file: File, jobDescription: string, plan?: string, useDefaultResume?: boolean) =>
+      apiCall<any>("POST", "/resume/analyze", { file, jobDescription, plan, useDefaultResume }),
+    
+    optimize: async (file: File, plan?: string, useDefaultResume?: boolean) => {
       const { data: { session } } = await supabase.auth.getSession();
       const formData = new FormData();
-      formData.append("File", file);
+      
+      if (!useDefaultResume) {
+        formData.append("File", file);
+      } else {
+        formData.append("useDefaultResume", "true");
+      }
+      
       if (plan) formData.append("plan", plan);
+      
       const headers: Record<string, string> = {};
       if (session?.access_token) {
         headers["Authorization"] = `Bearer ${session.access_token}`;
       }
+      
       return fetch(`${API_BASE_URL}/resume/optimize`, {
         method: "POST",
         headers,
@@ -541,10 +1006,17 @@ export const api = {
         return response.ok ? { data, error: null } : { data: null, error: data?.error || "Error optimizing resume" };
       });
     },
-    customize: async (file: File, jobDescription?: string, jobDescriptionFile?: File, plan?: string) => {
+    
+    customize: async (file: File, jobDescription?: string, jobDescriptionFile?: File, plan?: string, useDefaultResume?: boolean) => {
       const { data: { session } } = await supabase.auth.getSession();
       const formData = new FormData();
-      formData.append("File", file); // Backend expects 'File' (capital F)
+      
+      if (!useDefaultResume) {
+        formData.append("File", file); // Backend expects 'File' (capital F)
+      } else {
+        formData.append("useDefaultResume", "true");
+      }
+      
       if (jobDescription) formData.append("JobDescription", jobDescription);
       if (jobDescriptionFile) formData.append("JobDescriptionFile", jobDescriptionFile);
       if (plan) formData.append("plan", plan);

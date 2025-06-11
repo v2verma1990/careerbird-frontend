@@ -280,6 +280,38 @@ namespace ResumeAI.API.Services
             }
         }
         
+        /// <summary>
+        /// Updates specific fields of a user profile without overwriting the entire profile.
+        /// </summary>
+        /// <param name="userId">The user's ID</param>
+        /// <param name="defaultResumeBlobName">Optional. The blob name of the default resume.</param>
+        /// <returns>The updated UserProfile</returns>
+        public async Task<UserProfile> UpdateUserProfileAsync(string userId, string? defaultResumeBlobName = null)
+        {
+            try
+            {
+                Console.WriteLine($"UpdateUserProfileAsync for user ID: {userId}");
+                
+                // Get the current profile
+                var profile = await GetUserProfileAsync(userId);
+                
+                // Update only the specified fields
+                // Since defaultResumeBlobName is nullable, we can directly assign it
+                profile.DefaultResumeBlobName = defaultResumeBlobName;
+                
+                // Always update the timestamp
+                profile.UpdatedAt = DateTime.UtcNow;
+                
+                // Save the updated profile
+                return await AddOrUpdateUserProfileAsync(profile);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception in UpdateUserProfileAsync: {ex.Message}");
+                return new UserProfile { Id = userId };
+            }
+        }
+        
         // Subscription methods
         public async Task<List<Subscription>> GetAllUserSubscriptionsAsync(string userId)
         {

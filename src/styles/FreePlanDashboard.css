@@ -1,0 +1,46 @@
+/* Progress bar styles */
+.usage-progress-bar {
+  width: 100%;
+  background-color: #e2e8f0; /* slate-200 */
+  border-radius: 9999px;
+  height: 0.5rem;
+  margin-top: 0.5rem;
+  overflow: hidden;
+}
+
+.usage-progress-fill {
+  height: 0.5rem;
+  border-radius: 9999px;
+  transition: all 300ms;
+}
+
+.usage-progress-fill.blocked {
+  background-color: #ef4444; /* red-500 */
+}
+
+.usage-progress-fill.active {
+  background-image: linear-gradient(to right, #3b82f6, #6366f1); /* from-blue-500 to-indigo-500 */
+}
+
+/* Progress percentage classes */
+.usage-progress-0 { width: 0%; }
+.usage-progress-5 { width: 5%; }
+.usage-progress-10 { width: 10%; }
+.usage-progress-15 { width: 15%; }
+.usage-progress-20 { width: 20%; }
+.usage-progress-25 { width: 25%; }
+.usage-progress-30 { width: 30%; }
+.usage-progress-35 { width: 35%; }
+.usage-progress-40 { width: 40%; }
+.usage-progress-45 { width: 45%; }
+.usage-progress-50 { width: 50%; }
+.usage-progress-55 { width: 55%; }
+.usage-progress-60 { width: 60%; }
+.usage-progress-65 { width: 65%; }
+.usage-progress-70 { width: 70%; }
+.usage-progress-75 { width: 75%; }
+.usage-progress-80 { width: 80%; }
+.usage-progress-85 { width: 85%; }
+.usage-progress-90 { width: 90%; }
+.usage-progress-95 { width: 95%; }
+.usage-progress-100 { width: 100%; }

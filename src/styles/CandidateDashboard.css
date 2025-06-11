@@ -1,4 +1,66 @@
 .dashboard-title {
-font-weight: bold;
-font-size: 2rem;
+  font-weight: bold;
+  font-size: 2rem;
 }
+
+.usage-progress-bar {
+  width: 100%;
+  background-color: #e5e7eb; /* bg-gray-200 */
+  border-radius: 9999px; /* rounded-full */
+  height: 0.5rem; /* h-2 */
+}
+
+.usage-progress-indicator {
+  height: 0.5rem; /* h-2 */
+  border-radius: 9999px; /* rounded-full */
+  transition-property: all;
+  transition-duration: 300ms; /* duration-300 */
+  width: 0%; /* Default width, will be overridden by specific classes */
+}
+
+/* Blocked state */
+.usage-progress-indicator.blocked {
+  background-image: linear-gradient(to right, #f87171, #ef4444); /* from-red-400 to-red-500 */
+}
+
+/* Feature-specific gradient classes */
+.progress-blue-cyan {
+  background-image: linear-gradient(to right, #3b82f6, #06b6d4); /* from-blue-500 to-cyan-500 */
+}
+
+.progress-green-emerald {
+  background-image: linear-gradient(to right, #10b981, #059669); /* from-green-500 to-emerald-500 */
+}
+
+.progress-purple-pink {
+  background-image: linear-gradient(to right, #8b5cf6, #ec4899); /* from-purple-500 to-pink-500 */
+}
+
+.progress-orange-red {
+  background-image: linear-gradient(to right, #f97316, #ef4444); /* from-orange-500 to-red-500 */
+}
+
+.progress-indigo-purple {
+  background-image: linear-gradient(to right, #6366f1, #8b5cf6); /* from-indigo-500 to-purple-500 */
+}
+
+.progress-cyan-blue {
+  background-image: linear-gradient(to right, #06b6d4, #3b82f6); /* from-cyan-500 to-blue-500 */
+}
+
+.progress-pink-rose {
+  background-image: linear-gradient(to right, #ec4899, #f43f5e); /* from-pink-500 to-rose-500 */
+}
+
+/* Width classes for progress bars */
+.progress-width-0 { width: 0%; }
+.progress-width-10 { width: 10%; }
+.progress-width-20 { width: 20%; }
+.progress-width-30 { width: 30%; }
+.progress-width-40 { width: 40%; }
+.progress-width-50 { width: 50%; }
+.progress-width-60 { width: 60%; }
+.progress-width-70 { width: 70%; }
+.progress-width-80 { width: 80%; }
+.progress-width-90 { width: 90%; }
+.progress-width-100 { width: 100%; }

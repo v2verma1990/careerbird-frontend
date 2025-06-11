@@ -7,6 +7,8 @@ import { useAuth } from "@/contexts/auth/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import api from "@/utils/apiClient";
+import DefaultResumeUploader from "@/components/DefaultResumeUploader";
+import "@/styles/FreePlanDashboard.css";
 import { 
   User, 
   Settings, 
@@ -203,6 +205,11 @@ const FreePlanDashboard = () => {
             </Card>
           </div>
         </div>
+        
+        {/* Default Resume Uploader */}
+        <div className="mb-8">
+          <DefaultResumeUploader />
+        </div>
 
         {/* Upgrade Prompt */}
         {upgradePrompt && (
@@ -253,13 +260,19 @@ const FreePlanDashboard = () => {
                     </span>
                   </div>
                   
-                  <div className="w-full bg-slate-200 rounded-full h-2 mt-2">
-                    <div 
-                      className={`h-2 rounded-full transition-all duration-300 ${
-                        isBlocked ? 'bg-red-500' : 'bg-gradient-to-r from-blue-500 to-indigo-500'
-                      }`}
-                      style={{ width: `${Math.min((usage.usageCount / usage.usageLimit) * 100, 100)}%` }}
-                    ></div>
+                  <div className="usage-progress-bar">
+                    {(() => {
+                      // Calculate percentage and round to nearest 5%
+                      const percentage = Math.min((usage.usageCount / usage.usageLimit) * 100, 100);
+                      const roundedPercentage = Math.round(percentage / 5) * 5;
+                      return (
+                        <div 
+                          className={`usage-progress-fill usage-progress-${roundedPercentage} ${
+                            isBlocked ? 'blocked' : 'active'
+                          }`}
+                        ></div>
+                      );
+                    })()}
                   </div>
                 </CardContent>
                 

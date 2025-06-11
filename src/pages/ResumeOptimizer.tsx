@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth/AuthContext";
+import { useResume } from "@/contexts/resume/ResumeContext";
 import api from "@/utils/apiClient";
 import ResumeFileUploader from "@/components/ResumeFileUploader";
 import { 
@@ -36,12 +37,22 @@ const ResumeOptimizer = () => {
   const [featureUsage, setFeatureUsage] = useState<{ usageCount: number; usageLimit: number }>({ usageCount: 0, usageLimit: 0 });
   const [loadingUsage, setLoadingUsage] = useState(true);
   const [optimizeReport, setOptimizeReport] = useState<any>(null);
+  const [useDefaultResume, setUseDefaultResume] = useState(false);
   const { toast } = useToast();
   const { user, subscriptionStatus, incrementUsageCount } = useAuth();
+  const { defaultResume } = useResume();
 
-  const handleFileSelected = async (file: File) => {
+  const handleFileSelected = async (file: File | null) => {
     setResumeFile(file);
-    setResumeText("[PDF text will be extracted here]");
+    if (file) {
+      setResumeText("[PDF text will be extracted here]");
+    } else {
+      setResumeText("");
+    }
+  };
+  
+  const handleUseDefaultResumeChange = (useDefault: boolean) => {
+    setUseDefaultResume(useDefault);
   };
 
   useEffect(() => {
@@ -59,11 +70,20 @@ const ResumeOptimizer = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!resumeFile) {
+    if (!resumeFile && !useDefaultResume) {
       toast({
         variant: "destructive",
         title: "Missing resume file",
-        description: "Please upload your resume as a PDF file.",
+        description: "Please upload your resume or use your default resume.",
+      });
+      return;
+    }
+    
+    if (useDefaultResume && !defaultResume) {
+      toast({
+        variant: "destructive",
+        title: "Default Resume Not Found",
+        description: "Your default resume could not be found. Please upload a resume file.",
       });
       return;
     }

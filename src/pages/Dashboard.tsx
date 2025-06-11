@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/auth/AuthContext";
 import { UserPlus, FileText, FileSearch, Upload, MessageSquare, PieChart, Settings, User, Crown, Zap, TrendingUp, Award, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import api from "@/utils/apiClient";
+import ProgressBar from "@/components/ProgressBar";
 import "@/styles/Dashboard.css";
 
 const Dashboard = () => {
@@ -343,12 +344,10 @@ const Dashboard = () => {
                 </CardHeader>
                 
                 <CardContent className="space-y-4">
-                  <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
-                    <div
-                      className={`h-full rounded-full bg-gradient-to-r ${feature.gradient} transition-all duration-500 ease-out`}
-                      style={{ width: `${progressPercentage}%` }}
-                    ></div>
-                  </div>
+                  <ProgressBar 
+                    percentage={progressPercentage} 
+                    gradientClasses={feature.gradient} 
+                  />
                   
                   <div className="text-center">
                     <div className="text-sm font-medium text-gray-900">

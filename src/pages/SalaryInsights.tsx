@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth/AuthContext";
+import { useResume } from "@/contexts/resume/ResumeContext";
 import api, { IS_BACKEND_RUNNING } from "@/utils/apiClient";
 import ResumeFileUploader from "@/components/ResumeFileUploader";
 import { 
@@ -37,11 +38,17 @@ const SalaryInsights = () => {
   const [featureUsage, setFeatureUsage] = useState<{ usageCount: number; usageLimit: number }>({ usageCount: 0, usageLimit: 0 });
   const [loadingUsage, setLoadingUsage] = useState(true);
   const [salaryReport, setSalaryReport] = useState<any>(null);
+  const [useDefaultResume, setUseDefaultResume] = useState(false);
   const { toast } = useToast();
   const { user, subscriptionStatus, incrementUsageCount } = useAuth();
+  const { defaultResume } = useResume();
 
-  const handleFileSelected = async (file: File) => {
+  const handleFileSelected = async (file: File | null) => {
     setResumeFile(file);
+  };
+  
+  const handleUseDefaultResumeChange = (useDefault: boolean) => {
+    setUseDefaultResume(useDefault);
   };
 
   useEffect(() => {
@@ -290,12 +297,25 @@ const SalaryInsights = () => {
                     <FileText className="w-4 h-4 text-green-600" />
                     Your Resume (Optional)
                   </Label>
-                  <ResumeFileUploader onFileSelected={handleFileSelected} disabled={isLoading} />
+                  <ResumeFileUploader 
+                    onFileSelected={handleFileSelected} 
+                    onUseDefaultResumeChange={handleUseDefaultResumeChange}
+                    disabled={isLoading} 
+                    showDefaultResumeOption={true}
+                  />
                   {resumeFile && (
                     <div className="mt-2 p-3 bg-green-50 rounded-lg border border-green-200">
                       <div className="flex items-center gap-2 text-green-800">
                         <CheckCircle className="w-4 h-4" />
                         <span className="text-sm font-medium">{resumeFile.name}</span>
+                      </div>
+                    </div>
+                  )}
+                  {useDefaultResume && defaultResume && (
+                    <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="flex items-center gap-2 text-blue-800">
+                        <CheckCircle className="w-4 h-4" />
+                        <span className="text-sm font-medium">Using your default resume: {defaultResume.fileName}</span>
                       </div>
                     </div>
                   )}

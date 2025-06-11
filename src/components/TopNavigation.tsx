@@ -1,9 +1,11 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/auth/AuthContext';
+import { useResume } from '@/contexts/resume/ResumeContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import ProfileStatusIndicator from '@/components/ProfileStatusIndicator';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,12 +24,14 @@ import {
   Calendar,
   ChevronDown,
   Bell,
-  HelpCircle
+  HelpCircle,
+  FileText
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const TopNavigation = () => {
   const { user, subscriptionStatus, signOut } = useAuth();
+  const { profileStatus } = useResume();
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -87,6 +91,13 @@ const TopNavigation = () => {
 
           {/* Right side */}
           <div className="flex items-center space-x-4">
+            {/* Profile Status Indicator - Only show for logged in users */}
+            {user && (
+              <div className="hidden md:block">
+                <ProfileStatusIndicator profileStatus={profileStatus} />
+              </div>
+            )}
+            
             {/* Notifications */}
             <Button variant="ghost" size="sm" className="relative">
               <Bell className="w-5 h-5 text-gray-600" />
@@ -171,10 +182,10 @@ const TopNavigation = () => {
                 {/* Menu Items */}
                 <DropdownMenuItem 
                   className="flex items-center px-4 py-3 hover:bg-gray-50 cursor-pointer"
-                  onClick={() => navigate('/profile')}
+                  onClick={() => navigate('/account')}
                 >
                   <User className="w-4 h-4 mr-3 text-gray-500" />
-                  <span className="text-sm">Profile Settings</span>
+                  <span className="text-sm">Profile & Resume</span>
                 </DropdownMenuItem>
 
                 <DropdownMenuItem 

@@ -85,6 +85,26 @@ builder.Services.AddSingleton<RecruiterSubscriptionService>();
 builder.Services.AddSingleton<CandidateSubscriptionService>();
 builder.Services.AddSingleton<ResumeBuilderService>();
 
+// Configure storage service based on configuration
+var storageProvider = builder.Configuration["Storage:Provider"] ?? "AzureBlobStorage";
+if (string.Equals(storageProvider, "Supabase", StringComparison.OrdinalIgnoreCase))
+{
+    Console.WriteLine("Using Supabase Storage provider");
+    builder.Services.AddHttpClient<SupabaseStorageService>();
+    builder.Services.AddSingleton<IStorageService, SupabaseStorageService>();
+}
+else if (string.Equals(storageProvider, "AzureBlobStorage", StringComparison.OrdinalIgnoreCase))
+{
+    Console.WriteLine("Using Azure Blob Storage provider");
+    builder.Services.AddSingleton<IStorageService, BlobStorageService>();
+}
+else
+{
+    throw new InvalidOperationException($"Unknown storage provider: {storageProvider}. Valid options are 'Supabase' or 'AzureBlobStorage'.");
+}
+
+builder.Services.AddSingleton<ProfileMetadataService>();
+
 // Add health endpoint
 builder.Services.AddHealthChecks();
 builder.Services.AddSwaggerGen(c =>

@@ -1,7 +1,8 @@
-
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/contexts/auth/AuthContext';
+import { ResumeProvider } from '@/contexts/resume/ResumeContext';
 import { Toaster } from '@/components/ui/toaster';
 import CookieConsent from '@/components/CookieConsent';
 
@@ -17,6 +18,7 @@ import FreePlanDashboard from '@/pages/FreePlanDashboard';
 import Profile from '@/pages/Profile';
 import Settings from '@/pages/Settings';
 import Upgrade from '@/pages/Upgrade';
+import AccountPage from '@/pages/AccountPage';
 import NotFound from '@/pages/NotFound';
 
 // Service pages
@@ -56,9 +58,10 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <Router>
         <AuthProvider>
-          <div className="App">
-            <Navbar />
-            <Routes>
+          <ResumeProvider>
+            <div className="App">
+              <Navbar />
+              <Routes>
               {/* Auth routes */}
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
@@ -114,6 +117,14 @@ const App = () => {
                 element={
                   <CandidateProtectedRoute>
                     <Settings />
+                  </CandidateProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/account" 
+                element={
+                  <CandidateProtectedRoute>
+                    <AccountPage />
                   </CandidateProtectedRoute>
                 } 
               />
@@ -207,9 +218,10 @@ const App = () => {
               <Route path="*" element={<NotFound />} />
             </Routes>
             
-            <Toaster />
-            <CookieConsent />
-          </div>
+              <Toaster />
+              <CookieConsent />
+            </div>
+          </ResumeProvider>
         </AuthProvider>
       </Router>
     </QueryClientProvider>
