@@ -94,14 +94,11 @@ const DefaultResumeUploader: React.FC = () => {
 
   const handleUpload = async () => {
     if (!file) return;
-    
     setUploading(true);
     setUploadProgress(10);
     setError(null);
-    
     try {
       const success = await uploadDefaultResume(file);
-      
       if (success) {
         setUploadProgress(100);
         toast({
@@ -112,6 +109,8 @@ const DefaultResumeUploader: React.FC = () => {
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
+        // Explicitly refresh context/UI after upload
+        await refreshDefaultResume();
       } else {
         setError("Failed to upload resume. Please try again.");
         setUploadProgress(0);
@@ -378,7 +377,6 @@ const DefaultResumeUploader: React.FC = () => {
                     Use my default resume
                   </Label>
                 </div>
-                
                 {useDefaultResume && (
                   <div className="p-3 bg-blue-50 border border-blue-100 rounded-md">
                     <div className="flex items-start gap-3">
@@ -394,7 +392,6 @@ const DefaultResumeUploader: React.FC = () => {
                     </div>
                   </div>
                 )}
-                
                 {!useDefaultResume && (
                   <div>
                     <div 
@@ -405,7 +402,6 @@ const DefaultResumeUploader: React.FC = () => {
                       <p className="text-gray-600 text-sm mb-1">Upload a different resume</p>
                       <p className="text-gray-500 text-xs">PDF, DOCX, DOC, TXT (Max 5MB)</p>
                     </div>
-                    
                     {file && (
                       <div className="mt-3 p-3 bg-blue-50 border border-blue-100 rounded-md">
                         <div className="flex items-center justify-between">
@@ -426,14 +422,12 @@ const DefaultResumeUploader: React.FC = () => {
                             <Trash2 className="w-3 h-3" />
                           </Button>
                         </div>
-                        
                         {uploading && (
                           <div className="mt-2">
                             <Progress value={uploadProgress} className="h-2" />
                             <p className="text-xs text-blue-700 mt-1">Uploading: {uploadProgress}%</p>
                           </div>
                         )}
-                        
                         {!uploading && (
                           <div className="mt-2">
                             <Button 
@@ -457,7 +451,6 @@ const DefaultResumeUploader: React.FC = () => {
                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
                   You don't have a default resume yet. Please upload one.
                 </p>
-                
                 <div 
                   className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-400 transition-colors cursor-pointer"
                   onClick={() => fileInputRef.current?.click()}
@@ -466,7 +459,6 @@ const DefaultResumeUploader: React.FC = () => {
                   <p className="text-gray-600 text-sm mb-1">Upload your resume</p>
                   <p className="text-gray-500 text-xs">PDF, DOCX, DOC, TXT (Max 5MB)</p>
                 </div>
-                
                 {file && (
                   <div className="p-3 bg-blue-50 border border-blue-100 rounded-md">
                     <div className="flex items-center justify-between">
@@ -487,14 +479,12 @@ const DefaultResumeUploader: React.FC = () => {
                         <Trash2 className="w-3 h-3" />
                       </Button>
                     </div>
-                    
                     {uploading && (
                       <div className="mt-2">
                         <Progress value={uploadProgress} className="h-2" />
                         <p className="text-xs text-blue-700 mt-1">Uploading: {uploadProgress}%</p>
                       </div>
                     )}
-                    
                     {!uploading && (
                       <div className="mt-2">
                         <Button 
@@ -509,12 +499,20 @@ const DefaultResumeUploader: React.FC = () => {
                     )}
                   </div>
                 )}
+                <input
+                  type="file"
+                  accept=".pdf,.docx,.doc,.txt"
+                  className="hidden"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  disabled={uploading}
+                  title="Upload resume file"
+                  aria-label="Upload resume file"
+                />
               </div>
             )}
           </div>
         )}
-
-        {/* Full version with view/download options */}
         {showFullVersion && (
           <>
             {defaultResume ? (
@@ -537,7 +535,6 @@ const DefaultResumeUploader: React.FC = () => {
                     </div>
                   </div>
                 </div>
-
                 <div className="flex flex-wrap gap-2">
                   <Button 
                     variant="outline" 
@@ -576,24 +573,13 @@ const DefaultResumeUploader: React.FC = () => {
                     Delete
                   </Button>
                 </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div 
-                  className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors cursor-pointer"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Upload className="w-10 h-10 mx-auto text-gray-400 mb-2" />
-                  <p className="text-gray-600 mb-1">Drag and drop your resume here or click to browse</p>
-                  <p className="text-gray-500 text-sm">Supported formats: PDF, DOCX, DOC, TXT (Max 5MB)</p>
-                </div>
-                
+                {/* Always show upload button if a file is selected, even after Replace */}
                 {file && (
-                  <div className="p-3 bg-blue-50 border border-blue-100 rounded-md">
-                    <div className="flex items-center justify-between">
+                  <div className="mt-4">
+                    <div className="p-3 bg-blue-50 border border-blue-100 rounded-md flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <FileIcon className="w-5 h-5 text-blue-600" />
-                        <span className="font-medium text-blue-900 truncate max-w-[200px]">{file.name}</span>
+                        <span className="font-medium text-blue-900 truncate max-w-[200px] text-sm">{file.name}</span>
                         <span className="text-xs text-blue-700">({formatFileSize(file.size)})</span>
                       </div>
                       <Button 
@@ -608,14 +594,77 @@ const DefaultResumeUploader: React.FC = () => {
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
-                    
                     {uploading && (
                       <div className="mt-2">
                         <Progress value={uploadProgress} className="h-2" />
                         <p className="text-xs text-blue-700 mt-1">Uploading: {uploadProgress}%</p>
                       </div>
                     )}
-                    
+                    {!uploading && (
+                      <div className="mt-2">
+                        <Button 
+                          size="sm" 
+                          className="w-full"
+                          onClick={handleUpload}
+                        >
+                          <Upload className="w-3 h-3 mr-2" />
+                          Upload Resume
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <input
+                  type="file"
+                  accept=".pdf,.docx,.doc,.txt"
+                  className="hidden"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  disabled={uploading}
+                  title="Upload resume file"
+                  aria-label="Upload resume file"
+                />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm text-amber-700 bg-amber-50 p-3 rounded-md border border-amber-100 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  You don't have a default resume yet. Please upload one.
+                </p>
+                <div 
+                  className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors cursor-pointer"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload className="w-10 h-10 mx-auto text-gray-400 mb-2" />
+                  <p className="text-gray-600 mb-1">Drag and drop your resume here or click to browse</p>
+                  <p className="text-gray-500 text-sm">Supported formats: PDF, DOCX, DOC, TXT (Max 5MB)</p>
+                </div>
+                {file && (
+                  <div className="p-3 bg-blue-50 border border-blue-100 rounded-md">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <FileIcon className="w-5 h-5 text-blue-600" />
+                        <span className="font-medium text-blue-900 truncate max-w-[200px] text-sm">{file.name}</span>
+                        <span className="text-xs text-blue-700">({formatFileSize(file.size)})</span>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-7 w-7 p-0 text-gray-500"
+                        onClick={() => {
+                          setFile(null);
+                          if (fileInputRef.current) fileInputRef.current.value = '';
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    {uploading && (
+                      <div className="mt-2">
+                        <Progress value={uploadProgress} className="h-2" />
+                        <p className="text-xs text-blue-700 mt-1">Uploading: {uploadProgress}%</p>
+                      </div>
+                    )}
                     {!uploading && (
                       <div className="mt-2">
                         <Button 
@@ -630,22 +679,21 @@ const DefaultResumeUploader: React.FC = () => {
                     )}
                   </div>
                 )}
+                <input
+                  type="file"
+                  accept=".pdf,.docx,.doc,.txt"
+                  className="hidden"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  disabled={uploading}
+                  title="Upload resume file"
+                  aria-label="Upload resume file"
+                />
               </div>
             )}
           </>
         )}
-        
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          className="hidden"
-          accept=".pdf,.docx,.doc,.txt"
-          aria-label="Upload resume file"
-          title="Upload resume file"
-        />
       </CardContent>
-      
       {defaultResume && (
         <CardFooter className="bg-gray-50 border-t border-gray-100 px-6 py-3">
           <div className="flex items-center gap-2 text-sm text-green-700">
