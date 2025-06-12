@@ -20,6 +20,7 @@ import Settings from '@/pages/Settings';
 import Upgrade from '@/pages/Upgrade';
 import AccountPage from '@/pages/AccountPage';
 import NotFound from '@/pages/NotFound';
+import DashboardRedirect from '@/pages/DashboardRedirect';
 
 // Service pages
 import ResumeOptimizer from '@/pages/ResumeOptimizer';
@@ -76,6 +77,7 @@ const App = () => {
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/terms" element={<TermsConditions />} />
               <Route path="/upcoming-features" element={<UpcomingFeatures />} />
+              <Route path="/dashboard-redirect" element={<DashboardRedirect />} />
               
               {/* Dashboard routes */}
               <Route 

@@ -80,9 +80,9 @@ export const AuthProvider = ({ children }) => {
 
   // Session restoration and auth state management
   useEffect(() => {
-    // Skip if we already have a session
-    if (session) {
-      console.log("Session already exists, skipping restoration");
+    // Skip if we already have a session and user data
+    if (session && user && userType) {
+      console.log("Session already exists with user data, skipping restoration");
       setRestoringSession(false);
       return;
     }
@@ -398,6 +398,13 @@ export const AuthProvider = ({ children }) => {
       setUserType(null);
       setProfile(null);
       setSubscriptionStatus(null);
+      
+      // Also clear any Supabase session
+      try {
+        await supabase.auth.signOut();
+      } catch (error) {
+        console.error("Error during Supabase signOut:", error);
+      }
       
       // Call the logout API
       try {

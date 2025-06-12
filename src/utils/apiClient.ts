@@ -150,34 +150,66 @@ async function apiCall<T>(
 
 // Create API client with methods for different endpoints
 export const api = {
+  // Track in-flight requests to deduplicate
+  _pendingRequests: {} as Record<string, Promise<any>>,
+  
   profileMetadata: {
-    // Get the user's default resume
+    // Get the user's default resume with request deduplication
     getDefaultResume: async () => {
       try {
+        const requestKey = "GET_/ProfileMetadata";
+        
+        // Check if there's already a request in progress
+        if (api._pendingRequests[requestKey]) {
+          console.log(`[${new Date().toISOString()}] REUSING IN-FLIGHT REQUEST for GET /ProfileMetadata`);
+          return await api._pendingRequests[requestKey];
+        }
+        
         console.log(`[${new Date().toISOString()}] API CALL: GET /ProfileMetadata`);
-        // Use the REST API endpoint instead of direct Supabase query
-        const { data, error } = await apiCall<any>("GET", "/ProfileMetadata");
         
-        if (error) {
-          console.error("Error from ProfileMetadata API:", error);
-          return { data: null, error };
-        }
+        // Create the request and store it
+        const requestPromise = (async () => {
+          // Use the REST API endpoint instead of direct Supabase query
+          const { data, error } = await apiCall<any>("GET", "/ProfileMetadata");
+          
+          if (error) {
+            console.error("Error from ProfileMetadata API:", error);
+            return { data: null, error };
+          }
+          
+          console.log("Raw ProfileMetadata response:", data);
+          
+          // Process the data
+          if (!data || data.exists === false) {
+            console.log("No profile metadata exists");
+            return { 
+              data: null, 
+              error: null,
+              profileStatus: data?.profileStatus || {
+                hasResume: false,
+                hasBasicInfo: false,
+                hasDetailedInfo: false,
+                completionPercentage: 0
+              }
+            };
+          }
+          
+          // Clear the pending request after a short delay to allow for closely timed calls
+          setTimeout(() => {
+            delete api._pendingRequests[requestKey];
+          }, 100);
+          
+          return { data, error };
+        })();
         
-        console.log("Raw ProfileMetadata response:", data);
+        // Store the promise
+        api._pendingRequests[requestKey] = requestPromise;
         
-        if (!data || data.exists === false) {
-          console.log("No profile metadata exists");
-          return { 
-            data: null, 
-            error: null,
-            profileStatus: data?.profileStatus || {
-              hasResume: false,
-              hasBasicInfo: false,
-              hasDetailedInfo: false,
-              completionPercentage: 0
-            }
-          };
-        }
+        // Get the result
+        const result = await requestPromise;
+        
+        // Extract data from the result
+        const { data } = result;
         
         // Handle array response
         const responseData = Array.isArray(data) ? data[0] : data;
@@ -200,44 +232,69 @@ export const api = {
         // Extract the metadata from the response
         const metadataObj = responseData.metadata || responseData;
         
-        // Check if we have resume file information
-        const hasResumeFile = metadataObj.fileName || metadataObj.file_name;
-        const blobPath = metadataObj.blobPath || metadataObj.blob_path;
+        // Check if we have resume file information - check both in the root and in metadata
+        // First check if we have direct file properties in the response
+        const fileName = responseData.fileName || responseData.file_name;
+        const blobPath = responseData.blobPath || responseData.blob_path;
+        const fileUrl = responseData.fileUrl || responseData.file_url;
+        const fileSize = responseData.fileSize || responseData.file_size;
+        const uploadDate = responseData.uploadDate || responseData.upload_date;
+        
+        // Then check if we have them in the metadata object
+        const metadataFileName = metadataObj.fileName || metadataObj.file_name;
+        const metadataBlobPath = metadataObj.blobPath || metadataObj.blob_path;
+        const metadataFileUrl = metadataObj.fileUrl || metadataObj.file_url;
+        const metadataFileSize = metadataObj.fileSize || metadataObj.file_size;
+        const metadataUploadDate = metadataObj.uploadDate || metadataObj.upload_date;
+        
+        // Use the values from the root object if available, otherwise use the metadata values
+        const finalFileName = fileName || metadataFileName;
+        const finalBlobPath = blobPath || metadataBlobPath;
+        const finalFileUrl = fileUrl || metadataFileUrl;
+        const finalFileSize = fileSize || metadataFileSize;
+        const finalUploadDate = uploadDate || metadataUploadDate;
+        
+        // Check if we have enough information to consider this a valid resume
+        const hasResumeFile = finalFileName || finalBlobPath || finalFileUrl;
         
         console.log("Resume file check:", { 
-          fileName: metadataObj.fileName || metadataObj.file_name, 
-          blobPath: blobPath,
+          fileName: finalFileName, 
+          blobPath: finalBlobPath,
+          fileUrl: finalFileUrl,
           hasResumeFile
         });
         
         // Construct a proper fileUrl if it's missing but we have a blobPath
-        let fileUrl = metadataObj.fileUrl || metadataObj.file_url;
+        let constructedFileUrl = finalFileUrl;
         
-        if (!fileUrl && blobPath) {
-          console.log("API Client: No fileUrl found, constructing from blobPath:", blobPath);
+        if (!constructedFileUrl && finalBlobPath) {
+          console.log("API Client: No fileUrl found, constructing from blobPath:", finalBlobPath);
           
-          if (blobPath.startsWith('http')) {
+          if (finalBlobPath.startsWith('http')) {
             // If it's already a full URL
-            fileUrl = blobPath;
-          } else if (blobPath.includes('storage/')) {
+            constructedFileUrl = finalBlobPath;
+          } else if (finalBlobPath.includes('storage/')) {
             // If it's a Supabase storage path
             // Use the imported SUPABASE_URL constant
-            fileUrl = `${SUPABASE_URL}/storage/v1/object/public/${blobPath}`;
+            constructedFileUrl = `${SUPABASE_URL}/storage/v1/object/public/${finalBlobPath}`;
+          } else if (finalBlobPath.includes('user-resumes/')) {
+            // If it's a Supabase storage path but missing the storage prefix
+            constructedFileUrl = `${SUPABASE_URL}/storage/v1/object/public/${finalBlobPath}`;
           } else {
             // Default API endpoint
-            fileUrl = `/api/files/${blobPath}`;
+            constructedFileUrl = `/api/files/${finalBlobPath}`;
           }
           
-          console.log("API Client: Constructed fileUrl:", fileUrl);
+          console.log("API Client: Constructed fileUrl:", constructedFileUrl);
         }
         
         // Transform the data to match the expected format
         const transformedData = {
-          fileUrl: fileUrl,
-          fileName: metadataObj.fileName || metadataObj.file_name,
-          fileSize: metadataObj.fileSize || metadataObj.file_size,
-          uploadDate: metadataObj.uploadDate || metadataObj.upload_date,
-          blobPath: blobPath,
+          fileUrl: constructedFileUrl,
+          fileName: finalFileName,
+          fileSize: finalFileSize,
+          uploadDate: finalUploadDate,
+          blobPath: finalBlobPath,
           metadata: {
             jobTitle: metadataObj.jobTitle || metadataObj.job_title || '',
             currentCompany: metadataObj.currentCompany || metadataObj.current_company || '',
@@ -252,6 +309,7 @@ export const api = {
         
         console.log("Transformed resume data:", transformedData);
         
+        // Always return the transformed data if we have any resume file information
         return { 
           data: hasResumeFile ? transformedData : null, 
           error: null,

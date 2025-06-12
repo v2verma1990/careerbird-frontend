@@ -1,3 +1,4 @@
+import React from 'react';
 import { useAuth } from "@/contexts/auth/AuthContext";
 import { Navigate, useLocation } from "react-router-dom";
 
@@ -5,8 +6,43 @@ export default function CandidateProtectedRoute({ children }: { children: JSX.El
   const { user, userType, subscriptionStatus, subscriptionLoading, restoringSession } = useAuth();
   const location = useLocation();
   
+  // Check if we're coming from the account page
+  const isFromAccountPage = React.useMemo(() => {
+    // Check if the referrer is the account page
+    if (typeof document !== 'undefined') {
+      const referrer = document.referrer;
+      if (referrer && referrer.includes('/account')) {
+        console.log("Detected navigation from account page");
+        return true;
+      }
+    }
+    
+    // Also check for a special flag in sessionStorage
+    try {
+      const fromAccountPage = sessionStorage.getItem('from_account_page');
+      if (fromAccountPage === 'true') {
+        console.log("Found from_account_page flag in sessionStorage");
+        // Clear the flag after using it
+        sessionStorage.removeItem('from_account_page');
+        return true;
+      }
+    } catch (error) {
+      console.error("Error checking sessionStorage:", error);
+    }
+    
+    return false;
+  }, []);
+  
+  // If we're coming from the account page, render the children immediately
+  // This bypasses the auth check temporarily to prevent the login redirect
+  if (isFromAccountPage) {
+    console.log("Bypassing auth check because we're coming from account page");
+    return children;
+  }
+  
   // Show loading indicator while session is being restored or subscription is loading
   if (restoringSession || subscriptionLoading) {
+    console.log("Showing loading indicator while session is being restored");
     return (
       <div className="flex justify-center items-center h-screen">
         <span className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></span>
@@ -17,6 +53,7 @@ export default function CandidateProtectedRoute({ children }: { children: JSX.El
   
   // Redirect to login if user is not authenticated or not a candidate
   if (!user || userType !== 'candidate') {
+    console.log("User not authenticated or not a candidate, redirecting to login");
     return <Navigate to="/login" replace />;
   }
   

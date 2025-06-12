@@ -82,22 +82,12 @@ export const ResumeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [profileStatus, setProfileStatus] = useState<ProfileStatus | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Add a ref to track if we've already loaded data for this user
-  const hasLoadedForUserRef = React.useRef<string | null>(null);
-  
-  // Fetch the user's default resume when the component mounts or user changes
+  // Load data when component mounts or user changes
   useEffect(() => {
     if (user) {
-      // Only load data if we haven't loaded it for this user yet
-      if (hasLoadedForUserRef.current !== user.id) {
-        console.log(`Loading resume data for user ${user.id} (first time)`);
-        hasLoadedForUserRef.current = user.id;
-        refreshDefaultResume();
-      } else {
-        console.log(`Already loaded resume data for user ${user.id}, skipping`);
-      }
+      console.log(`Loading resume data for user ${user.id}`);
+      refreshDefaultResume();
     } else {
-      hasLoadedForUserRef.current = null;
       setDefaultResume(null);
       setProfileStatus(null);
       setIsLoading(false);
@@ -107,47 +97,112 @@ export const ResumeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // Add a ref to track if a refresh is in progress
   const isRefreshingRef = React.useRef(false);
   
+  // Add a ref to track the last refresh time
+  const lastRefreshTimeRef = React.useRef(0);
+  
+  // Debounce time in milliseconds (500ms is a good balance)
+  const DEBOUNCE_TIME = 500;
+  
+  // Create a ref to store the current refresh promise
+  const currentRefreshPromiseRef = React.useRef<Promise<void> | null>(null);
+  
   // Function to refresh the default resume data
   const refreshDefaultResume = async () => {
     if (!user) return;
     
-    // Skip if already refreshing to prevent duplicate API calls
-    if (isRefreshingRef.current) {
-      console.log("Skipping resume refresh - already in progress");
+    // Get current time
+    const now = Date.now();
+    
+    // Log the current state for debugging
+    console.log("Current resume state before refresh:", {
+      hasDefaultResume: !!defaultResume,
+      fileName: defaultResume?.fileName,
+      blobPath: defaultResume?.blobPath,
+      fileUrl: defaultResume?.fileUrl,
+      profileStatus: profileStatus ? JSON.stringify(profileStatus) : null
+    });
+    
+    // Check if we've refreshed recently (within debounce time)
+    if (now - lastRefreshTimeRef.current < DEBOUNCE_TIME) {
+      console.log(`Skipping refresh - last refresh was ${now - lastRefreshTimeRef.current}ms ago`);
+      
+      // If there's a current refresh in progress, return that promise
+      if (currentRefreshPromiseRef.current) {
+        console.log("Returning existing refresh promise");
+        return currentRefreshPromiseRef.current;
+      }
+      
       return;
     }
     
+    // If already refreshing, return the current promise
+    if (isRefreshingRef.current && currentRefreshPromiseRef.current) {
+      console.log("Refresh already in progress, returning existing promise");
+      return currentRefreshPromiseRef.current;
+    }
+    
+    // Update last refresh time
+    lastRefreshTimeRef.current = now;
+    
+    // Set a flag to track this specific refresh operation
+    const refreshId = now;
+    console.log(`Starting resume refresh operation ${refreshId}`);
+    
     isRefreshingRef.current = true;
     setIsLoading(true);
-    try {
-      console.log(`[${new Date().toISOString()}] Refreshing default resume data...`);
-      const response = await api.profileMetadata.getDefaultResume();
-      const { data, error, profileStatus: apiProfileStatus } = response;
-      
-      console.log("API response:", { data, error, profileStatus: apiProfileStatus });
-      
-      if (error) {
-        console.error("Error fetching default resume:", error);
-        setDefaultResume(null);
-        setProfileStatus(null);
+    
+    // Create a new promise for this refresh operation
+    const refreshPromise = (async () => {
+      try {
+        console.log(`[${new Date().toISOString()}] Refreshing default resume data...`);
+        const response = await api.profileMetadata.getDefaultResume();
+        const { data, error, profileStatus: apiProfileStatus } = response;
         
-        // Show a user-friendly error message
-        toast({
-          variant: "destructive",
-          title: "Unable to load profile data",
-          description: "Please try again later or contact support if the problem persists."
+        console.log("API response:", { 
+          data: data ? JSON.stringify(data, null, 2) : null, 
+          error, 
+          profileStatus: apiProfileStatus ? JSON.stringify(apiProfileStatus, null, 2) : null 
         });
-        return;
-      }
-      
-      // Handle profile status first
+        
+        if (error) {
+          console.error("Error fetching default resume:", error);
+          
+          // Show a user-friendly error message
+          toast({
+            variant: "destructive",
+            title: "Unable to load profile data",
+            description: "Please try again later or contact support if the problem persists."
+          });
+          return;
+        }
+        
+        // Handle profile status first
       if (apiProfileStatus) {
         console.log("Setting profile status from API:", apiProfileStatus);
         
         // Make sure we have the correct resume status
         // Convert data to camelCase if it exists
         const camelData = data ? keysToCamelCase(Array.isArray(data) ? data[0] : data) : null;
-        const hasResume = apiProfileStatus.hasResume || (camelData && (!!camelData.fileName || !!camelData.blobPath));
+        
+        // Enhanced check for resume existence - check both in apiProfileStatus and in the actual data
+        const hasResume = apiProfileStatus.hasResume || 
+                         (camelData && (
+                           (!!camelData.fileName && !!camelData.blobPath) || 
+                           !!camelData.fileUrl || 
+                           (camelData.metadata && (
+                             (!!camelData.metadata.fileName && !!camelData.metadata.blobPath) || 
+                             !!camelData.metadata.fileUrl
+                           ))
+                         ));
+        
+        console.log("Resume existence check:", {
+          apiProfileStatusHasResume: apiProfileStatus.hasResume,
+          camelDataExists: !!camelData,
+          fileName: camelData?.fileName || camelData?.metadata?.fileName,
+          blobPath: camelData?.blobPath || camelData?.metadata?.blobPath,
+          fileUrl: camelData?.fileUrl || camelData?.metadata?.fileUrl,
+          hasResume
+        });
         
         const updatedProfileStatus = {
           ...apiProfileStatus,
@@ -159,8 +214,18 @@ export const ResumeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setProfileStatus(updatedProfileStatus);
       } else {
         // Fallback if no profile status is provided
+        const camelData = data ? keysToCamelCase(Array.isArray(data) ? data[0] : data) : null;
+        const hasResume = camelData && (
+          (!!camelData.fileName && !!camelData.blobPath) || 
+          !!camelData.fileUrl || 
+          (camelData.metadata && (
+            (!!camelData.metadata.fileName && !!camelData.metadata.blobPath) || 
+            !!camelData.metadata.fileUrl
+          ))
+        );
+        
         setProfileStatus({
-          hasResume: data ? true : false,
+          hasResume: hasResume || false,
           hasBasicInfo: false,
           hasDetailedInfo: false,
           completionPercentage: 0
@@ -183,17 +248,25 @@ export const ResumeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         console.log("Resume data after camelCase conversion:", JSON.stringify(resumeData, null, 2));
         
         // Extract the metadata object from the response
+        // Handle both formats: direct properties or nested in metadata
         const metadataObj = resumeData.metadata || resumeData;
         
-        // Log the properties we're looking for
+        // Log the properties we're looking for - check both camelCase and snake_case
+        const fileUrl = resumeData.fileUrl || resumeData.file_url || metadataObj.fileUrl || metadataObj.file_url;
+        const fileName = resumeData.fileName || resumeData.file_name || metadataObj.fileName || metadataObj.file_name;
+        const fileSize = resumeData.fileSize || resumeData.file_size || metadataObj.fileSize || metadataObj.file_size;
+        const uploadDate = resumeData.uploadDate || resumeData.upload_date || metadataObj.uploadDate || metadataObj.upload_date;
+        const blobPath = resumeData.blobPath || resumeData.blob_path || metadataObj.blobPath || metadataObj.blob_path;
+        
         console.log("Looking for resume properties:", {
-          fileUrl: metadataObj.fileUrl || metadataObj.file_url,
-          fileName: metadataObj.fileName || metadataObj.file_name,
-          fileSize: metadataObj.fileSize || metadataObj.file_size,
-          uploadDate: metadataObj.uploadDate || metadataObj.upload_date,
-          blobPath: metadataObj.blobPath || metadataObj.blob_path
+          fileUrl,
+          fileName,
+          fileSize,
+          uploadDate,
+          blobPath
         });
         console.log("Metadata object:", JSON.stringify(metadataObj, null, 2));
+        console.log("Resume data object:", JSON.stringify(resumeData, null, 2));
         
         // Extract metadata fields (now all in camelCase)
         const metadata = {
@@ -212,34 +285,36 @@ export const ResumeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         console.log("Extracted metadata:", JSON.stringify(metadata, null, 2));
         
         // Construct a proper fileUrl if it's missing but we have a blobPath
-        let fileUrl = metadataObj.fileUrl;
-        const blobPath = metadataObj.blobPath;
+        let finalFileUrl = fileUrl;
         
-        if (!fileUrl && blobPath) {
+        if (!finalFileUrl && blobPath) {
           console.log("No fileUrl found, constructing from blobPath:", blobPath);
           
           if (blobPath.startsWith('http')) {
             // If it's already a full URL
-            fileUrl = blobPath;
+            finalFileUrl = blobPath;
           } else if (blobPath.includes('storage/')) {
             // If it's a Supabase storage path
             // Use the imported SUPABASE_URL constant
-            fileUrl = `${SUPABASE_URL}/storage/v1/object/public/${blobPath}`;
+            finalFileUrl = `${SUPABASE_URL}/storage/v1/object/public/${blobPath}`;
+          } else if (blobPath.includes('user-resumes/')) {
+            // If it's a Supabase storage path but missing the storage prefix
+            finalFileUrl = `${SUPABASE_URL}/storage/v1/object/public/${blobPath}`;
           } else {
             // Default API endpoint
-            fileUrl = `/api/files/${blobPath}`;
+            finalFileUrl = `/api/files/${blobPath}`;
           }
           
-          console.log("Constructed fileUrl:", fileUrl);
+          console.log("Constructed fileUrl:", finalFileUrl);
         }
         
-        // Create the resume object with proper property checks (now all in camelCase)
+        // Create the resume object with the extracted properties
         const resumeObject = {
-          fileUrl: fileUrl,
-          fileName: metadataObj.fileName,
-          fileSize: metadataObj.fileSize,
-          uploadDate: metadataObj.uploadDate 
-            ? new Date(metadataObj.uploadDate) 
+          fileUrl: finalFileUrl,
+          fileName: fileName,
+          fileSize: fileSize,
+          uploadDate: uploadDate 
+            ? new Date(uploadDate) 
             : null,
           blobPath: blobPath,
           metadata: metadata
@@ -247,22 +322,113 @@ export const ResumeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         
         console.log("Final resume object to be set:", resumeObject);
         
-        // Ensure we have at least one valid property before setting the state
-        if (resumeObject.fileUrl || resumeObject.blobPath) {
+        // Enhanced validation to ensure we have valid data
+        console.log("Validating resume object properties:", {
+          fileUrl: resumeObject.fileUrl ? "present" : "missing",
+          fileName: resumeObject.fileName ? "present" : "missing",
+          blobPath: resumeObject.blobPath ? "present" : "missing"
+        });
+        
+        // Check if we have at least one valid property before setting the state
+        // More permissive check - if we have either a blobPath or a fileName, we'll consider it valid
+        if (resumeObject.blobPath || resumeObject.fileName || resumeObject.fileUrl) {
+          console.log("Resume object has valid properties, setting state");
           setDefaultResume(resumeObject);
+          
+          // Also update the profile status to reflect that we have a resume
+          if (profileStatus && !profileStatus.hasResume) {
+            console.log("Updating profile status to reflect resume existence");
+            setProfileStatus({
+              ...profileStatus,
+              hasResume: true
+            });
+          }
         } else {
-          console.error("No valid URL properties found in resume data");
-          setDefaultResume(null);
+          console.error("No valid properties found in resume data");
+          
+          // Make a direct API call to check if the resume exists
+          console.log("Making direct API call to verify resume existence");
+          try {
+            // Try to get the data directly from the API
+            const verifyResponse = await api.profileMetadata.getDefaultResume();
+            console.log("Verification API response:", verifyResponse);
+            
+            // If we got valid data from the verification call, use it
+            if (verifyResponse.data && !verifyResponse.error) {
+              console.log("Using data from verification API call");
+              
+              // Process the verification data
+              const verifyData = Array.isArray(verifyResponse.data) 
+                ? verifyResponse.data[0] 
+                : verifyResponse.data;
+                
+              // Convert to camelCase
+              const verifyCamelData = keysToCamelCase(verifyData);
+              
+              // Extract file properties - check both in the root and in metadata
+              const verifyFileUrl = verifyCamelData.fileUrl || verifyCamelData.file_url || 
+                                   (verifyCamelData.metadata && (verifyCamelData.metadata.fileUrl || verifyCamelData.metadata.file_url));
+              const verifyFileName = verifyCamelData.fileName || verifyCamelData.file_name || 
+                                    (verifyCamelData.metadata && (verifyCamelData.metadata.fileName || verifyCamelData.metadata.file_name));
+              const verifyFileSize = verifyCamelData.fileSize || verifyCamelData.file_size || 
+                                    (verifyCamelData.metadata && (verifyCamelData.metadata.fileSize || verifyCamelData.metadata.file_size));
+              const verifyBlobPath = verifyCamelData.blobPath || verifyCamelData.blob_path || 
+                                    (verifyCamelData.metadata && (verifyCamelData.metadata.blobPath || verifyCamelData.metadata.blob_path));
+              
+              // Construct a URL if we have a blob path but no URL
+              let finalVerifyFileUrl = verifyFileUrl;
+              if (!finalVerifyFileUrl && verifyBlobPath) {
+                if (verifyBlobPath.startsWith('http')) {
+                  finalVerifyFileUrl = verifyBlobPath;
+                } else if (verifyBlobPath.includes('storage/')) {
+                  finalVerifyFileUrl = `${SUPABASE_URL}/storage/v1/object/public/${verifyBlobPath}`;
+                } else if (verifyBlobPath.includes('user-resumes/')) {
+                  finalVerifyFileUrl = `${SUPABASE_URL}/storage/v1/object/public/${verifyBlobPath}`;
+                } else {
+                  finalVerifyFileUrl = `/api/files/${verifyBlobPath}`;
+                }
+              }
+              
+              // More permissive check - if we have either a blobPath or a fileName, we'll consider it valid
+              if (verifyBlobPath || verifyFileName || finalVerifyFileUrl) {
+                const verifyResumeObject = {
+                  fileUrl: finalVerifyFileUrl,
+                  fileName: verifyFileName,
+                  fileSize: verifyFileSize,
+                  uploadDate: verifyCamelData.uploadDate 
+                    ? new Date(verifyCamelData.uploadDate) 
+                    : new Date(),
+                  blobPath: verifyBlobPath,
+                  metadata: metadata
+                };
+                
+                console.log("Setting resume from verification data:", verifyResumeObject);
+                setDefaultResume(verifyResumeObject);
+                
+                // Also update the profile status to reflect that we have a resume
+                if (profileStatus && !profileStatus.hasResume) {
+                  console.log("Updating profile status to reflect resume existence from verification");
+                  setProfileStatus({
+                    ...profileStatus,
+                    hasResume: true
+                  });
+                }
+              }
+            }
+          } catch (verifyError) {
+            console.error("Error during verification API call:", verifyError);
+          }
         }
         
         // Force a profile status update if we have resume data but profile status says we don't
         if (profileStatus && !profileStatus.hasResume) {
           console.log("Forcing profile status update because we have resume data");
-          setProfileStatus(prevStatus => ({
-            ...prevStatus,
+          const updatedStatus = {
+            ...profileStatus,
             hasResume: true,
-            completionPercentage: Math.max(prevStatus?.completionPercentage || 0, 10) // Ensure at least 10% completion
-          }));
+            completionPercentage: Math.max(profileStatus.completionPercentage || 0, 10) // Ensure at least 10% completion
+          };
+          setProfileStatus(updatedStatus);
         }
       } else {
         console.log("No resume data found");
@@ -270,8 +436,6 @@ export const ResumeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
     } catch (error) {
       console.error("Exception fetching default resume:", error);
-      setDefaultResume(null);
-      setProfileStatus(null);
       
       // Show a user-friendly error message
       toast({
@@ -281,10 +445,47 @@ export const ResumeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       });
     } finally {
       setIsLoading(false);
+      
       // Reset the refreshing flag
       isRefreshingRef.current = false;
-      console.log("Resume refresh completed");
+      
+      // Calculate elapsed time
+      const elapsedTime = Date.now() - lastRefreshTimeRef.current;
+      console.log(`Resume refresh completed in ${elapsedTime}ms`);
+      
+      // Log the current state for debugging
+      console.log("Current resume state after refresh:", {
+        hasResume: !!defaultResume,
+        hasFileUrl: defaultResume?.fileUrl ? "yes" : "no",
+        hasFileName: defaultResume?.fileName ? "yes" : "no",
+        hasBlobPath: defaultResume?.blobPath ? "yes" : "no",
+        fileName: defaultResume?.fileName,
+        blobPath: defaultResume?.blobPath,
+        fileUrl: defaultResume?.fileUrl,
+        profileStatus: profileStatus ? {
+          hasResume: profileStatus.hasResume,
+          hasBasicInfo: profileStatus.hasBasicInfo,
+          hasDetailedInfo: profileStatus.hasDetailedInfo,
+          completionPercentage: profileStatus.completionPercentage,
+          lastUpdated: profileStatus.lastUpdated
+        } : "none"
+      });
+      
+      // Clear the current promise reference after a short delay
+      // This allows closely timed calls to still use the same promise
+      setTimeout(() => {
+        if (currentRefreshPromiseRef.current) {
+          currentRefreshPromiseRef.current = null;
+        }
+      }, 100);
     }
+  })();
+  
+  // Store the promise in the ref
+  currentRefreshPromiseRef.current = refreshPromise;
+  
+  // Return the promise
+  return refreshPromise;
   };
   
   // Helper function to calculate completion percentage if not provided by API
@@ -350,7 +551,7 @@ export const ResumeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         console.log("Resume upload data after camelCase conversion:", camelData);
         
         // Update the default resume state
-        setDefaultResume({
+        const newResumeData = {
           fileUrl: camelData.fileUrl,
           fileName: camelData.fileName,
           fileSize: camelData.fileSize,
@@ -360,25 +561,31 @@ export const ResumeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             ...camelData.metadata,
             lastUpdated: camelData.metadata.lastUpdated ? new Date(camelData.metadata.lastUpdated) : new Date()
           } : undefined
-        });
+        };
+        
+        setDefaultResume(newResumeData);
         
         // Update the profile status to reflect that we now have a resume
-        setProfileStatus(prevStatus => {
-          if (!prevStatus) {
-            return {
+        const newProfileStatus = !profileStatus 
+          ? {
               hasResume: true,
               hasBasicInfo: false,
               hasDetailedInfo: false,
               completionPercentage: 10 // Start with 10% for having a resume
+            }
+          : {
+              ...profileStatus,
+              hasResume: true,
+              completionPercentage: Math.max(profileStatus.completionPercentage, 10) // Ensure at least 10% completion
             };
-          }
-          
-          return {
-            ...prevStatus,
-            hasResume: true,
-            completionPercentage: Math.max(prevStatus.completionPercentage, 10) // Ensure at least 10% completion
-          };
-        });
+            
+        setProfileStatus(newProfileStatus);
+        
+        // Update the last refresh time to prevent immediate refresh
+        lastRefreshTimeRef.current = Date.now();
+        
+        // No need to refresh immediately since we've already updated the local state
+        // This prevents duplicate API calls and improves performance
         
         toast({
           title: "Resume Uploaded",
@@ -424,15 +631,14 @@ export const ResumeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setDefaultResume(null);
       
       // Update the profile status to reflect that we no longer have a resume
-      setProfileStatus(prevStatus => {
-        if (!prevStatus) return null;
-        
-        return {
-          ...prevStatus,
+      if (profileStatus) {
+        const updatedStatus = {
+          ...profileStatus,
           hasResume: false,
-          completionPercentage: Math.max(0, prevStatus.completionPercentage - 10) // Reduce completion by 10%
+          completionPercentage: Math.max(0, profileStatus.completionPercentage - 10) // Reduce completion by 10%
         };
-      });
+        setProfileStatus(updatedStatus);
+      }
       
       toast({
         title: "Resume Removed",
@@ -479,17 +685,24 @@ export const ResumeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (data) {
         console.log("Resume metadata update successful, data:", data);
         
-        // Instead of calling refreshDefaultResume, manually update the state
+        // Update local state immediately for a responsive UI
         if (defaultResume && defaultResume.metadata) {
-          setDefaultResume({
+          const updatedResume = {
             ...defaultResume,
             metadata: {
               ...defaultResume.metadata,
               ...metadata,
               lastUpdated: new Date()
             }
-          });
+          };
+          setDefaultResume(updatedResume);
         }
+        
+        // Update the last refresh time to prevent immediate refresh
+        lastRefreshTimeRef.current = Date.now();
+        
+        // No need to refresh immediately since we've already updated the local state
+        // This prevents duplicate API calls and improves performance
         
         return true;
       }

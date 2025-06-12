@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/auth/AuthContext';
 import { useResume } from '@/contexts/resume/ResumeContext';
 import { Button } from '@/components/ui/button';
@@ -30,14 +29,35 @@ import {
 import { useNavigate } from 'react-router-dom';
 
 const TopNavigation = () => {
-  const { user, subscriptionStatus, signOut } = useAuth();
+  const { user, userType, subscriptionStatus, signOut, restoringSession } = useAuth();
   const { profileStatus } = useResume();
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  
+  // Log authentication state for debugging
+  useEffect(() => {
+    if (!restoringSession) {
+      console.log("TopNavigation - Auth state:", {
+        user: !!user,
+        userType,
+        subscriptionType: subscriptionStatus?.type,
+        active: subscriptionStatus?.active,
+        restoringSession
+      });
+    }
+  }, [user, userType, subscriptionStatus, restoringSession]);
 
   const handleLogout = async () => {
-    await signOut();
-    navigate('/');
+    try {
+      await signOut();
+      // After signOut, explicitly navigate to home page and force a page reload
+      // This ensures all React state is cleared and prevents stale auth state
+      window.location.href = '/';
+    } catch (error) {
+      console.error("Error during logout:", error);
+      // If there's an error during logout, still try to navigate home with a reload
+      window.location.href = '/';
+    }
   };
 
   const getSubscriptionBadge = () => {
@@ -78,7 +98,48 @@ const TopNavigation = () => {
           {/* Logo */}
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="flex items-center space-x-3">
+              <div 
+                className="flex items-center space-x-3 cursor-pointer" 
+                onClick={() => {
+                  // Prevent navigation while session is restoring
+                  if (restoringSession) {
+                    console.log("Skipping navigation - session is restoring");
+                    return;
+                  }
+                  
+                  console.log("Dashboard navigation - Current state:", {
+                    user: !!user,
+                    userType,
+                    subscriptionType: subscriptionStatus?.type,
+                    active: subscriptionStatus?.active
+                  });
+                  
+                  // Check if user is authenticated
+                  if (!user) {
+                    console.log("No user found, redirecting to login");
+                    window.location.href = '/login';
+                    return;
+                  }
+                  
+                  // Navigate based on user type and subscription
+                  if (userType === 'recruiter') {
+                    console.log("Navigating to recruiter dashboard");
+                    window.location.href = '/dashboard';
+                  } else if (userType === 'candidate') {
+                    if (subscriptionStatus?.type === 'free' || !subscriptionStatus?.active) {
+                      console.log("Navigating to free plan dashboard");
+                      window.location.href = '/free-plan-dashboard';
+                    } else {
+                      console.log("Navigating to premium candidate dashboard");
+                      window.location.href = '/candidate-dashboard';
+                    }
+                  } else {
+                    // Fallback: go to home
+                    console.log("Unknown user type, navigating to home");
+                    window.location.href = '/';
+                  }
+                }}
+              >
                 <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
                   <span className="text-white font-bold text-sm">R</span>
                 </div>
