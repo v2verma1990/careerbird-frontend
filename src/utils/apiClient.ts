@@ -1,4 +1,5 @@
 import { supabase, SUPABASE_URL } from "@/integrations/supabase/client";
+import { extractFileKey } from "@/lib/utils";
 
 // Re-export the SUPABASE_URL for use in other files
 export { SUPABASE_URL };
@@ -274,12 +275,31 @@ export const api = {
             // If it's already a full URL
             constructedFileUrl = finalBlobPath;
           } else if (finalBlobPath.includes('storage/')) {
-            // If it's a Supabase storage path
-            // Use the imported SUPABASE_URL constant
-            constructedFileUrl = `${SUPABASE_URL}/storage/v1/object/public/${finalBlobPath}`;
+            // Use the supabase client to get a public URL
+            try {
+              const { data } = supabase.storage.from('user-resumes').getPublicUrl(
+                finalBlobPath.replace('storage/user-resumes/', '')
+              );
+              constructedFileUrl = data.publicUrl;
+              console.log("API Client - Generated public URL from storage path:", constructedFileUrl);
+            } catch (err) {
+              console.error("API Client - Error generating public URL:", err);
+              // Fallback to direct URL
+              constructedFileUrl = `${SUPABASE_URL}/storage/v1/object/public/${finalBlobPath}`;
+            }
           } else if (finalBlobPath.includes('user-resumes/')) {
-            // If it's a Supabase storage path but missing the storage prefix
-            constructedFileUrl = `${SUPABASE_URL}/storage/v1/object/public/${finalBlobPath}`;
+            // Use the supabase client to get a public URL
+            try {
+              const { data } = supabase.storage.from('user-resumes').getPublicUrl(
+                finalBlobPath.replace('user-resumes/', '')
+              );
+              constructedFileUrl = data.publicUrl;
+              console.log("API Client - Generated public URL from user-resumes path:", constructedFileUrl);
+            } catch (err) {
+              console.error("API Client - Error generating public URL:", err);
+              // Fallback to direct URL
+              constructedFileUrl = `${SUPABASE_URL}/storage/v1/object/public/${finalBlobPath}`;
+            }
           } else {
             // Default API endpoint
             constructedFileUrl = `/api/files/${finalBlobPath}`;

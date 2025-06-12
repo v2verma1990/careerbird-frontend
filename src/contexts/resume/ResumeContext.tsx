@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/auth/AuthContext';
 import { api } from '@/utils/apiClient';
-import { SUPABASE_URL } from '@/integrations/supabase/client';
+import { SUPABASE_URL, supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { extractFileKey } from '@/lib/utils';
 
 // Helper function to convert snake_case to camelCase
 const toCamelCase = (str: string): string => {
@@ -29,6 +30,7 @@ const keysToCamelCase = (obj: any): any => {
 };
 
 export interface ResumeMetadata {
+  userId?: string;
   jobTitle?: string;
   currentCompany?: string;
   yearsOfExperience?: string;
@@ -293,13 +295,26 @@ export const ResumeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           if (blobPath.startsWith('http')) {
             // If it's already a full URL
             finalFileUrl = blobPath;
-          } else if (blobPath.includes('storage/')) {
-            // If it's a Supabase storage path
-            // Use the imported SUPABASE_URL constant
-            finalFileUrl = `${SUPABASE_URL}/storage/v1/object/public/${blobPath}`;
-          } else if (blobPath.includes('user-resumes/')) {
-            // If it's a Supabase storage path but missing the storage prefix
-            finalFileUrl = `${SUPABASE_URL}/storage/v1/object/public/${blobPath}`;
+          } else if (blobPath.includes('user-resumes')) {
+            // Use the supabase client to get a public URL
+            try {
+              // Extract the file key using our helper function
+              const fileKey = extractFileKey(blobPath);
+              console.log("ResumeContext - Extracted file key:", fileKey);
+              
+              if (fileKey) {
+                const { data } = supabase.storage.from('user-resumes').getPublicUrl(fileKey);
+                finalFileUrl = data.publicUrl;
+                console.log("ResumeContext - Generated public URL:", finalFileUrl);
+              } else {
+                console.error("ResumeContext - Could not extract file key from blob path:", blobPath);
+                finalFileUrl = `${SUPABASE_URL}/storage/v1/object/public/user-resumes/${blobPath}`;
+              }
+            } catch (err) {
+              console.error("ResumeContext - Error generating public URL:", err);
+              // Fallback to direct URL
+              finalFileUrl = `${SUPABASE_URL}/storage/v1/object/public/user-resumes/${blobPath}`;
+            }
           } else {
             // Default API endpoint
             finalFileUrl = `/api/files/${blobPath}`;

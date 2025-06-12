@@ -34,8 +34,8 @@ import {
   Upload,
   Trash2
 } from 'lucide-react';
-import { SUPABASE_URL } from '@/integrations/supabase/client';
-import { formatFileSize } from '@/lib/utils';
+import { SUPABASE_URL, supabase } from '@/integrations/supabase/client';
+import { formatFileSize, extractFileKey } from '@/lib/utils';
 
 const Profile = () => {
   const { user, subscriptionStatus } = useAuth();
@@ -293,14 +293,29 @@ const Profile = () => {
     if (!url && defaultResume.blobPath) {
       if (defaultResume.blobPath.startsWith('http')) {
         url = defaultResume.blobPath;
-      } else if (defaultResume.blobPath.includes('storage/')) {
-        url = `${SUPABASE_URL}/storage/v1/object/public/${defaultResume.blobPath}`;
-      } else if (defaultResume.blobPath.includes('user-resumes/')) {
-        // If it's a Supabase storage path but missing the storage prefix
-        url = `${SUPABASE_URL}/storage/v1/object/public/${defaultResume.blobPath}`;
       } else {
-        url = `/api/files/${defaultResume.blobPath}`;
+        // Use the supabase client to get a public URL
+        try {
+          // Extract the file key using our helper function
+          const fileKey = extractFileKey(defaultResume.blobPath);
+          console.log("Profile - Extracted file key:", fileKey);
+          
+          if (fileKey) {
+            const { data } = supabase.storage.from('user-resumes').getPublicUrl(fileKey);
+            url = data.publicUrl;
+            console.log("Profile - Generated public URL:", url);
+          } else {
+            console.error("Profile - Could not extract file key from blob path:", defaultResume.blobPath);
+            url = `${SUPABASE_URL}/storage/v1/object/public/user-resumes/${defaultResume.blobPath}`;
+          }
+        } catch (err) {
+          console.error("Profile - Error generating public URL:", err);
+          // Fallback to direct URL
+          url = `${SUPABASE_URL}/storage/v1/object/public/user-resumes/${defaultResume.blobPath}`;
+        }
       }
+    } else if (defaultResume.blobPath) {
+      url = `/api/files/${defaultResume.blobPath}`;
     }
     
     // If we still don't have a URL, try to construct one from the blob path
@@ -345,14 +360,29 @@ const Profile = () => {
     if (!url && defaultResume.blobPath) {
       if (defaultResume.blobPath.startsWith('http')) {
         url = defaultResume.blobPath;
-      } else if (defaultResume.blobPath.includes('storage/')) {
-        url = `${SUPABASE_URL}/storage/v1/object/public/${defaultResume.blobPath}`;
-      } else if (defaultResume.blobPath.includes('user-resumes/')) {
-        // If it's a Supabase storage path but missing the storage prefix
-        url = `${SUPABASE_URL}/storage/v1/object/public/${defaultResume.blobPath}`;
       } else {
-        url = `/api/files/${defaultResume.blobPath}`;
+        // Use the supabase client to get a public URL
+        try {
+          // Extract the file key using our helper function
+          const fileKey = extractFileKey(defaultResume.blobPath);
+          console.log("Profile - Extracted file key for download:", fileKey);
+          
+          if (fileKey) {
+            const { data } = supabase.storage.from('user-resumes').getPublicUrl(fileKey);
+            url = data.publicUrl;
+            console.log("Profile - Generated public URL for download:", url);
+          } else {
+            console.error("Profile - Could not extract file key from blob path for download:", defaultResume.blobPath);
+            url = `${SUPABASE_URL}/storage/v1/object/public/user-resumes/${defaultResume.blobPath}`;
+          }
+        } catch (err) {
+          console.error("Profile - Error generating public URL for download:", err);
+          // Fallback to direct URL
+          url = `${SUPABASE_URL}/storage/v1/object/public/user-resumes/${defaultResume.blobPath}`;
+        }
       }
+    } else if (defaultResume.blobPath) {
+      url = `/api/files/${defaultResume.blobPath}`;
     }
     
     // If we still don't have a URL, try to construct one from the blob path
