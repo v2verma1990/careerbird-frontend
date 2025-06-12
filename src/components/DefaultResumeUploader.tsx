@@ -132,7 +132,7 @@ const DefaultResumeUploader: React.FC = () => {
     }
   };
 
-  const handleView = () => {
+  const handleView = async () => {
     if (!defaultResume) {
       toast({
         variant: "destructive",
@@ -142,66 +142,84 @@ const DefaultResumeUploader: React.FC = () => {
       return;
     }
     
-    // Log the resume data for debugging
-    console.log("Resume data for viewing:", defaultResume);
-    
-    let url = defaultResume.fileUrl;
-    
-    if (!url && defaultResume.blobPath) {
-      if (defaultResume.blobPath.startsWith('http')) {
-        url = defaultResume.blobPath;
-      } else {
-        // Use the supabase client to get a public URL
-        try {
-          // Extract the file key using our helper function
-          const fileKey = extractFileKey(defaultResume.blobPath);
-          console.log("Extracted file key:", fileKey);
-          
-          if (fileKey) {
-            const { data } = supabase.storage.from('user-resumes').getPublicUrl(fileKey);
-            url = data.publicUrl;
-            console.log("Generated public URL:", url);
-          } else {
-            console.error("Could not extract file key from blob path:", defaultResume.blobPath);
-            url = `${SUPABASE_URL}/storage/v1/object/public/user-resumes/${defaultResume.blobPath}`;
-          }
-        } catch (err) {
-          console.error("Error generating public URL:", err);
-          // Fallback to direct URL
-          url = `${SUPABASE_URL}/storage/v1/object/public/user-resumes/${defaultResume.blobPath}`;
-        }
+    if (defaultResume.blobPath) {
+      try {
+        // Log the original blobPath for debugging
+        console.log("[Supabase] Original blobPath:", defaultResume.blobPath);
         
-        if (!url) {
-          url = `/api/files/${defaultResume.blobPath}`;
+        // Extract just the filename from the blobPath
+        // The upload code uses format: userId_default_resume.extension
+        const fileName = defaultResume.blobPath.split('/').pop();
+        console.log("[Supabase] Extracted filename:", fileName);
+        
+        if (fileName) {
+          // Get file extension to determine content type
+          const fileExtension = fileName.split('.').pop()?.toLowerCase();
+          let contentType = 'application/octet-stream'; // Default content type
+          
+          // Set appropriate content type based on file extension
+          if (fileExtension === 'pdf') {
+            contentType = 'application/pdf';
+          } else if (fileExtension === 'docx') {
+            contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+          } else if (fileExtension === 'doc') {
+            contentType = 'application/msword';
+          } else if (fileExtension === 'txt') {
+            contentType = 'text/plain';
+          }
+          
+          console.log("[Supabase] Using content type:", contentType);
+          
+          // Use createSignedUrl with the extracted filename and appropriate options
+          const { data, error } = await supabase.storage
+            .from('user-resumes')
+            .createSignedUrl(fileName, 60, {
+              transform: {
+                quality: 100 // Preserve quality
+              }
+            });
+            
+          if (error) {
+            console.error("Error creating signed URL:", error);
+            throw error;
+          }
+          
+          const url = data.signedUrl;
+          console.log("Generated signed URL:", url);
+          
+          // Create an iframe to display PDF files directly in the browser
+          if (fileExtension === 'pdf') {
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = url;
+            iframe.onload = () => {
+              window.open(url, '_blank');
+              document.body.removeChild(iframe);
+            };
+            document.body.appendChild(iframe);
+          } else {
+            // For other file types, open in a new tab and let the browser handle it
+            window.open(url, '_blank');
+          }
         }
+      } catch (err) {
+        console.error("Error generating URL:", err);
+        toast({
+          variant: "destructive",
+          title: "Unable to view resume",
+          description: "Could not generate a valid URL for your resume.",
+        });
       }
-    }
-    
-    // If we still don't have a URL, try to construct one from the blob path
-    if (!url && defaultResume.fileName) {
-      // Try to construct a URL based on the user ID and file name
-      // This is a fallback approach
-      const userId = defaultResume.metadata?.userId || '';
-      if (userId) {
-        const blobPath = `user-resumes/${userId}_default_resume.pdf`;
-        url = `${SUPABASE_URL}/storage/v1/object/public/${blobPath}`;
-        console.log("Constructed fallback URL from user ID:", url);
-      }
-    }
-    
-    if (url) {
-      console.log("Opening resume URL:", url);
-      window.open(url, '_blank');
     } else {
       toast({
         variant: "destructive",
         title: "Unable to view resume",
-        description: "Could not generate a valid URL for your resume.",
+        description: "No file path found for your resume.",
       });
     }
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!defaultResume) {
       toast({
         variant: "destructive",
@@ -211,66 +229,82 @@ const DefaultResumeUploader: React.FC = () => {
       return;
     }
     
-    // Log the resume data for debugging
-    console.log("Resume data for downloading:", defaultResume);
-    
-    let url = defaultResume.fileUrl;
-    
-    if (!url && defaultResume.blobPath) {
-      if (defaultResume.blobPath.startsWith('http')) {
-        url = defaultResume.blobPath;
-      } else {
-        // Use the supabase client to get a public URL
-        try {
-          // Extract the file key using our helper function
-          const fileKey = extractFileKey(defaultResume.blobPath);
-          console.log("Extracted file key for download:", fileKey);
-          
-          if (fileKey) {
-            const { data } = supabase.storage.from('user-resumes').getPublicUrl(fileKey);
-            url = data.publicUrl;
-            console.log("Generated public URL for download:", url);
-          } else {
-            console.error("Could not extract file key from blob path for download:", defaultResume.blobPath);
-            url = `${SUPABASE_URL}/storage/v1/object/public/user-resumes/${defaultResume.blobPath}`;
-          }
-        } catch (err) {
-          console.error("Error generating public URL for download:", err);
-          // Fallback to direct URL
-          url = `${SUPABASE_URL}/storage/v1/object/public/user-resumes/${defaultResume.blobPath}`;
-        }
+    if (defaultResume.blobPath) {
+      try {
+        // Log the original blobPath for debugging
+        console.log("[Supabase] Original blobPath:", defaultResume.blobPath);
         
-        if (!url) {
-          url = `/api/files/${defaultResume.blobPath}`;
+        // Extract just the filename from the blobPath
+        // The upload code uses format: userId_default_resume.extension
+        const fileName = defaultResume.blobPath.split('/').pop();
+        console.log("[Supabase] Extracted filename:", fileName);
+        
+        if (fileName) {
+          // Get file extension to determine content type
+          const fileExtension = fileName.split('.').pop()?.toLowerCase();
+          let contentType = 'application/octet-stream'; // Default content type
+          
+          // Set appropriate content type based on file extension
+          if (fileExtension === 'pdf') {
+            contentType = 'application/pdf';
+          } else if (fileExtension === 'docx') {
+            contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+          } else if (fileExtension === 'doc') {
+            contentType = 'application/msword';
+          } else if (fileExtension === 'txt') {
+            contentType = 'text/plain';
+          }
+          
+          console.log("[Supabase] Using content type:", contentType);
+          
+          // Use createSignedUrl with the extracted filename and appropriate options
+          const { data, error } = await supabase.storage
+            .from('user-resumes')
+            .createSignedUrl(fileName, 60, {
+              download: defaultResume.fileName || `resume.${fileExtension || 'pdf'}`
+            });
+            
+          if (error) {
+            console.error("Error creating signed URL for download:", error);
+            throw error;
+          }
+          
+          const url = data.signedUrl;
+          console.log("Generated signed URL for download:", url);
+          
+          // Create a hidden anchor element to trigger the download
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          a.download = defaultResume.fileName || `resume.${fileExtension || 'pdf'}`;
+          
+          // Add content type information to help the browser
+          if (contentType) {
+            a.type = contentType;
+          }
+          
+          // Append to body, click, and remove
+          document.body.appendChild(a);
+          a.click();
+          
+          // Small delay before removing to ensure download starts
+          setTimeout(() => {
+            document.body.removeChild(a);
+          }, 100);
         }
+      } catch (err) {
+        console.error("Error generating URL for download:", err);
+        toast({
+          variant: "destructive",
+          title: "Unable to download resume",
+          description: "Could not generate a valid URL for your resume.",
+        });
       }
-    }
-    
-    // If we still don't have a URL, try to construct one from the blob path
-    if (!url && defaultResume.fileName) {
-      // Try to construct a URL based on the user ID and file name
-      // This is a fallback approach
-      const userId = defaultResume.metadata?.userId || '';
-      if (userId) {
-        const blobPath = `user-resumes/${userId}_default_resume.pdf`;
-        url = `${SUPABASE_URL}/storage/v1/object/public/${blobPath}`;
-        console.log("Constructed fallback URL from user ID:", url);
-      }
-    }
-    
-    if (url) {
-      console.log("Downloading resume from URL:", url);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = defaultResume.fileName || 'resume.pdf';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
     } else {
       toast({
         variant: "destructive",
         title: "Unable to download resume",
-        description: "Could not generate a valid URL for your resume.",
+        description: "No file path found for your resume.",
       });
     }
   };
