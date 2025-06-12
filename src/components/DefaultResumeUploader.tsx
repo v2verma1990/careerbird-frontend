@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useResume } from "@/contexts/resume/ResumeContext";
 import { useAuth } from "@/contexts/auth/AuthContext";
 import { SUPABASE_URL, supabase } from "@/integrations/supabase/client";
+import { useLocation } from "react-router-dom";
 import { 
   FileText, 
   Upload, 
@@ -17,9 +18,19 @@ import {
   RefreshCw
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { formatFileSize, extractFileKey } from "@/lib/utils";
 
 const DefaultResumeUploader: React.FC = () => {
+  const location = useLocation();
+  
+  // Determine which page we're on
+  const isAccountPage = location.pathname.includes('/account');
+  
+  // Show full version only on account page, simplified version elsewhere
+  // This ensures resume-customizer, resume-optimizer, etc. all get the simplified version
+  const showFullVersion = isAccountPage;
   const { toast } = useToast();
   const { defaultResume, uploadDefaultResume, refreshDefaultResume, clearDefaultResume, isLoading } = useResume();
   const { user } = useAuth();
@@ -28,6 +39,7 @@ const DefaultResumeUploader: React.FC = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
+  const [useDefaultResume, setUseDefaultResume] = useState<boolean>(!!defaultResume);
 
   // Reset progress when file changes
   useEffect(() => {
@@ -322,6 +334,11 @@ const DefaultResumeUploader: React.FC = () => {
     );
   }
 
+  // Handle checkbox change
+  const handleCheckboxChange = (checked: boolean) => {
+    setUseDefaultResume(checked);
+  };
+
   return (
     <Card className="shadow-md border-0 bg-white">
       <CardHeader className="pb-2">
@@ -330,7 +347,9 @@ const DefaultResumeUploader: React.FC = () => {
           Default Resume
         </CardTitle>
         <CardDescription>
-          {defaultResume ? "Manage your default resume" : "Upload your resume to use with all tools"}
+          {showFullVersion 
+            ? (defaultResume ? "Manage your default resume" : "Upload your resume to use with all tools")
+            : "Choose whether to use your default resume"}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -341,120 +360,279 @@ const DefaultResumeUploader: React.FC = () => {
           </div>
         )}
 
-        {defaultResume ? (
+        {/* Simplified version with checkbox */}
+        {!showFullVersion && (
           <div className="space-y-4">
-            <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg">
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-white rounded-md border border-blue-200">
-                  <FileIcon className="w-8 h-8 text-blue-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-blue-900 truncate">{defaultResume.fileName}</h3>
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-blue-700 mt-1">
-                    <span className="flex items-center gap-1">
-                      <span>Size: {defaultResume.fileSize ? formatFileSize(defaultResume.fileSize) : 'Unknown'}</span>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span>Uploaded: {defaultResume.uploadDate ? new Date(defaultResume.uploadDate).toLocaleDateString() : 'Unknown'}</span>
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="flex-1 sm:flex-none"
-                onClick={handleView}
-              >
-                <Eye className="w-4 h-4 mr-2" />
-                View
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="flex-1 sm:flex-none"
-                onClick={handleDownload}
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Download
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="flex-1 sm:flex-none"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                Replace
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="flex-1 sm:flex-none text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                onClick={handleDelete}
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div 
-              className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors cursor-pointer"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <Upload className="w-10 h-10 mx-auto text-gray-400 mb-2" />
-              <p className="text-gray-600 mb-1">Drag and drop your resume here or click to browse</p>
-              <p className="text-gray-500 text-sm">Supported formats: PDF, DOCX, DOC, TXT (Max 5MB)</p>
-            </div>
-            
-            {file && (
-              <div className="p-3 bg-blue-50 border border-blue-100 rounded-md">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <FileIcon className="w-5 h-5 text-blue-600" />
-                    <span className="font-medium text-blue-900 truncate max-w-[200px]">{file.name}</span>
-                    <span className="text-xs text-blue-700">({formatFileSize(file.size)})</span>
-                  </div>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="h-7 w-7 p-0 text-gray-500"
-                    onClick={() => {
-                      setFile(null);
-                      if (fileInputRef.current) fileInputRef.current.value = '';
-                    }}
+            {defaultResume ? (
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="use-default-resume" 
+                    checked={useDefaultResume}
+                    onCheckedChange={handleCheckboxChange}
+                  />
+                  <Label 
+                    htmlFor="use-default-resume" 
+                    className="font-medium cursor-pointer"
                   >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                    Use my default resume
+                  </Label>
                 </div>
                 
-                {uploading && (
-                  <div className="mt-2">
-                    <Progress value={uploadProgress} className="h-2" />
-                    <p className="text-xs text-blue-700 mt-1">Uploading: {uploadProgress}%</p>
+                {useDefaultResume && (
+                  <div className="p-3 bg-blue-50 border border-blue-100 rounded-md">
+                    <div className="flex items-start gap-3">
+                      <div className="p-1 bg-white rounded-md border border-blue-200">
+                        <FileIcon className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-blue-900 truncate text-sm">{defaultResume.fileName}</h3>
+                        <p className="text-xs text-blue-700">
+                          Uploaded: {defaultResume.uploadDate ? new Date(defaultResume.uploadDate).toLocaleDateString() : 'Unknown'}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 )}
                 
-                {!uploading && (
-                  <div className="mt-2">
-                    <Button 
-                      size="sm" 
-                      className="w-full"
-                      onClick={handleUpload}
+                {!useDefaultResume && (
+                  <div>
+                    <div 
+                      className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-400 transition-colors cursor-pointer"
+                      onClick={() => fileInputRef.current?.click()}
                     >
-                      <Upload className="w-4 h-4 mr-2" />
-                      Upload Resume
-                    </Button>
+                      <Upload className="w-8 h-8 mx-auto text-gray-400 mb-1" />
+                      <p className="text-gray-600 text-sm mb-1">Upload a different resume</p>
+                      <p className="text-gray-500 text-xs">PDF, DOCX, DOC, TXT (Max 5MB)</p>
+                    </div>
+                    
+                    {file && (
+                      <div className="mt-3 p-3 bg-blue-50 border border-blue-100 rounded-md">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <FileIcon className="w-4 h-4 text-blue-600" />
+                            <span className="font-medium text-blue-900 truncate max-w-[200px] text-sm">{file.name}</span>
+                            <span className="text-xs text-blue-700">({formatFileSize(file.size)})</span>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-6 w-6 p-0 text-gray-500"
+                            onClick={() => {
+                              setFile(null);
+                              if (fileInputRef.current) fileInputRef.current.value = '';
+                            }}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                        
+                        {uploading && (
+                          <div className="mt-2">
+                            <Progress value={uploadProgress} className="h-2" />
+                            <p className="text-xs text-blue-700 mt-1">Uploading: {uploadProgress}%</p>
+                          </div>
+                        )}
+                        
+                        {!uploading && (
+                          <div className="mt-2">
+                            <Button 
+                              size="sm" 
+                              className="w-full"
+                              onClick={handleUpload}
+                            >
+                              <Upload className="w-3 h-3 mr-2" />
+                              Upload Resume
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm text-amber-700 bg-amber-50 p-3 rounded-md border border-amber-100 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  You don't have a default resume yet. Please upload one.
+                </p>
+                
+                <div 
+                  className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-400 transition-colors cursor-pointer"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload className="w-8 h-8 mx-auto text-gray-400 mb-1" />
+                  <p className="text-gray-600 text-sm mb-1">Upload your resume</p>
+                  <p className="text-gray-500 text-xs">PDF, DOCX, DOC, TXT (Max 5MB)</p>
+                </div>
+                
+                {file && (
+                  <div className="p-3 bg-blue-50 border border-blue-100 rounded-md">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <FileIcon className="w-4 h-4 text-blue-600" />
+                        <span className="font-medium text-blue-900 truncate max-w-[200px] text-sm">{file.name}</span>
+                        <span className="text-xs text-blue-700">({formatFileSize(file.size)})</span>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-6 w-6 p-0 text-gray-500"
+                        onClick={() => {
+                          setFile(null);
+                          if (fileInputRef.current) fileInputRef.current.value = '';
+                        }}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
+                    
+                    {uploading && (
+                      <div className="mt-2">
+                        <Progress value={uploadProgress} className="h-2" />
+                        <p className="text-xs text-blue-700 mt-1">Uploading: {uploadProgress}%</p>
+                      </div>
+                    )}
+                    
+                    {!uploading && (
+                      <div className="mt-2">
+                        <Button 
+                          size="sm" 
+                          className="w-full"
+                          onClick={handleUpload}
+                        >
+                          <Upload className="w-3 h-3 mr-2" />
+                          Upload Resume
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             )}
           </div>
+        )}
+
+        {/* Full version with view/download options */}
+        {showFullVersion && (
+          <>
+            {defaultResume ? (
+              <div className="space-y-4">
+                <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-white rounded-md border border-blue-200">
+                      <FileIcon className="w-8 h-8 text-blue-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-blue-900 truncate">{defaultResume.fileName}</h3>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-blue-700 mt-1">
+                        <span className="flex items-center gap-1">
+                          <span>Size: {defaultResume.fileSize ? formatFileSize(defaultResume.fileSize) : 'Unknown'}</span>
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <span>Uploaded: {defaultResume.uploadDate ? new Date(defaultResume.uploadDate).toLocaleDateString() : 'Unknown'}</span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1 sm:flex-none"
+                    onClick={handleView}
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    View
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1 sm:flex-none"
+                    onClick={handleDownload}
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Download
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1 sm:flex-none"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Replace
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1 sm:flex-none text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                    onClick={handleDelete}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div 
+                  className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors cursor-pointer"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload className="w-10 h-10 mx-auto text-gray-400 mb-2" />
+                  <p className="text-gray-600 mb-1">Drag and drop your resume here or click to browse</p>
+                  <p className="text-gray-500 text-sm">Supported formats: PDF, DOCX, DOC, TXT (Max 5MB)</p>
+                </div>
+                
+                {file && (
+                  <div className="p-3 bg-blue-50 border border-blue-100 rounded-md">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <FileIcon className="w-5 h-5 text-blue-600" />
+                        <span className="font-medium text-blue-900 truncate max-w-[200px]">{file.name}</span>
+                        <span className="text-xs text-blue-700">({formatFileSize(file.size)})</span>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-7 w-7 p-0 text-gray-500"
+                        onClick={() => {
+                          setFile(null);
+                          if (fileInputRef.current) fileInputRef.current.value = '';
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    
+                    {uploading && (
+                      <div className="mt-2">
+                        <Progress value={uploadProgress} className="h-2" />
+                        <p className="text-xs text-blue-700 mt-1">Uploading: {uploadProgress}%</p>
+                      </div>
+                    )}
+                    
+                    {!uploading && (
+                      <div className="mt-2">
+                        <Button 
+                          size="sm" 
+                          className="w-full"
+                          onClick={handleUpload}
+                        >
+                          <Upload className="w-4 h-4 mr-2" />
+                          Upload Resume
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </>
         )}
         
         <input

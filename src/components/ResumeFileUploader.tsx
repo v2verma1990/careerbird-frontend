@@ -34,7 +34,8 @@ const ResumeFileUploader = ({
   const [fileName, setFileName] = useState<string | null>(null);
   const [fileSize, setFileSize] = useState<string | null>(null);
   const [uploadDate, setUploadDate] = useState<Date | null>(null);
-  const [useDefaultResume, setUseDefaultResume] = useState<boolean>(defaultResume !== null && (defaultResume.fileUrl !== undefined || defaultResume.blobPath !== undefined));
+  // Initialize with false, will be updated by parent component if needed
+  const [useDefaultResume, setUseDefaultResume] = useState<boolean>(false);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -154,31 +155,18 @@ const ResumeFileUploader = ({
     }
   };
   
-  // Automatically use default resume and notify parent component on mount
+  // Listen for changes to the defaultResume
   useEffect(() => {
-    if (defaultResume && (defaultResume.fileUrl || defaultResume.blobPath) && onUseDefaultResumeChange) {
-      // Only use the default resume when it has valid data
-      setUseDefaultResume(true);
-      onUseDefaultResumeChange(true);
-      
-      // Debug the defaultResume object
-      console.log("Valid Default Resume Object:", defaultResume);
-      console.log("Default Resume File URL:", defaultResume.fileUrl);
-      console.log("Default Resume Blob Path:", defaultResume.blobPath);
-    } else if (defaultResume) {
-      console.log("Invalid Default Resume Object:", defaultResume);
-      setUseDefaultResume(false);
-      if (onUseDefaultResumeChange) {
-        onUseDefaultResumeChange(false);
-      }
+    // Only log information, don't change state here
+    if (defaultResume) {
+      console.log("ResumeFileUploader: Default resume available:", defaultResume);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultResume]);
+  
+  // This effect will run when the component receives a new useDefaultResume prop
+  // We'll add this in a future update if needed
 
-  // Debug log when component renders
-  console.log("ResumeFileUploader rendering with defaultResume:", defaultResume);
-  console.log("defaultResume.fileUrl:", defaultResume?.fileUrl);
-  console.log("defaultResume type:", typeof defaultResume);
+  // Component is now controlled by parent
   
   // Enhanced check for defaultResume validity
   useEffect(() => {
@@ -401,8 +389,8 @@ const ResumeFileUploader = ({
         </div>
       )}
       
-      {/* Default Resume Checkbox - Only shown when we have valid resume data and no file is selected */}
-      {showDefaultResumeOption && defaultResume && (defaultResume.fileUrl || defaultResume.blobPath) && !useDefaultResume && !fileName && (
+      {/* Default Resume Checkbox - Always shown when we have valid resume data */}
+      {showDefaultResumeOption && defaultResume && !fileName && (
         <div className="mb-4">
           <div className="flex items-center space-x-2">
             <Checkbox 
@@ -415,7 +403,7 @@ const ResumeFileUploader = ({
               htmlFor="use-default-resume" 
               className="text-sm text-gray-700 cursor-pointer"
             >
-              Use my default resume instead
+              Use my default resume
             </Label>
           </div>
         </div>
