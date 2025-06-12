@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,10 +10,11 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Download, Eye, Plus, Trash2, Upload, FileText, CheckCircle, AlertTriangle } from "lucide-react";
+import { Loader2, Download, Eye, Plus, Trash2, Upload, FileText, CheckCircle, AlertTriangle, ArrowLeft } from "lucide-react";
 import api from "@/utils/apiClient";
 import { supabase } from "@/integrations/supabase/client";
 import { useResume } from "@/contexts/resume/ResumeContext";
+import { useAuth } from "@/contexts/auth/AuthContext";
 import "@/styles/ResumeBuilderApp.css";
 
 const API_BASE_URL = "http://localhost:5001/api"; // Match the URL used in apiClient.ts
@@ -73,8 +75,10 @@ interface ResumeData {
 }
 
 const ResumeBuilderApp = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { defaultResume } = useResume();
+  const { user, subscriptionStatus } = useAuth();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
   const [resumeData, setResumeData] = useState<ResumeData>({
@@ -124,6 +128,20 @@ const ResumeBuilderApp = () => {
     
     return () => clearTimeout(timer);
   }, [defaultResume]);
+
+  // Function to handle back button click
+  const handleBackClick = () => {
+    if (!user) {
+      navigate('/');
+      return;
+    }
+    const userType = user.user_metadata?.userType || 'candidate';
+    if (userType === 'recruiter') {
+      navigate('/recruiter-dashboard');
+    } else {
+      navigate('/candidate-dashboard');
+    }
+  };
 
   const loadTemplates = async () => {
     try {
@@ -834,6 +852,16 @@ const ResumeBuilderApp = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center mb-4">
+            <Button 
+              variant="ghost" 
+              onClick={handleBackClick}
+              className="mr-4"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Dashboard
+            </Button>
+          </div>
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold">Resume Preview</h1>
             <div className="flex gap-4">
@@ -913,6 +941,16 @@ const ResumeBuilderApp = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center mb-4">
+          <Button 
+            variant="ghost" 
+            onClick={handleBackClick}
+            className="mr-4"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Dashboard
+          </Button>
+        </div>
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-4">Professional Resume Builder</h1>
           <p className="text-xl text-gray-600">Create stunning resumes with our AI-powered builder and beautiful templates</p>
