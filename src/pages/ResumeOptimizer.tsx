@@ -3,11 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth/AuthContext";
 import { useResume } from "@/contexts/resume/ResumeContext";
 import api from "@/utils/apiClient";
-import ResumeFileUploader from "@/components/ResumeFileUploader";
 import { 
   FileText, 
   Sparkles, 
@@ -23,7 +23,9 @@ import {
   BarChart3,
   FileCheck,
   Brain,
-  Star
+  Star,
+  Upload,
+  AlertTriangle
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -36,6 +38,7 @@ const ResumeOptimizer = () => {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [featureUsage, setFeatureUsage] = useState<{ usageCount: number; usageLimit: number }>({ usageCount: 0, usageLimit: 0 });
   const [loadingUsage, setLoadingUsage] = useState(true);
+  const [loadingResume, setLoadingResume] = useState(true);
   const [optimizeReport, setOptimizeReport] = useState<any>(null);
   const [useDefaultResume, setUseDefaultResume] = useState(false);
   const { toast } = useToast();
@@ -43,17 +46,32 @@ const ResumeOptimizer = () => {
   const { defaultResume } = useResume();
 
   const handleFileSelected = async (file: File | null) => {
-    setResumeFile(file);
+    // If a file is selected, uncheck the "use default resume" option
     if (file) {
+      setUseDefaultResume(false);
       setResumeText("[PDF text will be extracted here]");
     } else {
       setResumeText("");
     }
+    setResumeFile(file);
   };
-  
-  const handleUseDefaultResumeChange = (useDefault: boolean) => {
-    setUseDefaultResume(useDefault);
-  };
+
+  // Initialize useDefaultResume when defaultResume changes
+  useEffect(() => {
+    // Add a small delay to ensure the loading state is visible
+    // This prevents the UI from flashing between states
+    const timer = setTimeout(() => {
+      if (defaultResume) {
+        console.log("Default resume found, setting useDefaultResume to true");
+        setUseDefaultResume(true);
+      } else {
+        console.log("No default resume found");
+      }
+      setLoadingResume(false);
+    }, 500); // 500ms delay
+    
+    return () => clearTimeout(timer);
+  }, [defaultResume]);
 
   useEffect(() => {
     if (!user) return;
@@ -97,7 +115,13 @@ const ResumeOptimizer = () => {
     }
     try {
       setIsLoading(true);
-      const { data, error } = await api.resume.optimize(resumeFile);
+      
+      // If using default resume, pass null as the file and true for useDefaultResume
+      const { data, error } = await api.resume.optimize(
+        useDefaultResume ? null : resumeFile,
+        subscriptionStatus?.type,
+        useDefaultResume
+      );
       if (error) throw new Error(error);
 
       if (data) {
@@ -188,26 +212,104 @@ const ResumeOptimizer = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-3 text-xl">
                 <Target className="w-6 h-6 text-blue-600" />
-                Upload Resume
+                Optimize Your Resume
               </CardTitle>
-              <p className="text-gray-600">Upload your resume for comprehensive AI optimization analysis</p>
+              <p className="text-gray-600">Upload your resume or use your default resume for AI optimization</p>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                  <Label htmlFor="resumeText" className="text-base font-medium">
+                  <Label htmlFor="resumeFile" className="text-base font-medium">
                     Your Resume *
                   </Label>
-                  <ResumeFileUploader onFileSelected={handleFileSelected} disabled={isLoading} />
-                  {resumeFile && (
-                    <div className="mt-3 p-4 bg-green-50 rounded-lg border border-green-200">
-                      <div className="flex items-center gap-3">
-                        <CheckCircle className="w-5 h-5 text-green-600" />
-                        <div>
-                          <p className="font-medium text-green-800">{resumeFile.name}</p>
-                          <p className="text-sm text-green-600">Ready for optimization</p>
-                        </div>
+                  
+                  {loadingResume ? (
+                    // Show loading state while checking for default resume
+                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                        <p className="text-gray-600">Checking for default resume...</p>
                       </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {defaultResume && (
+                        <div className="flex items-center space-x-2 mt-2">
+                          <Checkbox 
+                            id="use-default-resume" 
+                            checked={useDefaultResume}
+                            onCheckedChange={(checked) => setUseDefaultResume(!!checked)}
+                            disabled={isLoading}
+                          />
+                          <Label 
+                            htmlFor="use-default-resume" 
+                            className="font-medium cursor-pointer"
+                          >
+                            Use my default resume
+                          </Label>
+                        </div>
+                      )}
+                      
+                      {/* Show default resume info when checkbox is checked */}
+                      {defaultResume && useDefaultResume && (
+                        <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                          <div className="flex items-center gap-3">
+                            <FileText className="w-5 h-5 text-blue-600" />
+                            <div>
+                              <p className="font-medium text-blue-800">Using your default resume</p>
+                              <p className="text-sm text-blue-600">{defaultResume.fileName}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Show warning if no default resume, but only after loading is complete */}
+                      {(!loadingResume && !defaultResume && !resumeFile) && (
+                        <div className="p-3 bg-amber-50 rounded-lg border border-amber-200 mb-3">
+                          <div className="flex items-center gap-2">
+                            <AlertTriangle className="w-5 h-5 text-amber-600" />
+                            <p className="text-amber-800">You don't have a default resume yet. Please upload one.</p>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Always show file upload option unless using default resume */}
+                      {(!defaultResume || !useDefaultResume) && (
+                        <div>
+                          <div 
+                            className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-400 transition-colors cursor-pointer"
+                            onClick={() => document.getElementById('resume-file-input')?.click()}
+                          >
+                            <Upload className="w-8 h-8 mx-auto text-gray-400 mb-1" />
+                            <p className="text-gray-600 text-sm mb-1">
+                              {defaultResume ? "Upload a different resume" : "Upload your resume"}
+                            </p>
+                            <p className="text-gray-500 text-xs">PDF, DOCX, DOC, TXT (Max 5MB)</p>
+                            <input
+                              id="resume-file-input"
+                              type="file"
+                              onChange={(e) => handleFileSelected(e.target.files?.[0] || null)}
+                              accept=".pdf,.docx,.doc,.txt"
+                              className="hidden"
+                              disabled={isLoading}
+                              title="Upload your resume file"
+                              placeholder="Upload your resume file"
+                            />
+                          </div>
+                          
+                          {resumeFile && (
+                            <div className="mt-3 p-3 bg-green-50 rounded-lg border border-green-200">
+                              <div className="flex items-center gap-3">
+                                <CheckCircle className="w-5 h-5 text-green-600" />
+                                <div>
+                                  <p className="font-medium text-green-800">{resumeFile.name}</p>
+                                  <p className="text-sm text-green-600">Ready for optimization</p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
