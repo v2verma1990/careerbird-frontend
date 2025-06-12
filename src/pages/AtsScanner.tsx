@@ -1,13 +1,14 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth/AuthContext";
+import { useResume } from "@/contexts/resume/ResumeContext";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import api from "@/utils/apiClient";
-import ResumeFileUploader from "@/components/ResumeFileUploader";
 import { 
   Bot, 
   FileText, 
@@ -21,7 +22,9 @@ import {
   Award,
   ArrowLeft,
   Download,
-  Eye
+  Eye,
+  Upload,
+  Loader2
 } from "lucide-react";
 
 interface ScanResults {
@@ -34,13 +37,40 @@ const AtsScanner = () => {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [scanResults, setScanResults] = useState<ScanResults | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [useDefaultResume, setUseDefaultResume] = useState(false);
+  const [loadingResume, setLoadingResume] = useState(true);
   const { toast } = useToast();
   const { user, subscriptionStatus, incrementUsageCount } = useAuth();
+  const { defaultResume } = useResume();
   const [upgradePrompt, setUpgradePrompt] = useState<string | null>(null);
 
-  const handleFileSelected = async (file: File) => {
-    setResumeFile(file);
-    setResumeText("[PDF text will be extracted here]");
+  // Initialize useDefaultResume when defaultResume changes
+  useEffect(() => {
+    // Add a small delay to ensure the loading state is visible
+    // This prevents the UI from flashing between states
+    const timer = setTimeout(() => {
+      if (defaultResume) {
+        console.log("Default resume found in ATS Scanner");
+        setUseDefaultResume(true);
+      } else {
+        console.log("No default resume found in ATS Scanner");
+      }
+      setLoadingResume(false);
+    }, 500); // 500ms delay
+    
+    return () => clearTimeout(timer);
+  }, [defaultResume]);
+
+  const handleFileSelected = async (file: File | null) => {
+    if (file) {
+      // If a file is selected, uncheck the "use default resume" option
+      setUseDefaultResume(false);
+      setResumeFile(file);
+      setResumeText("[PDF text will be extracted here]");
+    } else {
+      setResumeFile(null);
+      setResumeText("");
+    }
   };
 
   const getScoreColor = (score: number) => {
@@ -64,11 +94,20 @@ const AtsScanner = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!resumeFile) {
+    if (!resumeFile && !useDefaultResume) {
       toast({
         variant: "destructive",
         title: "Missing resume file",
-        description: "Please upload your resume as a PDF file.",
+        description: "Please upload your resume or use your default resume.",
+      });
+      return;
+    }
+    
+    if (useDefaultResume && !defaultResume) {
+      toast({
+        variant: "destructive",
+        title: "Default Resume Not Found",
+        description: "Your default resume could not be found. Please upload a resume file.",
       });
       return;
     }
@@ -85,7 +124,12 @@ const AtsScanner = () => {
     try {
       setIsLoading(true);
 
-      const { data, error } = await api.resume.atsScan(resumeFile);
+      // If using default resume, pass null as the file and true for useDefaultResume
+      const { data, error } = await api.resume.atsScan(
+        useDefaultResume ? null : resumeFile,
+        subscriptionStatus?.type,
+        useDefaultResume
+      );
 
       if (error) {
         throw new Error(error);
@@ -187,19 +231,96 @@ const AtsScanner = () => {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <Label htmlFor="resumeFile" className="text-base font-medium">
-                    Resume File (PDF)
+                    Your Resume *
                   </Label>
-                  <div className="mt-2">
-                    <ResumeFileUploader onFileSelected={handleFileSelected} disabled={isLoading} />
-                  </div>
-                  {resumeFile && (
-                    <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                      <div className="flex items-center">
-                        <CheckCircle className="w-5 h-5 text-green-600 mr-2" />
-                        <span className="text-green-800 font-medium">
-                          {resumeFile.name} uploaded successfully
-                        </span>
+                  
+                  {loadingResume ? (
+                    // Show loading state while checking for default resume
+                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                        <p className="text-gray-600">Checking for default resume...</p>
                       </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {defaultResume && (
+                        <div className="flex items-center space-x-2 mt-2">
+                          <Checkbox 
+                            id="use-default-resume" 
+                            checked={useDefaultResume}
+                            onCheckedChange={(checked) => setUseDefaultResume(!!checked)}
+                            disabled={isLoading}
+                          />
+                          <Label 
+                            htmlFor="use-default-resume" 
+                            className="font-medium cursor-pointer"
+                          >
+                            Use my default resume
+                          </Label>
+                        </div>
+                      )}
+                      
+                      {/* Show default resume info when checkbox is checked */}
+                      {defaultResume && useDefaultResume && (
+                        <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                          <div className="flex items-center gap-3">
+                            <FileText className="w-5 h-5 text-blue-600" />
+                            <div>
+                              <p className="font-medium text-blue-800">Using your default resume</p>
+                              <p className="text-sm text-blue-600">{defaultResume.fileName}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Show warning if no default resume, but only after loading is complete */}
+                      {(!loadingResume && !defaultResume && !resumeFile) && (
+                        <div className="p-3 bg-amber-50 rounded-lg border border-amber-200 mb-3">
+                          <div className="flex items-center gap-2">
+                            <AlertTriangle className="w-5 h-5 text-amber-600" />
+                            <p className="text-amber-800">You don't have a default resume yet. Please upload one.</p>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Always show file upload option unless using default resume */}
+                      {(!defaultResume || !useDefaultResume) && (
+                        <div>
+                          <div 
+                            className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-400 transition-colors cursor-pointer"
+                            onClick={() => document.getElementById('resume-file-input')?.click()}
+                          >
+                            <Upload className="w-8 h-8 mx-auto text-gray-400 mb-1" />
+                            <p className="text-gray-600 text-sm mb-1">
+                              {defaultResume ? "Upload a different resume" : "Upload your resume"}
+                            </p>
+                            <p className="text-gray-500 text-xs">PDF, DOCX, DOC, TXT (Max 5MB)</p>
+                            <input
+                              id="resume-file-input"
+                              type="file"
+                              onChange={(e) => handleFileSelected(e.target.files?.[0] || null)}
+                              accept=".pdf,.docx,.doc,.txt"
+                              className="hidden"
+                              disabled={isLoading}
+                              title="Upload your resume file"
+                              placeholder="Upload your resume file"
+                            />
+                          </div>
+                          
+                          {resumeFile && (
+                            <div className="mt-3 p-3 bg-green-50 rounded-lg border border-green-200">
+                              <div className="flex items-center gap-3">
+                                <CheckCircle className="w-5 h-5 text-green-600" />
+                                <div>
+                                  <p className="font-medium text-green-800">{resumeFile.name}</p>
+                                  <p className="text-sm text-green-600">Ready for scanning</p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -207,7 +328,7 @@ const AtsScanner = () => {
                 <Button 
                   type="submit" 
                   className="w-full py-6 text-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg transform transition-all duration-200 hover:scale-105" 
-                  disabled={isLoading || !resumeFile}
+                  disabled={isLoading || (!resumeFile && !useDefaultResume)}
                 >
                   {isLoading ? (
                     <>
@@ -217,7 +338,7 @@ const AtsScanner = () => {
                   ) : (
                     <>
                       <Bot className="w-5 h-5 mr-3" />
-                      Scan My Resume
+                      Scan {useDefaultResume ? "Default" : "My"} Resume
                     </>
                   )}
                 </Button>

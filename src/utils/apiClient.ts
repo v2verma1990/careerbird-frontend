@@ -843,11 +843,17 @@ export const api = {
   },
   resumeBuilder: {
     getTemplates: () => apiCall<any>("GET", "/resumebuilder/templates"),
-    extractResumeData: async (file: File) => {
+    extractResumeData: async (file: File | null, useDefaultResume: boolean = false) => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         const formData = new FormData();
-        formData.append('resumeFile', file);
+        
+        if (!useDefaultResume && file) {
+          formData.append('resumeFile', file);
+        }
+        
+        // Add a flag to indicate whether to use the default resume
+        formData.append('useDefaultResume', useDefaultResume.toString());
         
         const headers: Record<string, string> = {};
         if (session?.access_token) {
@@ -1112,15 +1118,24 @@ export const api = {
         return response.ok ? { data, error: null } : { data: null, error: data?.error || "Error customizing resume" };
       });
     },
-    atsScan: async (file: File, plan?: string) => {
+    atsScan: async (file: File | null, plan?: string, useDefaultResume: boolean = false) => {
       const { data: { session } } = await supabase.auth.getSession();
       const formData = new FormData();
-      formData.append("File", file);
+      
+      if (!useDefaultResume && file) {
+        formData.append("File", file);
+      }
+      
+      // Add a flag to indicate whether to use the default resume
+      formData.append('useDefaultResume', useDefaultResume.toString());
+      
       if (plan) formData.append("plan", plan);
+      
       const headers: Record<string, string> = {};
       if (session?.access_token) {
         headers["Authorization"] = `Bearer ${session.access_token}`;
       }
+      
       return fetch(`${API_BASE_URL}/resume/scan-ats`, {
         method: "POST",
         headers,

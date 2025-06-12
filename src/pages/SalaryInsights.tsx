@@ -3,11 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth/AuthContext";
 import { useResume } from "@/contexts/resume/ResumeContext";
 import api, { IS_BACKEND_RUNNING } from "@/utils/apiClient";
-import ResumeFileUploader from "@/components/ResumeFileUploader";
 import { 
   DollarSign, 
   TrendingUp, 
@@ -43,9 +43,7 @@ const SalaryInsights = () => {
   const { user, subscriptionStatus, incrementUsageCount } = useAuth();
   const { defaultResume } = useResume();
 
-  const handleFileSelected = async (file: File | null) => {
-    setResumeFile(file);
-  };
+  // We no longer need handleFileSelected since we removed the file uploader
   
   const handleUseDefaultResumeChange = (useDefault: boolean) => {
     setUseDefaultResume(useDefault);
@@ -101,7 +99,14 @@ const SalaryInsights = () => {
       formData.append('industry', industry);
       formData.append('yearsExperience', yearsExperience.toString());
       if (educationLevel) formData.append('educationLevel', educationLevel);
-      if (resumeFile) formData.append('resume', resumeFile);
+      
+      // Add a flag to indicate whether to use the default resume
+      formData.append('useDefaultResume', useDefaultResume.toString());
+      
+      // Only append the resume file if not using default resume
+      if (!useDefaultResume && resumeFile) {
+        formData.append('resume', resumeFile);
+      }
 
       const { data, error } = await api.resume.salaryInsights(formData, subscriptionStatus?.type);
       if (error) throw new Error(error);
@@ -297,25 +302,38 @@ const SalaryInsights = () => {
                     <FileText className="w-4 h-4 text-green-600" />
                     Your Resume (Optional)
                   </Label>
-                  <ResumeFileUploader 
-                    onFileSelected={handleFileSelected} 
-                    onUseDefaultResumeChange={handleUseDefaultResumeChange}
-                    disabled={isLoading} 
-                    showDefaultResumeOption={true}
-                  />
-                  {resumeFile && (
-                    <div className="mt-2 p-3 bg-green-50 rounded-lg border border-green-200">
-                      <div className="flex items-center gap-2 text-green-800">
-                        <CheckCircle className="w-4 h-4" />
-                        <span className="text-sm font-medium">{resumeFile.name}</span>
+                  
+                  {defaultResume ? (
+                    <div className="mt-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="use-default-resume" 
+                          checked={useDefaultResume}
+                          onCheckedChange={(checked) => handleUseDefaultResumeChange(!!checked)}
+                          disabled={isLoading}
+                        />
+                        <Label 
+                          htmlFor="use-default-resume" 
+                          className="text-sm text-gray-700 cursor-pointer"
+                        >
+                          Use my default resume
+                        </Label>
                       </div>
+                      
+                      {useDefaultResume && (
+                        <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                          <div className="flex items-center gap-2 text-blue-800">
+                            <CheckCircle className="w-4 h-4" />
+                            <span className="text-sm font-medium">Using your default resume: {defaultResume.fileName}</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  {useDefaultResume && defaultResume && (
-                    <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                      <div className="flex items-center gap-2 text-blue-800">
-                        <CheckCircle className="w-4 h-4" />
-                        <span className="text-sm font-medium">Using your default resume: {defaultResume.fileName}</span>
+                  ) : (
+                    <div className="mt-2 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                      <div className="flex items-center gap-2 text-amber-800">
+                        <FileText className="w-4 h-4" />
+                        <span className="text-sm">No default resume found. You can still get salary insights without a resume.</span>
                       </div>
                     </div>
                   )}

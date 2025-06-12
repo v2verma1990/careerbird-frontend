@@ -3,14 +3,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Download, Eye, Plus, Trash2, Upload, FileText } from "lucide-react";
+import { Loader2, Download, Eye, Plus, Trash2, Upload, FileText, CheckCircle, AlertTriangle } from "lucide-react";
 import api from "@/utils/apiClient";
 import { supabase } from "@/integrations/supabase/client";
+import { useResume } from "@/contexts/resume/ResumeContext";
 import "@/styles/ResumeBuilderApp.css";
 
 const API_BASE_URL = "http://localhost:5001/api"; // Match the URL used in apiClient.ts
@@ -72,6 +74,7 @@ interface ResumeData {
 
 const ResumeBuilderApp = () => {
   const { toast } = useToast();
+  const { defaultResume } = useResume();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
   const [resumeData, setResumeData] = useState<ResumeData>({
@@ -96,11 +99,31 @@ const ResumeBuilderApp = () => {
   const [previewHtml, setPreviewHtml] = useState<string>("");
   const [showPreview, setShowPreview] = useState(false);
   const [newSkill, setNewSkill] = useState("");
+  const [useDefaultResume, setUseDefaultResume] = useState(false);
+  const [loadingResume, setLoadingResume] = useState(true);
 
   // Load templates
   useEffect(() => {
     loadTemplates();
   }, []);
+  
+  // Initialize useDefaultResume when defaultResume changes
+  useEffect(() => {
+    // Add a small delay to ensure the loading state is visible
+    // This prevents the UI from flashing between states
+    const timer = setTimeout(() => {
+      if (defaultResume) {
+        console.log("Default resume found in Resume Builder");
+        // Don't automatically set useDefaultResume to true here
+        // Let the user explicitly choose to use the default resume
+      } else {
+        console.log("No default resume found in Resume Builder");
+      }
+      setLoadingResume(false);
+    }, 500); // 500ms delay
+    
+    return () => clearTimeout(timer);
+  }, [defaultResume]);
 
   const loadTemplates = async () => {
     try {
@@ -385,6 +408,9 @@ const ResumeBuilderApp = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // If a file is selected, uncheck the "use default resume" option
+    setUseDefaultResume(false);
+    
     try {
       setExtracting(true);
       const result = await api.resumeBuilder.extractResumeData(file);
@@ -423,6 +449,61 @@ const ResumeBuilderApp = () => {
       toast({
         title: "Error",
         description: "Failed to extract resume data",
+        variant: "destructive"
+      });
+    } finally {
+      setExtracting(false);
+    }
+  };
+  
+  const extractFromDefaultResume = async () => {
+    if (!defaultResume) {
+      toast({
+        title: "Error",
+        description: "Default resume not found. Please upload a resume file.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      setExtracting(true);
+      const result = await api.resumeBuilder.extractResumeData(null, true);
+      
+      if (result.error) {
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (result.data) {
+        setResumeData({
+          name: result.data.name || "",
+          title: result.data.title || "",
+          email: result.data.email || "",
+          phone: result.data.phone || "",
+          location: result.data.location || "",
+          linkedin: result.data.linkedin || "",
+          website: result.data.website || "",
+          summary: result.data.summary || "",
+          skills: result.data.skills || [],
+          experience: result.data.experience || [],
+          education: result.data.education || [],
+          certifications: result.data.certifications || [],
+          projects: result.data.projects || []
+        });
+        toast({
+          title: "Success",
+          description: "Resume data extracted successfully from your default resume!"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to extract data from default resume",
         variant: "destructive"
       });
     } finally {
@@ -904,23 +985,69 @@ const ResumeBuilderApp = () => {
                         id="resume-upload"
                         aria-label="Upload Resume File"
                       />
-                      <Button
-                        variant="outline"
-                        onClick={() => document.getElementById('resume-upload')?.click()}
-                        disabled={extracting}
-                        size="sm"
-                      >
-                        {extracting ? (
+                      
+                      {loadingResume ? (
+                        <Button variant="outline" size="sm" disabled>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        ) : (
-                          <Upload className="w-4 h-4 mr-2" />
-                        )}
-                        Extract from Resume
-                      </Button>
+                          Checking...
+                        </Button>
+                      ) : (
+                        <>
+                          {defaultResume && (
+                            <Button
+                              variant={useDefaultResume ? "default" : "outline"}
+                              onClick={() => {
+                                const newValue = !useDefaultResume;
+                                setUseDefaultResume(newValue);
+                                if (newValue) {
+                                  extractFromDefaultResume();
+                                }
+                              }}
+                              disabled={extracting}
+                              size="sm"
+                              className={useDefaultResume ? "bg-blue-600 hover:bg-blue-700" : ""}
+                            >
+                              {extracting && useDefaultResume ? (
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              ) : (
+                                <FileText className="w-4 h-4 mr-2" />
+                              )}
+                              Use Default Resume
+                            </Button>
+                          )}
+                          
+                          <Button
+                            variant="outline"
+                            onClick={() => document.getElementById('resume-upload')?.click()}
+                            disabled={extracting}
+                            size="sm"
+                          >
+                            {extracting && !useDefaultResume ? (
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            ) : (
+                              <Upload className="w-4 h-4 mr-2" />
+                            )}
+                            Upload Resume
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent>
+                  {/* Show default resume info when checkbox is checked */}
+                  {defaultResume && useDefaultResume && (
+                    <div className="p-3 mb-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="flex items-center gap-3">
+                        <FileText className="w-5 h-5 text-blue-600" />
+                        <div>
+                          <p className="font-medium text-blue-800">Using your default resume</p>
+                          <p className="text-sm text-blue-600">{defaultResume.fileName}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
                   <Tabs defaultValue="personal" className="w-full">
                     <TabsList className="grid w-full grid-cols-5">
                       <TabsTrigger value="personal">Personal</TabsTrigger>
