@@ -141,23 +141,17 @@ const DefaultResumeUploader: React.FC = () => {
       });
       return;
     }
-    
     if (defaultResume.blobPath) {
       try {
         // Log the original blobPath for debugging
         console.log("[Supabase] Original blobPath:", defaultResume.blobPath);
-        
-        // Extract just the filename from the blobPath
-        // The upload code uses format: userId_default_resume.extension
-        const fileName = defaultResume.blobPath.split('/').pop();
-        console.log("[Supabase] Extracted filename:", fileName);
-        
-        if (fileName) {
+        // Extract the file key using the utility function
+        const fileKey = extractFileKey(defaultResume.blobPath);
+        console.log("[Supabase] Extracted file key:", fileKey);
+        if (fileKey) {
           // Get file extension to determine content type
-          const fileExtension = fileName.split('.').pop()?.toLowerCase();
-          let contentType = 'application/octet-stream'; // Default content type
-          
-          // Set appropriate content type based on file extension
+          const fileExtension = fileKey.split('.').pop()?.toLowerCase();
+          let contentType = 'application/octet-stream';
           if (fileExtension === 'pdf') {
             contentType = 'application/pdf';
           } else if (fileExtension === 'docx') {
@@ -167,43 +161,23 @@ const DefaultResumeUploader: React.FC = () => {
           } else if (fileExtension === 'txt') {
             contentType = 'text/plain';
           }
-          
           console.log("[Supabase] Using content type:", contentType);
-          
-          // Use createSignedUrl with the extracted filename and appropriate options
+          // Only use signed URL for private bucket
           const { data, error } = await supabase.storage
             .from('user-resumes')
-            .createSignedUrl(fileName, 60, {
-              transform: {
-                quality: 100 // Preserve quality
-              }
-            });
-            
+            .createSignedUrl(fileKey, 60);
           if (error) {
-            console.error("Error creating signed URL:", error);
+            console.error("Error creating signed URL for view:", error);
             throw error;
           }
-          
           const url = data.signedUrl;
-          console.log("Generated signed URL:", url);
-          
-          // Create an iframe to display PDF files directly in the browser
-          if (fileExtension === 'pdf') {
-            const iframe = document.createElement('iframe');
-            iframe.style.display = 'none';
-            iframe.src = url;
-            iframe.onload = () => {
-              window.open(url, '_blank');
-              document.body.removeChild(iframe);
-            };
-            document.body.appendChild(iframe);
-          } else {
-            // For other file types, open in a new tab and let the browser handle it
-            window.open(url, '_blank');
-          }
+          console.log("Generated signed URL for view:", url);
+          window.open(url, '_blank');
+        } else {
+          throw new Error("Could not extract a valid file key from the blob path");
         }
       } catch (err) {
-        console.error("Error generating URL:", err);
+        console.error("Error generating URL for view:", err);
         toast({
           variant: "destructive",
           title: "Unable to view resume",
@@ -234,14 +208,13 @@ const DefaultResumeUploader: React.FC = () => {
         // Log the original blobPath for debugging
         console.log("[Supabase] Original blobPath:", defaultResume.blobPath);
         
-        // Extract just the filename from the blobPath
-        // The upload code uses format: userId_default_resume.extension
-        const fileName = defaultResume.blobPath.split('/').pop();
-        console.log("[Supabase] Extracted filename:", fileName);
+        // Extract the file key using the utility function
+        const fileKey = extractFileKey(defaultResume.blobPath);
+        console.log("[Supabase] Extracted file key:", fileKey);
         
-        if (fileName) {
+        if (fileKey) {
           // Get file extension to determine content type
-          const fileExtension = fileName.split('.').pop()?.toLowerCase();
+          const fileExtension = fileKey.split('.').pop()?.toLowerCase();
           let contentType = 'application/octet-stream'; // Default content type
           
           // Set appropriate content type based on file extension
@@ -257,10 +230,10 @@ const DefaultResumeUploader: React.FC = () => {
           
           console.log("[Supabase] Using content type:", contentType);
           
-          // Use createSignedUrl with the extracted filename and appropriate options
+          // Use createSignedUrl with the extracted file key and appropriate options
           const { data, error } = await supabase.storage
             .from('user-resumes')
-            .createSignedUrl(fileName, 60, {
+            .createSignedUrl(fileKey, 60, {
               download: defaultResume.fileName || `resume.${fileExtension || 'pdf'}`
             });
             
@@ -291,6 +264,8 @@ const DefaultResumeUploader: React.FC = () => {
           setTimeout(() => {
             document.body.removeChild(a);
           }, 100);
+        } else {
+          throw new Error("Could not extract a valid file key from the blob path");
         }
       } catch (err) {
         console.error("Error generating URL for download:", err);
