@@ -5,8 +5,6 @@ import { toast } from "@/components/ui/use-toast";
 import { api } from "@/utils/apiClient";
 import { supabase } from "@/integrations/supabase/client";
 
-
-
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
@@ -198,7 +196,7 @@ export const AuthProvider = ({ children }) => {
         setTimeout(() => {
           setRestoringSession(false);
           console.log("Restoration flag set to false");
-        }, 500);
+        }, 100);
       }
     };
     
@@ -336,7 +334,7 @@ export const AuthProvider = ({ children }) => {
           // Set restoring session to false after navigation
           setTimeout(() => {
             setRestoringSession(false);
-          }, 300);
+          }, 100);
         }
         
       } else {
@@ -375,7 +373,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // --- SIGN OUT ---
+  // Updated signOut function to handle navigation better
   const signOut = async () => {
     try {
       console.log("Signing out user");
@@ -392,7 +390,7 @@ export const AuthProvider = ({ children }) => {
         }
       }
       
-      // Clear all auth-related state
+      // Clear all auth-related state immediately
       setSession(null);
       setUser(null);
       setUserType(null);
@@ -419,8 +417,8 @@ export const AuthProvider = ({ children }) => {
       // Show success toast
       toast({ title: "Signed out successfully" });
       
-      // Navigate to home page
-      navigate('/', { replace: true });
+      // Navigate directly to login page instead of home
+      navigate('/login', { replace: true });
       
       console.log("Sign out complete");
     } catch (error) {
@@ -432,6 +430,9 @@ export const AuthProvider = ({ children }) => {
       setUserType(null);
       setProfile(null);
       setSubscriptionStatus(null);
+      
+      // Still navigate to login even on error
+      navigate('/login', { replace: true });
     }
   };
 

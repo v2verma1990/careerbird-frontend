@@ -6,18 +6,15 @@ import { useAuth } from '@/contexts/auth/AuthContext';
 
 const Navbar = () => {
   const { user, userType, signOut, restoringSession } = useAuth();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [showAuthButtons, setShowAuthButtons] = useState(false);
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [authState, setAuthState] = useState<'loading' | 'logged-in' | 'logged-out'>('loading');
   const location = useLocation();
 
-  // Check auth state on mount and when user changes
+  // Simplified auth state management
   useEffect(() => {
-    // Don't update anything while restoring session
+    // Always show loading while restoring session
     if (restoringSession) {
-      console.log("Session being restored, hiding buttons");
-      setShowAuthButtons(false);
-      setIsLoggingIn(true);
+      console.log("Session being restored");
+      setAuthState('loading');
       return;
     }
 
@@ -27,45 +24,33 @@ const Navbar = () => {
       restoringSession
     });
 
-    // If we have a user but no userType yet, we're in the process of logging in
-    if (user && !userType) {
-      console.log("User exists but userType not set yet, still logging in");
-      setIsLoggingIn(true);
-      setShowAuthButtons(false);
-      return;
-    }
-
-    // If we have both user and userType, login is complete
+    // Only consider user fully logged in when we have both user AND userType
     if (user && userType) {
-      console.log("Login complete, showing logged in state");
-      setIsLoggedIn(true);
-      setIsLoggingIn(false);
-      // Small delay to ensure smooth transition
-      setTimeout(() => {
-        setShowAuthButtons(true);
-      }, 150);
-      return;
-    }
-
-    // No user means logged out
-    if (!user) {
-      console.log("No user, showing logged out state");
-      setIsLoggedIn(false);
-      setIsLoggingIn(false);
-      setTimeout(() => {
-        setShowAuthButtons(true);
-      }, 100);
+      console.log("User fully authenticated, showing logged in state");
+      setAuthState('logged-in');
+    } else {
+      console.log("User not authenticated or incomplete auth, showing logged out state");
+      setAuthState('logged-out');
     }
   }, [user, userType, restoringSession]);
 
-  // Clear auth state completely on logout
+  // Handle logout with immediate state change
   const handleLogout = async () => {
     console.log("Logging out user");
-    setShowAuthButtons(false);
-    setIsLoggingIn(false);
-    await signOut();
-    // Force a page reload to ensure all state is cleared
-    window.location.href = '/';
+    // Immediately set to loading state to prevent any flashing
+    setAuthState('loading');
+    
+    try {
+      await signOut();
+      // The signOut function should handle navigation, but we can ensure it here
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Even on error, redirect to login
+      window.location.href = '/login';
+    }
   };
 
   // Don't show navbar on dashboard pages (they have TopNavigation)
@@ -73,7 +58,7 @@ const Navbar = () => {
                           location.pathname.includes('/dashboard') || 
                           location.pathname.includes('/free-plan-dashboard');
 
-  if (isDashboardPage && isLoggedIn) {
+  if (isDashboardPage && authState === 'logged-in') {
     return null;
   }
 
@@ -82,13 +67,12 @@ const Navbar = () => {
       <div className="container mx-auto flex justify-between items-center">
         <Link to="/" className="text-xl font-bold">ResumeAI</Link>
         <div className="flex items-center space-x-4">
-          {/* Show loading indicator while restoring session or logging in */}
-          {restoringSession || isLoggingIn || !showAuthButtons ? (
+          {authState === 'loading' ? (
             <div className="flex items-center">
               <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></span>
               <span>Loading...</span>
             </div>
-          ) : isLoggedIn && user && userType ? (
+          ) : authState === 'logged-in' ? (
             <>
               <Link to={userType === 'candidate' ? '/candidate-dashboard' : '/dashboard'}>
                 <Button variant="ghost">Dashboard</Button>
