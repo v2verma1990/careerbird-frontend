@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/auth/AuthContext';
 const Navbar = () => {
   const { user, userType, signOut, restoringSession } = useAuth();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showAuthButtons, setShowAuthButtons] = useState(false);
   const location = useLocation();
 
   // Check auth state on mount and when user changes
@@ -15,12 +16,21 @@ const Navbar = () => {
     if (!restoringSession) {
       console.log("Auth state updated in Navbar:", !!user);
       setIsLoggedIn(!!user);
+      
+      // Add a small delay before showing auth buttons to prevent flashing
+      setTimeout(() => {
+        setShowAuthButtons(true);
+      }, 100);
+    } else {
+      // Reset the show buttons flag when restoring session
+      setShowAuthButtons(false);
     }
   }, [user, restoringSession]);
 
   // Clear auth state completely on logout
   const handleLogout = async () => {
     console.log("Logging out user");
+    setShowAuthButtons(false); // Hide buttons immediately on logout
     await signOut();
     // Force a page reload to ensure all state is cleared
     window.location.href = '/';
@@ -40,8 +50,8 @@ const Navbar = () => {
       <div className="container mx-auto flex justify-between items-center">
         <Link to="/" className="text-xl font-bold">ResumeAI</Link>
         <div className="flex items-center space-x-4">
-          {/* Show loading indicator while restoring session */}
-          {restoringSession ? (
+          {/* Show loading indicator while restoring session or before showing buttons */}
+          {restoringSession || !showAuthButtons ? (
             <div className="flex items-center">
               <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></span>
               <span>Loading...</span>
