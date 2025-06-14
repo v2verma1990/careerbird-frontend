@@ -20,6 +20,7 @@ import {
   AlertCircle,
   Info,
   ArrowRight,
+  ArrowLeft,
   RefreshCw,
   Sparkles,
   Clock,
@@ -44,6 +45,26 @@ const AccountPage: React.FC = () => {
   
   // Use the profile status from context or calculate it
   const completionPercentage = profileStatus?.completionPercentage || 0;
+  
+  // Function to handle back button click
+  const handleBackClick = () => {
+    if (returnTo) {
+      navigate(returnTo);
+      return;
+    }
+    
+    if (!user) {
+      navigate('/');
+      return;
+    }
+    
+    const userType = user.user_metadata?.userType || 'candidate';
+    if (userType === 'recruiter') {
+      navigate('/recruiter-dashboard');
+    } else {
+      navigate('/candidate-dashboard');
+    }
+  };
   
   // Handle manual refresh of profile data
   const handleRefresh = async () => {
@@ -189,51 +210,27 @@ const AccountPage: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       <TopNavigation />
       
-      <main className="container mx-auto px-4 py-8">
-        {/* Back button - only show if we have a return path, session is NOT restoring, and user is authenticated */}
-        {(returnTo && !restoringSession && user && userType) && (
-          <div className="mb-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 -ml-2"
-              onClick={() => {
-                // Log the current state for debugging
-                console.log("Back to Dashboard button clicked - Current state:", {
-                  user: !!user,
-                  userType,
-                  subscriptionType: subscriptionStatus?.type,
-                  active: subscriptionStatus?.active,
-                  returnTo
-                });
-                
-                // Determine the correct dashboard path
-                let dashboardPath = '/';
-                
-                if (returnTo) {
-                  dashboardPath = returnTo;
-                } else if (userType === 'recruiter') {
-                  dashboardPath = '/dashboard';
-                } else if (userType === 'candidate') {
-                  dashboardPath = subscriptionStatus?.type === 'free' ? '/free-plan-dashboard' : '/candidate-dashboard';
-                }
-                
-                console.log(`Navigating to: ${dashboardPath}`);
-                
-                // Instead of trying to navigate directly to the dashboard,
-                // we'll navigate to our special redirect page that will handle the logic
-                console.log("Navigating to dashboard redirect page");
-                navigate('/dashboard-redirect', { replace: true });
-              }}
-            >
-              <ArrowRight className="w-4 h-4 mr-1 rotate-180" />
-              Back to Dashboard
-            </Button>
+      <div className="bg-white/80 backdrop-blur-sm shadow-lg border-b border-gray-200 mb-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Button variant="ghost" onClick={handleBackClick}>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back
+              </Button>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center shadow-md">
+                  <User className="w-5 h-5 text-white" />
+                </div>
+                <h1 className="text-xl font-semibold text-gray-900">Account & Profile</h1>
+              </div>
+            </div>
           </div>
-        )}
-        
+        </div>
+      </div>
+      
+      <main className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">Account & Profile</h1>
           <Button 
             variant="outline" 
             size="sm" 

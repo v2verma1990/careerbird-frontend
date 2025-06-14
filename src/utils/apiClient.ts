@@ -5,19 +5,115 @@ import { extractFileKey } from "@/lib/utils";
 export { SUPABASE_URL };
 
 // Base URL for API calls
-// Try HTTP if HTTPS is causing certificate issues
-const API_BASE_URL = "https://localhost:5001/api"; // Local development URL
+// Determine the appropriate API base URL based on the environment
+const determineApiBaseUrl = () => {
+  // Check if we're in a production environment
+  // In Vite, we use import.meta.env instead of process.env
+  const isProduction = import.meta.env.PROD;
+  
+  // Check if we're in a development environment with a specific backend URL
+  // Note: Vite environment variables must be prefixed with VITE_
+  const devBackendUrl = import.meta.env.VITE_API_URL;
+  
+  if (isProduction) {
+    console.log(`in production: ${import.meta.env.VITE_API_URL}`);
+    // In production, use relative URL which will use the same domain as the frontend
+    return '/api';
+  } else if (devBackendUrl) {
+    // Use configured backend URL if available
+    return devBackendUrl;
+  } else {
+    console.log(`else part: ${API_BASE_URL}`);
+    // Default to localhost for local development
+   // return "http://localhost:aaa/api";
+  }
+};
 
-// Backend is always running in production environment
-export const IS_BACKEND_RUNNING = true; // Set to true for production
+// Set the API base URL
+const API_BASE_URL = determineApiBaseUrl();
+console.log(`Using API base URL: ${API_BASE_URL}`);
+
+// Backend status detection
+export let IS_BACKEND_RUNNING = true; // Default to true, will be updated dynamically
+
+// Helper function to create an abort signal with timeout
+const createTimeoutSignal = (timeoutMs: number): AbortSignal => {
+  // Check if AbortSignal.timeout is available (newer browsers)
+  if ('timeout' in AbortSignal && typeof (AbortSignal as any).timeout === 'function') {
+    return (AbortSignal as any).timeout(timeoutMs);
+  }
+  
+  // Fallback for browsers that don't support AbortSignal.timeout
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), timeoutMs);
+  return controller.signal;
+};
+
+// Function to check if the backend is running
+export const checkBackendStatus = async (): Promise<boolean> => {
+  try {
+    // Use a health check endpoint or a simple endpoint that should always work
+    const response = await fetch(`${API_BASE_URL}/health`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      // Short timeout for health check
+      signal: createTimeoutSignal(5000)
+    });
+    
+    IS_BACKEND_RUNNING = response.ok;
+    return IS_BACKEND_RUNNING;
+  } catch (error) {
+    console.warn("Backend health check failed:", error);
+    IS_BACKEND_RUNNING = false;
+    return false;
+  }
+}
+
+// Try to check backend status on initialization
+if (typeof window !== 'undefined') {
+  // Only run in browser environment
+  setTimeout(() => {
+    checkBackendStatus().then(isRunning => {
+      console.log(`Backend status check: ${isRunning ? 'Running' : 'Not running'}`);
+    });
+  }, 1000); // Delay slightly to not block initial rendering
+}
+
+// Helper function to retry failed API calls
+async function retryApiCall<T>(
+  method: string,
+  endpoint: string,
+  body?: any,
+  customHeaders: Record<string, string> = {},
+  retries: number = 2,
+  backoff: number = 300
+): Promise<{ data: T | null; error: string | null }> {
+  try {
+    return await apiCall<T>(method, endpoint, body, customHeaders);
+  } catch (error) {
+    if (retries <= 0) {
+      throw error;
+    }
+    
+    console.log(`Retrying API call to ${endpoint} in ${backoff}ms. Retries left: ${retries}`);
+    await new Promise(resolve => setTimeout(resolve, backoff));
+    
+    return retryApiCall<T>(method, endpoint, body, customHeaders, retries - 1, backoff * 2);
+  }
+}
 
 // Helper function for API calls
 async function apiCall<T>(
   method: string,
   endpoint: string,
   body?: any,
-  customHeaders: Record<string, string> = {}
+  customHeaders: Record<string, string> = {},
+  shouldRetry: boolean = false
 ): Promise<{ data: T | null; error: string | null }> {
+  // If shouldRetry is true, use the retry mechanism for critical endpoints
+  if (shouldRetry) {
+    return retryApiCall<T>(method, endpoint, body, customHeaders);
+  }
   try {
     // Get the current session from Supabase for the auth token
     const { data: { session } } = await supabase.auth.getSession();
@@ -31,7 +127,7 @@ async function apiCall<T>(
     // Add authorization header if session exists
     if (session?.access_token) {
       headers["Authorization"] = `Bearer ${session.access_token}`;
-      console.log(`Using auth token: ${session.access_token.substring(0, 20)}...`);
+      console.log(`Using auth token: ${session.access_token?.slice(0, 8)}...`);
     } else {
       console.warn("No auth token available for API call to:", endpoint);
     }
@@ -48,9 +144,16 @@ async function apiCall<T>(
 
     console.log(`API ${method} ${endpoint}`, body);
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
-
-    if (response.status === 401) {
+    // Create an AbortController to handle timeouts
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+    
+    try {
+      options.signal = controller.signal;
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
+      clearTimeout(timeoutId); // Clear the timeout if the request completes
+      
+      if (response.status === 401) {
       console.error("Unauthorized API call:", endpoint);
       return { data: null, error: `Request failed with status 401: Unauthorized access` };
     }
@@ -119,15 +222,33 @@ async function apiCall<T>(
     }
 
     return { data, error: null };
+    } catch (fetchError) {
+      // Handle any errors that occurred during the fetch operation
+      clearTimeout(timeoutId);
+      throw fetchError; // Re-throw to be caught by the outer try-catch
+    }
   } catch (error) {
     console.error("API call failed:", error);
+    
+    // Determine environment for better error messages
     let isPreviewEnv = false;
     let isLocalhost = false;
     if (typeof window !== 'undefined' && window.location) {
       isPreviewEnv = window.location.hostname.includes('lovable.app');
       isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     }
-    if (error instanceof TypeError && error.message.includes('fetch')) {
+    
+    // Handle specific error types
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      console.warn(`Request to ${endpoint} timed out after 15 seconds`);
+      return {
+        data: null,
+        error: "Request timed out. The server took too long to respond. Please try again later."
+      };
+    } else if (error instanceof TypeError && error.message.includes('fetch')) {
+      // Update the backend running status
+      (window as any).IS_BACKEND_RUNNING = false;
+      
       if (isPreviewEnv) {
         return {
           data: null,
@@ -136,7 +257,7 @@ async function apiCall<T>(
       } else if (isLocalhost) {
         return {
           data: null,
-          error: "Cannot connect to your local backend. Make sure your backend server is running and accessible at the configured API_BASE_URL (http://localhost:5001/api)."
+          error: `Cannot connect to your local backend. Make sure your backend server is running and accessible at ${API_BASE_URL}.`
         };
       } else {
         return {
@@ -145,7 +266,12 @@ async function apiCall<T>(
         };
       }
     }
-    return { data: null, error: error instanceof Error ? error.message : "Unknown error" };
+    
+    // Generic error handling
+    return { 
+      data: null, 
+      error: error instanceof Error ? error.message : "Unknown error occurred while communicating with the server" 
+    };
   }
 }
 
@@ -315,6 +441,7 @@ export const api = {
           fileSize: finalFileSize,
           uploadDate: finalUploadDate,
           blobPath: finalBlobPath,
+          isVisibleToRecruiters: responseData.isVisibleToRecruiters || responseData.is_visible_to_recruiters || false,
           metadata: {
             jobTitle: metadataObj.jobTitle || metadataObj.job_title || '',
             currentCompany: metadataObj.currentCompany || metadataObj.current_company || '',
@@ -466,6 +593,7 @@ export const api = {
           fileSize: file.size,
           uploadDate: new Date().toISOString(),
           blobPath: filePath,
+          isVisibleToRecruiters: result.isVisibleToRecruiters || result.is_visible_to_recruiters || false,
           metadata: {
             jobTitle: result.jobTitle || "",
             currentCompany: result.currentCompany || "",
@@ -539,6 +667,48 @@ export const api = {
     clearDefaultResume: async () => {
       console.log(`[${new Date().toISOString()}] API CALL: clearDefaultResume (delegating to deleteDefaultResume)`);
       return await api.profileMetadata.deleteDefaultResume();
+    },
+    
+    // Update resume visibility to recruiters
+    updateResumeVisibility: async (isVisible: boolean) => {
+      try {
+        console.log(`Updating resume visibility to: ${isVisible}`);
+        
+        // Use a specific endpoint for updating visibility
+        const { data: result, error } = await apiCall<any>("PATCH", "/ProfileMetadata/visibility", {
+          isVisibleToRecruiters: isVisible
+        });
+        
+        if (error) {
+          return { data: null, error };
+        }
+        
+        console.log("Resume visibility update response:", JSON.stringify(result));
+        
+        // Handle array response
+        const responseData = Array.isArray(result) ? result[0] : result;
+        
+        if (!responseData) {
+          console.log("No data returned from visibility update");
+          // If no response data, use the provided visibility
+          return { 
+            data: { 
+              isVisibleToRecruiters: isVisible
+            }, 
+            error: null 
+          };
+        }
+        
+        // Transform the data to match the expected format
+        const transformedData = {
+          isVisibleToRecruiters: responseData.isVisibleToRecruiters || responseData.is_visible_to_recruiters || isVisible
+        };
+        
+        return { data: transformedData, error: null };
+      } catch (error) {
+        console.error("Error updating resume visibility:", error);
+        return { data: null, error: "Failed to update resume visibility" };
+      }
     },
     
     // Update resume metadata
@@ -820,17 +990,17 @@ export const api = {
     }
   },
   usage: {
-    // ... keep existing code (usage methods)
     incrementUsage: (userId: string, featureType: string) => {
       if (!userId) {
         console.error("No user ID available for usage tracking");
         return { data: null, error: "User not authenticated" };
       }
       console.log(`Incrementing usage for feature: ${featureType}, userId: ${userId}`);
+      // Use retry for important usage tracking
       return apiCall<any>("POST", "/usage/increment", {
         userId,
         featureType
-      });
+      }, {}, true); // Enable retry for this critical endpoint
     },
     resetUsageCount: (userId: string, featureType: string) =>
       apiCall<any>("POST", "/usage/reset", { userId, featureType }),
@@ -838,8 +1008,28 @@ export const api = {
       apiCall<any>("POST", "/usage/log-activity", params),
     getFeatureUsage: (userId: string, featureType: string) =>
       apiCall<any>("GET", `/usage/${userId}/${featureType}`),
-    getAllFeatureUsage: (userId: string) =>
-      apiCall<any>("GET", `/usage/all/${userId}`)
+    getAllFeatureUsage: (userId: string) => {
+      // Add fallback data for when the backend is not available
+      if (!IS_BACKEND_RUNNING) {
+        console.warn("Backend appears to be offline, returning fallback usage data");
+        return Promise.resolve({
+          data: {
+            // Provide default usage data that won't block the UI
+            features: {},
+            limits: {
+              // Default limits that won't restrict users when backend is down
+              resumeOptimize: { limit: 999, used: 0 },
+              coverLetterGenerate: { limit: 999, used: 0 },
+              jobDescriptionAnalyze: { limit: 999, used: 0 }
+            }
+          },
+          error: null
+        });
+      }
+      
+      // Use retry mechanism for this important endpoint
+      return apiCall<any>("GET", `/usage/all/${userId}`, undefined, {}, true);
+    }
   },
   resumeBuilder: {
     getTemplates: () => apiCall<any>("GET", "/resumebuilder/templates"),
@@ -1021,7 +1211,49 @@ export const api = {
   },
   resume: {
     // Default resume management
-    getDefaultResume: () => apiCall<any>("GET", "/resume/default"),
+    getDefaultResume: async () => {
+      console.log("Calling getDefaultResume API endpoint");
+      
+      // First try the resume-specific endpoint
+      const result = await apiCall<any>("GET", "/resume/default");
+      console.log("getDefaultResume API response:", result);
+      
+      // If that fails, fall back to the profile metadata endpoint
+      if (!result.data || result.error) {
+        console.log("Resume endpoint failed, falling back to profile metadata endpoint");
+        const profileResult = await api.profileMetadata.getDefaultResume();
+        console.log("Profile metadata fallback response:", profileResult);
+        return profileResult;
+      }
+      
+      return result;
+    },
+    
+    checkDefaultResumeExists: async () => {
+      console.log("Checking if default resume file exists");
+      try {
+        const result = await apiCall<any>("GET", "/resume/check-default");
+        
+        // If the API call fails, fall back to checking if we have a default resume in the client
+        if (result.error || !result.data) {
+          console.warn("Backend check for default resume failed, falling back to client-side check");
+          const clientResult = await api.resume.getDefaultResume();
+          
+          // If we have client-side data with a fileUrl, consider it exists
+          if (clientResult.data?.fileUrl) {
+            return { 
+              data: { exists: true, message: "Default resume found in client data" }, 
+              error: null 
+            };
+          }
+        }
+        
+        return result;
+      } catch (error) {
+        console.error("Error checking if default resume exists:", error);
+        return { data: null, error: "Failed to check if default resume exists" };
+      }
+    },
     
     uploadDefaultResume: async (file: File) => {
       try {
@@ -1091,31 +1323,207 @@ export const api = {
       });
     },
     
-    customize: async (file: File, jobDescription?: string, jobDescriptionFile?: File, plan?: string, useDefaultResume?: boolean) => {
+    customize: async (file: File | null, jobDescription?: string, jobDescriptionFile?: File | null, plan?: string, useDefaultResume: boolean = false) => {
+      console.log("Resume customize API call with params:", {
+        hasFile: !!file,
+        hasJobDescription: !!jobDescription,
+        hasJobDescriptionFile: !!jobDescriptionFile,
+        plan,
+        useDefaultResume
+      });
+      
+      // Initialize defaultResumeResult variable outside the if block so it's accessible throughout the function
+      let defaultResumeResult: { data: any | null; error: string | null } = { data: null, error: null };
+      
+      // If using default resume, first check if we can get the default resume
+      if (useDefaultResume) {
+        // Get the default resume to verify it exists
+        defaultResumeResult = await api.resume.getDefaultResume();
+        console.log("Checking default resume before customization:", defaultResumeResult);
+        
+        if (!defaultResumeResult.data || defaultResumeResult.error) {
+          return { 
+            data: null, 
+            error: "No default resume found. Please upload a resume file or set a default resume." 
+          };
+        }
+        
+        // Also check if the default resume file exists on the server
+        try {
+          // Make a direct API call to check if the default resume file exists
+          const checkResult = await apiCall<any>("GET", "/resume/check-default");
+          console.log("Default resume file check result:", checkResult);
+          
+          if (checkResult.error || !checkResult.data || !checkResult.data.exists) {
+            console.warn("Default resume check failed, but continuing with client-side file access attempt");
+            // Log the specific error for debugging
+            if (checkResult.error) {
+              console.warn("Default resume check error:", checkResult.error);
+            }
+            if (!checkResult.data) {
+              console.warn("Default resume check returned no data");
+            } else if (!checkResult.data.exists) {
+              console.warn("Default resume check indicates file does not exist");
+            }
+            
+            // Instead of returning an error immediately, we'll continue and try to use the client-side file
+            // This allows the process to continue even if the backend check fails
+            // We'll rely on the fileUrl check below to verify if we can access the file
+          }
+          
+          // If we have a fileUrl, try to download the file to verify it's accessible
+          if (defaultResumeResult.data?.fileUrl) {
+            try {
+              console.log("Attempting to verify default resume file is accessible");
+              const fileResponse = await fetch(defaultResumeResult.data.fileUrl, { method: 'HEAD' });
+              
+              if (!fileResponse.ok) {
+                console.error("Default resume file is not accessible:", fileResponse.status);
+                return {
+                  data: null,
+                  error: "Your default resume file could not be accessed. Please upload a new resume file."
+                };
+              }
+              
+              console.log("Default resume file is accessible");
+            } catch (fileError) {
+              console.error("Error accessing default resume file:", fileError);
+              // Continue anyway, as the backend might still be able to access the file
+            }
+          }
+        } catch (error) {
+          console.error("Error checking default resume file:", error);
+          // Continue anyway, as the backend might still be able to access the file
+        }
+      }
+      
       const { data: { session } } = await supabase.auth.getSession();
       const formData = new FormData();
       
-      if (!useDefaultResume) {
+      // Add a flag to indicate whether to use the default resume
+      // Make sure to use the exact field name expected by the backend
+      formData.append("useDefaultResume", useDefaultResume.toString());
+      
+      // Also add it as "UseDefaultResume" with capital letters in case the backend is case-sensitive
+      formData.append("UseDefaultResume", useDefaultResume.toString());
+      
+      console.log("Setting useDefaultResume in form data to:", useDefaultResume.toString());
+      
+      // Only append the file if not using default resume and file exists
+      if (!useDefaultResume && file) {
         formData.append("File", file); // Backend expects 'File' (capital F)
+        console.log("Appending file to form data:", file.name, file.size);
+      } else if (useDefaultResume) {
+        console.log("Using default resume, not appending file");
+        
+        // As a fallback, if we have the default resume data with a fileUrl,
+        // try to download the file and include it directly
+        if (defaultResumeResult.data?.fileUrl) {
+          try {
+            console.log("Attempting to download default resume file as fallback");
+            // Use a more robust fetch with proper error handling and timeout
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+            
+            const fileResponse = await fetch(defaultResumeResult.data.fileUrl, {
+              signal: controller.signal,
+              cache: 'no-cache', // Avoid caching issues
+              mode: 'cors',      // Explicitly set CORS mode
+              credentials: 'include'
+            });
+            
+            clearTimeout(timeoutId);
+            
+            if (fileResponse.ok) {
+              const blob = await fileResponse.blob();
+              const fileName = defaultResumeResult.data.fileName || "default-resume.pdf";
+              const resumeFile = new File([blob], fileName, { type: blob.type || 'application/pdf' });
+              
+              console.log("Successfully downloaded default resume file, appending to form data");
+              formData.append("File", resumeFile);
+              
+              // Still keep the useDefaultResume flag in case the backend can use either approach
+              console.log("Adding downloaded file as fallback but keeping useDefaultResume flag");
+            } else {
+              console.error("Failed to download default resume file:", fileResponse.status, fileResponse.statusText);
+              // Don't return error here, let the backend try to handle it with the useDefaultResume flag
+            }
+          } catch (downloadError) {
+            console.error("Error downloading default resume file:", downloadError);
+            // Continue with the useDefaultResume flag approach
+          }
+        }
       } else {
-        formData.append("useDefaultResume", "true");
+        console.log("WARNING: Neither file nor useDefaultResume is set!");
+        return { 
+          data: null, 
+          error: "No resume provided. Please upload a resume file or use your default resume." 
+        };
       }
       
       if (jobDescription) formData.append("JobDescription", jobDescription);
       if (jobDescriptionFile) formData.append("JobDescriptionFile", jobDescriptionFile);
       if (plan) formData.append("plan", plan);
+      
+      // Add user ID to form data to help backend identify the user
+      if (session?.user?.id) {
+        formData.append("userId", session.user.id);
+        formData.append("UserId", session.user.id);
+      }
+      
       const headers: Record<string, string> = {};
       if (session?.access_token) {
         headers["Authorization"] = `Bearer ${session.access_token}`;
+        
+        // Add user ID as a custom header to help the backend identify the user
+        if (session.user?.id) {
+          headers["X-User-ID"] = session.user.id;
+        }
       }
-      return fetch(`${API_BASE_URL}/resume/customize`, {
+      // Construct URL with query parameter for default resume
+      const url = useDefaultResume 
+        ? `${API_BASE_URL}/resume/customize?useDefaultResume=true` 
+        : `${API_BASE_URL}/resume/customize`;
+      
+      console.log("Making API call to:", url);
+      console.log("With headers:", headers);
+      
+      return fetch(url, {
         method: "POST",
         headers,
         body: formData,
         credentials: "include"
       }).then(async response => {
-        const data = await response.json();
-        return response.ok ? { data, error: null } : { data: null, error: data?.error || "Error customizing resume" };
+        console.log("Resume customize API response status:", response.status);
+        
+        const contentType = response.headers.get("content-type");
+        console.log("Response content type:", contentType);
+        
+        let data;
+        let responseText;
+        
+        try {
+          responseText = await response.text();
+          console.log("Raw response text:", responseText);
+          
+          if (contentType && contentType.includes("application/json")) {
+            data = JSON.parse(responseText);
+            console.log("Parsed JSON response:", data);
+          } else {
+            data = { text: responseText };
+            console.log("Non-JSON response, using as text");
+          }
+        } catch (error) {
+          console.error("Error parsing response:", error);
+          data = { parseError: true, text: responseText };
+        }
+        
+        if (!response.ok) {
+          console.error("API error response:", data);
+          return { data: null, error: data?.error || "Error customizing resume" };
+        }
+        
+        return { data, error: null };
       });
     },
     atsScan: async (file: File | null, plan?: string, useDefaultResume: boolean = false) => {

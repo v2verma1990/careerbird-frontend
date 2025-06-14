@@ -275,6 +275,37 @@ namespace ResumeAI.API.Controllers
             }
         }
 
+        [HttpPatch("visibility")]
+        public async Task<IActionResult> UpdateResumeVisibility([FromBody] UpdateResumeVisibilityRequest request)
+        {
+            try
+            {
+                string userId = _authService.ExtractUserIdFromAuthHeader(Request.Headers["Authorization"].ToString());
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized(new { error = "Invalid or missing authorization token" });
+
+                var existingMetadata = await _profileMetadataService.GetProfileMetadataAsync(userId);
+                if (existingMetadata == null)
+                {
+                    return NotFound(new { error = "Profile metadata not found for user." });
+                }
+
+                // Update the visibility setting
+                var result = await _profileMetadataService.UpdateResumeVisibilityAsync(userId, request.IsVisibleToRecruiters);
+                
+                if (result == null)
+                {
+                    return StatusCode(500, new { error = "Failed to update resume visibility" });
+                }
+
+                return Ok(new { isVisibleToRecruiters = result.IsVisibleToRecruiters });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
         [HttpPatch("metadata")]
         public async Task<IActionResult> UpdateProfileMetadataFields([FromBody] Dictionary<string, object> updates)
         {

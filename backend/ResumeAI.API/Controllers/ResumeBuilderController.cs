@@ -22,19 +22,25 @@ namespace ResumeAI.API.Controllers
         private readonly ActivityLogService _activityLogService;
         private readonly CandidateSubscriptionService _candidateSubscriptionService;
         private readonly UserService _userService;
+        private readonly ProfileMetadataService _profileMetadataService;
+        private readonly IStorageService _storageService;
 
         public ResumeBuilderController(
             ResumeBuilderService resumeBuilderService,
             AuthService authService,
             ActivityLogService activityLogService,
             CandidateSubscriptionService candidateSubscriptionService,
-            UserService userService)
+            UserService userService,
+            ProfileMetadataService profileMetadataService,
+            IStorageService storageService)
         {
             _resumeBuilderService = resumeBuilderService;
             _authService = authService;
             _activityLogService = activityLogService;
             _candidateSubscriptionService = candidateSubscriptionService;
             _userService = userService;
+            _profileMetadataService = profileMetadataService;
+            _storageService = storageService;
         }
 
         [HttpGet("templates")]
@@ -59,10 +65,60 @@ namespace ResumeAI.API.Controllers
 
         [HttpPost("extract-data")]
         [AllowAnonymous] // Allow anonymous access for testing
-        public async Task<IActionResult> ExtractResumeData([FromForm] IFormFile resumeFile)
+        public async Task<IActionResult> ExtractResumeData([FromForm] ExtractResumeDataModel request)
         {
             try
             {
+                string userId = _authService.ExtractUserIdFromAuthHeader(Request.Headers["Authorization"].ToString());
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized(new { error = "Invalid or missing authorization token" });
+
+                IFormFile? resumeFile = request.ResumeFile;
+                
+                // Check if we should use the default resume
+                if (request.UseDefaultResume)
+                {
+                    // Fetch the user's profile metadata instead of the main profile
+                    var profileMeta = await _profileMetadataService.GetProfileMetadataAsync(userId);
+                    if (profileMeta == null || string.IsNullOrEmpty(profileMeta.BlobPath))
+                            {
+                                return BadRequest(new { error = "No default resume found. Please upload a resume file or set a default resume." });
+                            }
+                    
+                    try
+                    {
+                        // Download the default resume to a memory stream
+                        (Stream content, string contentType, string fileName) = await _storageService.DownloadFileAsync(profileMeta.BlobPath);
+
+                        // Create a temporary file
+                        var tempFilePath = Path.GetTempFileName();
+                        using (var writeFileStream1 = new FileStream(tempFilePath, FileMode.Create, FileAccess.Write))
+                        {
+                            await content.CopyToAsync(writeFileStream1);
+                        }
+                        
+                        // Create a FormFile from the temporary file
+                        var fileInfo = new FileInfo(tempFilePath);
+                        var readFileStream1 = new FileStream(tempFilePath, FileMode.Open, FileAccess.Read);
+                        
+                        resumeFile = new FormFile(
+                            readFileStream1,
+                            0,
+                            fileInfo.Length,
+                            "file",
+                            fileName)
+                        {
+                            Headers = new HeaderDictionary(),
+                            ContentType = contentType
+                        };
+                    }
+                    catch (FileNotFoundException)
+                    {
+                        // If the blob doesn't exist, clear the reference in the user profile
+                        await _userService.UpdateUserProfileAsync(userId, defaultResumeBlobName: null);
+                        return BadRequest(new { error = "Default resume not found. Please upload a resume file." });
+                    }
+                }
                 if (resumeFile == null || resumeFile.Length == 0)
                     return BadRequest(new { error = "Resume file is required" });
 
@@ -75,10 +131,10 @@ namespace ResumeAI.API.Controllers
 
                 // Extract resume data
                 var result = await _resumeBuilderService.ExtractResumeDataFromFileAsync(resumeFile);
-                
+
                 // Log the result to help with debugging
                 Console.WriteLine($"Extracted resume data: Name={result.Name}, Email={result.Email}, Skills count={result.Skills.Count}");
-                
+
                 // Return the result directly without any additional processing
                 return Ok(result);
             }
@@ -118,7 +174,7 @@ namespace ResumeAI.API.Controllers
 
                 // Track feature usage
                 await _userService.TrackFeatureUsage(userId, "resume_builder");
-                
+
                 // Log activity
                 await _activityLogService.LogActivity(userId, "resume_built", "Resume built using template");
 
@@ -138,7 +194,7 @@ namespace ResumeAI.API.Controllers
                 return StatusCode(500, new { error = ex.Message });
             }
         }
-        
+
         [HttpPost("build-pdf")]
         public async Task<IActionResult> BuildResumePdf([FromForm] ResumeBuilderRequestModel request)
         {
@@ -167,19 +223,19 @@ namespace ResumeAI.API.Controllers
 
                 // Track feature usage
                 await _userService.TrackFeatureUsage(userId, "resume_builder");
-                
+
                 // Log activity
                 await _activityLogService.LogActivity(userId, "resume_built", "Resume built as PDF");
 
                 // Generate PDF directly
                 var pdfBytes = await _resumeBuilderService.BuildResumePdfAsync(request, userId);
-                
+
                 // Verify that we have PDF bytes
                 if (pdfBytes == null || pdfBytes.Length == 0)
                 {
                     return StatusCode(500, new { error = "Failed to generate PDF file" });
                 }
-                
+
                 // Verify that the content is actually a PDF (starts with %PDF)
                 bool isPdf = false;
                 if (pdfBytes.Length > 4)
@@ -187,7 +243,7 @@ namespace ResumeAI.API.Controllers
                     string header = System.Text.Encoding.ASCII.GetString(pdfBytes, 0, 4);
                     isPdf = header.StartsWith("%PDF");
                 }
-                
+
                 if (!isPdf)
                 {
                     Console.WriteLine("Warning: Generated content does not appear to be a valid PDF");
@@ -198,17 +254,17 @@ namespace ResumeAI.API.Controllers
                         var page = document.AddPage();
                         var gfx = PdfSharpCore.Drawing.XGraphics.FromPdfPage(page);
                         var font = new PdfSharpCore.Drawing.XFont("Arial", 12);
-                        
-                        gfx.DrawString("Error generating PDF. Please try again.", font, 
-                            PdfSharpCore.Drawing.XBrushes.Black, 
+
+                        gfx.DrawString("Error generating PDF. Please try again.", font,
+                            PdfSharpCore.Drawing.XBrushes.Black,
                             new PdfSharpCore.Drawing.XRect(50, 50, page.Width - 100, 50),
                             PdfSharpCore.Drawing.XStringFormats.TopLeft);
-                        
+
                         document.Save(memoryStream);
                         pdfBytes = memoryStream.ToArray();
                     }
                 }
-                
+
                 // Get the user's name for the filename if available
                 string userName = "resume";
                 if (!string.IsNullOrEmpty(request.ResumeData))
@@ -225,12 +281,15 @@ namespace ResumeAI.API.Controllers
                                 // Check if the name property exists and is not null
                                 // Use a safer approach to handle dynamic properties
                                 object? nameObj = null;
-                                try {
+                                try
+                                {
                                     nameObj = resumeData.name;
-                                } catch {
+                                }
+                                catch
+                                {
                                     // Property doesn't exist
                                 }
-                                
+
                                 if (nameObj != null)
                                 {
                                     nameValue = nameObj.ToString();
@@ -254,7 +313,7 @@ namespace ResumeAI.API.Controllers
                         Console.WriteLine($"Error extracting name for PDF filename: {ex.Message}");
                     }
                 }
-                
+
                 // Return the PDF file with a proper filename
                 return File(pdfBytes, "application/pdf", $"{userName.ToLower().Replace(" ", "_")}_resume_{DateTime.Now:yyyyMMdd}.pdf");
             }
@@ -273,7 +332,7 @@ namespace ResumeAI.API.Controllers
                 return StatusCode(500, new { error = ex.Message });
             }
         }
-        
+
         [HttpPost("optimize-ai")]
         public async Task<IActionResult> OptimizeResumeForResumeBuilder([FromBody] ResumeOptimizeRequestModel request)
         {
@@ -302,8 +361,8 @@ namespace ResumeAI.API.Controllers
                 // }
 
                 // Track feature usage
-               // await _userService.TrackFeatureUsage(userId, "resume_optimization");
-                
+                // await _userService.TrackFeatureUsage(userId, "resume_optimization");
+
                 // Log activity
                 await _activityLogService.LogActivity(userId, "resume_builder_ai_optimization", "Resume optimized with AI suggestions");
 
@@ -397,5 +456,12 @@ namespace ResumeAI.API.Controllers
             public string ResumeText { get; set; } = string.Empty;
             public string Format { get; set; } = "pdf";
         }
+        public class ExtractResumeDataModel
+        {
+            
+            public IFormFile? ResumeFile { get; set; }
+            public bool UseDefaultResume { get; set; } = false;
+        }
+        
     }
 }

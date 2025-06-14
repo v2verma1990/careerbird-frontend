@@ -56,5 +56,8 @@ namespace ResumeAI.API.Models
         
         [JsonPropertyName("updated_at")]
         public DateTime? UpdatedAt { get; set; }
+        
+        [JsonPropertyName("is_visible_to_recruiters")]
+        public bool IsVisibleToRecruiters { get; set; }
     }
 }

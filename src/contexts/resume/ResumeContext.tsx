@@ -58,6 +58,7 @@ export interface ResumeContextType {
     uploadDate?: Date | null;
     blobPath?: string;
     metadata?: ResumeMetadata;
+    isVisibleToRecruiters?: boolean;
   } | null;
   profileStatus: ProfileStatus | null;
   isLoading: boolean;
@@ -65,6 +66,7 @@ export interface ResumeContextType {
   clearDefaultResume: () => Promise<void>;
   refreshDefaultResume: () => Promise<void>;
   updateResumeMetadata: (metadata: Partial<ResumeMetadata>) => Promise<boolean>;
+  updateResumeVisibility: (isVisible: boolean) => Promise<boolean>;
 }
 
 const ResumeContext = createContext<ResumeContextType | null>(null);
@@ -602,10 +604,43 @@ export const ResumeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         // No need to refresh immediately since we've already updated the local state
         // This prevents duplicate API calls and improves performance
         
-        toast({
-          title: "Resume Uploaded",
-          description: "Your resume has been uploaded successfully."
-        });
+        // For paid users, automatically set visibility to true
+        if (user.subscription && user.subscription.type !== 'free') {
+          console.log("Paid user detected, automatically setting resume visibility to true");
+          try {
+            const visibilityResult = await api.profileMetadata.updateResumeVisibility(true);
+            
+            if (!visibilityResult.error) {
+              // Update local state with visibility
+              setDefaultResume(prev => prev ? {
+                ...prev,
+                isVisibleToRecruiters: true
+              } : null);
+              
+              toast({
+                title: "Resume Uploaded",
+                description: "Your resume has been uploaded and is now visible to recruiters."
+              });
+            } else {
+              console.error("Error setting initial visibility:", visibilityResult.error);
+              toast({
+                title: "Resume Uploaded",
+                description: "Your resume has been uploaded successfully."
+              });
+            }
+          } catch (err) {
+            console.error("Error setting initial visibility:", err);
+            toast({
+              title: "Resume Uploaded",
+              description: "Your resume has been uploaded successfully."
+            });
+          }
+        } else {
+          toast({
+            title: "Resume Uploaded",
+            description: "Your resume has been uploaded successfully."
+          });
+        }
         
         return true;
       }
@@ -736,6 +771,73 @@ export const ResumeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
+  // Function to update resume visibility to recruiters
+  const updateResumeVisibility = async (isVisible: boolean): Promise<boolean> => {
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Authentication Required",
+        description: "Please sign in to update your resume visibility."
+      });
+      return false;
+    }
+
+    if (!defaultResume) {
+      toast({
+        variant: "destructive",
+        title: "No Resume Found",
+        description: "Please upload a resume first."
+      });
+      return false;
+    }
+
+    setIsLoading(true);
+    try {
+      console.log(`Updating resume visibility to: ${isVisible}`);
+      const { data, error } = await api.profileMetadata.updateResumeVisibility(isVisible);
+      
+      if (error) {
+        console.error("Error updating resume visibility:", error);
+        toast({
+          variant: "destructive",
+          title: "Update Failed",
+          description: error
+        });
+        return false;
+      }
+      
+      if (data) {
+        console.log("Resume visibility update successful, data:", data);
+        
+        // Update local state immediately for a responsive UI
+        if (defaultResume) {
+          const updatedResume = {
+            ...defaultResume,
+            isVisibleToRecruiters: isVisible
+          };
+          setDefaultResume(updatedResume);
+        }
+        
+        // Update the last refresh time to prevent immediate refresh
+        lastRefreshTimeRef.current = Date.now();
+        
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error("Error updating resume visibility:", error);
+      toast({
+        variant: "destructive",
+        title: "Update Failed",
+        description: "An unexpected error occurred. Please try again."
+      });
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <ResumeContext.Provider
       value={{
@@ -745,7 +847,8 @@ export const ResumeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         uploadDefaultResume,
         clearDefaultResume,
         refreshDefaultResume,
-        updateResumeMetadata
+        updateResumeMetadata,
+        updateResumeVisibility
       }}
     >
       {children}

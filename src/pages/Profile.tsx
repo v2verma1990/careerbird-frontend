@@ -11,6 +11,7 @@ import { useResume } from '@/contexts/resume/ResumeContext';
 import { useToast } from '@/hooks/use-toast';
 import TopNavigation from '@/components/TopNavigation';
 import { Progress } from '@/components/ui/progress';
+import { useLocation } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   User, 
@@ -32,19 +33,71 @@ import {
   Download,
   Eye,
   Upload,
-  Trash2
+  Trash2,
+  EyeOff
 } from 'lucide-react';
+
+// Add CSS for the highlight effect
+const highlightStyle = `
+  @keyframes highlight-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5); }
+    70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+  }
+  
+  .highlight-section {
+    animation: highlight-pulse 2s ease-out;
+    background-color: rgba(59, 130, 246, 0.1);
+    border-radius: 0.375rem;
+    transition: background-color 0.5s ease;
+  }
+`;
+
+// Add the style to the document
+const styleElement = document.createElement('style');
+styleElement.textContent = highlightStyle;
+document.head.appendChild(styleElement);
 import { SUPABASE_URL, supabase } from '@/integrations/supabase/client';
 import { formatFileSize, extractFileKey } from '@/lib/utils';
 
 const Profile = () => {
   const { user, subscriptionStatus } = useAuth();
-  const { defaultResume, updateResumeMetadata, refreshDefaultResume, uploadDefaultResume, clearDefaultResume, isLoading } = useResume();
+  const { defaultResume, updateResumeMetadata, refreshDefaultResume, uploadDefaultResume, clearDefaultResume, updateResumeVisibility, isLoading } = useResume();
   const { toast } = useToast();
+  const location = useLocation();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState("personal");
+  const [isUpdatingVisibility, setIsUpdatingVisibility] = useState(false);
+  
+  // Set initial tab based on location state or default to personal
+  const [activeTab, setActiveTab] = useState(() => {
+    if (location.state && location.state.openVisibilitySettings) {
+      return "resume";
+    }
+    return "personal";
+  });
+  
+  // Check if we should automatically scroll to visibility settings
+  useEffect(() => {
+    if (location.state && location.state.openVisibilitySettings) {
+      // Focus on the resume tab
+      setActiveTab("resume");
+      
+      // Scroll to visibility section after a short delay to ensure the tab has changed
+      setTimeout(() => {
+        const visibilitySection = document.getElementById('resume-visibility-section');
+        if (visibilitySection) {
+          visibilitySection.scrollIntoView({ behavior: 'smooth' });
+          // Add a highlight effect
+          visibilitySection.classList.add('highlight-section');
+          setTimeout(() => {
+            visibilitySection.classList.remove('highlight-section');
+          }, 2000);
+        }
+      }, 300);
+    }
+  }, [location.state]);
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -274,6 +327,43 @@ const Profile = () => {
       });
     }
   };
+  
+  const handleToggleVisibility = async () => {
+    if (!defaultResume) return;
+    
+    setIsUpdatingVisibility(true);
+    
+    try {
+      // Toggle the current visibility status
+      const newVisibility = !(defaultResume.isVisibleToRecruiters || false);
+      
+      const success = await updateResumeVisibility(newVisibility);
+      
+      if (success) {
+        toast({
+          title: newVisibility ? "Resume is now visible to recruiters" : "Resume is now hidden from recruiters",
+          description: newVisibility 
+            ? "Recruiters can now find your resume when searching for candidates." 
+            : "Your resume is now private and won't appear in recruiter searches.",
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Update failed",
+          description: "Failed to update resume visibility. Please try again.",
+        });
+      }
+    } catch (err) {
+      console.error("Visibility toggle error:", err);
+      toast({
+        variant: "destructive",
+        title: "Update failed",
+        description: "An unexpected error occurred. Please try again.",
+      });
+    } finally {
+      setIsUpdatingVisibility(false);
+    }
+  };
 
   const handleView = () => {
     if (!defaultResume) {
@@ -442,6 +532,44 @@ const Profile = () => {
       <TopNavigation />
       
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Visibility Alert Banner - Only show for paid users with resume but visibility off */}
+        {subscriptionStatus !== 'free' && defaultResume && !defaultResume.isVisibleToRecruiters && (
+          <div className="mb-6 bg-amber-50 border border-amber-200 rounded-lg p-4 shadow-sm">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <Eye className="h-5 w-5 text-amber-600" aria-hidden="true" />
+              </div>
+              <div className="ml-3 flex-1">
+                <h3 className="text-sm font-medium text-amber-800">Your resume is not visible to recruiters</h3>
+                <div className="mt-1 text-sm text-amber-700">
+                  <p>Make your resume visible to recruiters to increase your chances of being discovered for job opportunities.</p>
+                </div>
+                <div className="mt-3">
+                  <Button
+                    size="sm"
+                    className="bg-amber-600 hover:bg-amber-700 text-white"
+                    onClick={() => {
+                      const visibilitySection = document.getElementById('resume-visibility-section');
+                      if (visibilitySection) {
+                        setActiveTab("resume");
+                        setTimeout(() => {
+                          visibilitySection.scrollIntoView({ behavior: 'smooth' });
+                          visibilitySection.classList.add('highlight-section');
+                          setTimeout(() => {
+                            visibilitySection.classList.remove('highlight-section');
+                          }, 2000);
+                        }, 300);
+                      }
+                    }}
+                  >
+                    Update Visibility Settings
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Profile Settings</h1>
           <p className="text-gray-600">Manage your personal information and professional details</p>
@@ -821,10 +949,118 @@ const Profile = () => {
               </CardContent>
               
               {defaultResume && (
-                <CardFooter className="bg-gray-50 border-t border-gray-100 px-6 py-3">
-                  <div className="flex items-center gap-2 text-sm text-green-700">
+                <CardFooter className="bg-gray-50 border-t border-gray-100 px-6 py-3 flex-col items-start gap-3">
+                  <div className="flex items-center gap-2 text-sm text-green-700 w-full">
                     <CheckCircle2 className="w-4 h-4" />
                     <span>Your resume is ready to use with all CareerBird tools</span>
+                  </div>
+                  
+                  {/* Visibility section with ID for scrolling */}
+                  <div id="resume-visibility-section" className="w-full border-t border-gray-200 pt-3 p-3 rounded-md">
+                    <h4 className="text-base font-semibold text-gray-800 mb-2 flex items-center">
+                      <Eye className="w-5 h-5 mr-2 text-blue-600" />
+                      Recruiter Visibility Settings
+                    </h4>
+                    
+                    {/* Only show visibility toggle for paid users */}
+                    {subscriptionStatus !== 'free' && (
+                      <div className="mb-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
+                          <div className="flex items-center">
+                            <div className={`h-3 w-3 rounded-full mr-2 ${defaultResume.isVisibleToRecruiters ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                            <span className="font-medium">
+                              {defaultResume.isVisibleToRecruiters ? "Your resume is visible to recruiters" : "Your resume is not visible to recruiters"}
+                            </span>
+                          </div>
+                          <Button 
+                            variant={defaultResume.isVisibleToRecruiters ? "default" : "outline"}
+                            size="sm"
+                            onClick={handleToggleVisibility}
+                            disabled={isUpdatingVisibility}
+                            className={defaultResume.isVisibleToRecruiters 
+                              ? "bg-green-600 hover:bg-green-700 min-w-[160px]" 
+                              : "border-blue-300 text-blue-700 hover:bg-blue-50 min-w-[160px]"}
+                          >
+                            {isUpdatingVisibility ? (
+                              <>
+                                <RefreshCw className="w-3 h-3 mr-2 animate-spin" />
+                                Updating...
+                              </>
+                            ) : defaultResume.isVisibleToRecruiters ? (
+                              <>
+                                <EyeOff className="w-3 h-3 mr-2" />
+                                Make Private
+                              </>
+                            ) : (
+                              <>
+                                <Eye className="w-3 h-3 mr-2" />
+                                Make Visible
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                        
+                        <div className={`p-3 rounded-md ${defaultResume.isVisibleToRecruiters ? 'bg-green-50 border border-green-100' : 'bg-blue-50 border border-blue-100'}`}>
+                          {defaultResume.isVisibleToRecruiters ? (
+                            <div className="flex items-start">
+                              <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 mr-2 flex-shrink-0" />
+                              <div>
+                                <p className="text-sm text-green-800 font-medium">Your resume is discoverable by recruiters</p>
+                                <p className="text-xs text-green-700 mt-1">
+                                  Recruiters can find your profile when searching for candidates with your skills and experience. 
+                                  This increases your chances of being contacted for relevant job opportunities.
+                                </p>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-start">
+                              <EyeOff className="w-5 h-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
+                              <div>
+                                <p className="text-sm text-blue-800 font-medium">Your resume is currently private</p>
+                                <p className="text-xs text-blue-700 mt-1">
+                                  Make your resume visible to recruiters to be discovered for job opportunities. 
+                                  When visible, recruiters can find your profile when searching for candidates with your skills.
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Show upgrade prompt for free users */}
+                    {subscriptionStatus === 'free' && (
+                      <div className="mb-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
+                          <div className="flex items-center">
+                            <div className="h-3 w-3 rounded-full mr-2 bg-amber-500"></div>
+                            <span className="font-medium">Resume visibility requires Pro plan</span>
+                          </div>
+                          <Button 
+                            variant="outline"
+                            size="sm"
+                            onClick={() => window.location.href = '/Upgrade'}
+                            className="border-amber-500 text-amber-600 hover:bg-amber-50 min-w-[160px]"
+                          >
+                            <Crown className="w-3 h-3 mr-2" />
+                            Upgrade to Pro
+                          </Button>
+                        </div>
+                        
+                        <div className="p-3 rounded-md bg-amber-50 border border-amber-100">
+                          <div className="flex items-start">
+                            <Crown className="w-5 h-5 text-amber-600 mt-0.5 mr-2 flex-shrink-0" />
+                            <div>
+                              <p className="text-sm text-amber-800 font-medium">Unlock recruiter visibility with Pro</p>
+                              <p className="text-xs text-amber-700 mt-1">
+                                Upgrade to a Pro plan to make your resume visible to recruiters and get discovered for job opportunities.
+                                Pro members receive 3x more job opportunities on average.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </CardFooter>
               )}

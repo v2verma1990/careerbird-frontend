@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth/AuthContext";
 import { useResume } from "@/contexts/resume/ResumeContext";
-import api from "@/utils/apiClient";
+import { api } from "@/utils/apiClient";
 // No longer using ResumeFileUploader
 import { 
   FileText, 
@@ -68,12 +68,21 @@ const ResumeCustomizer = () => {
   useEffect(() => {
     // Add a small delay to ensure the loading state is visible
     // This prevents the UI from flashing between states
+    console.log("Default resume state changed:", {
+      exists: !!defaultResume,
+      fileName: defaultResume?.fileName,
+      fileUrl: defaultResume?.fileUrl,
+      blobPath: defaultResume?.blobPath,
+      metadata: defaultResume?.metadata
+    });
+    
     const timer = setTimeout(() => {
-      if (defaultResume) {
-        console.log("Default resume found, setting useDefaultResume to true");
+      if (defaultResume && (defaultResume.fileUrl || defaultResume.blobPath)) {
+        console.log("Valid default resume found, setting useDefaultResume to true");
         setUseDefaultResume(true);
       } else {
-        console.log("No default resume found");
+        console.log("No valid default resume found");
+        setUseDefaultResume(false);
       }
       setLoadingResume(false);
     }, 500); // 500ms delay
@@ -96,6 +105,15 @@ const ResumeCustomizer = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log("Submitting resume customization with state:", {
+      hasResumeFile: !!resumeFile,
+      useDefaultResume,
+      hasDefaultResume: !!defaultResume,
+      defaultResumeFileUrl: defaultResume?.fileUrl,
+      defaultResumeBlobPath: defaultResume?.blobPath
+    });
+    
     if (!resumeFile && !useDefaultResume) {
       toast({
         variant: "destructive",
@@ -113,6 +131,16 @@ const ResumeCustomizer = () => {
       });
       return;
     }
+    
+    // Additional check to ensure default resume has required properties
+    if (useDefaultResume && defaultResume && !defaultResume.fileUrl && !defaultResume.blobPath) {
+      toast({
+        variant: "destructive",
+        title: "Invalid Default Resume",
+        description: "Your default resume appears to be missing required file information. Please upload a resume file instead.",
+      });
+      return;
+    }
     if (!user) {
       toast({
         variant: "destructive",
@@ -123,6 +151,22 @@ const ResumeCustomizer = () => {
     }
     try {
       setIsLoading(true);
+      
+      // If we're using the default resume but it's not fully loaded yet, refresh it first
+      if (useDefaultResume && (!defaultResume || (!defaultResume.fileUrl && !defaultResume.blobPath))) {
+        console.log("Default resume not fully loaded, refreshing before customization");
+        try {
+          // Try to refresh the default resume
+          await api.resume.getDefaultResume();
+          
+          // If we still don't have a valid default resume, show an error
+          if (!defaultResume || (!defaultResume.fileUrl && !defaultResume.blobPath)) {
+            throw new Error("Could not load default resume");
+          }
+        } catch (refreshError) {
+          throw new Error("Failed to load your default resume. Please upload a resume file instead.");
+        }
+      }
       
       // If using default resume, pass null as the file and true for useDefaultResume
       const { data, error } = await api.resume.customize(

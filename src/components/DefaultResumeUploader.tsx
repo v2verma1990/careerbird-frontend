@@ -15,12 +15,16 @@ import {
   AlertCircle, 
   CheckCircle2, 
   FileIcon,
-  RefreshCw
+  RefreshCw,
+  Users,
+  Info,
+  Crown
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { formatFileSize, extractFileKey } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const DefaultResumeUploader: React.FC = () => {
   const location = useLocation();
@@ -32,7 +36,7 @@ const DefaultResumeUploader: React.FC = () => {
   // This ensures resume-customizer, resume-optimizer, etc. all get the simplified version
   const showFullVersion = isAccountPage;
   const { toast } = useToast();
-  const { defaultResume, uploadDefaultResume, refreshDefaultResume, clearDefaultResume, isLoading } = useResume();
+  const { defaultResume, uploadDefaultResume, refreshDefaultResume, clearDefaultResume, updateResumeVisibility, isLoading } = useResume();
   const { user } = useAuth();
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -40,6 +44,7 @@ const DefaultResumeUploader: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [useDefaultResume, setUseDefaultResume] = useState<boolean>(!!defaultResume);
+  const [isVisibleToRecruiters, setIsVisibleToRecruiters] = useState<boolean>(defaultResume?.isVisibleToRecruiters || false);
 
   // Reset progress when file changes
   useEffect(() => {
@@ -47,6 +52,13 @@ const DefaultResumeUploader: React.FC = () => {
       setUploadProgress(0);
     }
   }, [file]);
+
+  // Update visibility state when defaultResume changes
+  useEffect(() => {
+    if (defaultResume) {
+      setIsVisibleToRecruiters(defaultResume.isVisibleToRecruiters || false);
+    }
+  }, [defaultResume]);
 
   // Simulate upload progress
   useEffect(() => {
@@ -101,10 +113,22 @@ const DefaultResumeUploader: React.FC = () => {
       const success = await uploadDefaultResume(file);
       if (success) {
         setUploadProgress(100);
-        toast({
-          title: "Resume uploaded successfully",
-          description: "Your default resume has been updated.",
-        });
+        
+        // After successful upload, set visibility based on subscription status
+        // For paid users, automatically make resume visible and inform them
+        if (user && user.subscription && user.subscription.type !== 'free') {
+          await updateResumeVisibility(true);
+          toast({
+            title: "Resume uploaded successfully",
+            description: "Your resume is now visible to recruiters and ready to use with all tools.",
+          });
+        } else {
+          toast({
+            title: "Resume uploaded successfully",
+            description: "Your resume is ready to use with all CareerBird tools.",
+          });
+        }
+        
         setFile(null);
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
@@ -333,9 +357,46 @@ const DefaultResumeUploader: React.FC = () => {
     );
   }
 
-  // Handle checkbox change
+  // Handle checkbox change for using default resume
   const handleCheckboxChange = (checked: boolean) => {
     setUseDefaultResume(checked);
+  };
+  
+  // Handle visibility checkbox change
+  const handleVisibilityChange = async (checked: boolean) => {
+    if (!defaultResume) return;
+    
+    setIsVisibleToRecruiters(checked);
+    
+    try {
+      const success = await updateResumeVisibility(checked);
+      
+      if (success) {
+        toast({
+          title: checked ? "Resume is now visible to recruiters" : "Resume is now hidden from recruiters",
+          description: checked 
+            ? "Recruiters can now find you based on your resume when searching for candidates." 
+            : "Your resume is no longer visible to recruiters.",
+        });
+      } else {
+        // Revert the UI state if the API call failed
+        setIsVisibleToRecruiters(!checked);
+        toast({
+          variant: "destructive",
+          title: "Update failed",
+          description: "Failed to update resume visibility. Please try again.",
+        });
+      }
+    } catch (err) {
+      console.error("Visibility update error:", err);
+      // Revert the UI state if there was an error
+      setIsVisibleToRecruiters(!checked);
+      toast({
+        variant: "destructive",
+        title: "Update failed",
+        description: "An unexpected error occurred. Please try again.",
+      });
+    }
   };
 
   return (
@@ -535,6 +596,97 @@ const DefaultResumeUploader: React.FC = () => {
                     </div>
                   </div>
                 </div>
+                
+                <div className="mb-4 p-4 bg-blue-50 border border-blue-100 rounded-lg" id="resume-visibility-section">
+                  <h3 className="text-md font-semibold text-blue-900 mb-3 flex items-center">
+                    <Users className="h-5 w-5 mr-2 text-blue-700" />
+                    Resume Visibility Settings
+                  </h3>
+                  
+                  {user && user.subscription && user.subscription.type !== 'free' ? (
+                    <div className="space-y-4">
+                      <div className={`p-3 rounded-md ${isVisibleToRecruiters ? 'bg-green-50 border border-green-100' : 'bg-amber-50 border border-amber-100'}`}>
+                        <div className="flex items-start">
+                          {isVisibleToRecruiters ? (
+                            <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 mr-2 flex-shrink-0" />
+                          ) : (
+                            <Eye className="h-5 w-5 text-amber-600 mt-0.5 mr-2 flex-shrink-0" />
+                          )}
+                          <div>
+                            <p className={`text-sm font-medium ${isVisibleToRecruiters ? 'text-green-800' : 'text-amber-800'}`}>
+                              {isVisibleToRecruiters 
+                                ? "Your resume is discoverable by recruiters" 
+                                : "Your resume is currently private"}
+                            </p>
+                            <p className={`text-xs mt-1 ${isVisibleToRecruiters ? 'text-green-700' : 'text-amber-700'}`}>
+                              {isVisibleToRecruiters 
+                                ? "Recruiters can find your profile when searching for candidates with your skills and experience. This increases your chances of being contacted for relevant job opportunities." 
+                                : "Your resume is not visible to recruiters. Enable visibility to be discovered for job opportunities."}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox 
+                            id="resume-visibility" 
+                            checked={isVisibleToRecruiters}
+                            onCheckedChange={handleVisibilityChange}
+                          />
+                          <Label 
+                            htmlFor="resume-visibility" 
+                            className="font-medium cursor-pointer text-blue-900"
+                          >
+                            Make my resume visible to recruiters
+                          </Label>
+                        </div>
+                        
+                        <Button
+                          variant={isVisibleToRecruiters ? "default" : "outline"}
+                          size="sm"
+                          className={isVisibleToRecruiters ? "bg-green-600 hover:bg-green-700" : "border-blue-300 text-blue-700"}
+                          onClick={() => handleVisibilityChange(!isVisibleToRecruiters)}
+                        >
+                          {isVisibleToRecruiters ? "Visible to Recruiters" : "Make Visible"}
+                        </Button>
+                      </div>
+                      
+                      <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded border border-gray-200">
+                        <p className="flex items-center">
+                          <Info className="h-3 w-3 mr-1 text-gray-500" />
+                          When enabled, recruiters can find you when searching for candidates. Your resume will be processed by AI to match you with relevant job opportunities.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="p-3 bg-amber-50 border border-amber-100 rounded-md">
+                        <div className="flex items-start">
+                          <Crown className="h-5 w-5 text-amber-600 mt-0.5 mr-2 flex-shrink-0" />
+                          <div>
+                            <p className="text-sm font-medium text-amber-800">Unlock recruiter visibility with Pro</p>
+                            <p className="text-xs text-amber-700 mt-1">
+                              Upgrade to a Pro plan to make your resume visible to recruiters and get discovered for job opportunities.
+                              Pro members receive 3x more job opportunities on average.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <Button 
+                        variant="outline"
+                        size="sm"
+                        className="border-amber-300 text-amber-700 hover:bg-amber-50 w-full"
+                        onClick={() => window.location.href = '/upgrade'}
+                      >
+                        <Crown className="w-4 h-4 mr-2" />
+                        Upgrade to Pro
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                
                 <div className="flex flex-wrap gap-2">
                   <Button 
                     variant="outline" 
@@ -631,13 +783,37 @@ const DefaultResumeUploader: React.FC = () => {
                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
                   You don't have a default resume yet. Please upload one.
                 </p>
-                <div 
-                  className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors cursor-pointer"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Upload className="w-10 h-10 mx-auto text-gray-400 mb-2" />
-                  <p className="text-gray-600 mb-1">Drag and drop your resume here or click to browse</p>
-                  <p className="text-gray-500 text-sm">Supported formats: PDF, DOCX, DOC, TXT (Max 5MB)</p>
+                <div className="space-y-4">
+                  <div 
+                    className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors cursor-pointer"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload className="w-10 h-10 mx-auto text-gray-400 mb-2" />
+                    <p className="text-gray-600 mb-1">Drag and drop your resume here or click to browse</p>
+                    <p className="text-gray-500 text-sm">Supported formats: PDF, DOCX, DOC, TXT (Max 5MB)</p>
+                  </div>
+                  
+                  {/* Visibility notice */}
+                  <div className="p-3 bg-blue-50 border border-blue-100 rounded-md">
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0 mt-0.5">
+                        <Users className="h-5 w-5 text-blue-600" />
+                      </div>
+                      <div className="ml-3">
+                        <h3 className="text-sm font-medium text-blue-800">Resume Visibility</h3>
+                        {user && user.subscription && user.subscription.type !== 'free' ? (
+                          <p className="mt-1 text-xs text-blue-700">
+                            Your resume will be automatically made visible to recruiters after upload, 
+                            helping you get discovered for job opportunities. You can change this setting anytime.
+                          </p>
+                        ) : (
+                          <p className="mt-1 text-xs text-blue-700">
+                            Upgrade to a Pro plan to make your resume visible to recruiters and get discovered for job opportunities.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 {file && (
                   <div className="p-3 bg-blue-50 border border-blue-100 rounded-md">
@@ -659,6 +835,15 @@ const DefaultResumeUploader: React.FC = () => {
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
+                    
+                    {/* Visibility notice based on subscription */}
+                    {user && user.subscription && user.subscription.type !== 'free' && (
+                      <div className="mt-2 mb-2 flex items-center text-xs text-green-700 bg-green-50 p-2 rounded border border-green-100">
+                        <CheckCircle2 className="w-3 h-3 mr-1 flex-shrink-0" />
+                        <span>Your resume will be automatically made visible to recruiters after upload</span>
+                      </div>
+                    )}
+                    
                     {uploading && (
                       <div className="mt-2">
                         <Progress value={uploadProgress} className="h-2" />
@@ -696,9 +881,47 @@ const DefaultResumeUploader: React.FC = () => {
       </CardContent>
       {defaultResume && (
         <CardFooter className="bg-gray-50 border-t border-gray-100 px-6 py-3">
-          <div className="flex items-center gap-2 text-sm text-green-700">
-            <CheckCircle2 className="w-4 h-4" />
-            <span>Your resume is ready to use with all CareerBird tools</span>
+          <div className="flex flex-col gap-2 w-full">
+            <div className="flex items-center gap-2 text-sm text-green-700">
+              <CheckCircle2 className="w-4 h-4" />
+              <span>Your resume is ready to use with all CareerBird tools</span>
+            </div>
+            
+            {/* Visibility status indicator */}
+            {user && user.subscription && user.subscription.type !== 'free' ? (
+              <div className="flex items-center gap-2 text-sm mt-1">
+                <div className={`h-2 w-2 rounded-full ${defaultResume.isVisibleToRecruiters ? 'bg-green-500' : 'bg-amber-500'}`}></div>
+                <span className={defaultResume.isVisibleToRecruiters ? 'text-green-700' : 'text-amber-700'}>
+                  {defaultResume.isVisibleToRecruiters 
+                    ? "Your resume is visible to recruiters" 
+                    : "Your resume is not visible to recruiters"}
+                </span>
+                <Button 
+                  variant="link" 
+                  size="sm" 
+                  className="p-0 h-auto text-blue-600 hover:text-blue-800"
+                  onClick={() => {
+                    // Toggle visibility directly from here
+                    if (defaultResume.isVisibleToRecruiters) {
+                      // If already visible, show confirmation before hiding
+                      if (confirm("Are you sure you want to hide your resume from recruiters? This may reduce your chances of being discovered for job opportunities.")) {
+                        updateResumeVisibility(false);
+                      }
+                    } else {
+                      // If not visible, make it visible
+                      updateResumeVisibility(true);
+                    }
+                  }}
+                >
+                  {defaultResume.isVisibleToRecruiters ? "Hide" : "Make visible"}
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-sm mt-1 text-amber-700">
+                <Crown className="w-3 h-3" />
+                <span>Upgrade to Pro to make your resume visible to recruiters</span>
+              </div>
+            )}
           </div>
         </CardFooter>
       )}

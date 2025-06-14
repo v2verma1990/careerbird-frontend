@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/auth/AuthContext';
+import { useNavigate, useLocation } from 'react-router-dom';
 import TopNavigation from '@/components/TopNavigation';
 import { 
   Crown, 
@@ -15,6 +16,7 @@ import {
   BarChart3, 
   Clock,
   ArrowRight,
+  ArrowLeft,
   Sparkles,
   Target,
   Brain,
@@ -23,7 +25,39 @@ import {
 
 const Upgrade = () => {
   const { user, subscriptionStatus } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
+  
+  // Function to handle back button click
+  const handleBackClick = () => {
+    // Check if we have a return path in the location state
+    const returnTo = location.state?.returnTo;
+    if (returnTo) {
+      navigate(returnTo);
+      return;
+    }
+    
+    if (!user) {
+      navigate('/');
+      return;
+    }
+    
+    // Navigate to the appropriate dashboard based on user type and subscription
+    const userType = user.user_metadata?.userType || 'candidate';
+    if (userType === 'recruiter') {
+      navigate('/recruiter-dashboard');
+    } else {
+      // For candidates, check subscription type
+      if (subscriptionStatus?.type === 'free') {
+        navigate('/free-plan-dashboard');
+      } else if (subscriptionStatus?.type === 'basic') {
+        navigate('/candidate-dashboard');
+      } else {
+        navigate('/candidate-dashboard');
+      }
+    }
+  };
 
   const plans = [
     {
@@ -124,7 +158,26 @@ const Upgrade = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
       <TopNavigation />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="bg-white/80 backdrop-blur-sm shadow-lg border-b border-gray-200 mb-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Button variant="ghost" onClick={handleBackClick}>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back
+              </Button>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center shadow-md">
+                  <Crown className="w-5 h-5 text-white" />
+                </div>
+                <h1 className="text-xl font-semibold text-gray-900">Subscription Plans</h1>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Hero Section */}
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 px-4 py-2 rounded-full text-sm font-medium mb-6">

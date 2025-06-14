@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/auth/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import api from "@/utils/apiClient";
+import api, { checkBackendStatus } from "@/utils/apiClient";
 import DefaultResumeUploader from "@/components/DefaultResumeUploader";
 import "@/styles/FreePlanDashboard.css";
 import { 
@@ -79,32 +79,65 @@ const FreePlanDashboard = () => {
 
     setLoadingUsage(true);
     setError(null);
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
-
-    api.usage.getAllFeatureUsage(user.id)
-      .then(({ data, error }) => {
-        clearTimeout(timeout);
-        if (error) {
-          setError("Failed to fetch usage data.");
+    
+    let timeoutId: NodeJS.Timeout | undefined;
+    
+    // First check if the backend is available
+    checkBackendStatus().then(isRunning => {
+      if (!isRunning) {
+        // If backend is not running, show a friendly message and use default data
+        console.log("Backend is not available, using fallback data");
+        setError("Backend server is currently unavailable. Using offline mode with default limits.");
+        setFeatureUsage({
+          // Default limits that won't restrict users when backend is down
+          resume_customization: { usageCount: 0, usageLimit: 5 },
+          resume_optimization: { usageCount: 0, usageLimit: 5 },
+          resume_builder: { usageCount: 0, usageLimit: 5 },
+          ats_scan: { usageCount: 0, usageLimit: 5 }
+        });
+        setLoadingUsage(false);
+        return;
+      }
+      
+      // If backend is running, proceed with the API call
+      const controller = new AbortController();
+      timeoutId = setTimeout(() => controller.abort(), 10000); // Increased timeout to 10 seconds
+      
+      api.usage.getAllFeatureUsage(user.id)
+        .then(({ data, error }) => {
+          if (timeoutId) clearTimeout(timeoutId);
+          if (error) {
+            console.warn("Error fetching usage data:", error);
+            setError("Unable to fetch your usage data. Using default limits for now.");
+            // Provide fallback data so the UI doesn't break
+            setFeatureUsage({
+              // Default limits that won't restrict users when backend is down
+              resume_customization: { usageCount: 0, usageLimit: 5 },
+              resume_optimization: { usageCount: 0, usageLimit: 5 },
+              resume_builder: { usageCount: 0, usageLimit: 5 },
+              ats_scan: { usageCount: 0, usageLimit: 5 }
+            });
+          } else {
+            setFeatureUsage(data || {});
+          }
+          setLoadingUsage(false);
+        })
+        .catch((err) => {
+          if (timeoutId) clearTimeout(timeoutId);
+          console.error("Exception in usage data fetch:", err);
+          if (err.name === "AbortError") {
+            setError("Usage data is taking too long to load. Using default limits for now.");
+          } else {
+            setError("An unexpected error occurred while loading usage data.");
+          }
           setFeatureUsage({});
-        } else {
-          setFeatureUsage(data || {});
-        }
-        setLoadingUsage(false);
-      })
-      .catch((err) => {
-        clearTimeout(timeout);
-        if (err.name === "AbortError") {
-          setError("Usage data is taking too long to load. Please try again later.");
-        } else {
-          setError("An unexpected error occurred while loading usage data.");
-        }
-        setFeatureUsage({});
-        setLoadingUsage(false);
-      });
+          setLoadingUsage(false);
+        });
+    });
 
-    return () => clearTimeout(timeout);
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, [user, subscriptionStatus, subscriptionLoading, featureUsage]);
 
   // Handler for feature button click  

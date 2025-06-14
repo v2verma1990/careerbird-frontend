@@ -235,6 +235,64 @@ namespace ResumeAI.API.Services
             }
         }
 
+        public async Task<ProfileMetadata?> UpdateResumeVisibilityAsync(string userId, bool isVisibleToRecruiters)
+        {
+            Console.WriteLine($"UpdateResumeVisibilityAsync for user ID: {userId}");
+            Console.WriteLine($"IsVisibleToRecruiters: {isVisibleToRecruiters}");
+            
+            try
+            {
+                // Check if the user already has a profile metadata record
+                var existingMetadata = await GetProfileMetadataAsync(userId);
+                Console.WriteLine($"Existing metadata found: {existingMetadata != null}");
+
+                if (existingMetadata == null)
+                {
+                    Console.WriteLine("No existing metadata found for user");
+                    return null;
+                }
+
+                // Update the visibility setting
+                existingMetadata.IsVisibleToRecruiters = isVisibleToRecruiters;
+                existingMetadata.LastUpdated = DateTime.UtcNow;
+                
+                // Update the record in the database
+                _supabaseHttpClientService.SetServiceKey();
+                
+                var url = $"{_supabaseHttpClientService.Url}/rest/v1/profile_metadata?user_id=eq.{Uri.EscapeDataString(userId)}";
+                Console.WriteLine($"Updating profile metadata at: {url}");
+                
+                var updateData = new Dictionary<string, object>
+                {
+                    { "is_visible_to_recruiters", isVisibleToRecruiters },
+                    { "last_updated", DateTime.UtcNow }
+                };
+                
+                var content = new StringContent(
+                    JsonSerializer.Serialize(updateData),
+                    Encoding.UTF8,
+                    "application/json");
+                
+                var response = await _supabaseHttpClientService.Client.PatchAsync(url, content);
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine($"Error updating profile metadata visibility: {response.StatusCode}");
+                    Console.WriteLine($"Response: {await response.Content.ReadAsStringAsync()}");
+                    return null;
+                }
+                
+                Console.WriteLine("Resume visibility updated successfully");
+                return existingMetadata;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception in UpdateResumeVisibilityAsync: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                return null;
+            }
+        }
+
         public async Task<ProfileMetadata?> UpdateResumeFileInfoAsync(string userId, string blobPath, string fileName, int fileSize, string fileUrl)
         {
             Console.WriteLine($"UpdateResumeFileInfoAsync for user ID: {userId}");
