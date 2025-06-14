@@ -4,29 +4,26 @@ import { extractFileKey } from "@/lib/utils";
 // Re-export the SUPABASE_URL for use in other files
 export { SUPABASE_URL };
 
-// Base URL for API calls
-// Determine the appropriate API base URL based on the environment
+
 const determineApiBaseUrl = () => {
-  // Check if we're in a production environment
-  // In Vite, we use import.meta.env instead of process.env
-  const isProduction = import.meta.env.PROD;
+
+  return "https://localhost:5001/api";
+  // const isProduction = import.meta.env.PROD;
   
-  // Check if we're in a development environment with a specific backend URL
-  // Note: Vite environment variables must be prefixed with VITE_
-  const devBackendUrl = import.meta.env.VITE_API_URL;
+
+  // const devBackendUrl = import.meta.env.VITE_API_URL;
   
-  if (isProduction) {
-    console.log(`in production: ${import.meta.env.VITE_API_URL}`);
-    // In production, use relative URL which will use the same domain as the frontend
-    return '/api';
-  } else if (devBackendUrl) {
-    // Use configured backend URL if available
-    return devBackendUrl;
-  } else {
-    console.log(`else part: ${API_BASE_URL}`);
-    // Default to localhost for local development
-   // return "http://localhost:aaa/api";
-  }
+  // if (isProduction) {
+  //   console.log(`in production: ${import.meta.env.VITE_API_URL}`);
+
+  //   return '/api';
+  // } else if (devBackendUrl) {
+
+  //   return devBackendUrl;
+  // } else {
+  //   console.log(`else part: ${API_BASE_URL}`);
+  //   return "https://localhost:5001/api";
+  // }
 };
 
 // Set the API base URL
