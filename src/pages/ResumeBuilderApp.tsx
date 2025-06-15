@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -70,76 +69,44 @@ const ResumeBuilderApp = () => {
   const [showFileUploader, setShowFileUploader] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
   
-  // Initialize with dummy data that's always visible
+  // Initialize with light placeholder data
   const [resumeData, setResumeData] = useState<ResumeData>({
     personalInfo: {
-      name: "John Doe",
-      title: "Senior Software Engineer",
-      email: "john.doe@example.com",
-      phone: "(123) 456-7890",
-      location: "San Francisco, CA",
-      linkedin: "linkedin.com/in/johndoe",
-      website: "johndoe.com"
+      name: "Your Name",
+      title: "Your Job Title",
+      email: "your.email@example.com",
+      phone: "Your Phone",
+      location: "Your Location",
+      linkedin: "Your LinkedIn",
+      website: "Your Website"
     },
-    summary: "Experienced software engineer with 8+ years of expertise in developing scalable web applications using React, Node.js, and AWS. Proven track record of leading teams to deliver high-quality products on time and within budget.",
+    summary: "Write a brief summary of your professional experience and goals...",
     experience: [
       {
-        title: "Senior Software Engineer",
-        company: "Tech Solutions Inc.",
-        location: "San Francisco, CA",
-        startDate: "Jan 2020",
-        endDate: "Present",
-        responsibilities: [
-          "Led a team of 5 developers to build a new e-commerce platform that increased sales by 35%",
-          "Implemented CI/CD pipelines that reduced deployment time by 70%",
-          "Refactored legacy codebase, improving application performance by 40%"
-        ]
-      },
-      {
-        title: "Software Engineer",
-        company: "WebDev Innovations",
-        location: "San Jose, CA",
-        startDate: "Mar 2017",
-        endDate: "Dec 2019",
-        responsibilities: [
-          "Developed responsive web applications using React and Redux",
-          "Collaborated with UX designers to implement user-friendly interfaces",
-          "Wrote unit and integration tests to ensure code quality"
-        ]
+        title: "Job Title",
+        company: "Company Name",
+        location: "Location",
+        startDate: "Start Date",
+        endDate: "End Date",
+        responsibilities: ["Describe your key responsibilities and achievements..."]
       }
     ],
     education: [
       {
-        degree: "Master of Science in Computer Science",
-        institution: "Stanford University",
-        location: "Stanford, CA",
-        startDate: "2015",
-        endDate: "2017",
-        gpa: "3.8/4.0"
-      },
-      {
-        degree: "Bachelor of Science in Computer Engineering",
-        institution: "University of California, Berkeley",
-        location: "Berkeley, CA",
-        startDate: "2011",
-        endDate: "2015",
-        gpa: "3.7/4.0"
+        degree: "Your Degree",
+        institution: "Institution Name",
+        location: "Location",
+        startDate: "Start Date",
+        endDate: "End Date",
+        gpa: "GPA (optional)"
       }
     ],
-    skills: [
-      "JavaScript", "TypeScript", "React", "Node.js", "AWS", "Docker", "Kubernetes", 
-      "GraphQL", "MongoDB", "PostgreSQL", "CI/CD", "Agile Methodologies"
-    ],
+    skills: ["Skill 1", "Skill 2", "Skill 3"],
     certifications: [
       {
-        name: "AWS Certified Solutions Architect",
-        issuer: "Amazon Web Services",
-        date: "2021"
-      },
-      {
-        name: "Certified Scrum Master",
-        issuer: "Scrum Alliance",
-        date: "2019"
+        name: "Certification Name",
+        issuer: "Issuing Organization",
+        date: "Date"
       }
     ]
   });
@@ -226,7 +193,7 @@ const ResumeBuilderApp = () => {
   };
 
   const handleFileExtracted = (extractedData: any) => {
-    console.log("Data extracted from file:", extractedData);
+    console.log("Data extracted from backend:", extractedData);
     setExtractedData(extractedData);
     setShowFileUploader(false);
     setIsExtracting(false);
@@ -270,6 +237,16 @@ const ResumeBuilderApp = () => {
   const handleManualEntry = () => {
     setDataSource('manual');
     setExtractedData(null);
+  };
+
+  // Helper function to clear placeholder text on focus
+  const handleInputFocus = (value: string, placeholder: string) => {
+    return value === placeholder ? "" : value;
+  };
+
+  // Helper function to restore placeholder if empty
+  const handleInputBlur = (value: string, placeholder: string) => {
+    return value.trim() === "" ? placeholder : value;
   };
 
   const handleGenerateResume = () => {
@@ -741,12 +718,30 @@ const ResumeBuilderApp = () => {
                         <input 
                           type="text" 
                           value={resumeData.personalInfo.name} 
+                          onFocus={(e) => {
+                            if (e.target.value === "Your Name") {
+                              setResumeData(prev => ({
+                                ...prev,
+                                personalInfo: { ...prev.personalInfo, name: "" }
+                              }));
+                            }
+                          }}
+                          onBlur={(e) => {
+                            if (e.target.value.trim() === "") {
+                              setResumeData(prev => ({
+                                ...prev,
+                                personalInfo: { ...prev.personalInfo, name: "Your Name" }
+                              }));
+                            }
+                          }}
                           onChange={(e) => setResumeData(prev => ({
                             ...prev,
                             personalInfo: { ...prev.personalInfo, name: e.target.value }
                           }))}
-                          className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                          placeholder="John Doe"
+                          className={`w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                            resumeData.personalInfo.name === "Your Name" ? "text-gray-400" : "text-gray-900"
+                          }`}
+                          placeholder="Your Name"
                         />
                       </div>
                       <div>
@@ -754,12 +749,30 @@ const ResumeBuilderApp = () => {
                         <input 
                           type="text" 
                           value={resumeData.personalInfo.title} 
+                          onFocus={(e) => {
+                            if (e.target.value === "Your Job Title") {
+                              setResumeData(prev => ({
+                                ...prev,
+                                personalInfo: { ...prev.personalInfo, title: "" }
+                              }));
+                            }
+                          }}
+                          onBlur={(e) => {
+                            if (e.target.value.trim() === "") {
+                              setResumeData(prev => ({
+                                ...prev,
+                                personalInfo: { ...prev.personalInfo, title: "Your Job Title" }
+                              }));
+                            }
+                          }}
                           onChange={(e) => setResumeData(prev => ({
                             ...prev,
                             personalInfo: { ...prev.personalInfo, title: e.target.value }
                           }))}
-                          className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                          placeholder="Software Developer"
+                          className={`w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                            resumeData.personalInfo.title === "Your Job Title" ? "text-gray-400" : "text-gray-900"
+                          }`}
+                          placeholder="Your Job Title"
                         />
                       </div>
                       <div>
@@ -767,12 +780,30 @@ const ResumeBuilderApp = () => {
                         <input 
                           type="email" 
                           value={resumeData.personalInfo.email} 
+                          onFocus={(e) => {
+                            if (e.target.value === "your.email@example.com") {
+                              setResumeData(prev => ({
+                                ...prev,
+                                personalInfo: { ...prev.personalInfo, email: "" }
+                              }));
+                            }
+                          }}
+                          onBlur={(e) => {
+                            if (e.target.value.trim() === "") {
+                              setResumeData(prev => ({
+                                ...prev,
+                                personalInfo: { ...prev.personalInfo, email: "your.email@example.com" }
+                              }));
+                            }
+                          }}
                           onChange={(e) => setResumeData(prev => ({
                             ...prev,
                             personalInfo: { ...prev.personalInfo, email: e.target.value }
                           }))}
-                          className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                          placeholder="john@example.com"
+                          className={`w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                            resumeData.personalInfo.email === "your.email@example.com" ? "text-gray-400" : "text-gray-900"
+                          }`}
+                          placeholder="your.email@example.com"
                         />
                       </div>
                       <div>
@@ -780,12 +811,30 @@ const ResumeBuilderApp = () => {
                         <input 
                           type="text" 
                           value={resumeData.personalInfo.phone} 
+                          onFocus={(e) => {
+                            if (e.target.value === "Your Phone") {
+                              setResumeData(prev => ({
+                                ...prev,
+                                personalInfo: { ...prev.personalInfo, phone: "" }
+                              }));
+                            }
+                          }}
+                          onBlur={(e) => {
+                            if (e.target.value.trim() === "") {
+                              setResumeData(prev => ({
+                                ...prev,
+                                personalInfo: { ...prev.personalInfo, phone: "Your Phone" }
+                              }));
+                            }
+                          }}
                           onChange={(e) => setResumeData(prev => ({
                             ...prev,
                             personalInfo: { ...prev.personalInfo, phone: e.target.value }
                           }))}
-                          className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                          placeholder="+1 234 567 8900"
+                          className={`w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                            resumeData.personalInfo.phone === "Your Phone" ? "text-gray-400" : "text-gray-900"
+                          }`}
+                          placeholder="Your Phone"
                         />
                       </div>
                       <div>
@@ -793,12 +842,30 @@ const ResumeBuilderApp = () => {
                         <input 
                           type="text" 
                           value={resumeData.personalInfo.location} 
+                          onFocus={(e) => {
+                            if (e.target.value === "Your Location") {
+                              setResumeData(prev => ({
+                                ...prev,
+                                personalInfo: { ...prev.personalInfo, location: "" }
+                              }));
+                            }
+                          }}
+                          onBlur={(e) => {
+                            if (e.target.value.trim() === "") {
+                              setResumeData(prev => ({
+                                ...prev,
+                                personalInfo: { ...prev.personalInfo, location: "Your Location" }
+                              }));
+                            }
+                          }}
                           onChange={(e) => setResumeData(prev => ({
                             ...prev,
                             personalInfo: { ...prev.personalInfo, location: e.target.value }
                           }))}
-                          className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                          placeholder="New York, NY"
+                          className={`w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                            resumeData.personalInfo.location === "Your Location" ? "text-gray-400" : "text-gray-900"
+                          }`}
+                          placeholder="Your Location"
                         />
                       </div>
                       <div>
@@ -806,12 +873,30 @@ const ResumeBuilderApp = () => {
                         <input 
                           type="text" 
                           value={resumeData.personalInfo.linkedin || ''} 
+                          onFocus={(e) => {
+                            if (e.target.value === "Your LinkedIn") {
+                              setResumeData(prev => ({
+                                ...prev,
+                                personalInfo: { ...prev.personalInfo, linkedin: "" }
+                              }));
+                            }
+                          }}
+                          onBlur={(e) => {
+                            if (e.target.value.trim() === "") {
+                              setResumeData(prev => ({
+                                ...prev,
+                                personalInfo: { ...prev.personalInfo, linkedin: "Your LinkedIn" }
+                              }));
+                            }
+                          }}
                           onChange={(e) => setResumeData(prev => ({
                             ...prev,
                             personalInfo: { ...prev.personalInfo, linkedin: e.target.value }
                           }))}
-                          className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                          placeholder="linkedin.com/in/johndoe"
+                          className={`w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                            resumeData.personalInfo.linkedin === "Your LinkedIn" ? "text-gray-400" : "text-gray-900"
+                          }`}
+                          placeholder="Your LinkedIn"
                         />
                       </div>
                       <div className="col-span-2">
@@ -819,12 +904,30 @@ const ResumeBuilderApp = () => {
                         <input 
                           type="text" 
                           value={resumeData.personalInfo.website || ''} 
+                          onFocus={(e) => {
+                            if (e.target.value === "Your Website") {
+                              setResumeData(prev => ({
+                                ...prev,
+                                personalInfo: { ...prev.personalInfo, website: "" }
+                              }));
+                            }
+                          }}
+                          onBlur={(e) => {
+                            if (e.target.value.trim() === "") {
+                              setResumeData(prev => ({
+                                ...prev,
+                                personalInfo: { ...prev.personalInfo, website: "Your Website" }
+                              }));
+                            }
+                          }}
                           onChange={(e) => setResumeData(prev => ({
                             ...prev,
                             personalInfo: { ...prev.personalInfo, website: e.target.value }
                           }))}
-                          className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                          placeholder="www.johndoe.com"
+                          className={`w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                            resumeData.personalInfo.website === "Your Website" ? "text-gray-400" : "text-gray-900"
+                          }`}
+                          placeholder="Your Website"
                         />
                       </div>
                     </div>
