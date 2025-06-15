@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Upload, FileText, Download, Eye, User, Briefcase, GraduationCap, Award, Code, Plus, X } from 'lucide-react';
+import { Upload, FileText, Download, Eye, User, Briefcase, GraduationCap, Award, Code, Plus, X, Sparkles, Zap } from 'lucide-react';
 import ResumeFileUploader from '@/components/ResumeFileUploader';
 import { resumeBuilderApi } from '@/utils/resumeBuilderApi';
 import { useToast } from '@/hooks/use-toast';
@@ -242,6 +241,101 @@ const ResumeBuilderApp = () => {
     }
   };
 
+  const generateResumeViaAI = async () => {
+    setIsLoading(true);
+    try {
+      // Call AI-enhanced resume generation
+      const result = await resumeBuilderApi.buildResume({
+        resumeData: JSON.stringify(resumeData),
+        templateId: selectedTemplate,
+        enhanceWithAI: true
+      });
+
+      if (result.error) {
+        toast({
+          title: "AI Generation failed",
+          description: result.error,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (result.data?.html) {
+        const blob = new Blob([result.data.html], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `ai-resume-${selectedTemplate}.html`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        toast({
+          title: "Success!",
+          description: "Your AI-enhanced resume has been generated and downloaded.",
+        });
+      }
+    } catch (error) {
+      console.error('Error generating AI resume:', error);
+      toast({
+        title: "AI Generation failed",
+        description: "Failed to generate AI-enhanced resume. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const generateAIEnhancedResume = async () => {
+    setIsLoading(true);
+    try {
+      // Call premium AI-enhanced resume generation
+      const result = await resumeBuilderApi.buildResume({
+        resumeData: JSON.stringify(resumeData),
+        templateId: selectedTemplate,
+        enhanceWithAI: true,
+        premiumEnhancement: true
+      });
+
+      if (result.error) {
+        toast({
+          title: "AI Enhanced Generation failed",
+          description: result.error,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (result.data?.html) {
+        const blob = new Blob([result.data.html], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `ai-enhanced-resume-${selectedTemplate}.html`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        toast({
+          title: "Success!",
+          description: "Your premium AI-enhanced resume has been generated and downloaded.",
+        });
+      }
+    } catch (error) {
+      console.error('Error generating AI enhanced resume:', error);
+      toast({
+        title: "AI Enhanced Generation failed",
+        description: "Failed to generate premium AI-enhanced resume. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-7xl mx-auto">
@@ -259,7 +353,7 @@ const ResumeBuilderApp = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Button
                 variant={dataSource === 'manual' ? 'default' : 'outline'}
                 className="h-20 flex flex-col items-center gap-2"
@@ -284,18 +378,6 @@ const ResumeBuilderApp = () => {
                   </Badge>
                 )}
               </div>
-              
-              <Button
-                variant={dataSource === 'default' ? 'default' : 'outline'}
-                className="h-20 flex flex-col items-center gap-2"
-                onClick={() => {
-                  setDataSource('default');
-                  setResumeData(initialData);
-                }}
-              >
-                <FileText className="h-6 w-6" />
-                <span>Use Template</span>
-              </Button>
             </div>
           </CardContent>
         </Card>
@@ -751,23 +833,64 @@ const ResumeBuilderApp = () => {
                     </div>
                   </div>
                   
-                  <Button 
-                    className="w-full" 
-                    onClick={generateResume}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <Download className="h-4 w-4 mr-2" />
-                        Generate Resume
-                      </>
-                    )}
-                  </Button>
+                  <Separator />
+                  
+                  {/* Three Generation Buttons */}
+                  <div className="space-y-3">
+                    <Button 
+                      className="w-full" 
+                      onClick={generateResume}
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Download className="h-4 w-4 mr-2" />
+                          Generate Resume
+                        </>
+                      )}
+                    </Button>
+
+                    <Button 
+                      className="w-full bg-blue-600 hover:bg-blue-700" 
+                      onClick={generateResumeViaAI}
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          Generate Resume via AI
+                        </>
+                      )}
+                    </Button>
+
+                    <Button 
+                      className="w-full bg-purple-600 hover:bg-purple-700" 
+                      onClick={generateAIEnhancedResume}
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="h-4 w-4 mr-2" />
+                          Generate AI Enhanced Resume
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
