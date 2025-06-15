@@ -223,19 +223,21 @@ const ResumeBuilderApp = () => {
     }
   }, [showPreview, sampleResumeData]);
 
-  // Load and compile template HTML for preview
+  // Replace local preview template fetching with backend API fetching
   useEffect(() => {
     if (showPreview && previewTemplate) {
       const loadTemplate = async () => {
         try {
-          const response = await fetch(`/resume-templates/html/${previewTemplate}.html`);
+          // Fetch template HTML from backend API instead of public folder
+          const response = await fetch(`/api/templates/${previewTemplate}.html`); // Assumes backend exposes this endpoint
+          if (!response.ok) throw new Error("Failed to fetch template from backend");
           const html = await response.text();
           // Use sample data for preview
           const dataForPreview = useSampleData && sampleResumeData ? sampleResumeData : resumeData;
           const compiled = Handlebars.compile(html)(dataForPreview);
           setTemplateHtml(compiled);
         } catch (error) {
-          setTemplateHtml('<p>Failed to load template</p>');
+          setTemplateHtml('<p>Failed to load template from backend</p>');
         }
       };
       loadTemplate();
