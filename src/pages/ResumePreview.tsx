@@ -19,7 +19,7 @@ const ResumePreview = () => {
   useEffect(() => {
     if (resumeData) {
       // In a real implementation, you would call your resume builder API here
-      // For now, we'll simulate loading
+      // For now, we'll simulate loading and automatically display the resume
       setIsLoading(true);
       setTimeout(() => {
         setResumeHtml(`
