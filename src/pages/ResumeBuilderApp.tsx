@@ -589,113 +589,49 @@ const ResumeBuilderApp = () => {
     // Main builder interface
     return (
       <div className="min-h-screen bg-gray-50">
-        {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="outline"
-                onClick={() => navigate('/resume-builder')}
-                className="flex items-center gap-2"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Change Template
-              </Button>
-              <div>
-                <h1 className="text-xl font-semibold">Resume Builder</h1>
-                <p className="text-sm text-gray-600">
-                  Using {templates.find(t => t.id === preselectedTemplate)?.name || 'Selected'} template
-                </p>
-              </div>
+        <div className="max-w-4xl mx-auto p-6">
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex items-center gap-3 mb-4">
+              <FileText className="w-6 h-6 text-blue-600" />
+              <h1 className="text-2xl font-semibold text-gray-900">Resume Information</h1>
             </div>
           </div>
-        </div>
-        
-        <div className="max-w-6xl mx-auto p-6">
-          {/* Data Source Selection */}
-          <div className="mb-6">
-            <h2 className="text-xl font-semibold mb-4">How would you like to create your resume?</h2>
-            
-            {/* Use Default Resume Checkbox */}
-            {hasDefaultResume && (
-              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <Checkbox 
-                    id="use-default-resume" 
-                    checked={useDefaultResume}
-                    onCheckedChange={(checked) => {
-                      setUseDefaultResume(checked as boolean);
-                      if (checked) {
-                        setDataSource('default');
-                        setExtractedData(defaultResumeData);
-                        setShowManualForm(false);
-                      } else {
-                        setDataSource(null);
-                        setExtractedData(null);
-                      }
-                    }}
-                  />
-                  <div>
-                    <label htmlFor="use-default-resume" className="text-sm font-medium text-blue-800 cursor-pointer">
-                      Use my default resume
-                    </label>
-                    <p className="text-xs text-blue-600">
-                      Use the resume you uploaded in your profile
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
 
-            {/* Data Source Buttons */}
-            {!useDefaultResume && (
-              <div className="flex gap-4">
-                <Button
-                  variant={dataSource === 'default' ? 'default' : 'outline'}
-                  onClick={() => {
-                    if (hasDefaultResume && defaultResumeData) {
-                      setDataSource('default');
-                      setExtractedData(defaultResumeData);
-                      setShowManualForm(false);
-                    }
-                  }}
-                  className="flex items-center gap-2"
-                  disabled={!hasDefaultResume}
-                >
-                  <FileText className="w-4 h-4" />
-                  Extract from Default Resume
-                </Button>
-                
-                <Button
-                  variant={dataSource === 'extract' ? 'default' : 'outline'}
-                  onClick={() => {
-                    // This will trigger the file upload
-                    setDataSource('extract');
+          {/* Data Source Buttons */}
+          <div className="mb-8">
+            <div className="flex gap-4">
+              <Button
+                variant={dataSource === 'default' ? 'default' : 'outline'}
+                onClick={() => {
+                  if (hasDefaultResume && defaultResumeData) {
+                    setDataSource('default');
+                    setExtractedData(defaultResumeData);
                     setShowManualForm(false);
-                  }}
-                  className="flex items-center gap-2"
-                >
-                  <Upload className="w-4 h-4" />
-                  Upload Resume to Extract Data
-                </Button>
-                
-                <Button
-                  variant={dataSource === 'manual' ? 'default' : 'outline'}
-                  onClick={() => {
-                    setDataSource('manual');
-                    setShowManualForm(true);
-                    setExtractedData(null);
-                  }}
-                  className="flex items-center gap-2"
-                >
-                  <Edit className="w-4 h-4" />
-                  Manually Enter
-                </Button>
-              </div>
-            )}
+                  }
+                }}
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                disabled={!hasDefaultResume}
+              >
+                <FileText className="w-4 h-4" />
+                Use Default Resume
+              </Button>
+              
+              <Button
+                variant={dataSource === 'extract' ? 'default' : 'outline'}
+                onClick={() => {
+                  setDataSource('extract');
+                  setShowManualForm(false);
+                }}
+                className="flex items-center gap-2"
+              >
+                <Upload className="w-4 h-4" />
+                Upload Resume
+              </Button>
+            </div>
 
             {/* File Upload Component - only show when Extract is selected */}
-            {dataSource === 'extract' && !useDefaultResume && (
+            {dataSource === 'extract' && (
               <div className="mt-4">
                 <ResumeFileUploader
                   onFileSelected={(file) => {
@@ -716,74 +652,122 @@ const ResumeBuilderApp = () => {
             )}
           </div>
 
+          {/* Default Resume Usage Indicator */}
+          {(dataSource === 'default' || useDefaultResume) && defaultResumeData && (
+            <div className="mb-6">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-center gap-3">
+                  <FileText className="w-5 h-5 text-blue-600" />
+                  <div>
+                    <h3 className="font-medium text-blue-800">Using your default resume</h3>
+                    <p className="text-sm text-blue-600">Vishal-CV.pdf</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Extracted Data Display */}
           {(extractedData || (dataSource === 'default' && defaultResumeData)) && (
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold mb-4">
-                {useDefaultResume ? 'Default Resume Data' : 'Extracted Resume Data'}
-              </h3>
+            <div className="mb-8">
               <Tabs defaultValue="personal" className="w-full">
-                <TabsList className="mb-4">
-                  <TabsTrigger value="personal">Personal Info</TabsTrigger>
-                  <TabsTrigger value="experience">Experience</TabsTrigger>
-                  <TabsTrigger value="education">Education</TabsTrigger>
-                  <TabsTrigger value="skills">Skills</TabsTrigger>
-                  <TabsTrigger value="certifications">Certifications</TabsTrigger>
+                <TabsList className="mb-6 bg-gray-100">
+                  <TabsTrigger value="personal" className="px-6">Personal</TabsTrigger>
+                  <TabsTrigger value="experience" className="px-6">Experience</TabsTrigger>
+                  <TabsTrigger value="education" className="px-6">Education</TabsTrigger>
+                  <TabsTrigger value="skills" className="px-6">Skills</TabsTrigger>
+                  <TabsTrigger value="additional" className="px-6">Additional</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="personal">
                   <Card>
-                    <CardHeader>
-                      <CardTitle>Personal Information</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div><strong>Name:</strong> {(extractedData || defaultResumeData)?.name || 'N/A'}</div>
-                        <div><strong>Title:</strong> {(extractedData || defaultResumeData)?.title || 'N/A'}</div>
-                        <div><strong>Email:</strong> {(extractedData || defaultResumeData)?.email || 'N/A'}</div>
-                        <div><strong>Phone:</strong> {(extractedData || defaultResumeData)?.phone || 'N/A'}</div>
-                        <div><strong>Location:</strong> {(extractedData || defaultResumeData)?.location || 'N/A'}</div>
-                        <div><strong>LinkedIn:</strong> {(extractedData || defaultResumeData)?.linkedin || 'N/A'}</div>
-                      </div>
-                      {(extractedData || defaultResumeData)?.summary && (
-                        <div className="mt-4">
-                          <strong>Summary:</strong>
-                          <p className="mt-2 text-gray-600">{(extractedData || defaultResumeData).summary}</p>
+                    <CardContent className="p-6">
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+                          <input 
+                            type="text" 
+                            value={(extractedData || defaultResumeData)?.name || 'Vishal Verma'} 
+                            className="w-full p-3 border border-gray-300 rounded-md bg-gray-50" 
+                            readOnly 
+                          />
                         </div>
-                      )}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Job Title *</label>
+                          <input 
+                            type="text" 
+                            value={(extractedData || defaultResumeData)?.title || 'Cloud Architect'} 
+                            className="w-full p-3 border border-gray-300 rounded-md bg-gray-50" 
+                            readOnly 
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                          <input 
+                            type="email" 
+                            value={(extractedData || defaultResumeData)?.email || 'v2verma1990@gmail.com'} 
+                            className="w-full p-3 border border-gray-300 rounded-md bg-gray-50" 
+                            readOnly 
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                          <input 
+                            type="text" 
+                            value={(extractedData || defaultResumeData)?.phone || '+917259577668 / +447890665787'} 
+                            className="w-full p-3 border border-gray-300 rounded-md bg-gray-50" 
+                            readOnly 
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                          <input 
+                            type="text" 
+                            value={(extractedData || defaultResumeData)?.location || 'London, United Kingdom'} 
+                            className="w-full p-3 border border-gray-300 rounded-md bg-gray-50" 
+                            readOnly 
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn</label>
+                          <input 
+                            type="text" 
+                            value={(extractedData || defaultResumeData)?.linkedin || 'linkedin.com/in/johndoe'} 
+                            className="w-full p-3 border border-gray-300 rounded-md bg-gray-50" 
+                            readOnly 
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
+                          <input 
+                            type="text" 
+                            value={(extractedData || defaultResumeData)?.website || 'johndoe.com'} 
+                            className="w-full p-3 border border-gray-300 rounded-md bg-gray-50" 
+                            readOnly 
+                          />
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
                 </TabsContent>
 
                 <TabsContent value="experience">
                   <Card>
-                    <CardHeader>
-                      <CardTitle>Work Experience</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {extractedData?.experience && extractedData.experience.length > 0 ? (
-                        <div className="space-y-4">
-                          {extractedData.experience.map((exp: any, index: number) => (
-                            <div key={index} className="border-l-2 border-blue-500 pl-4">
-                              <h4 className="font-semibold">{exp.title}</h4>
-                              <p className="text-gray-600">{exp.company} • {exp.startDate} - {exp.endDate}</p>
-                              <p className="text-sm text-gray-500">{exp.description || (exp.responsibilities ? exp.responsibilities.join(", ") : "")}</p>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-gray-500">No experience data found</p>
-                      )}
+                    <CardContent className="p-6">
+                      <h3 className="text-lg font-medium mb-4">Professional Summary</h3>
+                      <div className="bg-gray-50 p-4 rounded-md mb-4">
+                        <p className="text-gray-700">
+                          {(extractedData || defaultResumeData)?.summary || 
+                          'Experienced Architect with over 14+ years of expertise in cloud architecture, specializing in Microsoft Azure services and solutions. Skilled in assessing and recommending public and hybrid Cloud solutions (IaaS, SaaS, PaaS) and advising customers on Cloud solution options. Adept at collaborating with cross-functional teams to define cloud strategies, roadmaps, and migration plans. Proven track record of architecture and implementing cloud-native solutions, microservices, serverless architectures, and containerized applications. Committed to continuous professional development and staying abreast of industry trends and technological advancements.'}
+                        </p>
+                      </div>
                     </CardContent>
                   </Card>
                 </TabsContent>
 
                 <TabsContent value="education">
                   <Card>
-                    <CardHeader>
-                      <CardTitle>Education</CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-6">
                       {extractedData?.education && extractedData.education.length > 0 ? (
                         <div className="space-y-3">
                           {extractedData.education.map((edu: any, index: number) => (
@@ -802,10 +786,7 @@ const ResumeBuilderApp = () => {
 
                 <TabsContent value="skills">
                   <Card>
-                    <CardHeader>
-                      <CardTitle>Skills</CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-6">
                       {extractedData?.skills && extractedData.skills.length > 0 ? (
                         <div className="flex flex-wrap gap-2">
                           {extractedData.skills.map((skill: string, index: number) => (
@@ -819,12 +800,9 @@ const ResumeBuilderApp = () => {
                   </Card>
                 </TabsContent>
 
-                <TabsContent value="certifications">
+                <TabsContent value="additional">
                   <Card>
-                    <CardHeader>
-                      <CardTitle>Certifications</CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-6">
                       {extractedData?.certifications && extractedData.certifications.length > 0 ? (
                         <div className="space-y-2">
                           {extractedData.certifications.map((cert: any, index: number) => (
@@ -844,25 +822,11 @@ const ResumeBuilderApp = () => {
             </div>
           )}
 
-          {/* Manual Entry Form */}
-          {showManualForm && (
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold mb-4">Enter Your Resume Information</h3>
-              <Card>
-                <CardContent className="p-6">
-                  <p className="text-gray-600 text-center py-8">
-                    Manual entry form would be implemented here with all resume fields
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
           {/* Action Buttons at Bottom */}
-          <div className="flex justify-center gap-4 pt-6 border-t">
+          <div className="flex gap-4 pt-6">
             <Button 
               onClick={() => setShowPreview(true)}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-8 py-3"
               disabled={!extractedData && !showManualForm && !useDefaultResume}
             >
               <Eye className="w-4 h-4" />
@@ -870,28 +834,19 @@ const ResumeBuilderApp = () => {
             </Button>
             <Button 
               onClick={handleGenerateWithAI}
-              className="flex items-center gap-2"
-              disabled={!extractedData && !showManualForm && !useDefaultResume}
-            >
-              <Sparkles className="w-4 h-4" />
-              AI Resume
-            </Button>
-            <Button 
-              onClick={handleGenerateFromBackend}
-              className="flex items-center gap-2"
-              disabled={!extractedData && !showManualForm && !useDefaultResume}
-            >
-              <Crown className="w-4 h-4" />
-              Generate from Backend
-            </Button>
-            <Button 
-              variant="outline"
-              onClick={() => setShowPreview(true)} 
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-8 py-3"
               disabled={!extractedData && !showManualForm && !useDefaultResume}
             >
               <Eye className="w-4 h-4" />
-              Preview
+              Generate Best AI Resume
+            </Button>
+            <Button 
+              onClick={handleGenerateFromBackend}
+              className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-8 py-3"
+              disabled={!extractedData && !showManualForm && !useDefaultResume}
+            >
+              <Eye className="w-4 h-4" />
+              Generate AI Enhanced Resume (100% ATS)
             </Button>
           </div>
         </div>
