@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Eye, ArrowRight, Star, Crown, Sparkles, Palette, ArrowLeft } from "lucide-react";
+import { Eye, ArrowRight, Star, Crown, Sparkles, Palette, ArrowLeft, Download, FileText } from "lucide-react";
 
 interface ResumeData {
   personalInfo: {
@@ -290,11 +290,22 @@ const ResumeBuilderApp = () => {
     console.log("Exporting as Word...");
   };
 
+  const handleGenerateResume = () => {
+    console.log("Generating resume with current data...");
+    // Logic to generate resume with current form data
+  };
+
+  const handleGenerateWithAI = () => {
+    console.log("Generating resume with AI assistance...");
+    // Logic to generate resume with AI
+  };
+
   const handleBackToTemplateSelection = () => {
     navigate('/resume-builder');
   };
 
   const handlePreview = () => {
+    // Create a simple preview instead of iframe
     setShowPreview(true);
   };
 
@@ -302,7 +313,7 @@ const ResumeBuilderApp = () => {
     setShowPreview(false);
   };
 
-  // If template is preselected, show only the builder interface
+  // If template is preselected, show the builder interface
   if (preselectedTemplate) {
     // Show preview screen
     if (showPreview) {
@@ -328,25 +339,65 @@ const ResumeBuilderApp = () => {
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={handleExportWord}>
+                <Button variant="outline" onClick={handleExportWord} className="flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
                   Export as Word
                 </Button>
-                <Button onClick={handleExportPDF}>
+                <Button onClick={handleExportPDF} className="flex items-center gap-2">
+                  <Download className="w-4 h-4" />
                   Export as PDF
                 </Button>
               </div>
             </div>
           </div>
           
-          {/* Preview Content */}
+          {/* Simple Preview Content */}
           <div className="flex justify-center p-6">
-            <div className="w-full max-w-4xl">
-              <div className="bg-white shadow-md rounded-md overflow-hidden">
-                <iframe
-                  src={`/resume-preview?template=${preselectedTemplate}`}
-                  className="w-full h-[800px] border-0"
-                  title="Resume Preview"
-                />
+            <div className="w-full max-w-4xl bg-white shadow-lg rounded-lg p-8">
+              <div className="text-center mb-6">
+                <h1 className="text-3xl font-bold text-gray-800">{resumeData.personalInfo.name}</h1>
+                <p className="text-xl text-gray-600 mb-4">{resumeData.personalInfo.title}</p>
+                <div className="flex justify-center gap-4 text-sm text-gray-500">
+                  <span>{resumeData.personalInfo.email}</span>
+                  <span>{resumeData.personalInfo.phone}</span>
+                  <span>{resumeData.personalInfo.location}</span>
+                </div>
+              </div>
+              
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-lg font-semibold border-b pb-2 mb-3">Professional Summary</h2>
+                  <p className="text-gray-700">{resumeData.summary}</p>
+                </div>
+                
+                <div>
+                  <h2 className="text-lg font-semibold border-b pb-2 mb-3">Experience</h2>
+                  {resumeData.experience.map((exp, index) => (
+                    <div key={index} className="mb-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h3 className="font-medium">{exp.title}</h3>
+                          <p className="text-gray-600">{exp.company}</p>
+                        </div>
+                        <span className="text-sm text-gray-500">{exp.startDate} - {exp.endDate}</span>
+                      </div>
+                      <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
+                        {exp.responsibilities.map((resp, respIndex) => (
+                          <li key={respIndex}>{resp}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+                
+                <div>
+                  <h2 className="text-lg font-semibold border-b pb-2 mb-3">Skills</h2>
+                  <div className="flex flex-wrap gap-2">
+                    {resumeData.skills.map((skill, index) => (
+                      <Badge key={index} variant="secondary">{skill}</Badge>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -354,7 +405,7 @@ const ResumeBuilderApp = () => {
       );
     }
 
-    // Show form screen
+    // Show form screen with action buttons
     return (
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
@@ -376,22 +427,37 @@ const ResumeBuilderApp = () => {
                 </p>
               </div>
             </div>
+            
+            {/* Action Buttons */}
             <div className="flex gap-2">
-              <Button variant="outline" onClick={handlePreview} className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                onClick={handleGenerateResume}
+                className="flex items-center gap-2"
+              >
+                <FileText className="w-4 h-4" />
+                Generate Resume
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={handleGenerateWithAI}
+                className="flex items-center gap-2"
+              >
+                <Sparkles className="w-4 h-4" />
+                Generate with AI
+              </Button>
+              <Button 
+                onClick={handlePreview} 
+                className="flex items-center gap-2"
+              >
                 <Eye className="w-4 h-4" />
                 Preview
-              </Button>
-              <Button variant="outline" onClick={handleExportWord}>
-                Export as Word
-              </Button>
-              <Button onClick={handleExportPDF}>
-                Export as PDF
               </Button>
             </div>
           </div>
         </div>
         
-        {/* Form Section - Full Width */}
+        {/* Form Section */}
         <div className="max-w-4xl mx-auto p-6">
           <Tabs defaultValue="personal" className="w-full">
             <TabsList className="mb-4">
