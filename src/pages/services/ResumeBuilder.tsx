@@ -192,6 +192,16 @@ const ResumeBuilder = () => {
 
   const templates: Template[] = [
     {
+      id: "navy-column-modern",
+      name: "Navy Column Modern",
+      description: "Professional layout with navy sidebar and clean white content area",
+      thumbnail: "/lovable-uploads/111bb875-e937-4ebf-8470-bc9c0fd0e801.png",
+      category: "professional",
+      color: "navy",
+      isRecommended: true,
+      isNew: true
+    },
+    {
       id: "modern-executive",
       name: "Modern Executive",
       description: "Clean, professional design perfect for executives",
