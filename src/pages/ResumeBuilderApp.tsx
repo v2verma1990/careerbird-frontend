@@ -66,6 +66,7 @@ const ResumeBuilderApp = () => {
   const [hasDefaultResume, setHasDefaultResume] = useState(false);
   const [defaultResumeData, setDefaultResumeData] = useState<any>(null);
   const [extractedData, setExtractedData] = useState<any>(null);
+  const [showManualForm, setShowManualForm] = useState(false);
   
   const [resumeData, setResumeData] = useState<ResumeData>({
     personalInfo: {
@@ -517,7 +518,7 @@ const ResumeBuilderApp = () => {
   if (preselectedTemplate) {
     // Show preview screen with PDF in iframe
     if (showPreview) {
-      const previewData = extractedData || resumeData;
+      const previewData = extractedData || (showManualForm ? resumeData : null) || resumeData;
       
       return (
         <div className="min-h-screen bg-gray-50">
@@ -531,7 +532,7 @@ const ResumeBuilderApp = () => {
                   className="flex items-center gap-2"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  Back to Builder
+                  Back to Editor
                 </Button>
                 <div>
                   <h1 className="text-xl font-semibold">Resume Preview</h1>
@@ -541,13 +542,13 @@ const ResumeBuilderApp = () => {
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => console.log("Export as Word")} className="flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
-                  Export as Word
-                </Button>
-                <Button onClick={() => console.log("Export as PDF")} className="flex items-center gap-2">
+                <Button variant="outline" onClick={() => console.log("Download PDF")} className="flex items-center gap-2">
                   <Download className="w-4 h-4" />
-                  Export as PDF
+                  Download PDF
+                </Button>
+                <Button variant="outline" onClick={() => console.log("Download HTML")} className="flex items-center gap-2">
+                  <Download className="w-4 h-4" />
+                  Download HTML
                 </Button>
               </div>
             </div>
@@ -611,58 +612,116 @@ const ResumeBuilderApp = () => {
         </div>
         
         <div className="max-w-6xl mx-auto p-6">
-          {/* Data Source Buttons at Top */}
+          {/* Data Source Selection */}
           <div className="mb-6">
             <h2 className="text-xl font-semibold mb-4">How would you like to create your resume?</h2>
-            <div className="flex gap-4">
-              {hasDefaultResume && (
+            
+            {/* Use Default Resume Checkbox */}
+            {hasDefaultResume && (
+              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <Checkbox 
+                    id="use-default-resume" 
+                    checked={useDefaultResume}
+                    onCheckedChange={(checked) => {
+                      setUseDefaultResume(checked as boolean);
+                      if (checked) {
+                        setDataSource('default');
+                        setExtractedData(defaultResumeData);
+                        setShowManualForm(false);
+                      } else {
+                        setDataSource(null);
+                        setExtractedData(null);
+                      }
+                    }}
+                  />
+                  <div>
+                    <label htmlFor="use-default-resume" className="text-sm font-medium text-blue-800 cursor-pointer">
+                      Use my default resume
+                    </label>
+                    <p className="text-xs text-blue-600">
+                      Use the resume you uploaded in your profile
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Data Source Buttons */}
+            {!useDefaultResume && (
+              <div className="flex gap-4">
                 <Button
                   variant={dataSource === 'default' ? 'default' : 'outline'}
-                  onClick={handleExtractFromDefault}
+                  onClick={() => {
+                    if (hasDefaultResume && defaultResumeData) {
+                      setDataSource('default');
+                      setExtractedData(defaultResumeData);
+                      setShowManualForm(false);
+                    }
+                  }}
                   className="flex items-center gap-2"
+                  disabled={!hasDefaultResume}
                 >
                   <FileText className="w-4 h-4" />
                   Extract from Default Resume
                 </Button>
-              )}
-              <div className="flex-1">
+                
+                <Button
+                  variant={dataSource === 'extract' ? 'default' : 'outline'}
+                  onClick={() => {
+                    // This will trigger the file upload
+                    setDataSource('extract');
+                    setShowManualForm(false);
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <Upload className="w-4 h-4" />
+                  Upload Resume to Extract Data
+                </Button>
+                
+                <Button
+                  variant={dataSource === 'manual' ? 'default' : 'outline'}
+                  onClick={() => {
+                    setDataSource('manual');
+                    setShowManualForm(true);
+                    setExtractedData(null);
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <Edit className="w-4 h-4" />
+                  Manually Enter
+                </Button>
+              </div>
+            )}
+
+            {/* File Upload Component - only show when Extract is selected */}
+            {dataSource === 'extract' && !useDefaultResume && (
+              <div className="mt-4">
                 <ResumeFileUploader
                   onFileSelected={(file) => {
                     if (file) {
                       console.log("File selected for extraction:", file.name);
                     }
                   }}
-                  onDataExtracted={handleFileExtracted}
+                  onDataExtracted={(extractedData) => {
+                    console.log("Data extracted:", extractedData);
+                    setExtractedData(extractedData);
+                  }}
                   setIsExtracting={(extracting) => {
                     console.log("Extracting:", extracting);
                   }}
                   showDefaultResumeOption={false}
-                  customTrigger={
-                    <Button
-                      variant={dataSource === 'extract' ? 'default' : 'outline'}
-                      className="flex items-center gap-2"
-                    >
-                      <Upload className="w-4 h-4" />
-                      Upload Resume to Extract Data
-                    </Button>
-                  }
                 />
               </div>
-              <Button
-                variant={dataSource === 'manual' ? 'default' : 'outline'}
-                onClick={handleManualEntry}
-                className="flex items-center gap-2"
-              >
-                <Edit className="w-4 h-4" />
-                Manually Enter
-              </Button>
-            </div>
+            )}
           </div>
 
-          {/* Extracted Data Tabs */}
-          {extractedData && (
+          {/* Extracted Data Display */}
+          {(extractedData || (dataSource === 'default' && defaultResumeData)) && (
             <div className="mb-6">
-              <h3 className="text-lg font-semibold mb-4">Extracted Resume Data</h3>
+              <h3 className="text-lg font-semibold mb-4">
+                {useDefaultResume ? 'Default Resume Data' : 'Extracted Resume Data'}
+              </h3>
               <Tabs defaultValue="personal" className="w-full">
                 <TabsList className="mb-4">
                   <TabsTrigger value="personal">Personal Info</TabsTrigger>
@@ -679,17 +738,17 @@ const ResumeBuilderApp = () => {
                     </CardHeader>
                     <CardContent className="space-y-2">
                       <div className="grid grid-cols-2 gap-4">
-                        <div><strong>Name:</strong> {extractedData?.name || 'N/A'}</div>
-                        <div><strong>Title:</strong> {extractedData?.title || 'N/A'}</div>
-                        <div><strong>Email:</strong> {extractedData?.email || 'N/A'}</div>
-                        <div><strong>Phone:</strong> {extractedData?.phone || 'N/A'}</div>
-                        <div><strong>Location:</strong> {extractedData?.location || 'N/A'}</div>
-                        <div><strong>LinkedIn:</strong> {extractedData?.linkedin || 'N/A'}</div>
+                        <div><strong>Name:</strong> {(extractedData || defaultResumeData)?.name || 'N/A'}</div>
+                        <div><strong>Title:</strong> {(extractedData || defaultResumeData)?.title || 'N/A'}</div>
+                        <div><strong>Email:</strong> {(extractedData || defaultResumeData)?.email || 'N/A'}</div>
+                        <div><strong>Phone:</strong> {(extractedData || defaultResumeData)?.phone || 'N/A'}</div>
+                        <div><strong>Location:</strong> {(extractedData || defaultResumeData)?.location || 'N/A'}</div>
+                        <div><strong>LinkedIn:</strong> {(extractedData || defaultResumeData)?.linkedin || 'N/A'}</div>
                       </div>
-                      {extractedData?.summary && (
+                      {(extractedData || defaultResumeData)?.summary && (
                         <div className="mt-4">
                           <strong>Summary:</strong>
-                          <p className="mt-2 text-gray-600">{extractedData.summary}</p>
+                          <p className="mt-2 text-gray-600">{(extractedData || defaultResumeData).summary}</p>
                         </div>
                       )}
                     </CardContent>
@@ -785,18 +844,34 @@ const ResumeBuilderApp = () => {
             </div>
           )}
 
+          {/* Manual Entry Form */}
+          {showManualForm && (
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-4">Enter Your Resume Information</h3>
+              <Card>
+                <CardContent className="p-6">
+                  <p className="text-gray-600 text-center py-8">
+                    Manual entry form would be implemented here with all resume fields
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
           {/* Action Buttons at Bottom */}
           <div className="flex justify-center gap-4 pt-6 border-t">
             <Button 
-              onClick={handleGenerateResume}
+              onClick={() => setShowPreview(true)}
               className="flex items-center gap-2"
+              disabled={!extractedData && !showManualForm && !useDefaultResume}
             >
-              <FileText className="w-4 h-4" />
+              <Eye className="w-4 h-4" />
               Generate Resume
             </Button>
             <Button 
               onClick={handleGenerateWithAI}
               className="flex items-center gap-2"
+              disabled={!extractedData && !showManualForm && !useDefaultResume}
             >
               <Sparkles className="w-4 h-4" />
               AI Resume
@@ -804,14 +879,16 @@ const ResumeBuilderApp = () => {
             <Button 
               onClick={handleGenerateFromBackend}
               className="flex items-center gap-2"
+              disabled={!extractedData && !showManualForm && !useDefaultResume}
             >
               <Crown className="w-4 h-4" />
               Generate from Backend
             </Button>
             <Button 
               variant="outline"
-              onClick={handlePreview} 
+              onClick={() => setShowPreview(true)} 
               className="flex items-center gap-2"
+              disabled={!extractedData && !showManualForm && !useDefaultResume}
             >
               <Eye className="w-4 h-4" />
               Preview
