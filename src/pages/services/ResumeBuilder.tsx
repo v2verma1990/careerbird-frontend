@@ -289,6 +289,15 @@ const ResumeBuilder = () => {
       category: "classic",
       color: "gray",
       isNew: true
+    },
+    {
+      id: "blue-sidebar-profile",
+      name: "Blue Sidebar Profile",
+      description: "Elegant template with left sidebar and section dividers, matching classic professional format.",
+      thumbnail: "/lovable-uploads/502adb7a-83b3-4ebe-a1c2-6450915f1ed0.png",
+      category: "classic",
+      color: "blue",
+      isNew: true
     }
   ];
 
