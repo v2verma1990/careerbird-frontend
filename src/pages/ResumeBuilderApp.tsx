@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,40 +17,40 @@ import { supabase } from '@/integrations/supabase/client';
 
 // Light placeholder data that clears on click
 const initialData = {
-  Name: "Click to edit",
-  Title: "Your Title",
-  Email: "your.email@example.com",
-  Phone: "(555) 000-0000",
-  Location: "Your City, State",
-  LinkedIn: "linkedin.com/in/yourname",
-  Website: "yourwebsite.com",
-  Summary: "Click to add your professional summary...",
-  Skills: ["Click to add skills"],
+  Name: "",
+  Title: "",
+  Email: "",
+  Phone: "",
+  Location: "",
+  LinkedIn: "",
+  Website: "",
+  Summary: "",
+  Skills: [],
   Experience: [{
-    Title: "Job Title",
-    Company: "Company Name",
-    Location: "City, State",
-    StartDate: "Start Date",
-    EndDate: "End Date",
-    Description: "Click to add job description..."
+    Title: "",
+    Company: "",
+    Location: "",
+    StartDate: "",
+    EndDate: "",
+    Description: ""
   }],
   Education: [{
-    Degree: "Your Degree",
-    Institution: "University Name",
-    Location: "City, State",
-    StartDate: "Start Year",
-    EndDate: "End Year",
+    Degree: "",
+    Institution: "",
+    Location: "",
+    StartDate: "",
+    EndDate: "",
     GPA: ""
   }],
   Certifications: [{
-    Name: "Certification Name",
-    Issuer: "Issuing Organization",
-    Date: "Date Obtained"
+    Name: "",
+    Issuer: "",
+    Date: ""
   }],
   Projects: [{
-    Name: "Project Name",
-    Description: "Click to add project description...",
-    Technologies: "Technologies used"
+    Name: "",
+    Description: "",
+    Technologies: ""
   }]
 };
 
@@ -63,8 +64,8 @@ const ResumeBuilderApp = () => {
   const [dataSource, setDataSource] = useState('manual'); // 'manual', 'upload', or 'default'
   const { toast } = useToast();
 
-  // Function to handle file extraction - calls actual backend API
-  const handleFileExtracted = async (file: File) => {
+  // Function to handle file selection and extraction
+  const handleFileSelected = async (file: File | null) => {
     if (!file) return;
     
     setIsExtracting(true);
@@ -125,14 +126,14 @@ const ResumeBuilderApp = () => {
 
         // Map the extracted data to our resume format
         const mappedData = {
-          Name: extractedData.Name || extractedData.name || resumeData.Name,
-          Title: extractedData.Title || extractedData.title || resumeData.Title,
-          Email: extractedData.Email || extractedData.email || resumeData.Email,
-          Phone: extractedData.Phone || extractedData.phone || resumeData.Phone,
-          Location: extractedData.Location || extractedData.location || resumeData.Location,
-          LinkedIn: extractedData.LinkedIn || extractedData.linkedin || resumeData.LinkedIn,
-          Website: extractedData.Website || extractedData.website || resumeData.Website,
-          Summary: extractedData.Summary || extractedData.summary || result.summary || resumeData.Summary,
+          Name: extractedData.Name || extractedData.name || "",
+          Title: extractedData.Title || extractedData.title || "",
+          Email: extractedData.Email || extractedData.email || "",
+          Phone: extractedData.Phone || extractedData.phone || "",
+          Location: extractedData.Location || extractedData.location || "",
+          LinkedIn: extractedData.LinkedIn || extractedData.linkedin || "",
+          Website: extractedData.Website || extractedData.website || "",
+          Summary: extractedData.Summary || extractedData.summary || result.summary || "",
           Skills: extractedData.Skills || extractedData.skills || [],
           Experience: extractedData.Experience || extractedData.experience || [],
           Education: extractedData.Education || extractedData.education || [],
@@ -172,23 +173,6 @@ const ResumeBuilderApp = () => {
       });
     } finally {
       setIsExtracting(false);
-    }
-  };
-
-  const clearField = (field: string) => {
-    if (field.includes('.')) {
-      const [parent, child] = field.split('.');
-      setResumeData(prev => ({
-        ...prev,
-        [parent]: prev[parent].map((item, index) => 
-          index === 0 ? { ...item, [child]: '' } : item
-        )
-      }));
-    } else {
-      setResumeData(prev => ({
-        ...prev,
-        [field]: Array.isArray(prev[field]) ? [] : ''
-      }));
     }
   };
 
@@ -290,13 +274,10 @@ const ResumeBuilderApp = () => {
               
               <div className="flex flex-col">
                 <ResumeFileUploader
-                  onFileExtracted={handleFileExtracted}
-                  isLoading={isExtracting}
-                  className="h-20 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 transition-colors cursor-pointer"
-                >
-                  <Upload className="h-6 w-6" />
-                  <span>{isExtracting ? 'Extracting...' : 'Upload Resume'}</span>
-                </ResumeFileUploader>
+                  onFileSelected={handleFileSelected}
+                  setIsExtracting={setIsExtracting}
+                  disabled={isExtracting}
+                />
                 {dataSource === 'upload' && (
                   <Badge variant="secondary" className="mt-2 self-center">
                     Data Extracted
@@ -342,20 +323,18 @@ const ResumeBuilderApp = () => {
                         <Label htmlFor="name">Full Name</Label>
                         <Input
                           id="name"
+                          placeholder="Enter your full name"
                           value={resumeData.Name}
                           onChange={(e) => setResumeData(prev => ({ ...prev, Name: e.target.value }))}
-                          onClick={() => resumeData.Name === "Click to edit" && clearField('Name')}
-                          className={resumeData.Name === "Click to edit" ? "text-gray-400" : ""}
                         />
                       </div>
                       <div>
                         <Label htmlFor="title">Professional Title</Label>
                         <Input
                           id="title"
+                          placeholder="Enter your professional title"
                           value={resumeData.Title}
                           onChange={(e) => setResumeData(prev => ({ ...prev, Title: e.target.value }))}
-                          onClick={() => resumeData.Title === "Your Title" && clearField('Title')}
-                          className={resumeData.Title === "Your Title" ? "text-gray-400" : ""}
                         />
                       </div>
                       <div>
@@ -363,40 +342,36 @@ const ResumeBuilderApp = () => {
                         <Input
                           id="email"
                           type="email"
+                          placeholder="Enter your email"
                           value={resumeData.Email}
                           onChange={(e) => setResumeData(prev => ({ ...prev, Email: e.target.value }))}
-                          onClick={() => resumeData.Email === "your.email@example.com" && clearField('Email')}
-                          className={resumeData.Email === "your.email@example.com" ? "text-gray-400" : ""}
                         />
                       </div>
                       <div>
                         <Label htmlFor="phone">Phone</Label>
                         <Input
                           id="phone"
+                          placeholder="Enter your phone number"
                           value={resumeData.Phone}
                           onChange={(e) => setResumeData(prev => ({ ...prev, Phone: e.target.value }))}
-                          onClick={() => resumeData.Phone === "(555) 000-0000" && clearField('Phone')}
-                          className={resumeData.Phone === "(555) 000-0000" ? "text-gray-400" : ""}
                         />
                       </div>
                       <div>
                         <Label htmlFor="location">Location</Label>
                         <Input
                           id="location"
+                          placeholder="Enter your location"
                           value={resumeData.Location}
                           onChange={(e) => setResumeData(prev => ({ ...prev, Location: e.target.value }))}
-                          onClick={() => resumeData.Location === "Your City, State" && clearField('Location')}
-                          className={resumeData.Location === "Your City, State" ? "text-gray-400" : ""}
                         />
                       </div>
                       <div>
                         <Label htmlFor="linkedin">LinkedIn</Label>
                         <Input
                           id="linkedin"
+                          placeholder="Enter your LinkedIn profile"
                           value={resumeData.LinkedIn}
                           onChange={(e) => setResumeData(prev => ({ ...prev, LinkedIn: e.target.value }))}
-                          onClick={() => resumeData.LinkedIn === "linkedin.com/in/yourname" && clearField('LinkedIn')}
-                          className={resumeData.LinkedIn === "linkedin.com/in/yourname" ? "text-gray-400" : ""}
                         />
                       </div>
                     </div>
@@ -404,10 +379,9 @@ const ResumeBuilderApp = () => {
                       <Label htmlFor="summary">Professional Summary</Label>
                       <Textarea
                         id="summary"
+                        placeholder="Enter your professional summary"
                         value={resumeData.Summary}
                         onChange={(e) => setResumeData(prev => ({ ...prev, Summary: e.target.value }))}
-                        onClick={() => resumeData.Summary === "Click to add your professional summary..." && clearField('Summary')}
-                        className={resumeData.Summary === "Click to add your professional summary..." ? "text-gray-400" : ""}
                         rows={4}
                       />
                     </div>
@@ -421,6 +395,7 @@ const ResumeBuilderApp = () => {
                             <Label htmlFor={`experience-${index}-title`}>Job Title</Label>
                             <Input
                               id={`experience-${index}-title`}
+                              placeholder="Enter job title"
                               value={exp.Title}
                               onChange={(e) => updateArrayItem('Experience', index, { ...exp, Title: e.target.value })}
                             />
@@ -429,6 +404,7 @@ const ResumeBuilderApp = () => {
                             <Label htmlFor={`experience-${index}-company`}>Company</Label>
                             <Input
                               id={`experience-${index}-company`}
+                              placeholder="Enter company name"
                               value={exp.Company}
                               onChange={(e) => updateArrayItem('Experience', index, { ...exp, Company: e.target.value })}
                             />
@@ -437,6 +413,7 @@ const ResumeBuilderApp = () => {
                             <Label htmlFor={`experience-${index}-location`}>Location</Label>
                             <Input
                               id={`experience-${index}-location`}
+                              placeholder="Enter location"
                               value={exp.Location}
                               onChange={(e) => updateArrayItem('Experience', index, { ...exp, Location: e.target.value })}
                             />
@@ -445,6 +422,7 @@ const ResumeBuilderApp = () => {
                             <Label htmlFor={`experience-${index}-start-date`}>Start Date</Label>
                             <Input
                               id={`experience-${index}-start-date`}
+                              placeholder="Enter start date"
                               value={exp.StartDate}
                               onChange={(e) => updateArrayItem('Experience', index, { ...exp, StartDate: e.target.value })}
                             />
@@ -453,6 +431,7 @@ const ResumeBuilderApp = () => {
                             <Label htmlFor={`experience-${index}-end-date`}>End Date</Label>
                             <Input
                               id={`experience-${index}-end-date`}
+                              placeholder="Enter end date"
                               value={exp.EndDate}
                               onChange={(e) => updateArrayItem('Experience', index, { ...exp, EndDate: e.target.value })}
                             />
@@ -462,6 +441,7 @@ const ResumeBuilderApp = () => {
                           <Label htmlFor={`experience-${index}-description`}>Job Description</Label>
                           <Textarea
                             id={`experience-${index}-description`}
+                            placeholder="Enter job description"
                             value={exp.Description}
                             onChange={(e) => updateArrayItem('Experience', index, { ...exp, Description: e.target.value })}
                             rows={3}
@@ -480,12 +460,12 @@ const ResumeBuilderApp = () => {
                     <Button
                       variant="secondary"
                       onClick={() => addArrayItem('Experience', {
-                        Title: "Job Title",
-                        Company: "Company Name",
-                        Location: "City, State",
-                        StartDate: "Start Date",
-                        EndDate: "End Date",
-                        Description: "Click to add job description..."
+                        Title: "",
+                        Company: "",
+                        Location: "",
+                        StartDate: "",
+                        EndDate: "",
+                        Description: ""
                       })}
                     >
                       <Plus className="h-4 w-4 mr-2" />
@@ -501,6 +481,7 @@ const ResumeBuilderApp = () => {
                             <Label htmlFor={`education-${index}-degree`}>Degree</Label>
                             <Input
                               id={`education-${index}-degree`}
+                              placeholder="Enter degree"
                               value={edu.Degree}
                               onChange={(e) => updateArrayItem('Education', index, { ...edu, Degree: e.target.value })}
                             />
@@ -509,6 +490,7 @@ const ResumeBuilderApp = () => {
                             <Label htmlFor={`education-${index}-institution`}>Institution</Label>
                             <Input
                               id={`education-${index}-institution`}
+                              placeholder="Enter institution name"
                               value={edu.Institution}
                               onChange={(e) => updateArrayItem('Education', index, { ...edu, Institution: e.target.value })}
                             />
@@ -517,6 +499,7 @@ const ResumeBuilderApp = () => {
                             <Label htmlFor={`education-${index}-location`}>Location</Label>
                             <Input
                               id={`education-${index}-location`}
+                              placeholder="Enter location"
                               value={edu.Location}
                               onChange={(e) => updateArrayItem('Education', index, { ...edu, Location: e.target.value })}
                             />
@@ -525,6 +508,7 @@ const ResumeBuilderApp = () => {
                             <Label htmlFor={`education-${index}-start-date`}>Start Date</Label>
                             <Input
                               id={`education-${index}-start-date`}
+                              placeholder="Enter start date"
                               value={edu.StartDate}
                               onChange={(e) => updateArrayItem('Education', index, { ...edu, StartDate: e.target.value })}
                             />
@@ -533,6 +517,7 @@ const ResumeBuilderApp = () => {
                             <Label htmlFor={`education-${index}-end-date`}>End Date</Label>
                             <Input
                               id={`education-${index}-end-date`}
+                              placeholder="Enter end date"
                               value={edu.EndDate}
                               onChange={(e) => updateArrayItem('Education', index, { ...edu, EndDate: e.target.value })}
                             />
@@ -541,6 +526,7 @@ const ResumeBuilderApp = () => {
                             <Label htmlFor={`education-${index}-gpa`}>GPA</Label>
                             <Input
                               id={`education-${index}-gpa`}
+                              placeholder="Enter GPA (optional)"
                               value={edu.GPA}
                               onChange={(e) => updateArrayItem('Education', index, { ...edu, GPA: e.target.value })}
                             />
@@ -559,11 +545,11 @@ const ResumeBuilderApp = () => {
                     <Button
                       variant="secondary"
                       onClick={() => addArrayItem('Education', {
-                        Degree: "Your Degree",
-                        Institution: "University Name",
-                        Location: "City, State",
-                        StartDate: "Start Year",
-                        EndDate: "End Year",
+                        Degree: "",
+                        Institution: "",
+                        Location: "",
+                        StartDate: "",
+                        EndDate: "",
                         GPA: ""
                       })}
                     >
@@ -577,6 +563,7 @@ const ResumeBuilderApp = () => {
                       {resumeData.Skills.map((skill, index) => (
                         <div key={index} className="flex items-center space-x-2">
                           <Input
+                            placeholder="Enter skill"
                             value={skill}
                             onChange={(e) => updateArrayItem('Skills', index, e.target.value)}
                           />
@@ -592,7 +579,7 @@ const ResumeBuilderApp = () => {
                     </div>
                     <Button
                       variant="secondary"
-                      onClick={() => addArrayItem('Skills', "Click to add skills")}
+                      onClick={() => addArrayItem('Skills', "")}
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Add Skill
@@ -609,6 +596,7 @@ const ResumeBuilderApp = () => {
                               <Label htmlFor={`certification-${index}-name`}>Name</Label>
                               <Input
                                 id={`certification-${index}-name`}
+                                placeholder="Enter certification name"
                                 value={cert.Name}
                                 onChange={(e) => updateArrayItem('Certifications', index, { ...cert, Name: e.target.value })}
                               />
@@ -617,6 +605,7 @@ const ResumeBuilderApp = () => {
                               <Label htmlFor={`certification-${index}-issuer`}>Issuer</Label>
                               <Input
                                 id={`certification-${index}-issuer`}
+                                placeholder="Enter issuing organization"
                                 value={cert.Issuer}
                                 onChange={(e) => updateArrayItem('Certifications', index, { ...cert, Issuer: e.target.value })}
                               />
@@ -625,6 +614,7 @@ const ResumeBuilderApp = () => {
                               <Label htmlFor={`certification-${index}-date`}>Date</Label>
                               <Input
                                 id={`certification-${index}-date`}
+                                placeholder="Enter date obtained"
                                 value={cert.Date}
                                 onChange={(e) => updateArrayItem('Certifications', index, { ...cert, Date: e.target.value })}
                               />
@@ -643,9 +633,9 @@ const ResumeBuilderApp = () => {
                       <Button
                         variant="secondary"
                         onClick={() => addArrayItem('Certifications', {
-                          Name: "Certification Name",
-                          Issuer: "Issuing Organization",
-                          Date: "Date Obtained"
+                          Name: "",
+                          Issuer: "",
+                          Date: ""
                         })}
                       >
                         <Plus className="h-4 w-4 mr-2" />
@@ -662,6 +652,7 @@ const ResumeBuilderApp = () => {
                               <Label htmlFor={`project-${index}-name`}>Name</Label>
                               <Input
                                 id={`project-${index}-name`}
+                                placeholder="Enter project name"
                                 value={project.Name}
                                 onChange={(e) => updateArrayItem('Projects', index, { ...project, Name: e.target.value })}
                               />
@@ -670,6 +661,7 @@ const ResumeBuilderApp = () => {
                               <Label htmlFor={`project-${index}-technologies`}>Technologies</Label>
                               <Input
                                 id={`project-${index}-technologies`}
+                                placeholder="Enter technologies used"
                                 value={project.Technologies}
                                 onChange={(e) => updateArrayItem('Projects', index, { ...project, Technologies: e.target.value })}
                               />
@@ -679,6 +671,7 @@ const ResumeBuilderApp = () => {
                             <Label htmlFor={`project-${index}-description`}>Description</Label>
                             <Textarea
                               id={`project-${index}-description`}
+                              placeholder="Enter project description"
                               value={project.Description}
                               onChange={(e) => updateArrayItem('Projects', index, { ...project, Description: e.target.value })}
                               rows={3}
@@ -697,9 +690,9 @@ const ResumeBuilderApp = () => {
                       <Button
                         variant="secondary"
                         onClick={() => addArrayItem('Projects', {
-                          Name: "Project Name",
-                          Description: "Click to add project description...",
-                          Technologies: "Technologies used"
+                          Name: "",
+                          Description: "",
+                          Technologies: ""
                         })}
                       >
                         <Plus className="h-4 w-4 mr-2" />
@@ -725,16 +718,16 @@ const ResumeBuilderApp = () => {
               <CardContent>
                 <div className="space-y-4">
                   <div className="text-center">
-                    <h3 className="font-semibold text-lg">{resumeData.Name}</h3>
-                    <p className="text-gray-600">{resumeData.Title}</p>
-                    <p className="text-sm text-gray-500">{resumeData.Email} • {resumeData.Phone}</p>
+                    <h3 className="font-semibold text-lg">{resumeData.Name || "Your Name"}</h3>
+                    <p className="text-gray-600">{resumeData.Title || "Your Title"}</p>
+                    <p className="text-sm text-gray-500">{resumeData.Email || "your.email@example.com"} • {resumeData.Phone || "(555) 000-0000"}</p>
                   </div>
                   
                   <Separator />
                   
                   <div>
                     <h4 className="font-semibold mb-2">Summary</h4>
-                    <p className="text-sm text-gray-600">{resumeData.Summary}</p>
+                    <p className="text-sm text-gray-600">{resumeData.Summary || "Your professional summary will appear here..."}</p>
                   </div>
                   
                   <Separator />
@@ -742,15 +735,18 @@ const ResumeBuilderApp = () => {
                   <div>
                     <h4 className="font-semibold mb-2">Skills</h4>
                     <div className="flex flex-wrap gap-1">
-                      {resumeData.Skills.slice(0, 5).map((skill, index) => (
+                      {resumeData.Skills.filter(skill => skill.trim()).slice(0, 5).map((skill, index) => (
                         <Badge key={index} variant="secondary" className="text-xs">
                           {skill}
                         </Badge>
                       ))}
-                      {resumeData.Skills.length > 5 && (
+                      {resumeData.Skills.filter(skill => skill.trim()).length > 5 && (
                         <Badge variant="outline" className="text-xs">
-                          +{resumeData.Skills.length - 5} more
+                          +{resumeData.Skills.filter(skill => skill.trim()).length - 5} more
                         </Badge>
+                      )}
+                      {resumeData.Skills.filter(skill => skill.trim()).length === 0 && (
+                        <p className="text-sm text-gray-400">Add skills to see them here...</p>
                       )}
                     </div>
                   </div>
