@@ -8,11 +8,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Upload, FileText, Download, Eye, User, Briefcase, GraduationCap, Award, Code, Plus, X, Sparkles, Zap } from 'lucide-react';
+import { Upload, FileText, Download, Eye, User, Briefcase, GraduationCap, Award, Code, Plus, X, Sparkles, Zap, FileCheck } from 'lucide-react';
 import ResumeFileUploader from '@/components/ResumeFileUploader';
 import { resumeBuilderApi } from '@/utils/resumeBuilderApi';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useResume } from '@/contexts/resume/ResumeContext';
 
 // Light placeholder data that clears on click
 const initialData = {
@@ -62,6 +63,139 @@ const ResumeBuilderApp = () => {
   const [activeTab, setActiveTab] = useState('personal');
   const [dataSource, setDataSource] = useState('manual'); // 'manual', 'upload', or 'default'
   const { toast } = useToast();
+  const { defaultResume } = useResume();
+
+  // Function to extract data from default resume
+  const handleExtractFromDefaultResume = async () => {
+    if (!defaultResume || (!defaultResume.fileUrl && !defaultResume.blobPath)) {
+      toast({
+        title: "No default resume found",
+        description: "Please upload a default resume first in your profile settings.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsExtracting(true);
+    console.log('Starting resume extraction from default resume:', defaultResume);
+    
+    try {
+      // Get the current user session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Authentication required",
+          description: "Please log in to extract resume data",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Construct the file URL if needed
+      let fileUrl = defaultResume.fileUrl;
+      if (!fileUrl && defaultResume.blobPath) {
+        if (defaultResume.blobPath.startsWith('http')) {
+          fileUrl = defaultResume.blobPath;
+        } else if (defaultResume.blobPath.includes('storage/')) {
+          fileUrl = `${supabase.supabaseUrl}/storage/v1/object/public/${defaultResume.blobPath}`;
+        } else {
+          fileUrl = `/api/files/${defaultResume.blobPath}`;
+        }
+      }
+
+      // Fetch the file and convert to File object
+      const response = await fetch(fileUrl);
+      const blob = await response.blob();
+      const file = new File([blob], defaultResume.fileName || 'default-resume.pdf', { type: blob.type });
+
+      // Call the backend API for resume optimization/extraction
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('plan', 'free');
+      
+      console.log('Calling .NET backend for resume extraction...');
+      
+      const extractResponse = await fetch('https://localhost:5001/api/resume/optimize', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: formData,
+      });
+
+      if (!extractResponse.ok) {
+        const errorText = await extractResponse.text();
+        console.error('Backend API error:', errorText);
+        throw new Error(`Backend error: ${extractResponse.status} - ${errorText}`);
+      }
+
+      const result = await extractResponse.json();
+      console.log('Backend response received:', result);
+
+      // Extract and format the data from the backend response
+      if (result && result.optimizedContent) {
+        let extractedData;
+        try {
+          extractedData = typeof result.optimizedContent === 'string' 
+            ? JSON.parse(result.optimizedContent) 
+            : result.optimizedContent;
+        } catch (parseError) {
+          console.error('Error parsing optimized content:', parseError);
+          extractedData = {
+            Summary: result.summary || "Extracted from default resume",
+          };
+        }
+
+        // Map the extracted data to our resume format
+        const mappedData = {
+          Name: extractedData.Name || extractedData.name || "",
+          Title: extractedData.Title || extractedData.title || "",
+          Email: extractedData.Email || extractedData.email || "",
+          Phone: extractedData.Phone || extractedData.phone || "",
+          Location: extractedData.Location || extractedData.location || "",
+          LinkedIn: extractedData.LinkedIn || extractedData.linkedin || "",
+          Website: extractedData.Website || extractedData.website || "",
+          Summary: extractedData.Summary || extractedData.summary || result.summary || "",
+          Skills: extractedData.Skills || extractedData.skills || [],
+          Experience: extractedData.Experience || extractedData.experience || [],
+          Education: extractedData.Education || extractedData.education || [],
+          Certifications: extractedData.Certifications || extractedData.certifications || [],
+          Projects: extractedData.Projects || extractedData.projects || []
+        };
+
+        console.log('Mapped extracted data:', mappedData);
+        setResumeData(mappedData);
+        setDataSource('default');
+        
+        toast({
+          title: "Resume extracted successfully!",
+          description: "Your default resume data has been extracted and populated in the form.",
+        });
+      } else {
+        console.warn('No optimized content in response, using fallback data');
+        const fallbackData = {
+          ...resumeData,
+          Summary: result.summary || "Data extracted from your default resume",
+        };
+        setResumeData(fallbackData);
+        setDataSource('default');
+        
+        toast({
+          title: "Partial extraction completed",
+          description: "Some data was extracted. Please review and complete the form.",
+        });
+      }
+    } catch (error) {
+      console.error('Error extracting resume data:', error);
+      toast({
+        title: "Extraction failed",
+        description: error instanceof Error ? error.message : "Failed to extract resume data. Please try again or fill manually.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExtracting(false);
+    }
+  };
 
   // Function to handle file selection and extraction
   const handleFileSelected = async (file: File | null) => {
@@ -355,15 +489,22 @@ const ResumeBuilderApp = () => {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Button
-                variant={dataSource === 'manual' ? 'default' : 'outline'}
+                variant={dataSource === 'default' ? 'default' : 'outline'}
                 className="h-20 flex flex-col items-center gap-2"
-                onClick={() => {
-                  setDataSource('manual');
-                  setResumeData(initialData);
-                }}
+                onClick={handleExtractFromDefaultResume}
+                disabled={isExtracting || !defaultResume}
               >
-                <User className="h-6 w-6" />
-                <span>Manual Entry</span>
+                {isExtracting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                    <span>Extracting...</span>
+                  </>
+                ) : (
+                  <>
+                    <FileCheck className="h-6 w-6" />
+                    <span>Extract from Default Resume</span>
+                  </>
+                )}
               </Button>
               
               <div className="flex flex-col">
@@ -371,6 +512,7 @@ const ResumeBuilderApp = () => {
                   onFileSelected={handleFileSelected}
                   setIsExtracting={setIsExtracting}
                   disabled={isExtracting}
+                  showDefaultResumeOption={false}
                 />
                 {dataSource === 'upload' && (
                   <Badge variant="secondary" className="mt-2 self-center">
@@ -379,6 +521,11 @@ const ResumeBuilderApp = () => {
                 )}
               </div>
             </div>
+            {!defaultResume && (
+              <p className="text-sm text-gray-500 mt-2">
+                No default resume found. Please upload one in your profile settings to use the extract feature.
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -788,13 +935,13 @@ const ResumeBuilderApp = () => {
             </Card>
           </div>
 
-          {/* Preview Section */}
+          {/* Action Buttons Section */}
           <div className="lg:col-span-1">
             <Card className="sticky top-4">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Eye className="h-5 w-5" />
-                  Preview
+                  Actions
                 </CardTitle>
               </CardHeader>
               <CardContent>
