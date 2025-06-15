@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import apiClient from '@/utils/apiClient';
 import { useResume } from "@/contexts/resume/ResumeContext";
 import Handlebars from 'handlebars';
+import TemplateColorPicker from "@/components/resume/TemplateColorPicker";
 
 // Template data for step 1
 const templates = [
@@ -25,6 +26,7 @@ const templates = [
     thumbnail: "/lovable-uploads/111bb875-e937-4ebf-8470-bc9c0fd0e801.png",
     category: "professional",
     color: "navy",
+    availableColors: ["#a4814c", "#18bc6b", "#2196F3", "#ff1e1e", "#000"],
     isRecommended: true,
     isNew: true
   },
@@ -35,6 +37,7 @@ const templates = [
     thumbnail: "/lovable-uploads/be00c166-3bf1-4879-af44-a2f578e88bf7.png",
     category: "professional",
     color: "blue",
+    availableColors: ["#18bc6b", "#2196F3", "#ff1e1e", "#000", "#a4814c"],
     isPopular: true,
     isRecommended: true
   },
@@ -45,6 +48,7 @@ const templates = [
     thumbnail: "/resume-templates/thumbnails/creative.png",
     category: "creative",
     color: "purple",
+    availableColors: ["#2196F3", "#ff1e1e", "#000", "#18bc6b", "#a4814c"],
     isPremium: true
   },
   {
@@ -54,7 +58,8 @@ const templates = [
     thumbnail: "/resume-templates/thumbnails/tech.PNG",
     category: "tech",
     color: "green",
-    isNew: true
+    isNew: true,
+    availableColors: ["#18bc6b", "#2196F3", "#000", "#a4814c", "#ff1e1e"]
   },
   {
     id: "academic-scholar",
@@ -63,7 +68,8 @@ const templates = [
     thumbnail: "/resume-templates/thumbnails/academic.PNG",
     category: "academic",
     color: "gray",
-    isRecommended: true
+    isRecommended: true,
+    availableColors: ["#a4814c", "#2196F3", "#18bc6b", "#ff1e1e", "#000"]
   },
   {
     id: "startup-founder",
@@ -72,7 +78,8 @@ const templates = [
     thumbnail: "/resume-templates/thumbnails/professional.png",
     category: "professional",
     color: "orange",
-    isPremium: true
+    isPremium: true,
+    availableColors: ["#ff1e1e", "#18bc6b", "#2196F3", "#000", "#a4814c"]
   },
   {
     id: "fresh-graduate",
@@ -82,7 +89,8 @@ const templates = [
     category: "entry-level",
     color: "teal",
     isPopular: true,
-    isRecommended: true
+    isRecommended: true,
+    availableColors: ["#2196F3", "#18bc6b", "#ff1e1e", "#000", "#a4814c"]
   },
   {
     id: "grey-classic-profile",
@@ -92,7 +100,8 @@ const templates = [
     category: "classic",
     color: "gray",
     isRecommended: false,
-    isNew: true
+    isNew: true,
+    availableColors: ["#000", "#2196F3", "#18bc6b", "#ff1e1e", "#a4814c"]
   },
   {
     id: "blue-sidebar-profile",
@@ -101,7 +110,8 @@ const templates = [
     thumbnail: "/lovable-uploads/502adb7a-83b3-4ebe-a1c2-6450915f1ed0.png",
     category: "classic",
     color: "blue",
-    isNew: true
+    isNew: true,
+    availableColors: ["#2196F3", "#18bc6b", "#ff1e1e", "#000", "#a4814c"]
   },
   {
     id: "green-sidebar-receptionist",
@@ -110,7 +120,8 @@ const templates = [
     thumbnail: "/lovable-uploads/e72aeeac-84f9-493e-85af-c1994a03dc55.png",
     category: "classic",
     color: "green",
-    isNew: true
+    isNew: true,
+    availableColors: ["#18bc6b", "#2196F3", "#ff1e1e", "#000", "#a4814c"]
   },
   {
     id: "classic-profile-orange",
@@ -119,7 +130,8 @@ const templates = [
     thumbnail: "/lovable-uploads/aefc4f9a-f33d-406b-a191-f7aae767471d.png",
     category: "classic",
     color: "orange",
-    isNew: true
+    isNew: true,
+    availableColors: ["#a4814c", "#18bc6b", "#2196F3", "#ff1e1e", "#000"]
   },
   {
     id: "classic-law-bw",
@@ -128,7 +140,8 @@ const templates = [
     thumbnail: "/lovable-uploads/411cd4d2-9f96-4fa4-abaf-60b6828225fb.png",
     category: "classic",
     color: "gray",
-    isNew: true
+    isNew: true,
+    availableColors: ["#000", "#a4814c", "#18bc6b", "#2196F3", "#ff1e1e"]
   },
   {
     id: "green-sidebar-customer-service",
@@ -137,7 +150,8 @@ const templates = [
     thumbnail: "/lovable-uploads/4fcd8e16-5fb8-46bf-876e-def35b427c45.png",
     category: "classic",
     color: "green",
-    isNew: true
+    isNew: true,
+    availableColors: ["#18bc6b", "#2196F3", "#ff1e1e", "#000", "#a4814c"]
   }
 ];
 
@@ -252,6 +266,23 @@ const ResumeBuilderApp = () => {
     setCurrentStep(1);
   };
 
+  // Hook for storing template color choices, by template ID
+  const [templateColors, setTemplateColors] = useState<{[templateId: string]: string}>({});
+
+  // Default: use the first color available for each template, or #2196F3 (blue) as fallback.
+  useEffect(() => {
+    const map: {[templateId: string]: string} = {};
+    templates.forEach(temp => {
+      map[temp.id] = temp.availableColors?.[0] || "#2196F3";
+    });
+    setTemplateColors(map);
+  }, []);
+
+  // Handler for color selection
+  const handleColorSelect = (templateId: string, color: string) => {
+    setTemplateColors(prev => ({ ...prev, [templateId]: color }));
+  };
+
   // Function to extract data from default resume
   const handleExtractFromDefaultResume = async () => {
     setIsExtracting(true);
@@ -364,7 +395,8 @@ const ResumeBuilderApp = () => {
     try {
       const result = await resumeBuilderApi.buildResume({
         resumeData: JSON.stringify(resumeData),
-        templateId: selectedTemplate
+        templateId: selectedTemplate,
+        templateColor: templateColors[selectedTemplate]
       });
 
       if (result.error) {
@@ -644,6 +676,12 @@ const ResumeBuilderApp = () => {
                         )}
                       </div>
                     </div>
+                    {/* Color picker below template */}
+                    <TemplateColorPicker
+                      colors={template.availableColors}
+                      selectedColor={templateColors[template.id] || template.availableColors?.[0] || "#2196F3"}
+                      onColorSelect={(color) => handleColorSelect(template.id, color)}
+                    />
                   </div>
                 ))}
               </div>
