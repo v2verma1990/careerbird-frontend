@@ -77,10 +77,9 @@ const BestCandidates = () => {
         return;
       }
 
-      // Make API request to find best candidates using visible resumes
+      // Make API request to find best candidates
       const { data, error } = await api.jobs.findBestCandidates({
         description: jobDescription,
-        useVisibleResumes: true, // This flag tells the backend to use resumes marked as visible
         candidateCount: candidateCount
       });
       
