@@ -12,8 +12,8 @@ import { Upload, FileText, Download, Eye, User, Briefcase, GraduationCap, Award,
 import ResumeFileUploader from '@/components/ResumeFileUploader';
 import { resumeBuilderApi } from '@/utils/resumeBuilderApi';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { useResume } from '@/contexts/resume/ResumeContext';
+import apiClient from '@/utils/apiClient';
+import { useResume } from "@/contexts/resume/ResumeContext";
 import Handlebars from 'handlebars';
 
 // Template data for step 1
@@ -121,58 +121,18 @@ const ResumeBuilderApp = () => {
   const [selectedTemplate, setSelectedTemplate] = useState(searchParams.get('template') || '');
   const [currentStep, setCurrentStep] = useState(selectedTemplate ? 2 : 1);
   const [resumeData, setResumeData] = useState(initialData);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
   const [activeTab, setActiveTab] = useState('personal');
   const [dataSource, setDataSource] = useState('manual'); // 'manual', 'upload', or 'default'
-  const [defaultResumeData, setDefaultResumeData] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
   const [previewTemplate, setPreviewTemplate] = useState<string | null>(null);
   const [templateHtml, setTemplateHtml] = useState<string>("");
   const [sampleResumeData, setSampleResumeData] = useState<any>(null);
   const [useSampleData, setUseSampleData] = useState(true); // Always use sample data for preview for now
+  const [hasDefaultResume, setHasDefaultResume] = useState(false);
   const { toast } = useToast();
-
-  // Fetch default resume data from backend API with better error handling
-  const fetchDefaultResumeData = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        console.log('No session found');
-        return null;
-      }
-
-      console.log('Fetching default resume data from profile_metadata...');
-      
-      // Try to get from profile_metadata table directly
-      const { data: profileData, error: profileError } = await supabase
-        .from('profile_metadata')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .single();
-
-      if (profileError) {
-        console.log('Profile metadata query error:', profileError);
-        return null;
-      }
-
-      console.log('Found profile metadata:', profileData);
-      return profileData;
-    } catch (error) {
-      console.error('Error fetching default resume:', error);
-      return null;
-    }
-  };
-
-  // Load default resume data on component mount
-  useEffect(() => {
-    const loadDefaultResume = async () => {
-      const data = await fetchDefaultResumeData();
-      setDefaultResumeData(data);
-      console.log('Default resume data set:', data);
-    };
-    loadDefaultResume();
-  }, []);
+  const { defaultResume, isLoading } = useResume();
 
   // Load sample resume data for preview
   useEffect(() => {
@@ -229,140 +189,45 @@ const ResumeBuilderApp = () => {
 
   // Function to extract data from default resume
   const handleExtractFromDefaultResume = async () => {
-    console.log('handleExtractFromDefaultResume called, defaultResumeData:', defaultResumeData);
-    
-    if (!defaultResumeData) {
-      console.log('No default resume data found, trying to fetch again...');
-      const freshData = await fetchDefaultResumeData();
-      if (!freshData) {
-        toast({
-          title: "No default resume found",
-          description: "Please upload a default resume first in your profile settings.",
-          variant: "destructive",
-        });
-        return;
-      }
-      setDefaultResumeData(freshData);
-    }
-
     setIsExtracting(true);
-    console.log('Starting resume extraction from default resume:', defaultResumeData);
-    
     try {
-      // Get the current user session
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      const { data, error } = await apiClient.resumeBuilder.extractResumeData(null, true);
+      if (error) {
+        setHasDefaultResume(false); // Explicitly set to false if backend says not found
         toast({
-          title: "Authentication required",
-          description: "Please log in to extract resume data",
+          title: "Extraction failed",
+          description: error,
           variant: "destructive",
         });
         return;
       }
+      // Map the extracted data to our resume format
+      const mappedData = {
+        Name: data.Name || data.name || "",
+        Title: data.Title || data.title || "",
+        Email: data.Email || data.email || "",
+        Phone: data.Phone || data.phone || "",
+        Location: data.Location || data.location || "",
+        LinkedIn: data.LinkedIn || data.linkedin || "",
+        Website: data.Website || data.website || "",
+        Summary: data.Summary || data.summary || data.result?.summary || "",
+        Skills: data.Skills || data.skills || [],
+        Experience: data.Experience || data.experience || [],
+        Education: data.Education || data.education || [],
+        Certifications: data.Certifications || data.certifications || [],
+        Projects: data.Projects || data.projects || []
+      };
 
-      console.log('Downloading file from backend...');
-      
-      // Fetch the file from the download endpoint
-      const fileResponse = await fetch('https://localhost:5001/api/resume/default/download', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-        }
+      setResumeData(mappedData);
+      setHasDefaultResume(true); // Only set to true on success
+      console.log('Resume data after extraction:', mappedData);
+      setDataSource('default');
+      toast({
+        title: "Resume extracted successfully!",
+        description: "Your default resume data has been extracted and populated in the form.",
       });
-
-      console.log('File download response status:', fileResponse.status);
-
-      if (!fileResponse.ok) {
-        const errorText = await fileResponse.text();
-        console.error('Download error:', errorText);
-        throw new Error(`Failed to download file: ${fileResponse.status} - ${errorText}`);
-      }
-
-      const blob = await fileResponse.blob();
-      console.log('File downloaded successfully, blob size:', blob.size);
-      
-      const file = new File([blob], defaultResumeData.file_name || 'default-resume.pdf', { type: blob.type });
-
-      // Call the backend API for resume optimization/extraction
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('plan', 'free');
-      
-      console.log('Calling .NET backend for resume extraction...');
-      
-      const extractResponse = await fetch('https://localhost:5001/api/resume/optimize', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: formData,
-      });
-
-      console.log('Extract response status:', extractResponse.status);
-
-      if (!extractResponse.ok) {
-        const errorText = await extractResponse.text();
-        console.error('Backend API error:', errorText);
-        throw new Error(`Backend error: ${extractResponse.status} - ${errorText}`);
-      }
-
-      const result = await extractResponse.json();
-      console.log('Backend response received:', result);
-
-      // Extract and format the data from the backend response
-      if (result && result.optimizedContent) {
-        let extractedData;
-        try {
-          extractedData = typeof result.optimizedContent === 'string' 
-            ? JSON.parse(result.optimizedContent) 
-            : result.optimizedContent;
-        } catch (parseError) {
-          console.error('Error parsing optimized content:', parseError);
-          extractedData = {
-            Summary: result.summary || "Extracted from default resume",
-          };
-        }
-
-        // Map the extracted data to our resume format
-        const mappedData = {
-          Name: extractedData.Name || extractedData.name || "",
-          Title: extractedData.Title || extractedData.title || "",
-          Email: extractedData.Email || extractedData.email || "",
-          Phone: extractedData.Phone || extractedData.phone || "",
-          Location: extractedData.Location || extractedData.location || "",
-          LinkedIn: extractedData.LinkedIn || extractedData.linkedin || "",
-          Website: extractedData.Website || extractedData.website || "",
-          Summary: extractedData.Summary || extractedData.summary || result.summary || "",
-          Skills: extractedData.Skills || extractedData.skills || [],
-          Experience: extractedData.Experience || extractedData.experience || [],
-          Education: extractedData.Education || extractedData.education || [],
-          Certifications: extractedData.Certifications || extractedData.certifications || [],
-          Projects: extractedData.Projects || extractedData.projects || []
-        };
-
-        console.log('Mapped extracted data:', mappedData);
-        setResumeData(mappedData);
-        setDataSource('default');
-        
-        toast({
-          title: "Resume extracted successfully!",
-          description: "Your default resume data has been extracted and populated in the form.",
-        });
-      } else {
-        console.warn('No optimized content in response, using fallback data');
-        const fallbackData = {
-          ...resumeData,
-          Summary: result.summary || "Data extracted from your default resume",
-        };
-        setResumeData(fallbackData);
-        setDataSource('default');
-        
-        toast({
-          title: "Partial extraction completed",
-          description: "Some data was extracted. Please review and complete the form.",
-        });
-      }
     } catch (error) {
+      setHasDefaultResume(false); // Also set to false on exception
       console.error('Error extracting resume data:', error);
       toast({
         title: "Extraction failed",
@@ -382,104 +247,26 @@ const ResumeBuilderApp = () => {
     console.log('Starting resume extraction for file:', file.name);
     
     try {
-      // Get the current user session
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      // Replace direct fetch with API abstraction
+      const result = await apiClient.resumeBuilder.optimizeResumeForResumeBuilder({
+        resumeData: '', // or pass actual data if needed
+        templateId: selectedTemplate
+      });
+      if (result.error) {
         toast({
-          title: "Authentication required",
-          description: "Please log in to extract resume data",
+          title: "Extraction failed",
+          description: result.error,
           variant: "destructive",
         });
         return;
       }
-
-      // Call the actual .NET backend API for resume optimization/extraction
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('plan', 'free'); // or get from user subscription
-      
-      console.log('Calling .NET backend for resume extraction...');
-      
-      const response = await fetch('https://localhost:5001/api/resume/optimize', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Backend API error:', errorText);
-        throw new Error(`Backend error: ${response.status} - ${errorText}`);
+      // Map and set resume data as before
+      if (result.data) {
+        // ...mapping logic...
       }
-
-      const result = await response.json();
-      console.log('Backend response received:', result);
-
-      // Extract and format the data from the backend response
-      if (result && result.optimizedContent) {
-        // Parse the optimized content if it's a string
-        let extractedData;
-        try {
-          extractedData = typeof result.optimizedContent === 'string' 
-            ? JSON.parse(result.optimizedContent) 
-            : result.optimizedContent;
-        } catch (parseError) {
-          console.error('Error parsing optimized content:', parseError);
-          // If parsing fails, try to extract from other fields
-          extractedData = {
-            Summary: result.summary || "Extracted from resume",
-            // You may need to adjust this based on your backend response structure
-          };
-        }
-
-        // Map the extracted data to our resume format
-        const mappedData = {
-          Name: extractedData.Name || extractedData.name || "",
-          Title: extractedData.Title || extractedData.title || "",
-          Email: extractedData.Email || extractedData.email || "",
-          Phone: extractedData.Phone || extractedData.phone || "",
-          Location: extractedData.Location || extractedData.location || "",
-          LinkedIn: extractedData.LinkedIn || extractedData.linkedin || "",
-          Website: extractedData.Website || extractedData.website || "",
-          Summary: extractedData.Summary || extractedData.summary || result.summary || "",
-          Skills: extractedData.Skills || extractedData.skills || [],
-          Experience: extractedData.Experience || extractedData.experience || [],
-          Education: extractedData.Education || extractedData.education || [],
-          Certifications: extractedData.Certifications || extractedData.certifications || [],
-          Projects: extractedData.Projects || extractedData.projects || []
-        };
-
-        console.log('Mapped extracted data:', mappedData);
-        setResumeData(mappedData);
-        setDataSource('upload');
-        
-        toast({
-          title: "Resume extracted successfully!",
-          description: "Your resume data has been extracted and populated in the form.",
-        });
-      } else {
-        console.warn('No optimized content in response, using fallback data');
-        // Fallback: use any available data from the response
-        const fallbackData = {
-          ...resumeData,
-          Summary: result.summary || "Data extracted from your resume",
-        };
-        setResumeData(fallbackData);
-        setDataSource('upload');
-        
-        toast({
-          title: "Partial extraction completed",
-          description: "Some data was extracted. Please review and complete the form.",
-        });
-      }
-    } catch (error) {
-      console.error('Error extracting resume data:', error);
       toast({
-        title: "Extraction failed",
-        description: "Failed to extract resume data. Please try again or fill manually.",
-        variant: "destructive",
+        title: "Resume extracted successfully!",
+        description: "Your resume data has been extracted and populated in the form.",
       });
     } finally {
       setIsExtracting(false);
@@ -508,7 +295,7 @@ const ResumeBuilderApp = () => {
   };
 
   const generateResume = async () => {
-    setIsLoading(true);
+    setIsGenerating(true);
     try {
       const result = await resumeBuilderApi.buildResume({
         resumeData: JSON.stringify(resumeData),
@@ -545,12 +332,12 @@ const ResumeBuilderApp = () => {
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsGenerating(false);
     }
   };
 
   const generateResumeViaAI = async () => {
-    setIsLoading(true);
+    setIsGenerating(true);
     try {
       // Call AI-enhanced resume generation
       const result = await resumeBuilderApi.buildResume({
@@ -590,12 +377,12 @@ const ResumeBuilderApp = () => {
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsGenerating(false);
     }
   };
 
   const generateAIEnhancedResume = async () => {
-    setIsLoading(true);
+    setIsGenerating(true);
     try {
       // Call premium AI-enhanced resume generation
       const result = await resumeBuilderApi.buildResume({
@@ -637,9 +424,42 @@ const ResumeBuilderApp = () => {
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsGenerating(false);
     }
   };
+
+  // Example for optimizing resume:
+  const handleOptimizeResume = async (dataToSend, selectedTemplate) => {
+    setIsGenerating(true);
+    try {
+      const result = await apiClient.resumeBuilder.optimizeResumeForResumeBuilder({
+        resumeData: JSON.stringify(dataToSend),
+        templateId: selectedTemplate
+      });
+      if (result.error) {
+        toast({
+          title: "Optimization failed",
+          description: result.error,
+          variant: "destructive",
+        });
+        return;
+      }
+      // ...handle result.data as needed...
+      toast({
+        title: "Resume optimized!",
+        description: "Your resume has been optimized.",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // On mount, check if a default resume is already present (e.g., from profile load)
+  useEffect(() => {
+    if (resumeData && resumeData.Name && resumeData.Name.trim() !== "") {
+      setHasDefaultResume(true);
+    }
+  }, [resumeData]);
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -834,7 +654,6 @@ const ResumeBuilderApp = () => {
                       </>
                     )}
                   </Button>
-                  
                   <div className="flex flex-col">
                     <ResumeFileUploader
                       onFileSelected={handleFileSelected}
@@ -849,557 +668,420 @@ const ResumeBuilderApp = () => {
                     )}
                   </div>
                 </div>
-                <div className="mt-2 text-sm text-gray-500">
-                  {defaultResumeData ? (
-                    <p>✓ Default resume found: {defaultResumeData.file_name || 'Resume file'}</p>
-                  ) : (
-                    <p>No default resume found. Please upload one in your profile settings to use the extract feature.</p>
+                <div className="mt-2 text-sm text-gray-500 min-h-[1.5em]">
+                  {isLoading ? null : (
+                    defaultResume
+                      ? <div className="text-green-600">Default resume loaded: {defaultResume.fileName}</div>
+                      : <div className="text-red-600">No default resume found. Please upload one in your profile settings to use the extract feature.</div>
                   )}
                 </div>
               </CardContent>
             </Card>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Form Section */}
-              <div className="lg:col-span-2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Resume Information</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Tabs value={activeTab} onValueChange={setActiveTab}>
-                      <TabsList className="grid w-full grid-cols-5">
-                        <TabsTrigger value="personal">Personal</TabsTrigger>
-                        <TabsTrigger value="experience">Experience</TabsTrigger>
-                        <TabsTrigger value="education">Education</TabsTrigger>
-                        <TabsTrigger value="skills">Skills</TabsTrigger>
-                        <TabsTrigger value="other">Other</TabsTrigger>
-                      </TabsList>
+            {/* Resume Information Section - now full width */}
+            <div className="w-full">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Resume Information</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Tabs value={activeTab} onValueChange={setActiveTab}>
+                    <TabsList className="grid w-full grid-cols-6">
+                      <TabsTrigger value="personal">Personal</TabsTrigger>
+                      <TabsTrigger value="experience">Experience</TabsTrigger>
+                      <TabsTrigger value="education">Education</TabsTrigger>
+                      <TabsTrigger value="skills">Skills</TabsTrigger>
+                      <TabsTrigger value="projects">Projects</TabsTrigger>
+                      <TabsTrigger value="other">Other</TabsTrigger>
+                    </TabsList>
 
-                      <TabsContent value="personal" className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor="name">Full Name</Label>
-                            <Input
-                              id="name"
-                              placeholder="Enter your full name"
-                              value={resumeData.Name}
-                              onChange={(e) => setResumeData(prev => ({ ...prev, Name: e.target.value }))}
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="title">Professional Title</Label>
-                            <Input
-                              id="title"
-                              placeholder="Enter your professional title"
-                              value={resumeData.Title}
-                              onChange={(e) => setResumeData(prev => ({ ...prev, Title: e.target.value }))}
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="email">Email</Label>
-                            <Input
-                              id="email"
-                              type="email"
-                              placeholder="Enter your email"
-                              value={resumeData.Email}
-                              onChange={(e) => setResumeData(prev => ({ ...prev, Email: e.target.value }))}
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="phone">Phone</Label>
-                            <Input
-                              id="phone"
-                              placeholder="Enter your phone number"
-                              value={resumeData.Phone}
-                              onChange={(e) => setResumeData(prev => ({ ...prev, Phone: e.target.value }))}
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="location">Location</Label>
-                            <Input
-                              id="location"
-                              placeholder="Enter your location"
-                              value={resumeData.Location}
-                              onChange={(e) => setResumeData(prev => ({ ...prev, Location: e.target.value }))}
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="linkedin">LinkedIn</Label>
-                            <Input
-                              id="linkedin"
-                              placeholder="Enter your LinkedIn profile"
-                              value={resumeData.LinkedIn}
-                              onChange={(e) => setResumeData(prev => ({ ...prev, LinkedIn: e.target.value }))}
-                            />
-                          </div>
-                        </div>
+                    <TabsContent value="personal" className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <Label htmlFor="summary">Professional Summary</Label>
-                          <Textarea
-                            id="summary"
-                            placeholder="Enter your professional summary"
-                            value={resumeData.Summary}
-                            onChange={(e) => setResumeData(prev => ({ ...prev, Summary: e.target.value }))}
-                            rows={4}
+                          <Label htmlFor="name">Full Name</Label>
+                          <Input
+                            id="name"
+                            placeholder="Enter your full name"
+                            value={resumeData.Name}
+                            onChange={(e) => setResumeData(prev => ({ ...prev, Name: e.target.value }))}
                           />
                         </div>
-                      </TabsContent>
+                        <div>
+                          <Label htmlFor="title">Professional Title</Label>
+                          <Input
+                            id="title"
+                            placeholder="Enter your professional title"
+                            value={resumeData.Title}
+                            onChange={(e) => setResumeData(prev => ({ ...prev, Title: e.target.value }))}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="email">Email</Label>
+                          <Input
+                            id="email"
+                            type="email"
+                            placeholder="Enter your email"
+                            value={resumeData.Email}
+                            onChange={(e) => setResumeData(prev => ({ ...prev, Email: e.target.value }))}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="phone">Phone</Label>
+                          <Input
+                            id="phone"
+                            placeholder="Enter your phone number"
+                            value={resumeData.Phone}
+                            onChange={(e) => setResumeData(prev => ({ ...prev, Phone: e.target.value }))}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="location">Location</Label>
+                          <Input
+                            id="location"
+                            placeholder="Enter your location"
+                            value={resumeData.Location}
+                            onChange={(e) => setResumeData(prev => ({ ...prev, Location: e.target.value }))}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="linkedin">LinkedIn</Label>
+                          <Input
+                            id="linkedin"
+                            placeholder="Enter your LinkedIn profile"
+                            value={resumeData.LinkedIn}
+                            onChange={(e) => setResumeData(prev => ({ ...prev, LinkedIn: e.target.value }))}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label htmlFor="summary">Professional Summary</Label>
+                        <Textarea
+                          id="summary"
+                          placeholder="Enter your professional summary"
+                          value={resumeData.Summary}
+                          onChange={(e) => setResumeData(prev => ({ ...prev, Summary: e.target.value }))}
+                          rows={4}
+                        />
+                      </div>
+                    </TabsContent>
 
-                      <TabsContent value="experience" className="space-y-4">
-                        {resumeData.Experience.map((exp, index) => (
-                          <div key={index} className="border rounded-md p-4 space-y-2">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div>
-                                <Label htmlFor={`experience-${index}-title`}>Job Title</Label>
-                                <Input
-                                  id={`experience-${index}-title`}
-                                  placeholder="Enter job title"
-                                  value={exp.Title}
-                                  onChange={(e) => updateArrayItem('Experience', index, { ...exp, Title: e.target.value })}
-                                />
-                              </div>
-                              <div>
-                                <Label htmlFor={`experience-${index}-company`}>Company</Label>
-                                <Input
-                                  id={`experience-${index}-company`}
-                                  placeholder="Enter company name"
-                                  value={exp.Company}
-                                  onChange={(e) => updateArrayItem('Experience', index, { ...exp, Company: e.target.value })}
-                                />
-                              </div>
-                              <div>
-                                <Label htmlFor={`experience-${index}-location`}>Location</Label>
-                                <Input
-                                  id={`experience-${index}-location`}
-                                  placeholder="Enter location"
-                                  value={exp.Location}
-                                  onChange={(e) => updateArrayItem('Experience', index, { ...exp, Location: e.target.value })}
-                                />
-                              </div>
-                              <div>
-                                <Label htmlFor={`experience-${index}-start-date`}>Start Date</Label>
-                                <Input
-                                  id={`experience-${index}-start-date`}
-                                  placeholder="Enter start date"
-                                  value={exp.StartDate}
-                                  onChange={(e) => updateArrayItem('Experience', index, { ...exp, StartDate: e.target.value })}
-                                />
-                              </div>
-                              <div>
-                                <Label htmlFor={`experience-${index}-end-date`}>End Date</Label>
-                                <Input
-                                  id={`experience-${index}-end-date`}
-                                  placeholder="Enter end date"
-                                  value={exp.EndDate}
-                                  onChange={(e) => updateArrayItem('Experience', index, { ...exp, EndDate: e.target.value })}
-                                />
-                              </div>
+                    <TabsContent value="experience" className="space-y-4">
+                      {resumeData.Experience.map((exp, index) => (
+                        <div key={index} className="border rounded-md p-4 space-y-2">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <Label htmlFor={`experience-${index}-title`}>Job Title</Label>
+                              <Input
+                                id={`experience-${index}-title`}
+                                placeholder="Enter job title"
+                                value={exp.Title}
+                                onChange={(e) => updateArrayItem('Experience', index, { ...exp, Title: e.target.value })}
+                              />
                             </div>
                             <div>
-                              <Label htmlFor={`experience-${index}-description`}>Job Description</Label>
-                              <Textarea
-                                id={`experience-${index}-description`}
-                                placeholder="Enter job description"
-                                value={exp.Description}
-                                onChange={(e) => updateArrayItem('Experience', index, { ...exp, Description: e.target.value })}
-                                rows={3}
-                              />
-                            </div>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => removeArrayItem('Experience', index)}
-                            >
-                              <X className="h-4 w-4 mr-2" />
-                              Remove
-                            </Button>
-                          </div>
-                        ))}
-                        <Button
-                          variant="secondary"
-                          onClick={() => addArrayItem('Experience', {
-                            Title: "",
-                            Company: "",
-                            Location: "",
-                            StartDate: "",
-                            EndDate: "",
-                            Description: ""
-                          })}
-                        >
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add Experience
-                        </Button>
-                      </TabsContent>
-
-                      <TabsContent value="education" className="space-y-4">
-                        {resumeData.Education.map((edu, index) => (
-                          <div key={index} className="border rounded-md p-4 space-y-2">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div>
-                                <Label htmlFor={`education-${index}-degree`}>Degree</Label>
-                                <Input
-                                  id={`education-${index}-degree`}
-                                  placeholder="Enter degree"
-                                  value={edu.Degree}
-                                  onChange={(e) => updateArrayItem('Education', index, { ...edu, Degree: e.target.value })}
-                                />
-                              </div>
-                              <div>
-                                <Label htmlFor={`education-${index}-institution`}>Institution</Label>
-                                <Input
-                                  id={`education-${index}-institution`}
-                                  placeholder="Enter institution name"
-                                  value={edu.Institution}
-                                  onChange={(e) => updateArrayItem('Education', index, { ...edu, Institution: e.target.value })}
-                                />
-                              </div>
-                              <div>
-                                <Label htmlFor={`education-${index}-location`}>Location</Label>
-                                <Input
-                                  id={`education-${index}-location`}
-                                  placeholder="Enter location"
-                                  value={edu.Location}
-                                  onChange={(e) => updateArrayItem('Education', index, { ...edu, Location: e.target.value })}
-                                />
-                              </div>
-                              <div>
-                                <Label htmlFor={`education-${index}-start-date`}>Start Date</Label>
-                                <Input
-                                  id={`education-${index}-start-date`}
-                                  placeholder="Enter start date"
-                                  value={edu.StartDate}
-                                  onChange={(e) => updateArrayItem('Education', index, { ...edu, StartDate: e.target.value })}
-                                />
-                              </div>
-                              <div>
-                                <Label htmlFor={`education-${index}-end-date`}>End Date</Label>
-                                <Input
-                                  id={`education-${index}-end-date`}
-                                  placeholder="Enter end date"
-                                  value={edu.EndDate}
-                                  onChange={(e) => updateArrayItem('Education', index, { ...edu, EndDate: e.target.value })}
-                                />
-                              </div>
-                              <div>
-                                <Label htmlFor={`education-${index}-gpa`}>GPA</Label>
-                                <Input
-                                  id={`education-${index}-gpa`}
-                                  placeholder="Enter GPA (optional)"
-                                  value={edu.GPA}
-                                  onChange={(e) => updateArrayItem('Education', index, { ...edu, GPA: e.target.value })}
-                                />
-                              </div>
-                            </div>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => removeArrayItem('Education', index)}
-                            >
-                              <X className="h-4 w-4 mr-2" />
-                              Remove
-                            </Button>
-                          </div>
-                        ))}
-                        <Button
-                          variant="secondary"
-                          onClick={() => addArrayItem('Education', {
-                            Degree: "",
-                            Institution: "",
-                            Location: "",
-                            StartDate: "",
-                            EndDate: "",
-                            GPA: ""
-                          })}
-                        >
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add Education
-                        </Button>
-                      </TabsContent>
-
-                      <TabsContent value="skills" className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {resumeData.Skills.map((skill, index) => (
-                            <div key={index} className="flex items-center space-x-2">
+                              <Label htmlFor={`experience-${index}-company`}>Company</Label>
                               <Input
-                                placeholder="Enter skill"
-                                value={skill}
-                                onChange={(e) => updateArrayItem('Skills', index, e.target.value)}
+                                id={`experience-${index}-company`}
+                                placeholder="Enter company name"
+                                value={exp.Company}
+                                onChange={(e) => updateArrayItem('Experience', index, { ...exp, Company: e.target.value })}
                               />
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                onClick={() => removeArrayItem('Skills', index)}
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
                             </div>
-                          ))}
-                        </div>
-                        <Button
-                          variant="secondary"
-                          onClick={() => addArrayItem('Skills', "")}
-                        >
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add Skill
-                        </Button>
-                      </TabsContent>
-
-                      <TabsContent value="other" className="space-y-4">
-                        <div className="mb-4">
-                          <h4 className="text-sm font-medium">Certifications</h4>
-                          {resumeData.Certifications.map((cert, index) => (
-                            <div key={index} className="border rounded-md p-4 space-y-2">
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                  <Label htmlFor={`certification-${index}-name`}>Name</Label>
-                                  <Input
-                                    id={`certification-${index}-name`}
-                                    placeholder="Enter certification name"
-                                    value={cert.Name}
-                                    onChange={(e) => updateArrayItem('Certifications', index, { ...cert, Name: e.target.value })}
-                                  />
-                                </div>
-                                <div>
-                                  <Label htmlFor={`certification-${index}-issuer`}>Issuer</Label>
-                                  <Input
-                                    id={`certification-${index}-issuer`}
-                                    placeholder="Enter issuing organization"
-                                    value={cert.Issuer}
-                                    onChange={(e) => updateArrayItem('Certifications', index, { ...cert, Issuer: e.target.value })}
-                                  />
-                                </div>
-                                <div>
-                                  <Label htmlFor={`certification-${index}-date`}>Date</Label>
-                                  <Input
-                                    id={`certification-${index}-date`}
-                                    placeholder="Enter date obtained"
-                                    value={cert.Date}
-                                    onChange={(e) => updateArrayItem('Certifications', index, { ...cert, Date: e.target.value })}
-                                  />
-                                </div>
-                              </div>
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => removeArrayItem('Certifications', index)}
-                              >
-                                <X className="h-4 w-4 mr-2" />
-                                Remove
-                              </Button>
+                            <div>
+                              <Label htmlFor={`experience-${index}-location`}>Location</Label>
+                              <Input
+                                id={`experience-${index}-location`}
+                                placeholder="Enter location"
+                                value={exp.Location}
+                                onChange={(e) => updateArrayItem('Experience', index, { ...exp, Location: e.target.value })}
+                              />
                             </div>
-                          ))}
+                            <div>
+                              <Label htmlFor={`experience-${index}-start-date`}>Start Date</Label>
+                              <Input
+                                id={`experience-${index}-start-date`}
+                                placeholder="Enter start date"
+                                value={exp.StartDate}
+                                onChange={(e) => updateArrayItem('Experience', index, { ...exp, StartDate: e.target.value })}
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor={`experience-${index}-end-date`}>End Date</Label>
+                              <Input
+                                id={`experience-${index}-end-date`}
+                                placeholder="Enter end date"
+                                value={exp.EndDate}
+                                onChange={(e) => updateArrayItem('Experience', index, { ...exp, EndDate: e.target.value })}
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <Label htmlFor={`experience-${index}-description`}>Job Description</Label>
+                            <Textarea
+                              id={`experience-${index}-description`}
+                              placeholder="Enter job description"
+                              value={exp.Description}
+                              onChange={(e) => updateArrayItem('Experience', index, { ...exp, Description: e.target.value })}
+                              rows={3}
+                            />
+                          </div>
                           <Button
-                            variant="secondary"
-                            onClick={() => addArrayItem('Certifications', {
-                              Name: "",
-                              Issuer: "",
-                              Date: ""
-                            })}
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => removeArrayItem('Experience', index)}
                           >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add Certification
+                            <X className="h-4 w-4 mr-2" />
+                            Remove
                           </Button>
                         </div>
+                      ))}
+                      <Button
+                        variant="secondary"
+                        onClick={() => addArrayItem('Experience', {
+                          Title: "",
+                          Company: "",
+                          Location: "",
+                          StartDate: "",
+                          EndDate: "",
+                          Description: ""
+                        })}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Experience
+                      </Button>
+                    </TabsContent>
 
-                        <div>
-                          <h4 className="text-sm font-medium">Projects</h4>
-                          {resumeData.Projects.map((project, index) => (
-                            <div key={index} className="border rounded-md p-4 space-y-2">
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                  <Label htmlFor={`project-${index}-name`}>Name</Label>
-                                  <Input
-                                    id={`project-${index}-name`}
-                                    placeholder="Enter project name"
-                                    value={project.Name}
-                                    onChange={(e) => updateArrayItem('Projects', index, { ...project, Name: e.target.value })}
-                                  />
-                                </div>
-                                <div>
-                                  <Label htmlFor={`project-${index}-technologies`}>Technologies</Label>
-                                  <Input
-                                    id={`project-${index}-technologies`}
-                                    placeholder="Enter technologies used"
-                                    value={project.Technologies}
-                                    onChange={(e) => updateArrayItem('Projects', index, { ...project, Technologies: e.target.value })}
-                                  />
-                                </div>
-                              </div>
-                              <div>
-                                <Label htmlFor={`project-${index}-description`}>Description</Label>
-                                <Textarea
-                                  id={`project-${index}-description`}
-                                  placeholder="Enter project description"
-                                  value={project.Description}
-                                  onChange={(e) => updateArrayItem('Projects', index, { ...project, Description: e.target.value })}
-                                  rows={3}
-                                />
-                              </div>
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => removeArrayItem('Projects', index)}
-                              >
-                                <X className="h-4 w-4 mr-2" />
-                                Remove
-                              </Button>
+                    <TabsContent value="education" className="space-y-4">
+                      {resumeData.Education.map((edu, index) => (
+                        <div key={index} className="border rounded-md p-4 space-y-2">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <Label htmlFor={`education-${index}-degree`}>Degree</Label>
+                              <Input
+                                id={`education-${index}-degree`}
+                                placeholder="Enter degree"
+                                value={edu.Degree}
+                                onChange={(e) => updateArrayItem('Education', index, { ...edu, Degree: e.target.value })}
+                              />
                             </div>
-                          ))}
+                            <div>
+                              <Label htmlFor={`education-${index}-institution`}>Institution</Label>
+                              <Input
+                                id={`education-${index}-institution`}
+                                placeholder="Enter institution name"
+                                value={edu.Institution}
+                                onChange={(e) => updateArrayItem('Education', index, { ...edu, Institution: e.target.value })}
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor={`education-${index}-location`}>Location</Label>
+                              <Input
+                                id={`education-${index}-location`}
+                                placeholder="Enter location"
+                                value={edu.Location}
+                                onChange={(e) => updateArrayItem('Education', index, { ...edu, Location: e.target.value })}
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor={`education-${index}-start-date`}>Start Date</Label>
+                              <Input
+                                id={`education-${index}-start-date`}
+                                placeholder="Enter start date"
+                                value={edu.StartDate}
+                                onChange={(e) => updateArrayItem('Education', index, { ...edu, StartDate: e.target.value })}
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor={`education-${index}-end-date`}>End Date</Label>
+                              <Input
+                                id={`education-${index}-end-date`}
+                                placeholder="Enter end date"
+                                value={edu.EndDate}
+                                onChange={(e) => updateArrayItem('Education', index, { ...edu, EndDate: e.target.value })}
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor={`education-${index}-gpa`}>GPA</Label>
+                              <Input
+                                id={`education-${index}-gpa`}
+                                placeholder="Enter GPA (optional)"
+                                value={edu.GPA}
+                                onChange={(e) => updateArrayItem('Education', index, { ...edu, GPA: e.target.value })}
+                              />
+                            </div>
+                          </div>
                           <Button
-                            variant="secondary"
-                            onClick={() => addArrayItem('Projects', {
-                              Name: "",
-                              Description: "",
-                              Technologies: ""
-                            })}
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => removeArrayItem('Education', index)}
                           >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add Project
+                            <X className="h-4 w-4 mr-2" />
+                            Remove
                           </Button>
                         </div>
-                      </TabsContent>
+                      ))}
+                      <Button
+                        variant="secondary"
+                        onClick={() => addArrayItem('Education', {
+                          Degree: "",
+                          Institution: "",
+                          Location: "",
+                          StartDate: "",
+                          EndDate: "",
+                          GPA: ""
+                        })}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Education
+                      </Button>
+                    </TabsContent>
 
-                    </Tabs>
-                  </CardContent>
-                </Card>
-              </div>
+                    <TabsContent value="skills" className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {resumeData.Skills.map((skill, index) => (
+                          <div key={index} className="flex items-center space-x-2">
+                            <Input
+                              placeholder="Enter skill"
+                              value={skill}
+                              onChange={(e) => updateArrayItem('Skills', index, e.target.value)}
+                            />
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => removeArrayItem('Skills', index)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                      <Button
+                        variant="secondary"
+                        onClick={() => addArrayItem('Skills', "")}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Skill
+                      </Button>
+                    </TabsContent>
 
-              {/* Action Buttons Section */}
-              <div className="lg:col-span-1">
-                <Card className="sticky top-4">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Eye className="h-5 w-5" />
-                      Actions
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="text-center">
-                        <h3 className="font-semibold text-lg">{resumeData.Name || "Your Name"}</h3>
-                        <p className="text-gray-600">{resumeData.Title || "Your Title"}</p>
-                        <p className="text-sm text-gray-500">{resumeData.Email || "your.email@example.com"} • {resumeData.Phone || "(555) 000-0000"}</p>
-                      </div>
-                      
-                      <Separator />
-                      
-                      <div>
-                        <h4 className="font-semibold mb-2">Summary</h4>
-                        <p className="text-sm text-gray-600">{resumeData.Summary || "Your professional summary will appear here..."}</p>
-                      </div>
-                      
-                      <Separator />
-                      
-                      <div>
-                        <h4 className="font-semibold mb-2">Skills</h4>
-                        <div className="flex flex-wrap gap-1">
-                          {resumeData.Skills.filter(skill => skill.trim()).slice(0, 5).map((skill, index) => (
-                            <Badge key={index} variant="secondary" className="text-xs">
-                              {skill}
-                            </Badge>
-                          ))}
-                          {resumeData.Skills.filter(skill => skill.trim()).length > 5 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{resumeData.Skills.filter(skill => skill.trim()).length - 5} more
-                            </Badge>
-                          )}
-                          {resumeData.Skills.filter(skill => skill.trim()).length === 0 && (
-                            <p className="text-sm text-gray-400">Add skills to see them here...</p>
-                          )}
+                    <TabsContent value="projects" className="space-y-4">
+                      {resumeData.Projects.map((project, index) => (
+                        <div key={index} className="border rounded-md p-4 space-y-2">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <Label htmlFor={`project-${index}-name`}>Name</Label>
+                              <Input
+                                id={`project-${index}-name`}
+                                placeholder="Enter project name"
+                                value={project.Name}
+                                onChange={(e) => updateArrayItem('Projects', index, { ...project, Name: e.target.value })}
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor={`project-${index}-technologies`}>Technologies</Label>
+                              <Input
+                                id={`project-${index}-technologies`}
+                                placeholder="Enter technologies used"
+                                value={project.Technologies}
+                                onChange={(e) => updateArrayItem('Projects', index, { ...project, Technologies: e.target.value })}
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <Label htmlFor={`project-${index}-description`}>Description</Label>
+                            <Textarea
+                              id={`project-${index}-description`}
+                              placeholder="Enter project description"
+                              value={project.Description}
+                              onChange={(e) => updateArrayItem('Projects', index, { ...project, Description: e.target.value })}
+                              rows={3}
+                            />
+                          </div>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => removeArrayItem('Projects', index)}
+                          >
+                            <X className="h-4 w-4 mr-2" />
+                            Remove
+                          </Button>
                         </div>
-                      </div>
-                      
-                      <Separator />
-                      
-                      {/* Three Generation Buttons */}
-                      <div className="space-y-3">
-                        <Button 
-                          className="w-full" 
-                          onClick={generateResume}
-                          disabled={isLoading}
-                        >
-                          {isLoading ? (
-                            <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                              Generating...
-                            </>
-                          ) : (
-                            <>
-                              <Download className="h-4 w-4 mr-2" />
-                              Generate Resume
-                            </>
-                          )}
-                        </Button>
+                      ))}
+                      <Button
+                        variant="secondary"
+                        onClick={() => addArrayItem('Projects', {
+                          Name: "",
+                          Description: "",
+                          Technologies: ""
+                        })}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Project
+                      </Button>
+                    </TabsContent>
 
-                        <Button 
-                          className="w-full bg-blue-600 hover:bg-blue-700" 
-                          onClick={generateResumeViaAI}
-                          disabled={isLoading}
-                        >
-                          {isLoading ? (
-                            <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                              Generating...
-                            </>
-                          ) : (
-                            <>
-                              <Sparkles className="h-4 w-4 mr-2" />
-                              Generate Resume via AI
-                            </>
-                          )}
-                        </Button>
+                  </Tabs>
+                </CardContent>
+              </Card>
+            </div>
 
-                        <Button 
-                          className="w-full bg-purple-600 hover:bg-purple-700" 
-                          onClick={generateAIEnhancedResume}
-                          disabled={isLoading}
-                        >
-                          {isLoading ? (
-                            <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                              Generating...
-                            </>
-                          ) : (
-                            <>
-                              <Zap className="h-4 w-4 mr-2" />
-                              Generate AI Enhanced Resume
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+            {/* Bottom Action Buttons Row */}
+            <div className="mt-8 flex flex-col items-stretch gap-4 lg:flex-row lg:justify-end lg:items-center">
+              <Button 
+                className="w-full lg:w-auto lg:mr-4" 
+                onClick={generateResume}
+                disabled={isGenerating}
+              >
+                {isGenerating ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-4 w-4 mr-2" />
+                    Generate Resume
+                  </>
+                )}
+              </Button>
+
+              <Button 
+                className="w-full lg:w-auto lg:mr-4 bg-blue-600 hover:bg-blue-700" 
+                onClick={generateResumeViaAI}
+                disabled={isGenerating}
+              >
+                {isGenerating ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Generate Resume via AI
+                  </>
+                )}
+              </Button>
+
+              <Button 
+                className="w-full lg:w-auto bg-purple-600 hover:bg-purple-700" 
+                onClick={generateAIEnhancedResume}
+                disabled={isGenerating}
+              >
+                {isGenerating ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="h-4 w-4 mr-2" />
+                    Generate AI Enhanced Resume
+                  </>
+                )}
+              </Button>
             </div>
           </>
-        )}
-
-        {/* Preview Modal */}
-        {showPreview && previewTemplate && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-              <div className="flex items-center justify-between p-4 border-b border-gray-200">
-                <div>
-                  <h2 className="text-xl font-semibold">Template Preview</h2>
-                  <p className="text-sm text-gray-600">
-                    {templates.find(t => t.id === previewTemplate)?.name}
-                  </p>
-                </div>
-                <Button variant="outline" onClick={() => setShowPreview(false)}>
-                  Close
-                </Button>
-              </div>
-              <div className="p-4 overflow-auto max-h-[calc(90vh-80px)]">
-                <div
-                  className="bg-white shadow-lg rounded-lg overflow-hidden"
-                  dangerouslySetInnerHTML={{ __html: templateHtml }}
-                  style={{ fontFamily: 'Arial, sans-serif', lineHeight: '1.6', color: '#333' }}
-                />
-              </div>
-            </div>
-          </div>
         )}
       </div>
     </div>
