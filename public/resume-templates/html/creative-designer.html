@@ -91,6 +91,7 @@
             border-radius: 20px;
             display: inline-block;
             font-size: 0.85rem;
+            margin-right: 0.5rem;
         }
         
         .section {
@@ -215,11 +216,11 @@
                 {{#each experience}}
                 <div class="experience-item">
                     <div class="item-header">
-                        <div class="item-title">{{this.title}}</div>
-                        <div class="item-subtitle">{{this.company}}</div>
-                        <div class="item-meta">{{this.startDate}} - {{this.endDate}} | {{this.location}}</div>
+                        <div class="item-title">{{title}}</div>
+                        <div class="item-subtitle">{{company}}</div>
+                        <div class="item-meta">{{startDate}} - {{endDate}} | {{location}}</div>
                     </div>
-                    <div class="item-description">{{this.description}}</div>
+                    <div class="item-description">{{description}}</div>
                 </div>
                 {{/each}}
             </div>
@@ -231,10 +232,10 @@
                 {{#each projects}}
                 <div class="project-item">
                     <div class="item-header">
-                        <div class="item-title">{{this.name}}</div>
-                        <div class="item-meta">{{this.technologies}}</div>
+                        <div class="item-title">{{name}}</div>
+                        <div class="item-meta">{{date}}</div>
                     </div>
-                    <div class="item-description">{{this.description}}</div>
+                    <div class="item-description">{{description}}</div>
                 </div>
                 {{/each}}
             </div>
@@ -246,10 +247,25 @@
                 {{#each education}}
                 <div class="education-item">
                     <div class="item-header">
-                        <div class="item-title">{{this.degree}}</div>
-                        <div class="item-subtitle">{{this.institution}}</div>
-                        <div class="item-meta">{{this.startDate}} - {{this.endDate}} | {{this.location}}</div>
+                        <div class="item-title">{{degree}}</div>
+                        <div class="item-subtitle">{{institution}}</div>
+                        <div class="item-meta">{{startDate}} - {{endDate}} | {{location}}</div>
                     </div>
+                </div>
+                {{/each}}
+            </div>
+            {{/if}}
+            
+            {{#if certifications}}
+            <div class="section">
+                <h2 class="section-title">Certifications</h2>
+                {{#each certifications}}
+                <div class="education-item">
+                    <div class="item-header">
+                        <div class="item-title">{{name}}</div>
+                        <div class="item-meta">{{date}}</div>
+                    </div>
+                    <div class="item-subtitle">{{issuer}}</div>
                 </div>
                 {{/each}}
             </div>
@@ -258,9 +274,3 @@
     </div>
 </body>
 </html>
-
-
-
-
-
-

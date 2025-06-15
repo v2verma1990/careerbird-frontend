@@ -254,9 +254,9 @@ const ResumeBuilder = () => {
       color: "navy"
     },
     {
-      id: "entry-graduate",
+      id: "fresh-graduate",
       name: "Fresh Graduate",
-      description: "Perfect for new graduates",
+      description: "Perfect for new graduates and entry-level positions",
       thumbnail: "/resume-templates/thumbnails/entry-level.PNG",
       category: "entry-level",
       color: "teal",
