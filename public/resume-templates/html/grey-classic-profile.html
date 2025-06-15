@@ -1,0 +1,291 @@
+
+<!--
+  Grey Classic Profile Resume Template
+  Inspired by attached screenshot. Designed for clarity and readability.
+  Usage: Maps with Handlebars: {{Name}}, {{Title}}, {{Email}}, {{Phone}}, {{Location}}, {{Profile}}, {{Skills}}, {{Experience}}, {{Education}}, etc.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{Name}} - Resume</title>
+  <style>
+    body {
+      background: #f1f2f7;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    .resume-container {
+      background: #fff;
+      margin: 40px auto;
+      border-radius: 20px;
+      max-width: 785px;
+      box-shadow: 0 2px 28px rgba(30,40,90,.12), 0 0.5px 3px rgba(30,64,175,.09);
+      padding: 40px 0 38px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .profile-photo {
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 6px;
+      border: 2.5px solid #eee;
+    }
+    .header-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+    .name {
+      font-size: 2rem;
+      font-weight: 600;
+      letter-spacing: 1.2px;
+      color: #24262a;
+      margin-bottom: 2px;
+      margin-top: 2px;
+      text-align: center;
+    }
+    .title {
+      font-size: 1rem;
+      color: #84888d;
+      font-weight: 500;
+      text-align: center;
+      margin-bottom: 2px;
+      text-transform: uppercase;
+      letter-spacing: 1.1px;
+    }
+    .header-details {
+      font-size: 0.99rem;
+      color: #4d4f52;
+      text-align: center;
+      margin-bottom: 3px;
+    }
+    .divider {
+      width: 100px;
+      margin: 16px auto 13px auto;
+      border-bottom: 2px solid #e5e7ea;
+    }
+    .main-content {
+      width: 84%;
+      display: flex;
+      gap: 38px;
+      margin: 0 auto;
+      align-items: flex-start;
+    }
+    .sidebar {
+      flex: 0 0 220px;
+      max-width: 220px;
+      font-size: 0.97rem;
+      color: #24262a;
+      border-right: 1px solid #e6e8ee;
+      padding-right: 22px;
+      margin-right: 8px;
+    }
+    .sidebar-section {
+      margin-bottom: 32px;
+    }
+    .sidebar-label {
+      font-size: 1em;
+      font-weight: bold;
+      color: #878787;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 4px;
+      display: block;
+    }
+    .sidebar-details {
+      font-size: 0.97em;
+      color: #34383f;
+      line-height: 1.7;
+      margin-bottom: 10px;
+      white-space: pre-line;
+    }
+    .sidebar-details a {
+      color: #21355e;
+      text-decoration: none;
+    }
+    .skill-list {
+      padding-left: 0;
+      margin: 0;
+      list-style: none;
+    }
+    .skill-list li {
+      padding: 4px 0;
+      border-bottom: 1px solid #ececec;
+      font-size: 0.96em;
+      color: #535353;
+      font-weight: 500;
+    }
+    .right-main {
+      flex: 1;
+      padding-left: 0;
+    }
+    .section-label {
+      font-size: 1.1em;
+      font-weight: 700;
+      color: #383a4e;
+      margin-bottom: 9px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-left: 2.7px solid #c1c6d1;
+      padding-left: 14px;
+    }
+    .profile-section, .employment-section, .education-section {
+      margin-bottom: 28px;
+    }
+    .profile-content {
+      font-size: 1em;
+      color: #212226;
+      margin-bottom: 6px;
+      padding-left: 14px;
+    }
+    .employments {
+      padding-left: 0;
+      margin-left: 0;
+    }
+    .employment-role {
+      font-weight: 600;
+      font-size: 1.04em;
+      color: #24262a;
+      margin-bottom: 2px;
+      margin-top: 9px;
+    }
+    .employment-meta {
+      font-size: 0.96em;
+      color: #606364;
+      margin-bottom: 2px;
+      font-style: italic;
+    }
+    .employment-dates {
+      color: #9096a4;
+      font-size: 0.94em;
+    }
+    .employment-list {
+      margin: 4px 0 12px 0;
+      padding-left: 24px;
+      color: #23272c;
+      font-size: 0.98em;
+    }
+    .education-degree {
+      font-weight: 600;
+      font-size: 1.02em;
+      color: #345;
+      margin-top: 10px;
+      margin-bottom: 1px;
+    }
+    .education-meta {
+      color: #5f5f61;
+      font-size: 0.96em;
+      margin-bottom: 1.5px;
+      font-style: italic;
+    }
+    .education-dates {
+      color: #9ba3ac;
+      font-size: 0.94em;
+      margin-bottom: 7px;
+    }
+    .references-label {
+      color: #30354b;
+      font-size: 1.04em;
+      font-weight: 600;
+      margin-top: 10px;
+    }
+    @media (max-width: 900px) {
+      .main-content { flex-direction: column; gap: 0; }
+      .sidebar { border: none; border-bottom: 1px solid #eee; max-width: 100%; margin-right: 0; padding-right: 0; }
+      .right-main { padding-left: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="resume-container">
+    <div class="header-content">
+      {{#if Photo}}
+        <img src="{{Photo}}" alt="photo" class="profile-photo" />
+      {{else}}
+        <img src="https://ui-avatars.com/api/?name={{Name}}&size=128&background=ebeff3&color=39404b&bold=true" alt="photo" class="profile-photo" />
+      {{/if}}
+      <div class="name">{{Name}}</div>
+      {{#if Title}}
+        <div class="title">{{Title}}</div>
+      {{/if}}
+      <div class="header-details">
+        {{#if Location}}{{Location}}&nbsp;|&nbsp;{{/if}}
+        {{#if Phone}}{{Phone}}&nbsp;|&nbsp;{{/if}}
+        {{#if Email}}{{Email}}{{/if}}
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="main-content">
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <div class="sidebar-section">
+          <span class="sidebar-label">Details</span>
+          <div class="sidebar-details">
+            {{#if Location}}
+            {{Location}}<br/>
+            {{/if}}
+            {{#if Phone}}
+            {{Phone}}<br/>
+            {{/if}}
+            {{#if Email}}
+            <a href="mailto:{{Email}}">{{Email}}</a>
+            {{/if}}
+          </div>
+        </div>
+        <div class="sidebar-section">
+          <span class="sidebar-label">Skills</span>
+          <ul class="skill-list">
+            {{#each Skills}}
+              <li>{{this}}</li>
+            {{/each}}
+          </ul>
+        </div>
+      </div>
+      <!-- Main RIGHT -->
+      <div class="right-main">
+        <div class="profile-section">
+          <span class="section-label">Profile</span>
+          <div class="profile-content">{{Summary}}</div>
+        </div>
+        <div class="employment-section">
+          <span class="section-label">Employment History</span>
+          <div class="employments">
+            {{#each Experience}}
+            <div class="employment-role">{{Title}}, {{Company}}</div>
+            <div class="employment-meta">
+              {{#if Location}}{{Location}}, {{/if}}
+              <span class="employment-dates">{{StartDate}}{{#if EndDate}} &ndash; {{EndDate}}{{/if}}</span>
+            </div>
+            {{#if Description}}
+              <ul class="employment-list">
+                {{#each Description}}
+                  <li>{{this}}</li>
+                {{/each}}
+              </ul>
+            {{/if}}
+            {{/each}}
+          </div>
+        </div>
+        <div class="education-section">
+          <span class="section-label">Education</span>
+          {{#each Education}}
+            <div class="education-degree">{{Degree}}</div>
+            <div class="education-meta">{{Institution}}{{#if Location}}, {{Location}}{{/if}}</div>
+            <div class="education-dates">{{StartDate}}{{#if EndDate}} – {{EndDate}}{{/if}}</div>
+          {{/each}}
+        </div>
+        <div><span class="references-label">References</span></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

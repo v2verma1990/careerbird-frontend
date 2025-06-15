@@ -83,6 +83,16 @@ const templates = [
     color: "teal",
     isPopular: true,
     isRecommended: true
+  },
+  {
+    id: "grey-classic-profile",
+    name: "Grey Classic Profile",
+    description: "Elegant and clear template with sidebar and modern layout",
+    thumbnail: "/lovable-uploads/e8267b3d-746e-4d28-9688-1810ab72c83c.png",
+    category: "classic",
+    color: "gray",
+    isRecommended: false,
+    isNew: true
   }
 ];
 
