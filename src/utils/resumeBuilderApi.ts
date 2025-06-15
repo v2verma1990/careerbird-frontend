@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 // Base URL for API calls
@@ -38,7 +37,13 @@ export const resumeBuilderApi = {
   /**
    * Build a resume from data or file
    */
-  buildResume: async (params: { file?: File, resumeData?: string, templateId: string }) => {
+  buildResume: async (params: { 
+    file?: File, 
+    resumeData?: string, 
+    templateId: string,
+    enhanceWithAI?: boolean,
+    premiumEnhancement?: boolean 
+  }) => {
     try {
       // Validate required parameters
       if (!params.templateId) {
@@ -57,6 +62,15 @@ export const resumeBuilderApi = {
       
       // Add template ID
       formData.append('templateId', params.templateId);
+      
+      // Add AI enhancement flags
+      if (params.enhanceWithAI) {
+        formData.append('enhanceWithAI', 'true');
+      }
+      
+      if (params.premiumEnhancement) {
+        formData.append('premiumEnhancement', 'true');
+      }
       
       // Add file if provided
       if (params.file) {
