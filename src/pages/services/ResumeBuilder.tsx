@@ -317,6 +317,15 @@ const ResumeBuilder = () => {
       category: "classic",
       color: "orange",
       isNew: true
+    },
+    {
+      id: "classic-law-bw",
+      name: "Classic Law Black & White",
+      description: "Traditional black & white legal resume with section dividers and simple typographic elegance.",
+      thumbnail: "/lovable-uploads/411cd4d2-9f96-4fa4-abaf-60b6828225fb.png",
+      category: "classic",
+      color: "gray",
+      isNew: true
     }
   ];
 
