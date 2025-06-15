@@ -12,7 +12,7 @@ import { Upload, FileText, Download, Eye, User, Briefcase, GraduationCap, Award,
 import ResumeFileUploader from '@/components/ResumeFileUploader';
 import { resumeBuilderApi } from '@/utils/resumeBuilderApi';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, SUPABASE_URL } from '@/integrations/supabase/client';
 import { useResume } from '@/contexts/resume/ResumeContext';
 
 // Light placeholder data that clears on click
@@ -97,7 +97,7 @@ const ResumeBuilderApp = () => {
         if (defaultResume.blobPath.startsWith('http')) {
           fileUrl = defaultResume.blobPath;
         } else if (defaultResume.blobPath.includes('storage/')) {
-          fileUrl = `${supabase.supabaseUrl}/storage/v1/object/public/${defaultResume.blobPath}`;
+          fileUrl = `${SUPABASE_URL}/storage/v1/object/public/${defaultResume.blobPath}`;
         } else {
           fileUrl = `/api/files/${defaultResume.blobPath}`;
         }
@@ -301,7 +301,7 @@ const ResumeBuilderApp = () => {
       console.error('Error extracting resume data:', error);
       toast({
         title: "Extraction failed",
-        description: error instanceof Error ? error.message : "Failed to extract resume data. Please try again or fill manually.",
+        description: "Failed to extract resume data. Please try again or fill manually.",
         variant: "destructive",
       });
     } finally {
