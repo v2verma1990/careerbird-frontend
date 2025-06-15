@@ -172,15 +172,9 @@ const ResumeBuilderApp = () => {
     return templateUrl + `?data=${encodeURIComponent(JSON.stringify(data))}`;
   };
 
-  const handleExtractFromDefault = () => {
-    if (hasDefaultResume && defaultResumeData) {
-      setExtractedData(defaultResumeData);
-      setDataSource('default');
-    }
-  };
-
   const handleUseDefaultResume = () => {
     if (hasDefaultResume && defaultResumeData) {
+      console.log("Using default resume data:", defaultResumeData);
       // Populate resume data with default resume
       setResumeData({
         personalInfo: {
@@ -213,16 +207,18 @@ const ResumeBuilderApp = () => {
         certifications: defaultResumeData.certifications || []
       });
       setDataSource('default');
+      setExtractedData(defaultResumeData);
     }
   };
 
   const handleUploadResume = () => {
+    console.log("Opening file uploader for resume extraction");
     setShowFileUploader(true);
     setDataSource('extract');
   };
 
   const handleFileExtracted = (extractedData: any) => {
-    console.log("Data extracted:", extractedData);
+    console.log("Data extracted from file:", extractedData);
     setExtractedData(extractedData);
     setShowFileUploader(false);
     // Update resume data with extracted data
@@ -238,11 +234,26 @@ const ResumeBuilderApp = () => {
           website: extractedData.website || ""
         },
         summary: extractedData.summary || "Professional summary",
-        experience: extractedData.experience || [],
-        education: extractedData.education || [],
+        experience: extractedData.experience?.map((exp: any) => ({
+          title: exp.title || "",
+          company: exp.company || "",
+          location: exp.location || "",
+          startDate: exp.startDate || "",
+          endDate: exp.endDate || "",
+          responsibilities: exp.responsibilities || [exp.description || ""]
+        })) || [],
+        education: extractedData.education?.map((edu: any) => ({
+          degree: edu.degree || "",
+          institution: edu.institution || "",
+          location: edu.location || "",
+          startDate: edu.startDate || "",
+          endDate: edu.endDate || "",
+          gpa: edu.gpa || ""
+        })) || [],
         skills: extractedData.skills || [],
         certifications: extractedData.certifications || []
       });
+      setDataSource('extract');
     }
   };
 
@@ -482,13 +493,12 @@ const ResumeBuilderApp = () => {
     loadSampleData();
   }, []);
 
-  // Check if user has a default resume
+  // Check if user has a default resume - simulate having one for testing
   useEffect(() => {
     const checkDefaultResume = async () => {
       try {
-        // This would typically check the user's profile for default_resume_blob_name
-        // For now, we'll simulate checking if user has a default resume
-        const hasDefault = localStorage.getItem('hasDefaultResume') === 'true';
+        // For testing, let's simulate that user has a default resume
+        const hasDefault = true; // Change this to test different scenarios
         setHasDefaultResume(hasDefault);
         
         if (hasDefault) {
@@ -542,7 +552,7 @@ const ResumeBuilderApp = () => {
   if (preselectedTemplate) {
     // Show preview screen with PDF in iframe
     if (showPreview) {
-      const previewData = extractedData || (showManualForm ? resumeData : null) || resumeData;
+      const previewData = extractedData || resumeData;
       
       return (
         <div className="min-h-screen bg-gray-50">
@@ -675,6 +685,21 @@ const ResumeBuilderApp = () => {
                   <div>
                     <h3 className="font-medium text-blue-800">Using your default resume</h3>
                     <p className="text-sm text-blue-600">Default resume data loaded successfully</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Extracted Data Indicator */}
+          {dataSource === 'extract' && extractedData && (
+            <div className="mb-6">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="flex items-center gap-3">
+                  <Check className="w-5 h-5 text-green-600" />
+                  <div>
+                    <h3 className="font-medium text-green-800">Data extracted from uploaded resume</h3>
+                    <p className="text-sm text-green-600">You can edit the information below before generating your resume</p>
                   </div>
                 </div>
               </div>
