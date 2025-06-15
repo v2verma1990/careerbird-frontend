@@ -1,8 +1,10 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useNavigate } from "react-router-dom";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Link, useNavigate } from "react-router-dom";
 import { Eye, ArrowRight, Star, Crown, Sparkles, Palette } from "lucide-react";
 
 interface Template {
@@ -146,12 +148,12 @@ const ResumeBuilder = () => {
 
   const handleContinue = () => {
     if (selectedTemplate) {
-      navigate(`/resume-builder-app?template=${selectedTemplate}&hideTemplates=true`);
+      navigate(`/resume-builder-app?template=${selectedTemplate}`);
     }
   };
 
   const handleSkipForNow = () => {
-    navigate('/resume-builder-app?hideTemplates=true');
+    navigate('/resume-builder-app');
   };
 
   return (
