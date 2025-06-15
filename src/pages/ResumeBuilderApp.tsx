@@ -293,467 +293,476 @@ const ResumeBuilderApp = () => {
     navigate('/resume-builder');
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="flex">
-        {/* Only show template panel if no template is preselected */}
-        {!preselectedTemplate && (
-          <div className="w-80 bg-white border-r border-gray-200 overflow-y-auto">
-            <div className="p-6">
-              <h2 className="text-xl font-bold mb-4">Choose a Template</h2>
-              <div className="space-y-4">
-                {templates.map((template) => (
-                  <Card 
-                    key={template.id}
-                    className={`cursor-pointer transition-all ${
-                      selectedTemplate === template.id ? "ring-2 ring-blue-500" : ""
-                    }`}
-                    onClick={() => handleTemplateSelect(template.id)}
-                  >
-                    <CardContent className="p-3">
-                      <img 
-                        src={template.thumbnail} 
-                        alt={template.name} 
-                        className="w-full h-40 object-cover mb-2"
-                      />
-                      <h3 className="font-medium">{template.name}</h3>
-                      <p className="text-sm text-gray-500">{template.description}</p>
-                    </CardContent>
-                  </Card>
-                ))}
+  // If template is preselected, show only the builder interface
+  if (preselectedTemplate) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="outline"
+                onClick={handleBackToTemplateSelection}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Change Template
+              </Button>
+              <div>
+                <h1 className="text-xl font-semibold">Resume Builder</h1>
+                <p className="text-sm text-gray-600">
+                  Using {templates.find(t => t.id === preselectedTemplate)?.name || 'Selected'} template
+                </p>
               </div>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleExportWord}>
+                Export as Word
+              </Button>
+              <Button onClick={handleExportPDF}>
+                Export as PDF
+              </Button>
             </div>
           </div>
-        )}
+        </div>
         
-        {/* Main content area */}
-        <div className="flex-1 w-full">
-          {/* Header with back button when template is preselected */}
-          {preselectedTemplate && (
-            <div className="bg-white border-b border-gray-200 px-6 py-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <Button
-                    variant="outline"
-                    onClick={handleBackToTemplateSelection}
-                    className="flex items-center gap-2"
-                  >
-                    <ArrowLeft className="w-4 h-4" />
-                    Change Template
-                  </Button>
-                  <div>
-                    <h1 className="text-xl font-semibold">Resume Builder</h1>
-                    <p className="text-sm text-gray-600">
-                      Using {templates.find(t => t.id === preselectedTemplate)?.name || 'Selected'} template
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={handleExportWord}>
-                    Export as Word
-                  </Button>
-                  <Button onClick={handleExportPDF}>
-                    Export as PDF
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {/* Form and Preview */}
-          <div className="flex flex-1">
-            {/* Form Section */}
-            <div className="w-1/2 p-6 overflow-y-auto max-h-screen">
-              <Tabs defaultValue="personal" className="w-full">
-                <TabsList className="mb-4">
-                  <TabsTrigger value="personal">Personal Info</TabsTrigger>
-                  <TabsTrigger value="experience">Experience</TabsTrigger>
-                  <TabsTrigger value="education">Education</TabsTrigger>
-                  <TabsTrigger value="skills">Skills</TabsTrigger>
-                  <TabsTrigger value="certifications">Certifications</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="personal" className="space-y-4">
-                  <h2 className="text-xl font-semibold">Personal Information</h2>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Full Name</label>
-                      <input
-                        type="text"
-                        className="w-full p-2 border rounded"
-                        value={resumeData.personalInfo.name}
-                        onChange={(e) => handleUpdatePersonalInfo("name", e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Job Title</label>
-                      <input
-                        type="text"
-                        className="w-full p-2 border rounded"
-                        value={resumeData.personalInfo.title}
-                        onChange={(e) => handleUpdatePersonalInfo("title", e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Email</label>
-                      <input
-                        type="email"
-                        className="w-full p-2 border rounded"
-                        value={resumeData.personalInfo.email}
-                        onChange={(e) => handleUpdatePersonalInfo("email", e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Phone</label>
-                      <input
-                        type="tel"
-                        className="w-full p-2 border rounded"
-                        value={resumeData.personalInfo.phone}
-                        onChange={(e) => handleUpdatePersonalInfo("phone", e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Location</label>
-                      <input
-                        type="text"
-                        className="w-full p-2 border rounded"
-                        value={resumeData.personalInfo.location}
-                        onChange={(e) => handleUpdatePersonalInfo("location", e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">LinkedIn (optional)</label>
-                      <input
-                        type="text"
-                        className="w-full p-2 border rounded"
-                        value={resumeData.personalInfo.linkedin}
-                        onChange={(e) => handleUpdatePersonalInfo("linkedin", e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Website (optional)</label>
-                      <input
-                        type="text"
-                        className="w-full p-2 border rounded"
-                        value={resumeData.personalInfo.website}
-                        onChange={(e) => handleUpdatePersonalInfo("website", e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  
+        {/* Form and Preview */}
+        <div className="flex flex-1">
+          {/* Form Section */}
+          <div className="w-1/2 p-6 overflow-y-auto max-h-screen">
+            <Tabs defaultValue="personal" className="w-full">
+              <TabsList className="mb-4">
+                <TabsTrigger value="personal">Personal Info</TabsTrigger>
+                <TabsTrigger value="experience">Experience</TabsTrigger>
+                <TabsTrigger value="education">Education</TabsTrigger>
+                <TabsTrigger value="skills">Skills</TabsTrigger>
+                <TabsTrigger value="certifications">Certifications</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="personal" className="space-y-4">
+                <h2 className="text-xl font-semibold">Personal Information</h2>
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Professional Summary</label>
-                    <textarea
-                      className="w-full p-2 border rounded h-32"
-                      value={resumeData.summary}
-                      onChange={(e) => handleUpdateResumeData("summary", e.target.value)}
+                    <label className="text-sm font-medium">Full Name</label>
+                    <input
+                      type="text"
+                      className="w-full p-2 border rounded"
+                      value={resumeData.personalInfo.name}
+                      onChange={(e) => handleUpdatePersonalInfo("name", e.target.value)}
                     />
                   </div>
-                </TabsContent>
-                
-                <TabsContent value="experience" className="space-y-6">
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-semibold">Work Experience</h2>
-                    <Button onClick={handleAddExperience}>Add Experience</Button>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Job Title</label>
+                    <input
+                      type="text"
+                      className="w-full p-2 border rounded"
+                      value={resumeData.personalInfo.title}
+                      onChange={(e) => handleUpdatePersonalInfo("title", e.target.value)}
+                    />
                   </div>
-                  
-                  {resumeData.experience.map((exp, index) => (
-                    <div key={index} className="border p-4 rounded-md space-y-4">
-                      <h3 className="font-medium">Experience {index + 1}</h3>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Job Title</label>
-                          <input
-                            type="text"
-                            className="w-full p-2 border rounded"
-                            value={exp.title}
-                            onChange={(e) => handleUpdateExperience(index, "title", e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Company</label>
-                          <input
-                            type="text"
-                            className="w-full p-2 border rounded"
-                            value={exp.company}
-                            onChange={(e) => handleUpdateExperience(index, "company", e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Location</label>
-                          <input
-                            type="text"
-                            className="w-full p-2 border rounded"
-                            value={exp.location}
-                            onChange={(e) => handleUpdateExperience(index, "location", e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Start Date</label>
-                          <input
-                            type="text"
-                            className="w-full p-2 border rounded"
-                            value={exp.startDate}
-                            onChange={(e) => handleUpdateExperience(index, "startDate", e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">End Date</label>
-                          <input
-                            type="text"
-                            className="w-full p-2 border rounded"
-                            value={exp.endDate}
-                            onChange={(e) => handleUpdateExperience(index, "endDate", e.target.value)}
-                          />
-                        </div>
-                      </div>
-                      
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Email</label>
+                    <input
+                      type="email"
+                      className="w-full p-2 border rounded"
+                      value={resumeData.personalInfo.email}
+                      onChange={(e) => handleUpdatePersonalInfo("email", e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Phone</label>
+                    <input
+                      type="tel"
+                      className="w-full p-2 border rounded"
+                      value={resumeData.personalInfo.phone}
+                      onChange={(e) => handleUpdatePersonalInfo("phone", e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Location</label>
+                    <input
+                      type="text"
+                      className="w-full p-2 border rounded"
+                      value={resumeData.personalInfo.location}
+                      onChange={(e) => handleUpdatePersonalInfo("location", e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">LinkedIn (optional)</label>
+                    <input
+                      type="text"
+                      className="w-full p-2 border rounded"
+                      value={resumeData.personalInfo.linkedin}
+                      onChange={(e) => handleUpdatePersonalInfo("linkedin", e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Website (optional)</label>
+                    <input
+                      type="text"
+                      className="w-full p-2 border rounded"
+                      value={resumeData.personalInfo.website}
+                      onChange={(e) => handleUpdatePersonalInfo("website", e.target.value)}
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Professional Summary</label>
+                  <textarea
+                    className="w-full p-2 border rounded h-32"
+                    value={resumeData.summary}
+                    onChange={(e) => handleUpdateResumeData("summary", e.target.value)}
+                  />
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="experience" className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-semibold">Work Experience</h2>
+                  <Button onClick={handleAddExperience}>Add Experience</Button>
+                </div>
+                
+                {resumeData.experience.map((exp, index) => (
+                  <div key={index} className="border p-4 rounded-md space-y-4">
+                    <h3 className="font-medium">Experience {index + 1}</h3>
+                    <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">Responsibilities</label>
-                        {exp.responsibilities.map((resp, respIndex) => (
-                          <div key={respIndex} className="flex gap-2">
-                            <input
-                              type="text"
-                              className="w-full p-2 border rounded"
-                              value={resp}
-                              onChange={(e) => {
-                                const newResponsibilities = [...exp.responsibilities];
-                                newResponsibilities[respIndex] = e.target.value;
-                                handleUpdateExperience(index, "responsibilities", newResponsibilities);
-                              }}
-                            />
-                            <Button
-                              variant="outline"
-                              onClick={() => {
-                                const newResponsibilities = exp.responsibilities.filter((_, i) => i !== respIndex);
-                                handleUpdateExperience(index, "responsibilities", newResponsibilities);
-                              }}
-                            >
-                              Remove
-                            </Button>
-                          </div>
-                        ))}
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            const newResponsibilities = [...exp.responsibilities, ""];
-                            handleUpdateExperience(index, "responsibilities", newResponsibilities);
-                          }}
-                        >
-                          Add Responsibility
-                        </Button>
+                        <label className="text-sm font-medium">Job Title</label>
+                        <input
+                          type="text"
+                          className="w-full p-2 border rounded"
+                          value={exp.title}
+                          onChange={(e) => handleUpdateExperience(index, "title", e.target.value)}
+                        />
                       </div>
-                      
-                      <Button
-                        variant="destructive"
-                        onClick={() => {
-                          setResumeData(prev => ({
-                            ...prev,
-                            experience: prev.experience.filter((_, i) => i !== index)
-                          }));
-                        }}
-                      >
-                        Remove Experience
-                      </Button>
-                    </div>
-                  ))}
-                </TabsContent>
-                
-                <TabsContent value="education" className="space-y-6">
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-semibold">Education</h2>
-                    <Button onClick={handleAddEducation}>Add Education</Button>
-                  </div>
-                  
-                  {resumeData.education.map((edu, index) => (
-                    <div key={index} className="border p-4 rounded-md space-y-4">
-                      <h3 className="font-medium">Education {index + 1}</h3>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Degree</label>
-                          <input
-                            type="text"
-                            className="w-full p-2 border rounded"
-                            value={edu.degree}
-                            onChange={(e) => handleUpdateEducation(index, "degree", e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Institution</label>
-                          <input
-                            type="text"
-                            className="w-full p-2 border rounded"
-                            value={edu.institution}
-                            onChange={(e) => handleUpdateEducation(index, "institution", e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Location</label>
-                          <input
-                            type="text"
-                            className="w-full p-2 border rounded"
-                            value={edu.location}
-                            onChange={(e) => handleUpdateEducation(index, "location", e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Start Date</label>
-                          <input
-                            type="text"
-                            className="w-full p-2 border rounded"
-                            value={edu.startDate}
-                            onChange={(e) => handleUpdateEducation(index, "startDate", e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">End Date</label>
-                          <input
-                            type="text"
-                            className="w-full p-2 border rounded"
-                            value={edu.endDate}
-                            onChange={(e) => handleUpdateEducation(index, "endDate", e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">GPA (optional)</label>
-                          <input
-                            type="text"
-                            className="w-full p-2 border rounded"
-                            value={edu.gpa}
-                            onChange={(e) => handleUpdateEducation(index, "gpa", e.target.value)}
-                          />
-                        </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Company</label>
+                        <input
+                          type="text"
+                          className="w-full p-2 border rounded"
+                          value={exp.company}
+                          onChange={(e) => handleUpdateExperience(index, "company", e.target.value)}
+                        />
                       </div>
-                      
-                      <Button
-                        variant="destructive"
-                        onClick={() => {
-                          setResumeData(prev => ({
-                            ...prev,
-                            education: prev.education.filter((_, i) => i !== index)
-                          }));
-                        }}
-                      >
-                        Remove Education
-                      </Button>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Location</label>
+                        <input
+                          type="text"
+                          className="w-full p-2 border rounded"
+                          value={exp.location}
+                          onChange={(e) => handleUpdateExperience(index, "location", e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Start Date</label>
+                        <input
+                          type="text"
+                          className="w-full p-2 border rounded"
+                          value={exp.startDate}
+                          onChange={(e) => handleUpdateExperience(index, "startDate", e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">End Date</label>
+                        <input
+                          type="text"
+                          className="w-full p-2 border rounded"
+                          value={exp.endDate}
+                          onChange={(e) => handleUpdateExperience(index, "endDate", e.target.value)}
+                        />
+                      </div>
                     </div>
-                  ))}
-                </TabsContent>
-                
-                <TabsContent value="skills" className="space-y-4">
-                  <h2 className="text-xl font-semibold">Skills</h2>
-                  
-                  <div className="space-y-4">
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        className="flex-1 p-2 border rounded"
-                        placeholder="Add a skill..."
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            handleAddSkill(e.currentTarget.value);
-                            e.currentTarget.value = '';
-                          }
-                        }}
-                      />
+                    
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Responsibilities</label>
+                      {exp.responsibilities.map((resp, respIndex) => (
+                        <div key={respIndex} className="flex gap-2">
+                          <input
+                            type="text"
+                            className="w-full p-2 border rounded"
+                            value={resp}
+                            onChange={(e) => {
+                              const newResponsibilities = [...exp.responsibilities];
+                              newResponsibilities[respIndex] = e.target.value;
+                              handleUpdateExperience(index, "responsibilities", newResponsibilities);
+                            }}
+                          />
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              const newResponsibilities = exp.responsibilities.filter((_, i) => i !== respIndex);
+                              handleUpdateExperience(index, "responsibilities", newResponsibilities);
+                            }}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      ))}
                       <Button
-                        onClick={(e) => {
-                          const input = e.currentTarget.previousElementSibling as HTMLInputElement;
-                          handleAddSkill(input.value);
-                          input.value = '';
+                        variant="outline"
+                        onClick={() => {
+                          const newResponsibilities = [...exp.responsibilities, ""];
+                          handleUpdateExperience(index, "responsibilities", newResponsibilities);
                         }}
                       >
-                        Add
+                        Add Responsibility
                       </Button>
                     </div>
                     
-                    <div className="flex flex-wrap gap-2">
-                      {resumeData.skills.map((skill, index) => (
-                        <Badge
-                          key={index}
-                          className="px-3 py-1 cursor-pointer"
-                          onClick={() => handleRemoveSkill(skill)}
-                        >
-                          {skill} ×
-                        </Badge>
-                      ))}
-                    </div>
+                    <Button
+                      variant="destructive"
+                      onClick={() => {
+                        setResumeData(prev => ({
+                          ...prev,
+                          experience: prev.experience.filter((_, i) => i !== index)
+                        }));
+                      }}
+                    >
+                      Remove Experience
+                    </Button>
                   </div>
-                </TabsContent>
+                ))}
+              </TabsContent>
+              
+              <TabsContent value="education" className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-semibold">Education</h2>
+                  <Button onClick={handleAddEducation}>Add Education</Button>
+                </div>
                 
-                <TabsContent value="certifications" className="space-y-6">
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-semibold">Certifications</h2>
-                    <Button onClick={handleAddCertification}>Add Certification</Button>
+                {resumeData.education.map((edu, index) => (
+                  <div key={index} className="border p-4 rounded-md space-y-4">
+                    <h3 className="font-medium">Education {index + 1}</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Degree</label>
+                        <input
+                          type="text"
+                          className="w-full p-2 border rounded"
+                          value={edu.degree}
+                          onChange={(e) => handleUpdateEducation(index, "degree", e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Institution</label>
+                        <input
+                          type="text"
+                          className="w-full p-2 border rounded"
+                          value={edu.institution}
+                          onChange={(e) => handleUpdateEducation(index, "institution", e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Location</label>
+                        <input
+                          type="text"
+                          className="w-full p-2 border rounded"
+                          value={edu.location}
+                          onChange={(e) => handleUpdateEducation(index, "location", e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Start Date</label>
+                        <input
+                          type="text"
+                          className="w-full p-2 border rounded"
+                          value={edu.startDate}
+                          onChange={(e) => handleUpdateEducation(index, "startDate", e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">End Date</label>
+                        <input
+                          type="text"
+                          className="w-full p-2 border rounded"
+                          value={edu.endDate}
+                          onChange={(e) => handleUpdateEducation(index, "endDate", e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">GPA (optional)</label>
+                        <input
+                          type="text"
+                          className="w-full p-2 border rounded"
+                          value={edu.gpa}
+                          onChange={(e) => handleUpdateEducation(index, "gpa", e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    
+                    <Button
+                      variant="destructive"
+                      onClick={() => {
+                        setResumeData(prev => ({
+                          ...prev,
+                          education: prev.education.filter((_, i) => i !== index)
+                        }));
+                      }}
+                    >
+                      Remove Education
+                    </Button>
+                  </div>
+                ))}
+              </TabsContent>
+              
+              <TabsContent value="skills" className="space-y-4">
+                <h2 className="text-xl font-semibold">Skills</h2>
+                
+                <div className="space-y-4">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      className="flex-1 p-2 border rounded"
+                      placeholder="Add a skill..."
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handleAddSkill(e.currentTarget.value);
+                          e.currentTarget.value = '';
+                        }
+                      }}
+                    />
+                    <Button
+                      onClick={(e) => {
+                        const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                        handleAddSkill(input.value);
+                        input.value = '';
+                      }}
+                    >
+                      Add
+                    </Button>
                   </div>
                   
-                  {resumeData.certifications.map((cert, index) => (
-                    <div key={index} className="border p-4 rounded-md space-y-4">
-                      <h3 className="font-medium">Certification {index + 1}</h3>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Name</label>
-                          <input
-                            type="text"
-                            className="w-full p-2 border rounded"
-                            value={cert.name}
-                            onChange={(e) => handleUpdateCertification(index, "name", e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Issuer</label>
-                          <input
-                            type="text"
-                            className="w-full p-2 border rounded"
-                            value={cert.issuer}
-                            onChange={(e) => handleUpdateCertification(index, "issuer", e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Date (optional)</label>
-                          <input
-                            type="text"
-                            className="w-full p-2 border rounded"
-                            value={cert.date}
-                            onChange={(e) => handleUpdateCertification(index, "date", e.target.value)}
-                          />
-                        </div>
-                      </div>
-                      
-                      <Button
-                        variant="destructive"
-                        onClick={() => {
-                          setResumeData(prev => ({
-                            ...prev,
-                            certifications: prev.certifications.filter((_, i) => i !== index)
-                          }));
-                        }}
+                  <div className="flex flex-wrap gap-2">
+                    {resumeData.skills.map((skill, index) => (
+                      <Badge
+                        key={index}
+                        className="px-3 py-1 cursor-pointer"
+                        onClick={() => handleRemoveSkill(skill)}
                       >
-                        Remove Certification
-                      </Button>
+                        {skill} ×
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="certifications" className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-semibold">Certifications</h2>
+                  <Button onClick={handleAddCertification}>Add Certification</Button>
+                </div>
+                
+                {resumeData.certifications.map((cert, index) => (
+                  <div key={index} className="border p-4 rounded-md space-y-4">
+                    <h3 className="font-medium">Certification {index + 1}</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Name</label>
+                        <input
+                          type="text"
+                          className="w-full p-2 border rounded"
+                          value={cert.name}
+                          onChange={(e) => handleUpdateCertification(index, "name", e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Issuer</label>
+                        <input
+                          type="text"
+                          className="w-full p-2 border rounded"
+                          value={cert.issuer}
+                          onChange={(e) => handleUpdateCertification(index, "issuer", e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Date (optional)</label>
+                        <input
+                          type="text"
+                          className="w-full p-2 border rounded"
+                          value={cert.date}
+                          onChange={(e) => handleUpdateCertification(index, "date", e.target.value)}
+                        />
+                      </div>
                     </div>
-                  ))}
-                </TabsContent>
-              </Tabs>
+                    
+                    <Button
+                      variant="destructive"
+                      onClick={() => {
+                        setResumeData(prev => ({
+                          ...prev,
+                          certifications: prev.certifications.filter((_, i) => i !== index)
+                        }));
+                      }}
+                    >
+                      Remove Certification
+                    </Button>
+                  </div>
+                ))}
+              </TabsContent>
+            </Tabs>
+          </div>
+          
+          {/* Preview Section */}
+          <div className="w-1/2 bg-gray-100 p-6 overflow-y-auto max-h-screen">
+            <div className="bg-white shadow-md rounded-md p-4 mb-4">
+              <h2 className="text-xl font-semibold mb-2">Resume Preview</h2>
+              <p className="text-gray-500 text-sm">
+                This is a simplified preview. Export to see the final result.
+              </p>
             </div>
             
-            {/* Preview Section */}
-            <div className="w-1/2 bg-gray-100 p-6 overflow-y-auto max-h-screen">
-              <div className="bg-white shadow-md rounded-md p-4 mb-4">
-                <h2 className="text-xl font-semibold mb-2">Resume Preview</h2>
-                <p className="text-gray-500 text-sm">
-                  This is a simplified preview. Export to see the final result.
-                </p>
-              </div>
-              
-              <div className="bg-white shadow-md rounded-md overflow-hidden">
-                <iframe
-                  src={`/resume-preview?template=${selectedTemplate || preselectedTemplate}`}
-                  className="w-full h-[800px] border-0"
-                  title="Resume Preview"
-                />
-              </div>
+            <div className="bg-white shadow-md rounded-md overflow-hidden">
+              <iframe
+                src={`/resume-preview?template=${preselectedTemplate}`}
+                className="w-full h-[800px] border-0"
+                title="Resume Preview"
+              />
             </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Template selection interface (when no template is preselected)
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="flex">
+        {/* Template Selection Panel */}
+        <div className="w-80 bg-white border-r border-gray-200 overflow-y-auto">
+          <div className="p-6">
+            <h2 className="text-xl font-bold mb-4">Choose a Template</h2>
+            <div className="space-y-4">
+              {templates.map((template) => (
+                <Card 
+                  key={template.id}
+                  className={`cursor-pointer transition-all ${
+                    selectedTemplate === template.id ? "ring-2 ring-blue-500" : ""
+                  }`}
+                  onClick={() => handleTemplateSelect(template.id)}
+                >
+                  <CardContent className="p-3">
+                    <img 
+                      src={template.thumbnail} 
+                      alt={template.name} 
+                      className="w-full h-40 object-cover mb-2"
+                    />
+                    <h3 className="font-medium">{template.name}</h3>
+                    <p className="text-sm text-gray-500">{template.description}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </div>
+        
+        {/* Main content area for template selection */}
+        <div className="flex-1 p-6">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold mb-4">Select a Resume Template</h1>
+            <p className="text-gray-600">Choose a template from the sidebar to get started with your resume.</p>
           </div>
         </div>
       </div>
