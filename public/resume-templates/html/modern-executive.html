@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{#if Name}}{{name}}{{else}}{{name}}{{/if}} - Resume</title>
+    <title>{{name}} - Resume</title>
     <style>
         * {
             margin: 0;
@@ -26,23 +27,26 @@
         }
         
         .header {
-            background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+            background: linear-gradient(135deg, #4a5db8, #6366f1);
             color: white;
-            padding: 2rem;
+            padding: 2.5rem 2rem;
             text-align: center;
             margin-bottom: 2rem;
+            border-radius: 8px;
         }
         
         .header h1 {
-            font-size: 2.5rem;
+            font-size: 2.8rem;
             font-weight: bold;
             margin-bottom: 0.5rem;
+            letter-spacing: 1px;
         }
         
         .header .title {
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             opacity: 0.9;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
+            font-weight: 300;
         }
         
         .contact-info {
@@ -50,93 +54,125 @@
             justify-content: center;
             gap: 2rem;
             flex-wrap: wrap;
+            font-size: 0.95rem;
+        }
+        
+        .contact-info span {
+            opacity: 0.95;
         }
         
         .section {
-            margin-bottom: 2rem;
+            margin-bottom: 2.5rem;
         }
         
         .section-title {
-            font-size: 1.4rem;
-            color: #1e3a8a;
-            border-bottom: 2px solid #3b82f6;
+            font-size: 1.5rem;
+            color: #4a5db8;
+            border-bottom: 3px solid #6366f1;
             padding-bottom: 0.5rem;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
             font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
         .summary {
             font-size: 1rem;
-            line-height: 1.7;
+            line-height: 1.8;
             text-align: justify;
+            color: #374151;
+            padding: 0.5rem 0;
         }
         
         .experience-item, .education-item {
-            margin-bottom: 1.5rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .experience-item:last-child, .education-item:last-child {
+            border-bottom: none;
         }
         
         .experience-header {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 0.5rem;
+            align-items: flex-start;
+            margin-bottom: 1rem;
         }
         
         .job-title {
             font-weight: bold;
-            font-size: 1.1rem;
-            color: #1e3a8a;
+            font-size: 1.2rem;
+            color: #4a5db8;
+            margin-bottom: 0.3rem;
         }
         
         .company {
             font-weight: 600;
             color: #374151;
+            font-size: 1rem;
         }
         
         .date-location {
             color: #6b7280;
             font-style: italic;
+            text-align: right;
+            font-size: 0.9rem;
         }
         
         .description {
+            margin-top: 1rem;
+            line-height: 1.7;
+            color: #374151;
+        }
+        
+        .description ul {
+            margin-left: 1.5rem;
             margin-top: 0.5rem;
-            line-height: 1.6;
         }
         
-        .skills-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-        }
-        
-        .skill-category {
-            background: #f8fafc;
-            padding: 1rem;
-            border-left: 4px solid #3b82f6;
-        }
-        
-        .skill-category h4 {
-            color: #1e3a8a;
+        .description li {
             margin-bottom: 0.5rem;
         }
         
         .skills-list {
             display: flex;
             flex-wrap: wrap;
-            gap: 0.5rem;
+            gap: 0.7rem;
         }
         
         .skill-tag {
-            background: #e0f2fe;
-            color: #0369a1;
-            padding: 0.2rem 0.6rem;
-            border-radius: 1rem;
-            font-size: 0.85rem;
+            background: linear-gradient(135deg, #e0f2fe, #bfdbfe);
+            color: #1e40af;
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border: 1px solid #93c5fd;
+        }
+        
+        .certifications ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .certifications li {
+            background: #f8fafc;
+            padding: 0.8rem 1rem;
+            margin-bottom: 0.5rem;
+            border-left: 4px solid #6366f1;
+            border-radius: 4px;
         }
         
         @media print {
             .container {
                 max-width: none;
                 padding: 0;
+            }
+            
+            .header {
+                border-radius: 0;
             }
         }
     </style>
@@ -177,7 +213,17 @@
                         {{location}}
                     </div>
                 </div>
-                <div class="description">{{description}}</div>
+                <div class="description">
+                    {{#if responsibilities}}
+                        <ul>
+                            {{#each responsibilities}}
+                            <li>{{this}}</li>
+                            {{/each}}
+                        </ul>
+                    {{else}}
+                        {{description}}
+                    {{/if}}
+                </div>
             </div>
             {{/each}}
         </div>
@@ -209,14 +255,14 @@
                         {{location}}
                     </div>
                 </div>
-                {{#if gpa}}<div>GPA: {{gpa}}</div>{{/if}}
+                {{#if gpa}}<div style="margin-top: 0.5rem; color: #6b7280;">GPA: {{gpa}}</div>{{/if}}
             </div>
             {{/each}}
         </div>
         {{/if}}
 
         {{#if certifications}}
-        <div class="section">
+        <div class="section certifications">
             <h2 class="section-title">Certifications</h2>
             <ul>
                 {{#each certifications}}
@@ -228,4 +274,3 @@
     </div>
 </body>
 </html>
-
