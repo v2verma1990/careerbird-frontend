@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Eye, ArrowRight, Star, Crown, Sparkles, Palette, ArrowLeft, Download, FileText, Upload, Edit, Check } from "lucide-react";
+import { Eye, ArrowRight, Star, Crown, Sparkles, Palette, ArrowLeft, Download, FileText, Upload, Edit, Check, Plus } from "lucide-react";
 import ResumeFileUploader from "@/components/ResumeFileUploader";
 
 interface ResumeData {
@@ -66,8 +66,9 @@ const ResumeBuilderApp = () => {
   const [hasDefaultResume, setHasDefaultResume] = useState(false);
   const [defaultResumeData, setDefaultResumeData] = useState<any>(null);
   const [extractedData, setExtractedData] = useState<any>(null);
-  const [showManualForm, setShowManualForm] = useState(false);
+  const [showFileUploader, setShowFileUploader] = useState(false);
   
+  // Initialize with dummy data that's always visible
   const [resumeData, setResumeData] = useState<ResumeData>({
     personalInfo: {
       name: "John Doe",
@@ -178,10 +179,71 @@ const ResumeBuilderApp = () => {
     }
   };
 
+  const handleUseDefaultResume = () => {
+    if (hasDefaultResume && defaultResumeData) {
+      // Populate resume data with default resume
+      setResumeData({
+        personalInfo: {
+          name: defaultResumeData.name || "John Smith",
+          title: defaultResumeData.title || "Software Engineer",
+          email: defaultResumeData.email || "john.smith@email.com",
+          phone: defaultResumeData.phone || "(555) 123-4567",
+          location: defaultResumeData.location || "New York, NY",
+          linkedin: defaultResumeData.linkedin || "linkedin.com/in/johnsmith",
+          website: defaultResumeData.website || ""
+        },
+        summary: defaultResumeData.summary || "Experienced software engineer with 5+ years of expertise in full-stack development.",
+        experience: defaultResumeData.experience?.map((exp: any) => ({
+          title: exp.title || "",
+          company: exp.company || "",
+          location: exp.location || "",
+          startDate: exp.startDate || "",
+          endDate: exp.endDate || "",
+          responsibilities: exp.description ? [exp.description] : [""]
+        })) || [],
+        education: defaultResumeData.education?.map((edu: any) => ({
+          degree: edu.degree || "",
+          institution: edu.institution || "",
+          location: edu.location || "",
+          startDate: edu.startDate || "",
+          endDate: edu.endDate || "",
+          gpa: edu.gpa || ""
+        })) || [],
+        skills: defaultResumeData.skills || [],
+        certifications: defaultResumeData.certifications || []
+      });
+      setDataSource('default');
+    }
+  };
+
+  const handleUploadResume = () => {
+    setShowFileUploader(true);
+    setDataSource('extract');
+  };
+
   const handleFileExtracted = (extractedData: any) => {
     console.log("Data extracted:", extractedData);
     setExtractedData(extractedData);
-    setDataSource('extract');
+    setShowFileUploader(false);
+    // Update resume data with extracted data
+    if (extractedData) {
+      setResumeData({
+        personalInfo: {
+          name: extractedData.name || "John Doe",
+          title: extractedData.title || "Professional",
+          email: extractedData.email || "john@example.com",
+          phone: extractedData.phone || "(555) 123-4567",
+          location: extractedData.location || "City, State",
+          linkedin: extractedData.linkedin || "",
+          website: extractedData.website || ""
+        },
+        summary: extractedData.summary || "Professional summary",
+        experience: extractedData.experience || [],
+        education: extractedData.education || [],
+        skills: extractedData.skills || [],
+        certifications: extractedData.certifications || []
+      });
+    }
   };
 
   const handleManualEntry = () => {
@@ -369,44 +431,6 @@ const ResumeBuilderApp = () => {
     setDataSource(null);
   };
 
-  const handleUseDefaultResumeChange = (checked: boolean) => {
-    setUseDefaultResume(checked);
-    if (checked && defaultResumeData) {
-      // Populate form with default resume data
-      setResumeData({
-        personalInfo: {
-          name: defaultResumeData.name || "",
-          title: defaultResumeData.title || "",
-          email: defaultResumeData.email || "",
-          phone: defaultResumeData.phone || "",
-          location: defaultResumeData.location || "",
-          linkedin: defaultResumeData.linkedin || "",
-          website: defaultResumeData.website || ""
-        },
-        summary: defaultResumeData.summary || "",
-        experience: defaultResumeData.experience?.map((exp: any) => ({
-          title: exp.title || "",
-          company: exp.company || "",
-          location: exp.location || "",
-          startDate: exp.startDate || "",
-          endDate: exp.endDate || "",
-          responsibilities: exp.description ? [exp.description] : [""]
-        })) || [],
-        education: defaultResumeData.education?.map((edu: any) => ({
-          degree: edu.degree || "",
-          institution: edu.institution || "",
-          location: edu.location || "",
-          startDate: edu.startDate || "",
-          endDate: edu.endDate || "",
-          gpa: edu.gpa || ""
-        })) || [],
-        skills: defaultResumeData.skills || [],
-        certifications: defaultResumeData.certifications || []
-      });
-      setDataSource('default');
-    }
-  };
-
   const handleUseSampleResume = () => {
     if (sampleData) {
       // Populate form with sample data
@@ -589,435 +613,520 @@ const ResumeBuilderApp = () => {
     // Main builder interface
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-4xl mx-auto p-6">
+        <div className="max-w-6xl mx-auto p-6">
           {/* Header */}
           <div className="mb-8">
-            <div className="flex items-center gap-3 mb-4">
-              <FileText className="w-6 h-6 text-blue-600" />
-              <h1 className="text-2xl font-semibold text-gray-900">Resume Information</h1>
-            </div>
-          </div>
-
-          {/* Data Source Buttons */}
-          <div className="mb-8">
-            <div className="flex gap-4">
-              <Button
-                variant={dataSource === 'default' ? 'default' : 'outline'}
-                onClick={() => {
-                  if (hasDefaultResume && defaultResumeData) {
-                    setDataSource('default');
-                    setExtractedData(defaultResumeData);
-                    setShowManualForm(false);
-                  }
-                }}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
-                disabled={!hasDefaultResume}
-              >
-                <FileText className="w-4 h-4" />
-                Use Default Resume
-              </Button>
-              
-              <Button
-                variant={dataSource === 'extract' ? 'default' : 'outline'}
-                onClick={() => {
-                  setDataSource('extract');
-                  setShowManualForm(false);
-                }}
-                className="flex items-center gap-2"
-              >
-                <Upload className="w-4 h-4" />
-                Upload Resume
-              </Button>
-            </div>
-
-            {/* File Upload Component - only show when Extract is selected */}
-            {dataSource === 'extract' && (
-              <div className="mt-4">
-                <ResumeFileUploader
-                  onFileSelected={(file) => {
-                    if (file) {
-                      console.log("File selected for extraction:", file.name);
-                    }
-                  }}
-                  onDataExtracted={(extractedData) => {
-                    console.log("Data extracted:", extractedData);
-                    setExtractedData(extractedData);
-                  }}
-                  setIsExtracting={(extracting) => {
-                    console.log("Extracting:", extracting);
-                  }}
-                  showDefaultResumeOption={false}
-                />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <FileText className="w-6 h-6 text-blue-600" />
+                <h1 className="text-2xl font-semibold text-gray-900">Resume Information</h1>
               </div>
-            )}
+              <div className="flex gap-4">
+                <Button
+                  variant={dataSource === 'default' ? 'default' : 'outline'}
+                  onClick={handleUseDefaultResume}
+                  className="flex items-center gap-2"
+                  disabled={!hasDefaultResume}
+                >
+                  <FileText className="w-4 h-4" />
+                  Use Default Resume
+                </Button>
+                
+                <Button
+                  variant={dataSource === 'extract' ? 'default' : 'outline'}
+                  onClick={handleUploadResume}
+                  className="flex items-center gap-2"
+                >
+                  <Upload className="w-4 h-4" />
+                  Upload Resume
+                </Button>
+              </div>
+            </div>
           </div>
+
+          {/* File Upload Component - only show when Upload Resume is clicked */}
+          {showFileUploader && (
+            <div className="mb-8">
+              <Card>
+                <CardContent className="p-6">
+                  <ResumeFileUploader
+                    onFileSelected={(file) => {
+                      if (file) {
+                        console.log("File selected for extraction:", file.name);
+                      }
+                    }}
+                    onDataExtracted={handleFileExtracted}
+                    setIsExtracting={(extracting) => {
+                      console.log("Extracting:", extracting);
+                    }}
+                    showDefaultResumeOption={false}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
           {/* Default Resume Usage Indicator */}
-          {(dataSource === 'default' || useDefaultResume) && defaultResumeData && (
+          {dataSource === 'default' && defaultResumeData && (
             <div className="mb-6">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div className="flex items-center gap-3">
                   <FileText className="w-5 h-5 text-blue-600" />
                   <div>
                     <h3 className="font-medium text-blue-800">Using your default resume</h3>
-                    <p className="text-sm text-blue-600">Vishal-CV.pdf</p>
+                    <p className="text-sm text-blue-600">Default resume data loaded successfully</p>
                   </div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Editable Data Form */}
-          {(extractedData || (dataSource === 'default' && defaultResumeData)) && (
-            <div className="mb-8">
-              <Tabs defaultValue="personal" className="w-full">
-                <TabsList className="mb-6 bg-gray-100">
-                  <TabsTrigger value="personal" className="px-6">Personal</TabsTrigger>
-                  <TabsTrigger value="experience" className="px-6">Experience</TabsTrigger>
-                  <TabsTrigger value="education" className="px-6">Education</TabsTrigger>
-                  <TabsTrigger value="skills" className="px-6">Skills</TabsTrigger>
-                  <TabsTrigger value="additional" className="px-6">Additional</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="personal">
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="grid grid-cols-2 gap-6">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
-                          <input 
-                            type="text" 
-                            value={(extractedData || defaultResumeData)?.name || 'John Doe'} 
-                            onChange={(e) => {
-                              if (extractedData) {
-                                setExtractedData({...extractedData, name: e.target.value});
-                              }
-                            }}
-                            className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                            placeholder="John Doe"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Job Title *</label>
-                          <input 
-                            type="text" 
-                            value={(extractedData || defaultResumeData)?.title || 'Software Developer'} 
-                            onChange={(e) => {
-                              if (extractedData) {
-                                setExtractedData({...extractedData, title: e.target.value});
-                              }
-                            }}
-                            className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                            placeholder="Software Developer"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-                          <input 
-                            type="email" 
-                            value={(extractedData || defaultResumeData)?.email || 'john@example.com'} 
-                            onChange={(e) => {
-                              if (extractedData) {
-                                setExtractedData({...extractedData, email: e.target.value});
-                              }
-                            }}
-                            className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                            placeholder="john@example.com"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                          <input 
-                            type="text" 
-                            value={(extractedData || defaultResumeData)?.phone || '+1 234 567 8900'} 
-                            onChange={(e) => {
-                              if (extractedData) {
-                                setExtractedData({...extractedData, phone: e.target.value});
-                              }
-                            }}
-                            className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                            placeholder="+1 234 567 8900"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-                          <input 
-                            type="text" 
-                            value={(extractedData || defaultResumeData)?.location || 'New York, NY'} 
-                            onChange={(e) => {
-                              if (extractedData) {
-                                setExtractedData({...extractedData, location: e.target.value});
-                              }
-                            }}
-                            className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                            placeholder="New York, NY"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn</label>
-                          <input 
-                            type="text" 
-                            value={(extractedData || defaultResumeData)?.linkedin || 'linkedin.com/in/johndoe'} 
-                            onChange={(e) => {
-                              if (extractedData) {
-                                setExtractedData({...extractedData, linkedin: e.target.value});
-                              }
-                            }}
-                            className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                            placeholder="linkedin.com/in/johndoe"
-                          />
-                        </div>
-                        <div className="col-span-2">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
-                          <input 
-                            type="text" 
-                            value={(extractedData || defaultResumeData)?.website || ''} 
-                            onChange={(e) => {
-                              if (extractedData) {
-                                setExtractedData({...extractedData, website: e.target.value});
-                              }
-                            }}
-                            className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                            placeholder="www.johndoe.com"
-                          />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-
-                <TabsContent value="experience">
-                  <Card>
-                    <CardContent className="p-6">
-                      <h3 className="text-lg font-medium mb-4">Professional Summary</h3>
-                      <div className="mb-6">
-                        <textarea 
-                          value={(extractedData || defaultResumeData)?.summary || 
-                          'Experienced professional with expertise in...'}
-                          onChange={(e) => {
-                            if (extractedData) {
-                              setExtractedData({...extractedData, summary: e.target.value});
-                            }
-                          }}
-                          rows={4}
-                          className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Write a brief summary of your professional experience..."
+          {/* Resume Data Tabs - Always Visible */}
+          <div className="mb-8">
+            <Tabs defaultValue="personal" className="w-full">
+              <TabsList className="mb-6 bg-gray-100">
+                <TabsTrigger value="personal" className="px-6">Personal</TabsTrigger>
+                <TabsTrigger value="experience" className="px-6">Experience</TabsTrigger>
+                <TabsTrigger value="education" className="px-6">Education</TabsTrigger>
+                <TabsTrigger value="skills" className="px-6">Skills</TabsTrigger>
+                <TabsTrigger value="additional" className="px-6">Additional</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="personal">
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="grid grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+                        <input 
+                          type="text" 
+                          value={resumeData.personalInfo.name} 
+                          onChange={(e) => setResumeData(prev => ({
+                            ...prev,
+                            personalInfo: { ...prev.personalInfo, name: e.target.value }
+                          }))}
+                          className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                          placeholder="John Doe"
                         />
                       </div>
-                      
-                      <h3 className="text-lg font-medium mb-4">Work Experience</h3>
-                      {(extractedData || defaultResumeData)?.experience && (extractedData || defaultResumeData).experience.length > 0 ? (
-                        <div className="space-y-4">
-                          {(extractedData || defaultResumeData).experience.map((exp: any, index: number) => (
-                            <div key={index} className="border border-gray-200 rounded-lg p-4">
-                              <div className="grid grid-cols-2 gap-4 mb-4">
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">Job Title</label>
-                                  <input 
-                                    type="text" 
-                                    value={exp.title || ''} 
-                                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                    placeholder="Job Title"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">Company</label>
-                                  <input 
-                                    type="text" 
-                                    value={exp.company || ''} 
-                                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                    placeholder="Company Name"
-                                  />
-                                </div>
-                              </div>
-                              <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                                <textarea 
-                                  value={exp.description || ''} 
-                                  rows={3}
-                                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                  placeholder="Describe your responsibilities and achievements..."
-                                />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-gray-500">No experience data found</p>
-                      )}
-                    </CardContent>
-                  </Card>
-                </TabsContent>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Job Title *</label>
+                        <input 
+                          type="text" 
+                          value={resumeData.personalInfo.title} 
+                          onChange={(e) => setResumeData(prev => ({
+                            ...prev,
+                            personalInfo: { ...prev.personalInfo, title: e.target.value }
+                          }))}
+                          className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                          placeholder="Software Developer"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                        <input 
+                          type="email" 
+                          value={resumeData.personalInfo.email} 
+                          onChange={(e) => setResumeData(prev => ({
+                            ...prev,
+                            personalInfo: { ...prev.personalInfo, email: e.target.value }
+                          }))}
+                          className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                          placeholder="john@example.com"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                        <input 
+                          type="text" 
+                          value={resumeData.personalInfo.phone} 
+                          onChange={(e) => setResumeData(prev => ({
+                            ...prev,
+                            personalInfo: { ...prev.personalInfo, phone: e.target.value }
+                          }))}
+                          className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                          placeholder="+1 234 567 8900"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                        <input 
+                          type="text" 
+                          value={resumeData.personalInfo.location} 
+                          onChange={(e) => setResumeData(prev => ({
+                            ...prev,
+                            personalInfo: { ...prev.personalInfo, location: e.target.value }
+                          }))}
+                          className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                          placeholder="New York, NY"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn</label>
+                        <input 
+                          type="text" 
+                          value={resumeData.personalInfo.linkedin || ''} 
+                          onChange={(e) => setResumeData(prev => ({
+                            ...prev,
+                            personalInfo: { ...prev.personalInfo, linkedin: e.target.value }
+                          }))}
+                          className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                          placeholder="linkedin.com/in/johndoe"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
+                        <input 
+                          type="text" 
+                          value={resumeData.personalInfo.website || ''} 
+                          onChange={(e) => setResumeData(prev => ({
+                            ...prev,
+                            personalInfo: { ...prev.personalInfo, website: e.target.value }
+                          }))}
+                          className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                          placeholder="www.johndoe.com"
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-                <TabsContent value="education">
-                  <Card>
-                    <CardContent className="p-6">
-                      {(extractedData || defaultResumeData)?.education && (extractedData || defaultResumeData).education.length > 0 ? (
-                        <div className="space-y-4">
-                          {(extractedData || defaultResumeData).education.map((edu: any, index: number) => (
-                            <div key={index} className="border border-gray-200 rounded-lg p-4">
-                              <div className="grid grid-cols-2 gap-4 mb-4">
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">Degree</label>
-                                  <input 
-                                    type="text" 
-                                    value={edu.degree || ''} 
-                                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                    placeholder="Bachelor of Science"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">Institution</label>
-                                  <input 
-                                    type="text" 
-                                    value={edu.institution || ''} 
-                                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                    placeholder="University Name"
-                                  />
-                                </div>
-                              </div>
-                              <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                                  <input 
-                                    type="text" 
-                                    value={edu.startDate || ''} 
-                                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                    placeholder="2015"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                                  <input 
-                                    type="text" 
-                                    value={edu.endDate || ''} 
-                                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                    placeholder="2019"
-                                  />
-                                </div>
-                              </div>
+              <TabsContent value="experience">
+                <Card>
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-medium mb-4">Professional Summary</h3>
+                    <div className="mb-6">
+                      <textarea 
+                        value={resumeData.summary}
+                        onChange={(e) => setResumeData(prev => ({
+                          ...prev,
+                          summary: e.target.value
+                        }))}
+                        rows={4}
+                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Write a brief summary of your professional experience..."
+                      />
+                    </div>
+                    
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-medium">Work Experience</h3>
+                      <Button 
+                        onClick={() => setResumeData(prev => ({
+                          ...prev,
+                          experience: [...prev.experience, {
+                            title: "",
+                            company: "",
+                            location: "",
+                            startDate: "",
+                            endDate: "",
+                            responsibilities: [""]
+                          }]
+                        }))}
+                        className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add Experience
+                      </Button>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      {resumeData.experience.map((exp, index) => (
+                        <div key={index} className="border border-gray-200 rounded-lg p-4">
+                          <div className="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Job Title</label>
+                              <input 
+                                type="text" 
+                                value={exp.title} 
+                                onChange={(e) => {
+                                  const updatedExperience = [...resumeData.experience];
+                                  updatedExperience[index].title = e.target.value;
+                                  setResumeData(prev => ({ ...prev, experience: updatedExperience }));
+                                }}
+                                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                placeholder="Job Title"
+                              />
                             </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-gray-500">No education data found</p>
-                      )}
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-
-                <TabsContent value="skills">
-                  <Card>
-                    <CardContent className="p-6">
-                      {(extractedData || defaultResumeData)?.skills && (extractedData || defaultResumeData).skills.length > 0 ? (
-                        <div className="space-y-4">
-                          <div className="flex flex-wrap gap-2">
-                            {(extractedData || defaultResumeData).skills.map((skill: string, index: number) => (
-                              <Badge key={index} variant="secondary" className="px-3 py-1">{skill}</Badge>
-                            ))}
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Company</label>
+                              <input 
+                                type="text" 
+                                value={exp.company} 
+                                onChange={(e) => {
+                                  const updatedExperience = [...resumeData.experience];
+                                  updatedExperience[index].company = e.target.value;
+                                  setResumeData(prev => ({ ...prev, experience: updatedExperience }));
+                                }}
+                                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                placeholder="Company Name"
+                              />
+                            </div>
                           </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Add Skills (comma separated)</label>
+                          <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Responsibilities</label>
                             <textarea 
-                              value={(extractedData || defaultResumeData).skills.join(', ')}
+                              value={exp.responsibilities.join('\n')} 
                               onChange={(e) => {
-                                if (extractedData) {
-                                  const skills = e.target.value.split(',').map(skill => skill.trim()).filter(skill => skill);
-                                  setExtractedData({...extractedData, skills});
-                                }
+                                const updatedExperience = [...resumeData.experience];
+                                updatedExperience[index].responsibilities = e.target.value.split('\n');
+                                setResumeData(prev => ({ ...prev, experience: updatedExperience }));
                               }}
                               rows={3}
-                              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                              placeholder="JavaScript, React, Node.js, Python..."
+                              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              placeholder="Describe your responsibilities and achievements..."
                             />
                           </div>
                         </div>
-                      ) : (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Skills (comma separated)</label>
-                          <textarea 
-                            rows={3}
-                            className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="JavaScript, React, Node.js, Python..."
-                          />
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </TabsContent>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-                <TabsContent value="additional">
-                  <Card>
-                    <CardContent className="p-6">
-                      <h3 className="text-lg font-medium mb-4">Certifications</h3>
-                      {(extractedData || defaultResumeData)?.certifications && (extractedData || defaultResumeData).certifications.length > 0 ? (
-                        <div className="space-y-4">
-                          {(extractedData || defaultResumeData).certifications.map((cert: any, index: number) => (
-                            <div key={index} className="border border-gray-200 rounded-lg p-4">
-                              <div className="grid grid-cols-2 gap-4 mb-4">
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">Certification Name</label>
-                                  <input 
-                                    type="text" 
-                                    value={cert.name || ''} 
-                                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                    placeholder="AWS Certified Developer"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">Issuing Organization</label>
-                                  <input 
-                                    type="text" 
-                                    value={cert.issuer || ''} 
-                                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                    placeholder="Amazon Web Services"
-                                  />
-                                </div>
-                              </div>
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                                <input 
-                                  type="text" 
-                                  value={cert.date || ''} 
-                                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                  placeholder="2022"
-                                />
-                              </div>
+              <TabsContent value="education">
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-medium">Education</h3>
+                      <Button 
+                        onClick={() => setResumeData(prev => ({
+                          ...prev,
+                          education: [...prev.education, {
+                            degree: "",
+                            institution: "",
+                            location: "",
+                            startDate: "",
+                            endDate: "",
+                            gpa: ""
+                          }]
+                        }))}
+                        className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add Education
+                      </Button>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      {resumeData.education.map((edu, index) => (
+                        <div key={index} className="border border-gray-200 rounded-lg p-4">
+                          <div className="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Degree</label>
+                              <input 
+                                type="text" 
+                                value={edu.degree} 
+                                onChange={(e) => {
+                                  const updatedEducation = [...resumeData.education];
+                                  updatedEducation[index].degree = e.target.value;
+                                  setResumeData(prev => ({ ...prev, education: updatedEducation }));
+                                }}
+                                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                placeholder="Bachelor of Science"
+                              />
                             </div>
-                          ))}
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Institution</label>
+                              <input 
+                                type="text" 
+                                value={edu.institution} 
+                                onChange={(e) => {
+                                  const updatedEducation = [...resumeData.education];
+                                  updatedEducation[index].institution = e.target.value;
+                                  setResumeData(prev => ({ ...prev, education: updatedEducation }));
+                                }}
+                                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                placeholder="University Name"
+                              />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-3 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                              <input 
+                                type="text" 
+                                value={edu.startDate} 
+                                onChange={(e) => {
+                                  const updatedEducation = [...resumeData.education];
+                                  updatedEducation[index].startDate = e.target.value;
+                                  setResumeData(prev => ({ ...prev, education: updatedEducation }));
+                                }}
+                                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                placeholder="2015"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                              <input 
+                                type="text" 
+                                value={edu.endDate} 
+                                onChange={(e) => {
+                                  const updatedEducation = [...resumeData.education];
+                                  updatedEducation[index].endDate = e.target.value;
+                                  setResumeData(prev => ({ ...prev, education: updatedEducation }));
+                                }}
+                                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                placeholder="2019"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">GPA</label>
+                              <input 
+                                type="text" 
+                                value={edu.gpa || ''} 
+                                onChange={(e) => {
+                                  const updatedEducation = [...resumeData.education];
+                                  updatedEducation[index].gpa = e.target.value;
+                                  setResumeData(prev => ({ ...prev, education: updatedEducation }));
+                                }}
+                                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                placeholder="3.8/4.0"
+                              />
+                            </div>
+                          </div>
                         </div>
-                      ) : (
-                        <p className="text-gray-500">No certifications data found</p>
-                      )}
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              </Tabs>
-            </div>
-          )}
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="skills">
+                <Card>
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-medium mb-4">Skills</h3>
+                    <div className="space-y-4">
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {resumeData.skills.map((skill, index) => (
+                          <Badge key={index} variant="secondary" className="px-3 py-1">{skill}</Badge>
+                        ))}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Skills (comma separated)</label>
+                        <textarea 
+                          value={resumeData.skills.join(', ')}
+                          onChange={(e) => {
+                            const skills = e.target.value.split(',').map(skill => skill.trim()).filter(skill => skill);
+                            setResumeData(prev => ({ ...prev, skills }));
+                          }}
+                          rows={3}
+                          className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="JavaScript, React, Node.js, Python..."
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="additional">
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-medium">Certifications</h3>
+                      <Button 
+                        onClick={() => setResumeData(prev => ({
+                          ...prev,
+                          certifications: [...prev.certifications, {
+                            name: "",
+                            issuer: "",
+                            date: ""
+                          }]
+                        }))}
+                        className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add Certification
+                      </Button>
+                    </div>
+                    
+                    <div className="space-y-4 mb-8">
+                      {resumeData.certifications.map((cert, index) => (
+                        <div key={index} className="border border-gray-200 rounded-lg p-4">
+                          <div className="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Certification Name</label>
+                              <input 
+                                type="text" 
+                                value={cert.name} 
+                                onChange={(e) => {
+                                  const updatedCertifications = [...resumeData.certifications];
+                                  updatedCertifications[index].name = e.target.value;
+                                  setResumeData(prev => ({ ...prev, certifications: updatedCertifications }));
+                                }}
+                                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                placeholder="AWS Certified Developer"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Issuing Organization</label>
+                              <input 
+                                type="text" 
+                                value={cert.issuer} 
+                                onChange={(e) => {
+                                  const updatedCertifications = [...resumeData.certifications];
+                                  updatedCertifications[index].issuer = e.target.value;
+                                  setResumeData(prev => ({ ...prev, certifications: updatedCertifications }));
+                                }}
+                                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                placeholder="Amazon Web Services"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                            <input 
+                              type="text" 
+                              value={cert.date || ''} 
+                              onChange={(e) => {
+                                const updatedCertifications = [...resumeData.certifications];
+                                updatedCertifications[index].date = e.target.value;
+                                setResumeData(prev => ({ ...prev, certifications: updatedCertifications }));
+                              }}
+                              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                              placeholder="2022"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-medium">Projects</h3>
+                      <Button 
+                        className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add Project
+                      </Button>
+                    </div>
+                    <p className="text-gray-500 text-sm">Add your notable projects here.</p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </div>
 
           {/* Action Buttons at Bottom */}
           <div className="flex gap-4 pt-6">
             <Button 
               onClick={() => setShowPreview(true)}
               className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-8 py-3"
-              disabled={!extractedData && !showManualForm && !useDefaultResume}
             >
               <Eye className="w-4 h-4" />
               Generate Resume
             </Button>
             <Button 
-              onClick={handleGenerateWithAI}
-              className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-8 py-3"
-              disabled={!extractedData && !showManualForm && !useDefaultResume}
+              onClick={() => console.log("Generate Best AI Resume")}
+              className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-8 py-3"
             >
               <Eye className="w-4 h-4" />
               Generate Best AI Resume
             </Button>
             <Button 
-              onClick={handleGenerateFromBackend}
-              className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-8 py-3"
-              disabled={!extractedData && !showManualForm && !useDefaultResume}
+              onClick={() => console.log("Generate AI Enhanced Resume")}
+              className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-8 py-3"
             >
               <Eye className="w-4 h-4" />
               Generate AI Enhanced Resume (100% ATS)
