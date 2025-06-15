@@ -57,6 +57,7 @@ const ResumeBuilderApp = () => {
   const preselectedTemplate = searchParams.get('template');
   
   const [selectedTemplate, setSelectedTemplate] = useState<string>(preselectedTemplate || '');
+  
   const [resumeData, setResumeData] = useState<ResumeData>({
     personalInfo: {
       name: "John Doe",
@@ -326,7 +327,7 @@ const ResumeBuilderApp = () => {
         )}
         
         {/* Main content area */}
-        <div className={`flex-1 ${preselectedTemplate ? 'w-full' : ''}`}>
+        <div className="flex-1 w-full">
           {/* Header with back button when template is preselected */}
           {preselectedTemplate && (
             <div className="bg-white border-b border-gray-200 px-6 py-4">
@@ -362,7 +363,7 @@ const ResumeBuilderApp = () => {
           {/* Form and Preview */}
           <div className="flex flex-1">
             {/* Form Section */}
-            <div className={`${preselectedTemplate ? 'w-1/2' : 'w-2/3'} p-6 overflow-y-auto max-h-screen`}>
+            <div className="w-1/2 p-6 overflow-y-auto max-h-screen">
               <Tabs defaultValue="personal" className="w-full">
                 <TabsList className="mb-4">
                   <TabsTrigger value="personal">Personal Info</TabsTrigger>
@@ -737,7 +738,7 @@ const ResumeBuilderApp = () => {
             </div>
             
             {/* Preview Section */}
-            <div className={`${preselectedTemplate ? 'w-1/2' : 'w-1/3'} bg-gray-100 p-6 overflow-y-auto max-h-screen`}>
+            <div className="w-1/2 bg-gray-100 p-6 overflow-y-auto max-h-screen">
               <div className="bg-white shadow-md rounded-md p-4 mb-4">
                 <h2 className="text-xl font-semibold mb-2">Resume Preview</h2>
                 <p className="text-gray-500 text-sm">
