@@ -504,96 +504,95 @@ const ResumeBuilderApp = () => {
 
         {/* Step 1: Template Selection */}
         {currentStep === 1 && (
-          <Card>
+          <Card className="shadow-none border-none bg-transparent">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-2xl font-bold mb-2">
                 <Palette className="h-5 w-5" />
                 Step 1: Choose Your Template
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+              {/* New Large Resume Style Template Grid */}
+              <div className="w-full flex flex-wrap justify-center gap-10 mb-8">
                 {templates.map((template) => (
-                  <Card
+                  <div
                     key={template.id}
-                    className={`cursor-pointer transition-all duration-300 hover:shadow-xl group ${
-                      selectedTemplate === template.id
-                        ? "ring-2 ring-blue-500 shadow-xl"
-                        : "hover:shadow-lg"
-                    }`}
                     onClick={() => handleTemplateSelect(template.id)}
+                    className={`
+                      group flex flex-col items-center cursor-pointer transition-all duration-300
+                      ${selectedTemplate === template.id
+                        ? "ring-4 ring-blue-600 shadow-2xl"
+                        : "hover:ring-2 hover:ring-blue-400 hover:shadow-xl"
+                      }
+                      bg-white rounded-xl p-4
+                    `}
                   >
-                    <CardContent className="p-0">
-                      <div className="relative overflow-hidden">
-                        <img
-                          src={template.thumbnail}
-                          alt={template.name}
-                          className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
-                          onError={(e) => {
-                            e.currentTarget.src = "/resume-templates/thumbnails/professional.png";
-                          }}
-                        />
-                        
-                        {/* Preview Button */}
-                        <div className="absolute bottom-3 right-3">
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={e => {
-                              e.stopPropagation();
-                              setPreviewTemplate(template.id);
-                              setShowPreview(true);
-                            }}
-                          >
-                            Preview
-                          </Button>
-                        </div>
-
-                        {/* Selection Indicator */}
-                        {selectedTemplate === template.id && (
-                          <div className="absolute top-3 right-3">
-                            <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                              </svg>
-                            </div>
-                          </div>
+                    {/* Resume-Style Big Card Thumbnail */}
+                    <div
+                      className="
+                        bg-white rounded-lg shadow-lg overflow-hidden relative
+                        flex items-center justify-center
+                        w-[320px] md:w-[330px] lg:w-[340px] xl:w-[360px]
+                        h-[460px] md:h-[470px] lg:h-[500px]
+                        aspect-[210/297]
+                        border border-gray-200
+                        mb-4
+                        transition-transform duration-300
+                        group-hover:scale-[1.04]
+                        "
+                      style={{
+                        boxShadow: selectedTemplate === template.id
+                          ? '0 8px 32px 0 rgba(30,64,175,0.25)'
+                          : '0 6px 24px 0 rgba(30,64,175,0.08)'
+                      }}
+                    >
+                      <img
+                        src={template.thumbnail}
+                        alt={template.name}
+                        className="object-contain w-full h-full bg-white"
+                        style={{ backgroundColor: 'white', borderRadius: 10 }}
+                        onError={e => {
+                          e.currentTarget.src = "/resume-templates/thumbnails/professional.png";
+                        }}
+                      />
+                      {/* Selection Overlay */}
+                      {selectedTemplate === template.id && (
+                        <div className="absolute inset-0 pointer-events-none border-[3.5px] border-blue-700 rounded-lg"></div>
+                      )}
+                    </div>
+                    {/* Template Name + Description */}
+                    <div className="flex flex-col items-center w-[320px] md:w-[330px] lg:w-[340px] xl:w-[360px]">
+                      <div className="font-semibold text-xl text-gray-900 mb-1">{template.name}</div>
+                      <div className="text-gray-500 text-sm mb-1 text-center">{template.description}</div>
+                      {/* Badges (if relevant) */}
+                      <div className="flex flex-wrap justify-center gap-2 mb-1">
+                        {template.isRecommended && (
+                          <Badge className="bg-blue-500 text-white text-xs">Recommended</Badge>
                         )}
-
-                        {/* Badges */}
-                        <div className="absolute top-3 left-3 flex flex-col gap-1">
-                          {template.isRecommended && (
-                            <Badge className="bg-blue-500 text-white text-xs">Recommended</Badge>
-                          )}
-                          {template.isPopular && (
-                            <Badge className="bg-orange-500 text-white text-xs">Popular</Badge>
-                          )}
-                          {template.isPremium && (
-                            <Badge className="bg-purple-500 text-white text-xs">Premium</Badge>
-                          )}
-                          {template.isNew && (
-                            <Badge className="bg-green-500 text-white text-xs">New</Badge>
-                          )}
-                        </div>
+                        {template.isPopular && (
+                          <Badge className="bg-orange-400 text-white text-xs">Popular</Badge>
+                        )}
+                        {template.isPremium && (
+                          <Badge className="bg-purple-500 text-white text-xs">Premium</Badge>
+                        )}
+                        {template.isNew && (
+                          <Badge className="bg-green-500 text-white text-xs">New</Badge>
+                        )}
                       </div>
-
-                      <div className="p-4">
-                        <h3 className="font-semibold text-lg mb-2 text-gray-900">{template.name}</h3>
-                        <p className="text-gray-600 text-sm">{template.description}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 ))}
               </div>
-
-              <div className="flex justify-end">
+              {/* Actions row */}
+              <div className="flex justify-end mt-6">
                 <Button 
                   onClick={goToStep2} 
                   disabled={!selectedTemplate}
-                  className="bg-blue-600 hover:bg-blue-700"
+                  className="bg-blue-600 hover:bg-blue-700 px-8 text-lg font-semibold shadow-lg"
+                  size="lg"
                 >
                   Next: Add Resume Data
-                  <ArrowRight className="w-4 h-4 ml-2" />
+                  <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </div>
             </CardContent>
