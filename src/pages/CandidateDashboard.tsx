@@ -105,7 +105,7 @@ const featureTypes = [
     title: "Resume Builder", 
     icon: FileText, 
     description: "Create professional resumes with our template library.", 
-    route: "/resume-builder",
+    route: "/resume-builder-app",
     category: "creation",
     premium: false,
     color: "from-purple-500 to-pink-500"
@@ -332,7 +332,7 @@ const CandidateDashboard = () => {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-0 hover:shadow-xl transition-all duration-300 cursor-pointer" onClick={() => navigate('/resume-builder')}>
+          <Card className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-0 hover:shadow-xl transition-all duration-300 cursor-pointer" onClick={() => navigate('/resume-builder-app')}>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>

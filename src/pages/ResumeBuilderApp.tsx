@@ -14,6 +14,7 @@ import { resumeBuilderApi } from '@/utils/resumeBuilderApi';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useResume } from '@/contexts/resume/ResumeContext';
+import Handlebars from 'handlebars';
 
 // Template data for step 1
 const templates = [
@@ -125,6 +126,11 @@ const ResumeBuilderApp = () => {
   const [activeTab, setActiveTab] = useState('personal');
   const [dataSource, setDataSource] = useState('manual'); // 'manual', 'upload', or 'default'
   const [defaultResumeData, setDefaultResumeData] = useState(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewTemplate, setPreviewTemplate] = useState<string | null>(null);
+  const [templateHtml, setTemplateHtml] = useState<string>("");
+  const [sampleResumeData, setSampleResumeData] = useState<any>(null);
+  const [useSampleData, setUseSampleData] = useState(true); // Always use sample data for preview for now
   const { toast } = useToast();
 
   // Fetch default resume data from backend API with better error handling
@@ -167,6 +173,35 @@ const ResumeBuilderApp = () => {
     };
     loadDefaultResume();
   }, []);
+
+  // Load sample resume data for preview
+  useEffect(() => {
+    if (showPreview && !sampleResumeData) {
+      fetch('/resume-templates/sample-data.json')
+        .then(res => res.json())
+        .then(data => setSampleResumeData(data))
+        .catch(() => setSampleResumeData(null));
+    }
+  }, [showPreview, sampleResumeData]);
+
+  // Load and compile template HTML for preview
+  useEffect(() => {
+    if (showPreview && previewTemplate) {
+      const loadTemplate = async () => {
+        try {
+          const response = await fetch(`/resume-templates/html/${previewTemplate}.html`);
+          const html = await response.text();
+          // Use sample data for preview
+          const dataForPreview = useSampleData && sampleResumeData ? sampleResumeData : resumeData;
+          const compiled = Handlebars.compile(html)(dataForPreview);
+          setTemplateHtml(compiled);
+        } catch (error) {
+          setTemplateHtml('<p>Failed to load template</p>');
+        }
+      };
+      loadTemplate();
+    }
+  }, [showPreview, previewTemplate, resumeData, sampleResumeData, useSampleData]);
 
   // Handle template selection
   const handleTemplateSelect = (templateId: string) => {
@@ -679,6 +714,21 @@ const ResumeBuilderApp = () => {
                           }}
                         />
                         
+                        {/* Preview Button */}
+                        <div className="absolute bottom-3 right-3">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={e => {
+                              e.stopPropagation();
+                              setPreviewTemplate(template.id);
+                              setShowPreview(true);
+                            }}
+                          >
+                            Preview
+                          </Button>
+                        </div>
+
                         {/* Selection Indicator */}
                         {selectedTemplate === template.id && (
                           <div className="absolute top-3 right-3">
@@ -1324,6 +1374,32 @@ const ResumeBuilderApp = () => {
               </div>
             </div>
           </>
+        )}
+
+        {/* Preview Modal */}
+        {showPreview && previewTemplate && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+              <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                <div>
+                  <h2 className="text-xl font-semibold">Template Preview</h2>
+                  <p className="text-sm text-gray-600">
+                    {templates.find(t => t.id === previewTemplate)?.name}
+                  </p>
+                </div>
+                <Button variant="outline" onClick={() => setShowPreview(false)}>
+                  Close
+                </Button>
+              </div>
+              <div className="p-4 overflow-auto max-h-[calc(90vh-80px)]">
+                <div
+                  className="bg-white shadow-lg rounded-lg overflow-hidden"
+                  dangerouslySetInnerHTML={{ __html: templateHtml }}
+                  style={{ fontFamily: 'Arial, sans-serif', lineHeight: '1.6', color: '#333' }}
+                />
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>

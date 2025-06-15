@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -28,7 +27,6 @@ import ResumeThumbnailGenerator from '@/pages/admin/ResumeThumbnailGenerator';
 // Service pages
 import ResumeOptimizer from '@/pages/ResumeOptimizer';
 import ResumeCustomizer from '@/pages/ResumeCustomizer';
-import ResumeBuilder from '@/pages/services/ResumeBuilder';
 import ResumeBuilderApp from '@/pages/ResumeBuilderApp';
 import ResumePreview from '@/pages/ResumePreview';
 import ResumeTemplateDemo from '@/pages/ResumeTemplateDemo';
@@ -157,7 +155,6 @@ const App = () => {
                   </CandidateProtectedRoute>
                 } 
               />
-              <Route path="/resume-builder" element={<ResumeBuilder />} />
               <Route 
                 path="/resume-builder-app" 
                 element={
