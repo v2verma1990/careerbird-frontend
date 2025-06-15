@@ -1,11 +1,10 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, ArrowRight, Star, Crown, Sparkles, Palette } from "lucide-react";
+import { Eye, ArrowRight, Star, Crown, Sparkles, Palette, X } from "lucide-react";
 
 interface Template {
   id: string;
@@ -25,6 +24,23 @@ const ResumeBuilder = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
   const [activeFilter, setActiveFilter] = useState("all");
   const [selectedColor, setSelectedColor] = useState("all");
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewTemplate, setPreviewTemplate] = useState<string>("");
+  const [sampleData, setSampleData] = useState<any>(null);
+
+  // Load sample data
+  useEffect(() => {
+    const loadSampleData = async () => {
+      try {
+        const response = await fetch('/resume-templates/sample-data.json');
+        const data = await response.json();
+        setSampleData(data);
+      } catch (error) {
+        console.error('Failed to load sample data:', error);
+      }
+    };
+    loadSampleData();
+  }, []);
 
   const templates: Template[] = [
     {
@@ -146,6 +162,17 @@ const ResumeBuilder = () => {
     setSelectedTemplate(templateId);
   };
 
+  const handlePreview = (templateId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setPreviewTemplate(templateId);
+    setShowPreview(true);
+  };
+
+  const handleClosePreview = () => {
+    setShowPreview(false);
+    setPreviewTemplate("");
+  };
+
   const handleContinue = () => {
     if (selectedTemplate) {
       navigate(`/resume-builder-app?template=${selectedTemplate}`);
@@ -155,6 +182,69 @@ const ResumeBuilder = () => {
   const handleSkipForNow = () => {
     navigate('/resume-builder-app');
   };
+
+  // Show preview modal
+  if (showPreview && previewTemplate) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+          {/* Preview Header */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-200">
+            <div>
+              <h2 className="text-xl font-semibold">Template Preview</h2>
+              <p className="text-sm text-gray-600">
+                {templates.find(t => t.id === previewTemplate)?.name}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => {
+                  setSelectedTemplate(previewTemplate);
+                  handleClosePreview();
+                }}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                Use This Template
+              </Button>
+              <Button variant="outline" onClick={handleClosePreview}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+          
+          {/* Preview Content */}
+          <div className="p-4 overflow-auto max-h-[calc(90vh-80px)]">
+            <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+              <iframe
+                src={`/resume-templates/html/${previewTemplate}.html`}
+                className="w-full h-[800px] border-0"
+                title="Template Preview"
+                onLoad={(e) => {
+                  // Inject sample data into the iframe
+                  if (sampleData) {
+                    try {
+                      const iframe = e.target as HTMLIFrameElement;
+                      setTimeout(() => {
+                        iframe.contentWindow?.postMessage({ 
+                          type: 'POPULATE_RESUME_DATA', 
+                          data: sampleData 
+                        }, '*');
+                      }, 500);
+                    } catch (error) {
+                      console.log('Could not inject sample data into preview:', error);
+                    }
+                  }
+                }}
+                onError={() => {
+                  console.error(`Failed to load template: ${previewTemplate}.html`);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -291,7 +381,12 @@ const ResumeBuilder = () => {
 
                     {/* Preview Button - appears on hover */}
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <Button variant="secondary" size="sm" className="bg-white/90 hover:bg-white">
+                      <Button 
+                        variant="secondary" 
+                        size="sm" 
+                        className="bg-white/90 hover:bg-white"
+                        onClick={(e) => handlePreview(template.id, e)}
+                      >
                         <Eye className="w-4 h-4 mr-2" />
                         Preview
                       </Button>
