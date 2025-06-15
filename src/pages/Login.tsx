@@ -17,46 +17,81 @@ const Login = () => {
   
   // Redirect if user is already authenticated
   useEffect(() => {
+    // If we're restoring the session, don't do anything yet
     if (restoringSession) {
       return;
     }
     
+    // Only redirect if we have all the necessary user data
     if (user && userType && subscriptionStatus) {
       console.log("Login: User authenticated, redirecting", { userType, subscriptionType: subscriptionStatus?.type });
       
-      if (userType === 'recruiter') {
-        navigate('/dashboard', { replace: true });
-      } else if (userType === 'candidate') {
-        if (subscriptionStatus?.type === 'free') {
-          navigate('/free-plan-dashboard', { replace: true });
+      // Set loading state to true to prevent UI flickering during navigation
+      setIsLoading(true);
+      
+      // Use a short timeout to ensure smooth transition
+      setTimeout(() => {
+        if (userType === 'recruiter') {
+          navigate('/dashboard', { replace: true });
+        } else if (userType === 'candidate') {
+          if (subscriptionStatus?.type === 'free') {
+            navigate('/free-plan-dashboard', { replace: true });
+          } else {
+            navigate('/candidate-dashboard', { replace: true });
+          }
         } else {
-          navigate('/candidate-dashboard', { replace: true });
+          navigate('/', { replace: true });
         }
-      } else {
-        navigate('/', { replace: true });
-      }
+      }, 100);
     }
   }, [user, userType, subscriptionStatus, restoringSession, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate inputs before attempting login
+    if (!email || !password) {
+      toast({
+        variant: "destructive",
+        title: "Login Failed",
+        description: "Please enter both email and password."
+      });
+      return;
+    }
+    
+    // Set loading state to show spinner and disable form
     setIsLoading(true);
     
     try {
+      // The signIn function in AuthContext already handles navigation
       await signIn(email, password);
+      
+      // Keep loading state true since we're navigating away
+      // This prevents UI flickering during transition
     } catch (error: any) {
+      // Only show error and reset loading state if login failed
       toast({
         variant: "destructive",
         title: "Login Failed",
         description: error.message || "Could not sign you in. Please check your credentials and try again."
       });
-    } finally {
       setIsLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
+      {/* Loading overlay - shown during session restoration or login process */}
+      {(restoringSession || isLoading) && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-lg shadow-xl flex flex-col items-center">
+            <div className="w-12 h-12 border-4 border-t-blue-600 border-r-transparent border-b-blue-600 border-l-transparent rounded-full animate-spin mb-4"></div>
+            <p className="text-lg font-medium text-gray-700">
+              {restoringSession ? "Checking your session..." : "Signing you in..."}
+            </p>
+          </div>
+        </div>
+      )}
       <div className="flex flex-col lg:flex-row w-full max-w-6xl shadow-2xl rounded-2xl overflow-hidden bg-white">
         {/* Video Demo Section */}
         <div className="lg:w-1/2 bg-gradient-to-br from-blue-600 to-indigo-700 p-8 flex flex-col justify-center">

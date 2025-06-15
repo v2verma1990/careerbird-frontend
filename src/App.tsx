@@ -4,11 +4,12 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/contexts/auth/AuthContext';
 import { ResumeProvider } from '@/contexts/resume/ResumeContext';
+import { ResumeColorProvider, useInitResumeColors } from '@/contexts/resume/ResumeColorContext';
 import { Toaster } from '@/components/ui/toaster';
 import CookieConsent from '@/components/CookieConsent';
 
 // Auth pages
-import Login from '@/pages/auth/Login';
+import Login from '@/pages/Login';
 import Signup from '@/pages/auth/Signup';
 
 // Main pages
@@ -22,6 +23,7 @@ import Upgrade from '@/pages/Upgrade';
 import AccountPage from '@/pages/AccountPage';
 import NotFound from '@/pages/NotFound';
 import DashboardRedirect from '@/pages/DashboardRedirect';
+import ResumeThumbnailGenerator from '@/pages/admin/ResumeThumbnailGenerator';
 
 // Service pages
 import ResumeOptimizer from '@/pages/ResumeOptimizer';
@@ -29,6 +31,7 @@ import ResumeCustomizer from '@/pages/ResumeCustomizer';
 import ResumeBuilder from '@/pages/services/ResumeBuilder';
 import ResumeBuilderApp from '@/pages/ResumeBuilderApp';
 import ResumePreview from '@/pages/ResumePreview';
+import ResumeTemplateDemo from '@/pages/ResumeTemplateDemo';
 import AtsScanner from '@/pages/AtsScanner';
 import SalaryInsights from '@/pages/SalaryInsights';
 import CoverLetterGenerator from '@/pages/CoverLetterGenerator';
@@ -57,12 +60,16 @@ import Navbar from '@/components/Navbar';
 const queryClient = new QueryClient();
 
 const App = () => {
+  // Initialize resume colors from localStorage if available
+  const initialColors = useInitResumeColors();
+  
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
         <AuthProvider>
           <ResumeProvider>
-            <div className="App">
+            <ResumeColorProvider initialColors={initialColors}>
+              <div className="App">
               <Navbar />
               <Routes>
               {/* Auth routes */}
@@ -167,6 +174,7 @@ const App = () => {
                   </CandidateProtectedRoute>
                 } 
               />
+              <Route path="/resume-templates" element={<ResumeTemplateDemo />} />
               <Route 
                 path="/ats-scanner" 
                 element={
@@ -226,6 +234,9 @@ const App = () => {
                 } 
               />
               
+              {/* Admin routes */}
+              <Route path="/admin/resume-thumbnails" element={<ResumeThumbnailGenerator />} />
+              
               {/* 404 route */}
               <Route path="*" element={<NotFound />} />
             </Routes>
@@ -233,6 +244,7 @@ const App = () => {
               <Toaster />
               <CookieConsent />
             </div>
+            </ResumeColorProvider>
           </ResumeProvider>
         </AuthProvider>
       </Router>

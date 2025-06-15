@@ -18,12 +18,11 @@ const Navbar = () => {
     }
   }, [user, restoringSession]);
 
-  // Clear auth state completely on logout
+  // Handle logout through the AuthContext
   const handleLogout = async () => {
     console.log("Logging out user");
     await signOut();
-    // Force a page reload to ensure all state is cleared
-    window.location.href = '/';
+    // No need to force a page reload - the AuthContext will handle navigation
   };
 
   // Don't show navbar on dashboard pages (they have TopNavigation)

@@ -380,6 +380,9 @@ export const AuthProvider = ({ children }) => {
     try {
       console.log("Signing out user");
       
+      // Set restoring session to true to prevent flickering during logout
+      setRestoringSession(true);
+      
       // Log the sign out activity if user exists
       if (user) {
         try {
@@ -392,26 +395,13 @@ export const AuthProvider = ({ children }) => {
         }
       }
       
-      // Clear all auth-related state
-      setSession(null);
-      setUser(null);
-      setUserType(null);
-      setProfile(null);
-      setSubscriptionStatus(null);
-      
-      // Also clear any Supabase session
-      try {
-        await supabase.auth.signOut();
-      } catch (error) {
-        console.error("Error during Supabase signOut:", error);
-      }
-      
-      // Call the logout API
-      try {
-        await api.auth.logout();
-      } catch (error) {
-        console.error("Error during API logout:", error);
-      }
+      // Batch all API calls in parallel to speed up logout
+      await Promise.allSettled([
+        // Clear Supabase session
+        supabase.auth.signOut(),
+        // Call the logout API
+        api.auth.logout()
+      ]);
       
       // Clear any local storage items related to auth
       localStorage.removeItem("supabase-auth");
@@ -419,8 +409,20 @@ export const AuthProvider = ({ children }) => {
       // Show success toast
       toast({ title: "Signed out successfully" });
       
+      // Clear all auth-related state in a single batch
+      setSession(null);
+      setUser(null);
+      setUserType(null);
+      setProfile(null);
+      setSubscriptionStatus(null);
+      
       // Navigate to home page
       navigate('/', { replace: true });
+      
+      // Set restoring session to false after a short delay
+      setTimeout(() => {
+        setRestoringSession(false);
+      }, 300);
       
       console.log("Sign out complete");
     } catch (error) {
@@ -432,6 +434,9 @@ export const AuthProvider = ({ children }) => {
       setUserType(null);
       setProfile(null);
       setSubscriptionStatus(null);
+      
+      // Set restoring session to false
+      setRestoringSession(false);
     }
   };
 
