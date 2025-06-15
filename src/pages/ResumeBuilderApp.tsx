@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -56,6 +56,7 @@ const initialData = {
 
 const ResumeBuilderApp = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const selectedTemplate = searchParams.get('template') || 'modern-executive';
   const [resumeData, setResumeData] = useState(initialData);
   const [isLoading, setIsLoading] = useState(false);
@@ -404,19 +405,16 @@ const ResumeBuilderApp = () => {
       }
 
       if (result.data?.html) {
-        const blob = new Blob([result.data.html], { type: 'text/html' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `resume-${selectedTemplate}.html`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        // Navigate to preview page with the generated HTML
+        const params = new URLSearchParams({
+          template: selectedTemplate,
+          data: encodeURIComponent(JSON.stringify(resumeData))
+        });
+        navigate(`/resume-preview?${params.toString()}`);
 
         toast({
           title: "Success!",
-          description: "Your resume has been generated and downloaded.",
+          description: "Your resume has been generated. You can now preview and download it.",
         });
       }
     } catch (error) {
@@ -451,19 +449,17 @@ const ResumeBuilderApp = () => {
       }
 
       if (result.data?.html) {
-        const blob = new Blob([result.data.html], { type: 'text/html' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `ai-resume-${selectedTemplate}.html`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        // Navigate to preview page with the generated HTML
+        const params = new URLSearchParams({
+          template: selectedTemplate,
+          data: encodeURIComponent(JSON.stringify(resumeData)),
+          aiEnhanced: 'true'
+        });
+        navigate(`/resume-preview?${params.toString()}`);
 
         toast({
           title: "Success!",
-          description: "Your AI-enhanced resume has been generated and downloaded.",
+          description: "Your AI-enhanced resume has been generated. You can now preview and download it.",
         });
       }
     } catch (error) {
@@ -499,19 +495,18 @@ const ResumeBuilderApp = () => {
       }
 
       if (result.data?.html) {
-        const blob = new Blob([result.data.html], { type: 'text/html' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `ai-enhanced-resume-${selectedTemplate}.html`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        // Navigate to preview page with the generated HTML
+        const params = new URLSearchParams({
+          template: selectedTemplate,
+          data: encodeURIComponent(JSON.stringify(resumeData)),
+          aiEnhanced: 'true',
+          premium: 'true'
+        });
+        navigate(`/resume-preview?${params.toString()}`);
 
         toast({
           title: "Success!",
-          description: "Your premium AI-enhanced resume has been generated and downloaded.",
+          description: "Your premium AI-enhanced resume has been generated. You can now preview and download it.",
         });
       }
     } catch (error) {
