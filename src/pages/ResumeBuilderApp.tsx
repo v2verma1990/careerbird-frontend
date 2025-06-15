@@ -74,54 +74,25 @@ const ResumeBuilderApp = () => {
         return null;
       }
 
-      console.log('Fetching default resume data...');
+      console.log('Fetching default resume data from profile_metadata...');
       
-      const response = await fetch('https://localhost:5001/api/resume/default', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      // Try to get from profile_metadata table directly
+      const { data: profileData, error: profileError } = await supabase
+        .from('profile_metadata')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .single();
 
-      console.log('Default resume API response status:', response.status);
-
-      if (!response.ok) {
-        if (response.status === 404) {
-          console.log('No default resume found (404)');
-          return null;
-        }
-        const errorText = await response.text();
-        console.error('Error response:', errorText);
-        throw new Error(`Failed to fetch default resume: ${response.status} - ${errorText}`);
-      }
-
-      const data = await response.json();
-      console.log('Default resume data fetched successfully:', data);
-      return data;
-    } catch (error) {
-      console.error('Error fetching default resume:', error);
-      // If it's a network error, try to get the data from Supabase directly
-      try {
-        console.log('Trying to fetch from Supabase directly...');
-        const { data: resumeData, error: resumeError } = await supabase
-          .from('resume_metadata')
-          .select('*')
-          .eq('user_id', session?.user?.id)
-          .eq('is_default', true)
-          .single();
-
-        if (resumeError) {
-          console.log('Supabase query error:', resumeError);
-          return null;
-        }
-
-        console.log('Found default resume in Supabase:', resumeData);
-        return resumeData;
-      } catch (supabaseError) {
-        console.error('Supabase fallback also failed:', supabaseError);
+      if (profileError) {
+        console.log('Profile metadata query error:', profileError);
         return null;
       }
+
+      console.log('Found profile metadata:', profileData);
+      return profileData;
+    } catch (error) {
+      console.error('Error fetching default resume:', error);
+      return null;
     }
   };
 
@@ -189,7 +160,7 @@ const ResumeBuilderApp = () => {
       const blob = await fileResponse.blob();
       console.log('File downloaded successfully, blob size:', blob.size);
       
-      const file = new File([blob], defaultResumeData.fileName || 'default-resume.pdf', { type: blob.type });
+      const file = new File([blob], defaultResumeData.file_name || 'default-resume.pdf', { type: blob.type });
 
       // Call the backend API for resume optimization/extraction
       const formData = new FormData();
@@ -608,7 +579,7 @@ const ResumeBuilderApp = () => {
             </div>
             <div className="mt-2 text-sm text-gray-500">
               {defaultResumeData ? (
-                <p>✓ Default resume found: {defaultResumeData.fileName || 'Resume file'}</p>
+                <p>✓ Default resume found: {defaultResumeData.file_name || 'Resume file'}</p>
               ) : (
                 <p>No default resume found. Please upload one in your profile settings to use the extract feature.</p>
               )}
