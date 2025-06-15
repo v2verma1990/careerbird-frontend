@@ -79,8 +79,7 @@ const BestCandidates = () => {
 
       // Make API request to find best candidates
       const { data, error } = await api.jobs.findBestCandidates({
-        description: jobDescription,
-        candidateCount: candidateCount
+        description: jobDescription
       });
       
       if (error) {
