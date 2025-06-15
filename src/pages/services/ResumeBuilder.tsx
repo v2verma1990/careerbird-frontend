@@ -298,6 +298,16 @@ const ResumeBuilder = () => {
       category: "classic",
       color: "blue",
       isNew: true
+    },
+    {
+      id: "green-sidebar-receptionist",
+      name: "Green Sidebar Receptionist",
+      description: "Fresh and approachable sidebar template matching receptionist roles",
+      thumbnail: "/lovable-uploads/e72aeeac-84f9-493e-85af-c1994a03dc55.png",
+      category: "classic",
+      color: "green",
+      isNew: true,
+      isRecommended: false
     }
   ];
 
