@@ -87,9 +87,73 @@ export type Database = {
         }
         Relationships: []
       }
+      profile_metadata: {
+        Row: {
+          blob_path: string | null
+          created_at: string | null
+          current_company: string | null
+          file_name: string | null
+          file_size: number | null
+          file_url: string | null
+          id: string
+          is_visible_to_recruiters: boolean | null
+          job_title: string | null
+          last_updated: string | null
+          location: string | null
+          phone_number: string | null
+          professional_bio: string | null
+          skills: string[] | null
+          updated_at: string | null
+          upload_date: string | null
+          user_id: string
+          years_of_experience: string | null
+        }
+        Insert: {
+          blob_path?: string | null
+          created_at?: string | null
+          current_company?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          file_url?: string | null
+          id?: string
+          is_visible_to_recruiters?: boolean | null
+          job_title?: string | null
+          last_updated?: string | null
+          location?: string | null
+          phone_number?: string | null
+          professional_bio?: string | null
+          skills?: string[] | null
+          updated_at?: string | null
+          upload_date?: string | null
+          user_id: string
+          years_of_experience?: string | null
+        }
+        Update: {
+          blob_path?: string | null
+          created_at?: string | null
+          current_company?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          file_url?: string | null
+          id?: string
+          is_visible_to_recruiters?: boolean | null
+          job_title?: string | null
+          last_updated?: string | null
+          location?: string | null
+          phone_number?: string | null
+          professional_bio?: string | null
+          skills?: string[] | null
+          updated_at?: string | null
+          upload_date?: string | null
+          user_id?: string
+          years_of_experience?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
+          default_resume_blob_name: string | null
           email: string | null
           id: string
           updated_at: string
@@ -97,6 +161,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          default_resume_blob_name?: string | null
           email?: string | null
           id: string
           updated_at?: string
@@ -104,6 +169,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          default_resume_blob_name?: string | null
           email?: string | null
           id?: string
           updated_at?: string
