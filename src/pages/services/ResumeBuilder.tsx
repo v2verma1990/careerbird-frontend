@@ -458,92 +458,61 @@ const ResumeBuilder = () => {
         </div>
 
         {/* Templates Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mb-16">
           {filteredTemplates.map((template) => (
-            <Card
+            <div
               key={template.id}
-              className={`cursor-pointer transition-all duration-300 hover:shadow-xl group ${
-                selectedTemplate === template.id
-                  ? "ring-2 ring-blue-500 shadow-xl"
-                  : "hover:shadow-lg"
-              }`}
+              className={`group relative p-0 rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-lg transition-all duration-200 cursor-pointer
+                ${selectedTemplate === template.id ? 'ring-2 ring-blue-500 shadow-xl' : ''}
+              `}
               onClick={() => handleTemplateSelect(template.id)}
+              style={{
+                minHeight: 440,
+                display: "flex",
+                flexDirection: "column"
+              }}
             >
-              <CardContent className="p-0">
-                {/* Template Preview */}
-                <div className="relative overflow-hidden">
+              {/* Badge Row */}
+              <div className="absolute top-4 left-4 z-10 flex space-x-2">
+                {template.isRecommended && (
+                  <span className="px-2 py-0.5 rounded-full text-xs bg-blue-500 text-white font-medium shadow-sm">Recommended</span>
+                )}
+                {template.isPopular && (
+                  <span className="px-2 py-0.5 rounded-full text-xs bg-orange-400 text-white font-medium shadow-sm">Popular</span>
+                )}
+                {template.isPremium && (
+                  <span className="px-2 py-0.5 rounded-full text-xs bg-purple-500 text-white font-medium shadow-sm">Premium</span>
+                )}
+                {template.isNew && (
+                  <span className="px-2 py-0.5 rounded-full text-xs bg-green-500 text-white font-medium shadow-sm">New</span>
+                )}
+              </div>
+              {/* Resume Preview Thumbnail */}
+              <div className="p-0 pt-8 pb-0 flex-1 flex flex-col justify-start">
+                <div className="rounded-t-xl overflow-hidden relative aspect-[210/297] bg-gray-50 border border-dashed border-gray-200 flex items-center justify-center shadow-sm
+                  transition-all duration-150
+                ">
                   <img
                     src={template.thumbnail}
                     alt={template.name}
-                    className="w-full h-80 object-cover transition-transform duration-300 group-hover:scale-105"
-                    onError={(e) => {
+                    className="object-contain w-full h-full"
+                    style={{ maxHeight: 330, background: "white" }}
+                    onError={e => {
                       e.currentTarget.src = "/resume-templates/thumbnails/professional.png";
                     }}
                   />
-                  
-                  {/* Overlay with badges */}
-                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-300">
-                    {/* Badges */}
-                    <div className="absolute top-3 left-3 flex flex-col gap-2">
-                      {template.isRecommended && (
-                        <Badge className="bg-blue-500 text-white text-xs">
-                          <Star className="w-3 h-3 mr-1" />
-                          Recommended
-                        </Badge>
-                      )}
-                      {template.isPopular && (
-                        <Badge className="bg-orange-500 text-white text-xs">
-                          <Star className="w-3 h-3 mr-1" />
-                          Popular
-                        </Badge>
-                      )}
-                      {template.isPremium && (
-                        <Badge className="bg-purple-500 text-white text-xs">
-                          <Crown className="w-3 h-3 mr-1" />
-                          Premium
-                        </Badge>
-                      )}
-                      {template.isNew && (
-                        <Badge className="bg-green-500 text-white text-xs">
-                          <Sparkles className="w-3 h-3 mr-1" />
-                          New
-                        </Badge>
-                      )}
-                    </div>
-
-                    {/* Selection Indicator */}
-                    {selectedTemplate === template.id && (
-                      <div className="absolute top-3 right-3">
-                        <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                          <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Preview Button - appears on hover */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <Button 
-                        variant="secondary" 
-                        size="sm" 
-                        className="bg-white/90 hover:bg-white"
-                        onClick={(e) => handlePreview(template.id, e)}
-                      >
-                        <Eye className="w-4 h-4 mr-2" />
-                        Preview
-                      </Button>
-                    </div>
-                  </div>
+                  {/* Selection ring overlay */}
+                  {selectedTemplate === template.id && (
+                    <div className="absolute inset-0 border-4 border-blue-400 pointer-events-none rounded-lg" />
+                  )}
                 </div>
-
-                {/* Template Info */}
-                <div className="p-4">
-                  <h3 className="font-semibold text-lg mb-2 text-gray-900">{template.name}</h3>
-                  <p className="text-gray-600 text-sm">{template.description}</p>
-                </div>
-              </CardContent>
-            </Card>
+              </div>
+              {/* Card Info */}
+              <div className="px-6 py-4">
+                <div className="font-semibold text-[1.07rem] text-gray-900 mb-1 tracking-tight leading-tight">{template.name}</div>
+                <div className="text-gray-500 text-sm font-light">{template.description}</div>
+              </div>
+            </div>
           ))}
         </div>
 
