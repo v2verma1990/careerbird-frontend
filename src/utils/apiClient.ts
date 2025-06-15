@@ -8,19 +8,19 @@ export { SUPABASE_URL };
 // Determine the appropriate API base URL based on the environment
 const determineApiBaseUrl = () => {
 
-  
-  const isProduction = import.meta.env.PROD;
-  
-  const devBackendUrl = import.meta.env.VITE_API_URL;
-if (isProduction) {
-    console.log(`in production: ${import.meta.env.VITE_API_URL}`);
-    return '/api';
-  } else if (devBackendUrl) {
-  return devBackendUrl;
-  } else {
-  console.log(`else part: ${API_BASE_URL}`);
   return "http://localhost:5001/api";
-  }
+//   const isProduction = import.meta.env.PROD;
+  
+//   const devBackendUrl = import.meta.env.VITE_API_URL;
+// if (isProduction) {
+//     console.log(`in production: ${import.meta.env.VITE_API_URL}`);
+//     return '/api';
+//   } else if (devBackendUrl) {
+//   return devBackendUrl;
+//   } else {
+//   console.log(`else part: ${API_BASE_URL}`);
+//   return "http://localhost:5001/api";
+//   }
 };
 
 // Set the API base URL
