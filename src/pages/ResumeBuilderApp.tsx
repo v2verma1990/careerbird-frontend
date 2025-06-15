@@ -4,7 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Eye, ArrowRight, Star, Crown, Sparkles, Palette, ArrowLeft, Download, FileText } from "lucide-react";
+import { Eye, ArrowRight, Star, Crown, Sparkles, Palette, ArrowLeft, Download, FileText, Upload } from "lucide-react";
+import ResumeFileUploader from "@/components/ResumeFileUploader";
 
 interface ResumeData {
   personalInfo: {
@@ -58,6 +59,8 @@ const ResumeBuilderApp = () => {
   
   const [selectedTemplate, setSelectedTemplate] = useState<string>(preselectedTemplate || '');
   const [showPreview, setShowPreview] = useState(false);
+  const [dataSource, setDataSource] = useState<'manual' | 'extract' | null>(null);
+  const [useDefaultResume, setUseDefaultResume] = useState(false);
   
   const [resumeData, setResumeData] = useState<ResumeData>({
     personalInfo: {
@@ -304,8 +307,15 @@ const ResumeBuilderApp = () => {
     navigate('/resume-builder');
   };
 
+  const handleExtractResume = () => {
+    setDataSource('extract');
+  };
+
+  const handleEnterManually = () => {
+    setDataSource('manual');
+  };
+
   const handlePreview = () => {
-    // Create a simple preview instead of iframe
     setShowPreview(true);
   };
 
@@ -313,9 +323,13 @@ const ResumeBuilderApp = () => {
     setShowPreview(false);
   };
 
+  const handleBackToDataSource = () => {
+    setDataSource(null);
+  };
+
   // If template is preselected, show the builder interface
   if (preselectedTemplate) {
-    // Show preview screen
+    // Show preview screen with actual HTML template
     if (showPreview) {
       return (
         <div className="min-h-screen bg-gray-50">
@@ -351,61 +365,176 @@ const ResumeBuilderApp = () => {
             </div>
           </div>
           
-          {/* Simple Preview Content */}
+          {/* Template Preview using actual HTML */}
           <div className="flex justify-center p-6">
-            <div className="w-full max-w-4xl bg-white shadow-lg rounded-lg p-8">
-              <div className="text-center mb-6">
-                <h1 className="text-3xl font-bold text-gray-800">{resumeData.personalInfo.name}</h1>
-                <p className="text-xl text-gray-600 mb-4">{resumeData.personalInfo.title}</p>
-                <div className="flex justify-center gap-4 text-sm text-gray-500">
-                  <span>{resumeData.personalInfo.email}</span>
-                  <span>{resumeData.personalInfo.phone}</span>
-                  <span>{resumeData.personalInfo.location}</span>
-                </div>
-              </div>
-              
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-lg font-semibold border-b pb-2 mb-3">Professional Summary</h2>
-                  <p className="text-gray-700">{resumeData.summary}</p>
-                </div>
-                
-                <div>
-                  <h2 className="text-lg font-semibold border-b pb-2 mb-3">Experience</h2>
-                  {resumeData.experience.map((exp, index) => (
-                    <div key={index} className="mb-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <h3 className="font-medium">{exp.title}</h3>
-                          <p className="text-gray-600">{exp.company}</p>
-                        </div>
-                        <span className="text-sm text-gray-500">{exp.startDate} - {exp.endDate}</span>
-                      </div>
-                      <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
-                        {exp.responsibilities.map((resp, respIndex) => (
-                          <li key={respIndex}>{resp}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-                
-                <div>
-                  <h2 className="text-lg font-semibold border-b pb-2 mb-3">Skills</h2>
-                  <div className="flex flex-wrap gap-2">
-                    {resumeData.skills.map((skill, index) => (
-                      <Badge key={index} variant="secondary">{skill}</Badge>
-                    ))}
-                  </div>
-                </div>
-              </div>
+            <div className="w-full max-w-4xl bg-white shadow-lg rounded-lg overflow-hidden">
+              <iframe
+                src={`/resume-templates/html/${preselectedTemplate}.html`}
+                className="w-full h-[800px] border-0"
+                title="Resume Preview"
+                onError={() => {
+                  console.error(`Failed to load template: ${preselectedTemplate}.html`);
+                }}
+              />
             </div>
           </div>
         </div>
       );
     }
 
-    // Show form screen with action buttons
+    // Show data source selection if no source selected
+    if (!dataSource) {
+      return (
+        <div className="min-h-screen bg-gray-50">
+          {/* Header */}
+          <div className="bg-white border-b border-gray-200 px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="outline"
+                  onClick={() => navigate('/resume-builder')}
+                  className="flex items-center gap-2"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Change Template
+                </Button>
+                <div>
+                  <h1 className="text-xl font-semibold">Resume Builder</h1>
+                  <p className="text-sm text-gray-600">
+                    Using {templates.find(t => t.id === preselectedTemplate)?.name || 'Selected'} template
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Data Source Selection */}
+          <div className="max-w-2xl mx-auto p-6">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold mb-2">How would you like to create your resume?</h2>
+              <p className="text-gray-600">Choose your preferred method to get started</p>
+            </div>
+            
+            <div className="space-y-4">
+              {/* Default Resume Option */}
+              <ResumeFileUploader
+                onFileSelected={() => {}}
+                onUseDefaultResumeChange={(checked) => {
+                  setUseDefaultResume(checked);
+                  if (checked) {
+                    setDataSource('extract');
+                  }
+                }}
+                showDefaultResumeOption={true}
+              />
+              
+              {/* Extract Resume Option */}
+              <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleExtractResume}>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <Upload className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold">Extract from Resume</h3>
+                      <p className="text-gray-600">Upload your existing resume and we'll extract the information</p>
+                    </div>
+                    <ArrowRight className="w-5 h-5 text-gray-400" />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Enter Manually Option */}
+              <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleEnterManually}>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                      <FileText className="w-6 h-6 text-green-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold">Enter Manually</h3>
+                      <p className="text-gray-600">Start from scratch and fill in your information step by step</p>
+                    </div>
+                    <ArrowRight className="w-5 h-5 text-gray-400" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Show extract resume interface
+    if (dataSource === 'extract') {
+      return (
+        <div className="min-h-screen bg-gray-50">
+          {/* Header */}
+          <div className="bg-white border-b border-gray-200 px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="outline"
+                  onClick={handleBackToDataSource}
+                  className="flex items-center gap-2"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Back
+                </Button>
+                <div>
+                  <h1 className="text-xl font-semibold">Extract Resume Data</h1>
+                  <p className="text-sm text-gray-600">Upload your resume to extract information</p>
+                </div>
+              </div>
+              <Button 
+                onClick={handlePreview} 
+                className="flex items-center gap-2"
+              >
+                <Eye className="w-4 h-4" />
+                Preview
+              </Button>
+            </div>
+          </div>
+          
+          {/* File Upload Section */}
+          <div className="max-w-2xl mx-auto p-6">
+            <ResumeFileUploader
+              onFileSelected={(file) => {
+                if (file) {
+                  console.log("File selected for extraction:", file.name);
+                  // Here you would implement the extraction logic
+                }
+              }}
+              onDataExtracted={(data) => {
+                console.log("Data extracted:", data);
+                // Update resumeData with extracted data
+                setResumeData(prev => ({ ...prev, ...data }));
+              }}
+              setIsExtracting={(extracting) => {
+                console.log("Extracting:", extracting);
+              }}
+              showDefaultResumeOption={false}
+            />
+            
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-600 mb-4">
+                Once your resume is uploaded and processed, you can review and edit the extracted information.
+              </p>
+              <Button 
+                variant="outline" 
+                onClick={() => setDataSource('manual')}
+                className="flex items-center gap-2"
+              >
+                <FileText className="w-4 h-4" />
+                Enter Information Manually Instead
+              </Button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Show form screen (manual entry)
     return (
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
@@ -414,11 +543,11 @@ const ResumeBuilderApp = () => {
             <div className="flex items-center gap-4">
               <Button
                 variant="outline"
-                onClick={handleBackToTemplateSelection}
+                onClick={handleBackToDataSource}
                 className="flex items-center gap-2"
               >
                 <ArrowLeft className="w-4 h-4" />
-                Change Template
+                Back
               </Button>
               <div>
                 <h1 className="text-xl font-semibold">Resume Builder</h1>
@@ -860,6 +989,17 @@ const ResumeBuilderApp = () => {
                     />
                     <h3 className="font-medium">{template.name}</h3>
                     <p className="text-sm text-gray-500">{template.description}</p>
+                    {selectedTemplate === template.id && (
+                      <Button 
+                        className="w-full mt-3"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/resume-builder-app?template=${template.id}`);
+                        }}
+                      >
+                        Use This Template
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               ))}
@@ -867,12 +1007,31 @@ const ResumeBuilderApp = () => {
           </div>
         </div>
         
-        {/* Main content area for template selection */}
+        {/* Preview Panel */}
         <div className="flex-1 p-6">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold mb-4">Select a Resume Template</h1>
-            <p className="text-gray-600">Choose a template from the sidebar to get started with your resume.</p>
-          </div>
+          {selectedTemplate ? (
+            <div className="text-center">
+              <h1 className="text-2xl font-bold mb-4">Template Preview</h1>
+              <div className="bg-white shadow-lg rounded-lg overflow-hidden max-w-2xl mx-auto">
+                <iframe
+                  src={`/resume-templates/html/${selectedTemplate}.html`}
+                  className="w-full h-[600px] border-0"
+                  title="Template Preview"
+                />
+              </div>
+              <Button 
+                className="mt-4"
+                onClick={() => navigate(`/resume-builder-app?template=${selectedTemplate}`)}
+              >
+                Use This Template
+              </Button>
+            </div>
+          ) : (
+            <div className="text-center">
+              <h1 className="text-3xl font-bold mb-4">Select a Resume Template</h1>
+              <p className="text-gray-600">Choose a template from the sidebar to see the preview.</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
