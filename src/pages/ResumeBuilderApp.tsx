@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -67,6 +68,7 @@ const ResumeBuilderApp = () => {
   const [defaultResumeData, setDefaultResumeData] = useState<any>(null);
   const [extractedData, setExtractedData] = useState<any>(null);
   const [showFileUploader, setShowFileUploader] = useState(false);
+  const [isExtracting, setIsExtracting] = useState(false);
   
   // Initialize with dummy data that's always visible
   const [resumeData, setResumeData] = useState<ResumeData>({
@@ -214,26 +216,34 @@ const ResumeBuilderApp = () => {
   const handleUploadResume = () => {
     console.log("Opening file uploader for resume extraction");
     setShowFileUploader(true);
-    setDataSource('extract');
+  };
+
+  const handleFileSelected = (file: File | null) => {
+    if (file) {
+      console.log("File selected for extraction:", file.name);
+      setIsExtracting(true);
+    }
   };
 
   const handleFileExtracted = (extractedData: any) => {
     console.log("Data extracted from file:", extractedData);
     setExtractedData(extractedData);
     setShowFileUploader(false);
+    setIsExtracting(false);
+    
     // Update resume data with extracted data
     if (extractedData) {
       setResumeData({
         personalInfo: {
-          name: extractedData.name || "John Doe",
-          title: extractedData.title || "Professional",
-          email: extractedData.email || "john@example.com",
-          phone: extractedData.phone || "(555) 123-4567",
-          location: extractedData.location || "City, State",
+          name: extractedData.name || "",
+          title: extractedData.title || "",
+          email: extractedData.email || "",
+          phone: extractedData.phone || "",
+          location: extractedData.location || "",
           linkedin: extractedData.linkedin || "",
           website: extractedData.website || ""
         },
-        summary: extractedData.summary || "Professional summary",
+        summary: extractedData.summary || "",
         experience: extractedData.experience?.map((exp: any) => ({
           title: exp.title || "",
           company: exp.company || "",
@@ -646,9 +656,10 @@ const ResumeBuilderApp = () => {
                   variant={dataSource === 'extract' ? 'default' : 'outline'}
                   onClick={handleUploadResume}
                   className="flex items-center gap-2"
+                  disabled={isExtracting}
                 >
                   <Upload className="w-4 h-4" />
-                  Upload Resume
+                  {isExtracting ? 'Extracting...' : 'Upload Resume'}
                 </Button>
               </div>
             </div>
@@ -659,16 +670,20 @@ const ResumeBuilderApp = () => {
             <div className="mb-8">
               <Card>
                 <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-medium">Upload Resume for Data Extraction</h3>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setShowFileUploader(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
                   <ResumeFileUploader
-                    onFileSelected={(file) => {
-                      if (file) {
-                        console.log("File selected for extraction:", file.name);
-                      }
-                    }}
+                    onFileSelected={handleFileSelected}
                     onDataExtracted={handleFileExtracted}
-                    setIsExtracting={(extracting) => {
-                      console.log("Extracting:", extracting);
-                    }}
+                    setIsExtracting={setIsExtracting}
                     showDefaultResumeOption={false}
                   />
                 </CardContent>
@@ -1177,7 +1192,7 @@ const ResumeBuilderApp = () => {
                   className={`cursor-pointer transition-all ${
                     selectedTemplate === template.id ? "ring-2 ring-blue-500" : ""
                   }`}
-                  onClick={() => handleTemplateSelect(template.id)}
+                  onClick={() => setSelectedTemplate(template.id)}
                 >
                   <CardContent className="p-3">
                     <img 
