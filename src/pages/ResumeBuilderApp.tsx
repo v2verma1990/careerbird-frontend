@@ -62,12 +62,56 @@ const ResumeBuilderApp = () => {
   const [isExtracting, setIsExtracting] = useState(false);
   const [activeTab, setActiveTab] = useState('personal');
   const [dataSource, setDataSource] = useState('manual'); // 'manual', 'upload', or 'default'
+  const [defaultResumeData, setDefaultResumeData] = useState(null);
   const { toast } = useToast();
   const { defaultResume } = useResume();
 
+  // Fetch default resume data from backend API
+  const fetchDefaultResumeData = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.log('No session found');
+        return null;
+      }
+
+      const response = await fetch('https://localhost:5001/api/resume/default', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.log('No default resume found');
+          return null;
+        }
+        throw new Error(`Failed to fetch default resume: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Default resume data fetched:', data);
+      return data;
+    } catch (error) {
+      console.error('Error fetching default resume:', error);
+      return null;
+    }
+  };
+
+  // Load default resume data on component mount
+  useEffect(() => {
+    const loadDefaultResume = async () => {
+      const data = await fetchDefaultResumeData();
+      setDefaultResumeData(data);
+    };
+    loadDefaultResume();
+  }, []);
+
   // Function to extract data from default resume
   const handleExtractFromDefaultResume = async () => {
-    if (!defaultResume || (!defaultResume.fileUrl && !defaultResume.blobPath)) {
+    if (!defaultResumeData?.fileUrl) {
       toast({
         title: "No default resume found",
         description: "Please upload a default resume first in your profile settings.",
@@ -77,7 +121,7 @@ const ResumeBuilderApp = () => {
     }
 
     setIsExtracting(true);
-    console.log('Starting resume extraction from default resume:', defaultResume);
+    console.log('Starting resume extraction from default resume:', defaultResumeData);
     
     try {
       // Get the current user session
@@ -91,22 +135,20 @@ const ResumeBuilderApp = () => {
         return;
       }
 
-      // Construct the file URL if needed
-      let fileUrl = defaultResume.fileUrl;
-      if (!fileUrl && defaultResume.blobPath) {
-        if (defaultResume.blobPath.startsWith('http')) {
-          fileUrl = defaultResume.blobPath;
-        } else if (defaultResume.blobPath.includes('storage/')) {
-          fileUrl = `${SUPABASE_URL}/storage/v1/object/public/${defaultResume.blobPath}`;
-        } else {
-          fileUrl = `/api/files/${defaultResume.blobPath}`;
+      // Fetch the file from the download endpoint
+      const fileResponse = await fetch('https://localhost:5001/api/resume/default/download', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
         }
+      });
+
+      if (!fileResponse.ok) {
+        throw new Error(`Failed to download file: ${fileResponse.status}`);
       }
 
-      // Fetch the file and convert to File object
-      const response = await fetch(fileUrl);
-      const blob = await response.blob();
-      const file = new File([blob], defaultResume.fileName || 'default-resume.pdf', { type: blob.type });
+      const blob = await fileResponse.blob();
+      const file = new File([blob], defaultResumeData.fileName || 'default-resume.pdf', { type: blob.type });
 
       // Call the backend API for resume optimization/extraction
       const formData = new FormData();
@@ -189,7 +231,7 @@ const ResumeBuilderApp = () => {
       console.error('Error extracting resume data:', error);
       toast({
         title: "Extraction failed",
-        description: error instanceof Error ? error.message : "Failed to extract resume data. Please try again or fill manually.",
+        description: "Failed to extract resume data. Please try again or fill manually.",
         variant: "destructive",
       });
     } finally {
@@ -492,7 +534,7 @@ const ResumeBuilderApp = () => {
                 variant={dataSource === 'default' ? 'default' : 'outline'}
                 className="h-20 flex flex-col items-center gap-2"
                 onClick={handleExtractFromDefaultResume}
-                disabled={isExtracting || !defaultResume}
+                disabled={isExtracting || !defaultResumeData}
               >
                 {isExtracting ? (
                   <>
@@ -521,7 +563,7 @@ const ResumeBuilderApp = () => {
                 )}
               </div>
             </div>
-            {!defaultResume && (
+            {!defaultResumeData && (
               <p className="text-sm text-gray-500 mt-2">
                 No default resume found. Please upload one in your profile settings to use the extract feature.
               </p>
