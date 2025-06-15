@@ -285,9 +285,10 @@ const ResumeBuilder = () => {
       id: "grey-classic-profile",
       name: "Grey Classic Profile",
       description: "Elegant and clear template with sidebar and modern layout",
-      thumbnail: "/lovable-uploads/e8267b3d-746e-4d28-9688-1810ab72c83c.png",
+      thumbnail: "/lovable-uploads/2d518c3a-cd43-4fb4-b391-8729c98e1479.png",
       category: "classic",
       color: "gray",
+      isRecommended: false,
       isNew: true
     },
     {
