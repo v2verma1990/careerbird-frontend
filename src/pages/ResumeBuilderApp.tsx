@@ -61,11 +61,11 @@ const ResumeBuilderApp = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<string>(preselectedTemplate || '');
   const [showPreview, setShowPreview] = useState(false);
   const [dataSource, setDataSource] = useState<'manual' | 'extract' | 'default' | null>(null);
-  const [showDataReview, setShowDataReview] = useState(false);
   const [sampleData, setSampleData] = useState<any>(null);
   const [useDefaultResume, setUseDefaultResume] = useState(false);
   const [hasDefaultResume, setHasDefaultResume] = useState(false);
   const [defaultResumeData, setDefaultResumeData] = useState<any>(null);
+  const [extractedData, setExtractedData] = useState<any>(null);
   
   const [resumeData, setResumeData] = useState<ResumeData>({
     personalInfo: {
@@ -168,6 +168,55 @@ const ResumeBuilderApp = () => {
     // Create a data URL with the template HTML that includes the sample data
     const templateUrl = `/resume-templates/html/${templateId}.html`;
     return templateUrl + `?data=${encodeURIComponent(JSON.stringify(data))}`;
+  };
+
+  const handleExtractFromDefault = () => {
+    if (hasDefaultResume && defaultResumeData) {
+      setExtractedData(defaultResumeData);
+      setDataSource('default');
+    }
+  };
+
+  const handleFileExtracted = (extractedData: any) => {
+    console.log("Data extracted:", extractedData);
+    setExtractedData(extractedData);
+    setDataSource('extract');
+  };
+
+  const handleManualEntry = () => {
+    setDataSource('manual');
+    setExtractedData(null);
+  };
+
+  const handleGenerateResume = () => {
+    console.log("Generating basic resume...");
+    // Logic to generate basic resume
+  };
+
+  const handleGenerateWithAI = () => {
+    console.log("Generating resume with AI assistance...");
+    // Logic to generate resume with AI
+  };
+
+  const handleGenerateFromBackend = async () => {
+    console.log("Generating resume from .NET backend...");
+    // Logic to send data to .NET backend and get generated resume
+    try {
+      // This would be the actual API call to your .NET backend
+      // const response = await fetch('/api/generate-resume', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ resumeData, templateId: preselectedTemplate })
+      // });
+      // const result = await response.json();
+      console.log("Resume generated from backend");
+    } catch (error) {
+      console.error("Error generating resume from backend:", error);
+    }
+  };
+
+  const handlePreview = () => {
+    setShowPreview(true);
   };
 
   const handleTemplateSelect = (templateId: string) => {
@@ -307,30 +356,8 @@ const ResumeBuilderApp = () => {
     console.log("Exporting as Word...");
   };
 
-  const handleGenerateResume = () => {
-    console.log("Generating resume with current data...");
-    // Logic to generate resume with current form data
-  };
-
-  const handleGenerateWithAI = () => {
-    console.log("Generating resume with AI assistance...");
-    // Logic to generate resume with AI
-  };
-
   const handleBackToTemplateSelection = () => {
     navigate('/resume-builder');
-  };
-
-  const handleExtractResume = () => {
-    setDataSource('extract');
-  };
-
-  const handleEnterManually = () => {
-    setDataSource('manual');
-  };
-
-  const handlePreview = () => {
-    setShowPreview(true);
   };
 
   const handleBackToForm = () => {
@@ -376,7 +403,6 @@ const ResumeBuilderApp = () => {
         certifications: defaultResumeData.certifications || []
       });
       setDataSource('default');
-      setShowDataReview(true);
     }
   };
 
@@ -414,29 +440,7 @@ const ResumeBuilderApp = () => {
         certifications: sampleData.certifications || []
       });
       setDataSource('default');
-      setShowDataReview(true);
     }
-  };
-
-  const handleFileExtracted = (extractedData: any) => {
-    console.log("Data extracted:", extractedData);
-    // Update resumeData with extracted data
-    setResumeData(prev => ({ ...prev, ...extractedData }));
-    setDataSource('extract');
-    setShowDataReview(true);
-  };
-
-  const handleManualEntry = () => {
-    setDataSource('manual');
-    setShowDataReview(false); // Go directly to form for manual entry
-  };
-
-  const handleEditData = () => {
-    setShowDataReview(false); // Go to form to edit the data
-  };
-
-  const handleContinueWithData = () => {
-    setShowDataReview(false); // Go to form with the current data
   };
 
   // Load sample data
@@ -511,9 +515,9 @@ const ResumeBuilderApp = () => {
 
   // If template is preselected, show the builder interface
   if (preselectedTemplate) {
-    // Show preview screen with actual HTML template populated with data
+    // Show preview screen with PDF in iframe
     if (showPreview) {
-      const previewData = dataSource === 'default' ? (useDefaultResume ? defaultResumeData : sampleData) : resumeData;
+      const previewData = extractedData || resumeData;
       
       return (
         <div className="min-h-screen bg-gray-50">
@@ -527,7 +531,7 @@ const ResumeBuilderApp = () => {
                   className="flex items-center gap-2"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  Back to Form
+                  Back to Builder
                 </Button>
                 <div>
                   <h1 className="text-xl font-semibold">Resume Preview</h1>
@@ -549,7 +553,7 @@ const ResumeBuilderApp = () => {
             </div>
           </div>
           
-          {/* Template Preview with Data */}
+          {/* PDF Preview in iframe */}
           <div className="flex justify-center p-6">
             <div className="w-full max-w-4xl bg-white shadow-lg rounded-lg overflow-hidden">
               <iframe
@@ -557,7 +561,7 @@ const ResumeBuilderApp = () => {
                 className="w-full h-[800px] border-0"
                 title="Resume Preview"
                 onLoad={(e) => {
-                  // Inject data into the iframe if sample data is available
+                  // Inject data into the iframe if data is available
                   if (previewData) {
                     try {
                       const iframe = e.target as HTMLIFrameElement;
@@ -581,308 +585,7 @@ const ResumeBuilderApp = () => {
       );
     }
 
-    // Show data review screen
-    if (showDataReview && (dataSource === 'default' || dataSource === 'extract')) {
-      const reviewData = dataSource === 'default' ? (useDefaultResume ? defaultResumeData : sampleData) : resumeData;
-      
-      return (
-        <div className="min-h-screen bg-gray-50">
-          {/* Header */}
-          <div className="bg-white border-b border-gray-200 px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setShowDataReview(false);
-                    setDataSource(null);
-                    setUseDefaultResume(false);
-                  }}
-                  className="flex items-center gap-2"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  Back
-                </Button>
-                <div>
-                  <h1 className="text-xl font-semibold">Review Your Resume Data</h1>
-                  <p className="text-sm text-gray-600">
-                    {dataSource === 'default' ? (useDefaultResume ? 'Using your default resume data' : 'Using sample resume data') : 'Data extracted from your resume'}
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={handleEditData} className="flex items-center gap-2">
-                  <Edit className="w-4 h-4" />
-                  Edit Details
-                </Button>
-                <Button onClick={() => setShowPreview(true)} className="flex items-center gap-2">
-                  <Eye className="w-4 h-4" />
-                  Preview
-                </Button>
-              </div>
-            </div>
-          </div>
-          
-          {/* Data Review Content */}
-          <div className="max-w-4xl mx-auto p-6 space-y-6">
-            {/* Personal Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Check className="w-5 h-5 text-green-500" />
-                  Personal Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="grid grid-cols-2 gap-4">
-                  <div><strong>Name:</strong> {reviewData?.name || 'N/A'}</div>
-                  <div><strong>Title:</strong> {reviewData?.title || 'N/A'}</div>
-                  <div><strong>Email:</strong> {reviewData?.email || 'N/A'}</div>
-                  <div><strong>Phone:</strong> {reviewData?.phone || 'N/A'}</div>
-                  <div><strong>Location:</strong> {reviewData?.location || 'N/A'}</div>
-                  <div><strong>LinkedIn:</strong> {reviewData?.linkedin || 'N/A'}</div>
-                </div>
-                {reviewData?.summary && (
-                  <div className="mt-4">
-                    <strong>Summary:</strong>
-                    <p className="mt-2 text-gray-600">{reviewData.summary}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Experience */}
-            {reviewData?.experience && reviewData.experience.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-green-500" />
-                    Work Experience ({reviewData.experience.length} entries)
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {reviewData.experience.slice(0, 2).map((exp: any, index: number) => (
-                      <div key={index} className="border-l-2 border-blue-500 pl-4">
-                        <h4 className="font-semibold">{exp.title}</h4>
-                        <p className="text-gray-600">{exp.company} • {exp.startDate} - {exp.endDate}</p>
-                        <p className="text-sm text-gray-500">{exp.description || (exp.responsibilities ? exp.responsibilities.join(", ") : "")}</p>
-                      </div>
-                    ))}
-                    {reviewData.experience.length > 2 && (
-                      <p className="text-sm text-gray-500">
-                        And {reviewData.experience.length - 2} more experience entries...
-                      </p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Education */}
-            {reviewData?.education && reviewData.education.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-green-500" />
-                    Education ({reviewData.education.length} entries)
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {reviewData.education.map((edu: any, index: number) => (
-                      <div key={index} className="border-l-2 border-green-500 pl-4">
-                        <h4 className="font-semibold">{edu.degree}</h4>
-                        <p className="text-gray-600">{edu.institution} • {edu.startDate} - {edu.endDate}</p>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Skills */}
-            {reviewData?.skills && reviewData.skills.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-green-500" />
-                    Skills ({reviewData.skills.length} skills)
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {reviewData.skills.map((skill: string, index: number) => (
-                      <Badge key={index} variant="secondary">{skill}</Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Certifications */}
-            {reviewData?.certifications && reviewData.certifications.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-green-500" />
-                    Certifications ({reviewData.certifications.length} certifications)
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {reviewData.certifications.map((cert: any, index: number) => (
-                      <div key={index} className="border-l-2 border-purple-500 pl-4">
-                        <h4 className="font-semibold">{cert.name}</h4>
-                        <p className="text-gray-600">{cert.issuer} • {cert.date}</p>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Action Buttons */}
-            <div className="flex justify-center gap-4 pt-6">
-              <Button variant="outline" onClick={handleEditData} className="flex items-center gap-2">
-                <Edit className="w-4 h-4" />
-                Edit Details
-              </Button>
-              <Button onClick={handleContinueWithData} className="flex items-center gap-2">
-                Continue with this Data
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    // Show data source selection if no source selected
-    if (!dataSource) {
-      return (
-        <div className="min-h-screen bg-gray-50">
-          {/* Header */}
-          <div className="bg-white border-b border-gray-200 px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <Button
-                  variant="outline"
-                  onClick={() => navigate('/resume-builder')}
-                  className="flex items-center gap-2"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  Change Template
-                </Button>
-                <div>
-                  <h1 className="text-xl font-semibold">Resume Builder</h1>
-                  <p className="text-sm text-gray-600">
-                    Using {templates.find(t => t.id === preselectedTemplate)?.name || 'Selected'} template
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Data Source Selection */}
-          <div className="max-w-2xl mx-auto p-6">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold mb-2">How would you like to create your resume?</h2>
-              <p className="text-gray-600">Choose your preferred method to get started</p>
-            </div>
-            
-            <div className="space-y-4">
-              {/* Use Default Resume Checkbox */}
-              {hasDefaultResume && (
-                <Card className="border-2 border-dashed border-gray-300">
-                  <CardContent className="p-6">
-                    <div className="flex items-center space-x-3">
-                      <Checkbox
-                        id="use-default-resume"
-                        checked={useDefaultResume}
-                        onCheckedChange={handleUseDefaultResumeChange}
-                        className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
-                      />
-                      <div className="flex-1">
-                        <label htmlFor="use-default-resume" className="text-lg font-semibold cursor-pointer">
-                          Use my default resume
-                        </label>
-                        <p className="text-gray-600 text-sm mt-1">
-                          Use the resume you've already uploaded to your profile
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Use Sample Resume Option */}
-              <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleUseSampleResume}>
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                      <Star className="w-6 h-6 text-purple-600" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold">Use Sample Resume</h3>
-                      <p className="text-gray-600">Start with our sample resume data and customize it</p>
-                    </div>
-                    <ArrowRight className="w-5 h-5 text-gray-400" />
-                  </div>
-                </CardContent>
-              </Card>
-              
-              {/* Upload Resume Option */}
-              <Card className="cursor-pointer hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <Upload className="w-6 h-6 text-blue-600" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold">Upload Your Resume</h3>
-                      <p className="text-gray-600">Upload your existing resume and we'll extract the information</p>
-                      <div className="mt-3">
-                        <ResumeFileUploader
-                          onFileSelected={(file) => {
-                            if (file) {
-                              console.log("File selected for extraction:", file.name);
-                            }
-                          }}
-                          onDataExtracted={handleFileExtracted}
-                          setIsExtracting={(extracting) => {
-                            console.log("Extracting:", extracting);
-                          }}
-                          showDefaultResumeOption={false}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              {/* Enter Manually Option */}
-              <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleManualEntry}>
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                      <FileText className="w-6 h-6 text-green-600" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold">Enter Manually</h3>
-                      <p className="text-gray-600">Start from scratch and fill in your information step by step</p>
-                    </div>
-                    <ArrowRight className="w-5 h-5 text-gray-400" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    // Show form screen (manual entry or after review)
+    // Main builder interface
     return (
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
@@ -891,18 +594,11 @@ const ResumeBuilderApp = () => {
             <div className="flex items-center gap-4">
               <Button
                 variant="outline"
-                onClick={() => {
-                  if (showDataReview) {
-                    setShowDataReview(true);
-                  } else {
-                    setDataSource(null);
-                    setUseDefaultResume(false);
-                  }
-                }}
+                onClick={() => navigate('/resume-builder')}
                 className="flex items-center gap-2"
               >
                 <ArrowLeft className="w-4 h-4" />
-                Back
+                Change Template
               </Button>
               <div>
                 <h1 className="text-xl font-semibold">Resume Builder</h1>
@@ -911,409 +607,216 @@ const ResumeBuilderApp = () => {
                 </p>
               </div>
             </div>
-            
-            {/* Action Buttons */}
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                onClick={() => console.log("Generate Resume")}
-                className="flex items-center gap-2"
-              >
-                <FileText className="w-4 h-4" />
-                Generate Resume
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => console.log("Generate with AI")}
-                className="flex items-center gap-2"
-              >
-                <Sparkles className="w-4 h-4" />
-                Generate with AI
-              </Button>
-              <Button 
-                onClick={() => setShowPreview(true)} 
-                className="flex items-center gap-2"
-              >
-                <Eye className="w-4 h-4" />
-                Preview
-              </Button>
-            </div>
           </div>
         </div>
         
-        {/* Form Section */}
-        <div className="max-w-4xl mx-auto p-6">
-          <Tabs defaultValue="personal" className="w-full">
-            <TabsList className="mb-4">
-              <TabsTrigger value="personal">Personal Info</TabsTrigger>
-              <TabsTrigger value="experience">Experience</TabsTrigger>
-              <TabsTrigger value="education">Education</TabsTrigger>
-              <TabsTrigger value="skills">Skills</TabsTrigger>
-              <TabsTrigger value="certifications">Certifications</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="personal" className="space-y-4">
-              <h2 className="text-xl font-semibold">Personal Information</h2>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Full Name</label>
-                  <input
-                    type="text"
-                    className="w-full p-2 border rounded"
-                    value={resumeData.personalInfo.name}
-                    onChange={(e) => handleUpdatePersonalInfo("name", e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Job Title</label>
-                  <input
-                    type="text"
-                    className="w-full p-2 border rounded"
-                    value={resumeData.personalInfo.title}
-                    onChange={(e) => handleUpdatePersonalInfo("title", e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Email</label>
-                  <input
-                    type="email"
-                    className="w-full p-2 border rounded"
-                    value={resumeData.personalInfo.email}
-                    onChange={(e) => handleUpdatePersonalInfo("email", e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Phone</label>
-                  <input
-                    type="tel"
-                    className="w-full p-2 border rounded"
-                    value={resumeData.personalInfo.phone}
-                    onChange={(e) => handleUpdatePersonalInfo("phone", e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Location</label>
-                  <input
-                    type="text"
-                    className="w-full p-2 border rounded"
-                    value={resumeData.personalInfo.location}
-                    onChange={(e) => handleUpdatePersonalInfo("location", e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">LinkedIn (optional)</label>
-                  <input
-                    type="text"
-                    className="w-full p-2 border rounded"
-                    value={resumeData.personalInfo.linkedin}
-                    onChange={(e) => handleUpdatePersonalInfo("linkedin", e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Website (optional)</label>
-                  <input
-                    type="text"
-                    className="w-full p-2 border rounded"
-                    value={resumeData.personalInfo.website}
-                    onChange={(e) => handleUpdatePersonalInfo("website", e.target.value)}
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Professional Summary</label>
-                <textarea
-                  className="w-full p-2 border rounded h-32"
-                  value={resumeData.summary}
-                  onChange={(e) => handleUpdateResumeData("summary", e.target.value)}
+        <div className="max-w-6xl mx-auto p-6">
+          {/* Data Source Buttons at Top */}
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold mb-4">How would you like to create your resume?</h2>
+            <div className="flex gap-4">
+              {hasDefaultResume && (
+                <Button
+                  variant={dataSource === 'default' ? 'default' : 'outline'}
+                  onClick={handleExtractFromDefault}
+                  className="flex items-center gap-2"
+                >
+                  <FileText className="w-4 h-4" />
+                  Extract from Default Resume
+                </Button>
+              )}
+              <div className="flex-1">
+                <ResumeFileUploader
+                  onFileSelected={(file) => {
+                    if (file) {
+                      console.log("File selected for extraction:", file.name);
+                    }
+                  }}
+                  onDataExtracted={handleFileExtracted}
+                  setIsExtracting={(extracting) => {
+                    console.log("Extracting:", extracting);
+                  }}
+                  showDefaultResumeOption={false}
+                  customTrigger={
+                    <Button
+                      variant={dataSource === 'extract' ? 'default' : 'outline'}
+                      className="flex items-center gap-2"
+                    >
+                      <Upload className="w-4 h-4" />
+                      Upload Resume to Extract Data
+                    </Button>
+                  }
                 />
               </div>
-            </TabsContent>
-            
-            <TabsContent value="experience" className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold">Work Experience</h2>
-                <Button onClick={handleAddExperience}>Add Experience</Button>
-              </div>
-              
-              {resumeData.experience.map((exp, index) => (
-                <div key={index} className="border p-4 rounded-md space-y-4">
-                  <h3 className="font-medium">Experience {index + 1}</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Job Title</label>
-                      <input
-                        type="text"
-                        className="w-full p-2 border rounded"
-                        value={exp.title}
-                        onChange={(e) => handleUpdateExperience(index, "title", e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Company</label>
-                      <input
-                        type="text"
-                        className="w-full p-2 border rounded"
-                        value={exp.company}
-                        onChange={(e) => handleUpdateExperience(index, "company", e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Location</label>
-                      <input
-                        type="text"
-                        className="w-full p-2 border rounded"
-                        value={exp.location}
-                        onChange={(e) => handleUpdateExperience(index, "location", e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Start Date</label>
-                      <input
-                        type="text"
-                        className="w-full p-2 border rounded"
-                        value={exp.startDate}
-                        onChange={(e) => handleUpdateExperience(index, "startDate", e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">End Date</label>
-                      <input
-                        type="text"
-                        className="w-full p-2 border rounded"
-                        value={exp.endDate}
-                        onChange={(e) => handleUpdateExperience(index, "endDate", e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Responsibilities</label>
-                    {exp.responsibilities.map((resp, respIndex) => (
-                      <div key={respIndex} className="flex gap-2">
-                        <input
-                          type="text"
-                          className="w-full p-2 border rounded"
-                          value={resp}
-                          onChange={(e) => {
-                            const newResponsibilities = [...exp.responsibilities];
-                            newResponsibilities[respIndex] = e.target.value;
-                            handleUpdateExperience(index, "responsibilities", newResponsibilities);
-                          }}
-                        />
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            const newResponsibilities = exp.responsibilities.filter((_, i) => i !== respIndex);
-                            handleUpdateExperience(index, "responsibilities", newResponsibilities);
-                          }}
-                        >
-                          Remove
-                        </Button>
-                      </div>
-                    ))}
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        const newResponsibilities = [...exp.responsibilities, ""];
-                        handleUpdateExperience(index, "responsibilities", newResponsibilities);
-                      }}
-                    >
-                      Add Responsibility
-                    </Button>
-                  </div>
-                  
-                  <Button
-                    variant="destructive"
-                    onClick={() => {
-                      setResumeData(prev => ({
-                        ...prev,
-                        experience: prev.experience.filter((_, i) => i !== index)
-                      }));
-                    }}
-                  >
-                    Remove Experience
-                  </Button>
-                </div>
-              ))}
-            </TabsContent>
-            
-            <TabsContent value="education" className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold">Education</h2>
-                <Button onClick={handleAddEducation}>Add Education</Button>
-              </div>
-              
-              {resumeData.education.map((edu, index) => (
-                <div key={index} className="border p-4 rounded-md space-y-4">
-                  <h3 className="font-medium">Education {index + 1}</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Degree</label>
-                      <input
-                        type="text"
-                        className="w-full p-2 border rounded"
-                        value={edu.degree}
-                        onChange={(e) => handleUpdateEducation(index, "degree", e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Institution</label>
-                      <input
-                        type="text"
-                        className="w-full p-2 border rounded"
-                        value={edu.institution}
-                        onChange={(e) => handleUpdateEducation(index, "institution", e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Location</label>
-                      <input
-                        type="text"
-                        className="w-full p-2 border rounded"
-                        value={edu.location}
-                        onChange={(e) => handleUpdateEducation(index, "location", e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Start Date</label>
-                      <input
-                        type="text"
-                        className="w-full p-2 border rounded"
-                        value={edu.startDate}
-                        onChange={(e) => handleUpdateEducation(index, "startDate", e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">End Date</label>
-                      <input
-                        type="text"
-                        className="w-full p-2 border rounded"
-                        value={edu.endDate}
-                        onChange={(e) => handleUpdateEducation(index, "endDate", e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">GPA (optional)</label>
-                      <input
-                        type="text"
-                        className="w-full p-2 border rounded"
-                        value={edu.gpa}
-                        onChange={(e) => handleUpdateEducation(index, "gpa", e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  
-                  <Button
-                    variant="destructive"
-                    onClick={() => {
-                      setResumeData(prev => ({
-                        ...prev,
-                        education: prev.education.filter((_, i) => i !== index)
-                      }));
-                    }}
-                  >
-                    Remove Education
-                  </Button>
-                </div>
-              ))}
-            </TabsContent>
-            
-            <TabsContent value="skills" className="space-y-4">
-              <h2 className="text-xl font-semibold">Skills</h2>
-              
-              <div className="space-y-4">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    className="flex-1 p-2 border rounded"
-                    placeholder="Add a skill..."
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        handleAddSkill(e.currentTarget.value);
-                        e.currentTarget.value = '';
-                      }
-                    }}
-                  />
-                  <Button
-                    onClick={(e) => {
-                      const input = e.currentTarget.previousElementSibling as HTMLInputElement;
-                      handleAddSkill(input.value);
-                      input.value = '';
-                    }}
-                  >
-                    Add
-                  </Button>
-                </div>
+              <Button
+                variant={dataSource === 'manual' ? 'default' : 'outline'}
+                onClick={handleManualEntry}
+                className="flex items-center gap-2"
+              >
+                <Edit className="w-4 h-4" />
+                Manually Enter
+              </Button>
+            </div>
+          </div>
+
+          {/* Extracted Data Tabs */}
+          {extractedData && (
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-4">Extracted Resume Data</h3>
+              <Tabs defaultValue="personal" className="w-full">
+                <TabsList className="mb-4">
+                  <TabsTrigger value="personal">Personal Info</TabsTrigger>
+                  <TabsTrigger value="experience">Experience</TabsTrigger>
+                  <TabsTrigger value="education">Education</TabsTrigger>
+                  <TabsTrigger value="skills">Skills</TabsTrigger>
+                  <TabsTrigger value="certifications">Certifications</TabsTrigger>
+                </TabsList>
                 
-                <div className="flex flex-wrap gap-2">
-                  {resumeData.skills.map((skill, index) => (
-                    <Badge
-                      key={index}
-                      className="px-3 py-1 cursor-pointer"
-                      onClick={() => handleRemoveSkill(skill)}
-                    >
-                      {skill} ×
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="certifications" className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold">Certifications</h2>
-                <Button onClick={handleAddCertification}>Add Certification</Button>
-              </div>
-              
-              {resumeData.certifications.map((cert, index) => (
-                <div key={index} className="border p-4 rounded-md space-y-4">
-                  <h3 className="font-medium">Certification {index + 1}</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Name</label>
-                      <input
-                        type="text"
-                        className="w-full p-2 border rounded"
-                        value={cert.name}
-                        onChange={(e) => handleUpdateCertification(index, "name", e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Issuer</label>
-                      <input
-                        type="text"
-                        className="w-full p-2 border rounded"
-                        value={cert.issuer}
-                        onChange={(e) => handleUpdateCertification(index, "issuer", e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Date (optional)</label>
-                      <input
-                        type="text"
-                        className="w-full p-2 border rounded"
-                        value={cert.date}
-                        onChange={(e) => handleUpdateCertification(index, "date", e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  
-                  <Button
-                    variant="destructive"
-                    onClick={() => {
-                      setResumeData(prev => ({
-                        ...prev,
-                        certifications: prev.certifications.filter((_, i) => i !== index)
-                      }));
-                    }}
-                  >
-                    Remove Certification
-                  </Button>
-                </div>
-              ))}
-            </TabsContent>
-          </Tabs>
+                <TabsContent value="personal">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Personal Information</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div><strong>Name:</strong> {extractedData?.name || 'N/A'}</div>
+                        <div><strong>Title:</strong> {extractedData?.title || 'N/A'}</div>
+                        <div><strong>Email:</strong> {extractedData?.email || 'N/A'}</div>
+                        <div><strong>Phone:</strong> {extractedData?.phone || 'N/A'}</div>
+                        <div><strong>Location:</strong> {extractedData?.location || 'N/A'}</div>
+                        <div><strong>LinkedIn:</strong> {extractedData?.linkedin || 'N/A'}</div>
+                      </div>
+                      {extractedData?.summary && (
+                        <div className="mt-4">
+                          <strong>Summary:</strong>
+                          <p className="mt-2 text-gray-600">{extractedData.summary}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="experience">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Work Experience</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {extractedData?.experience && extractedData.experience.length > 0 ? (
+                        <div className="space-y-4">
+                          {extractedData.experience.map((exp: any, index: number) => (
+                            <div key={index} className="border-l-2 border-blue-500 pl-4">
+                              <h4 className="font-semibold">{exp.title}</h4>
+                              <p className="text-gray-600">{exp.company} • {exp.startDate} - {exp.endDate}</p>
+                              <p className="text-sm text-gray-500">{exp.description || (exp.responsibilities ? exp.responsibilities.join(", ") : "")}</p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-gray-500">No experience data found</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="education">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Education</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {extractedData?.education && extractedData.education.length > 0 ? (
+                        <div className="space-y-3">
+                          {extractedData.education.map((edu: any, index: number) => (
+                            <div key={index} className="border-l-2 border-green-500 pl-4">
+                              <h4 className="font-semibold">{edu.degree}</h4>
+                              <p className="text-gray-600">{edu.institution} • {edu.startDate} - {edu.endDate}</p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-gray-500">No education data found</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="skills">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Skills</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {extractedData?.skills && extractedData.skills.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {extractedData.skills.map((skill: string, index: number) => (
+                            <Badge key={index} variant="secondary">{skill}</Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-gray-500">No skills data found</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="certifications">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Certifications</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {extractedData?.certifications && extractedData.certifications.length > 0 ? (
+                        <div className="space-y-2">
+                          {extractedData.certifications.map((cert: any, index: number) => (
+                            <div key={index} className="border-l-2 border-purple-500 pl-4">
+                              <h4 className="font-semibold">{cert.name}</h4>
+                              <p className="text-gray-600">{cert.issuer} • {cert.date}</p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-gray-500">No certifications data found</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+            </div>
+          )}
+
+          {/* Action Buttons at Bottom */}
+          <div className="flex justify-center gap-4 pt-6 border-t">
+            <Button 
+              onClick={handleGenerateResume}
+              className="flex items-center gap-2"
+            >
+              <FileText className="w-4 h-4" />
+              Generate Resume
+            </Button>
+            <Button 
+              onClick={handleGenerateWithAI}
+              className="flex items-center gap-2"
+            >
+              <Sparkles className="w-4 h-4" />
+              AI Resume
+            </Button>
+            <Button 
+              onClick={handleGenerateFromBackend}
+              className="flex items-center gap-2"
+            >
+              <Crown className="w-4 h-4" />
+              Generate from Backend
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={handlePreview} 
+              className="flex items-center gap-2"
+            >
+              <Eye className="w-4 h-4" />
+              Preview
+            </Button>
+          </div>
         </div>
       </div>
     );
