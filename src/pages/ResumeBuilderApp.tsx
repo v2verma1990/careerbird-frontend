@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Eye, ArrowRight, Star, Crown, Sparkles, Palette, ArrowLeft, Download, FileText, Upload, Edit, Check } from "lucide-react";
 import ResumeFileUploader from "@/components/ResumeFileUploader";
@@ -62,6 +63,9 @@ const ResumeBuilderApp = () => {
   const [dataSource, setDataSource] = useState<'manual' | 'extract' | 'default' | null>(null);
   const [showDataReview, setShowDataReview] = useState(false);
   const [sampleData, setSampleData] = useState<any>(null);
+  const [useDefaultResume, setUseDefaultResume] = useState(false);
+  const [hasDefaultResume, setHasDefaultResume] = useState(false);
+  const [defaultResumeData, setDefaultResumeData] = useState<any>(null);
   
   const [resumeData, setResumeData] = useState<ResumeData>({
     personalInfo: {
@@ -337,7 +341,46 @@ const ResumeBuilderApp = () => {
     setDataSource(null);
   };
 
-  const handleUseDefaultResume = () => {
+  const handleUseDefaultResumeChange = (checked: boolean) => {
+    setUseDefaultResume(checked);
+    if (checked && defaultResumeData) {
+      // Populate form with default resume data
+      setResumeData({
+        personalInfo: {
+          name: defaultResumeData.name || "",
+          title: defaultResumeData.title || "",
+          email: defaultResumeData.email || "",
+          phone: defaultResumeData.phone || "",
+          location: defaultResumeData.location || "",
+          linkedin: defaultResumeData.linkedin || "",
+          website: defaultResumeData.website || ""
+        },
+        summary: defaultResumeData.summary || "",
+        experience: defaultResumeData.experience?.map((exp: any) => ({
+          title: exp.title || "",
+          company: exp.company || "",
+          location: exp.location || "",
+          startDate: exp.startDate || "",
+          endDate: exp.endDate || "",
+          responsibilities: exp.description ? [exp.description] : [""]
+        })) || [],
+        education: defaultResumeData.education?.map((edu: any) => ({
+          degree: edu.degree || "",
+          institution: edu.institution || "",
+          location: edu.location || "",
+          startDate: edu.startDate || "",
+          endDate: edu.endDate || "",
+          gpa: edu.gpa || ""
+        })) || [],
+        skills: defaultResumeData.skills || [],
+        certifications: defaultResumeData.certifications || []
+      });
+      setDataSource('default');
+      setShowDataReview(true);
+    }
+  };
+
+  const handleUseSampleResume = () => {
     if (sampleData) {
       // Populate form with sample data
       setResumeData({
@@ -410,11 +453,67 @@ const ResumeBuilderApp = () => {
     loadSampleData();
   }, []);
 
+  // Check if user has a default resume
+  useEffect(() => {
+    const checkDefaultResume = async () => {
+      try {
+        // This would typically check the user's profile for default_resume_blob_name
+        // For now, we'll simulate checking if user has a default resume
+        const hasDefault = localStorage.getItem('hasDefaultResume') === 'true';
+        setHasDefaultResume(hasDefault);
+        
+        if (hasDefault) {
+          // Load default resume data (this would come from user's profile)
+          const defaultData = {
+            name: "John Smith",
+            title: "Software Engineer",
+            email: "john.smith@email.com",
+            phone: "(555) 123-4567",
+            location: "New York, NY",
+            summary: "Experienced software engineer with 5+ years of expertise in full-stack development.",
+            experience: [
+              {
+                title: "Senior Software Engineer",
+                company: "Tech Corp",
+                location: "New York, NY",
+                startDate: "2020",
+                endDate: "Present",
+                description: "Led development of scalable web applications"
+              }
+            ],
+            education: [
+              {
+                degree: "Bachelor of Science in Computer Science",
+                institution: "University of Technology",
+                location: "New York, NY",
+                startDate: "2015",
+                endDate: "2019"
+              }
+            ],
+            skills: ["JavaScript", "React", "Node.js", "Python", "SQL"],
+            certifications: [
+              {
+                name: "AWS Certified Developer",
+                issuer: "Amazon Web Services",
+                date: "2022"
+              }
+            ]
+          };
+          setDefaultResumeData(defaultData);
+        }
+      } catch (error) {
+        console.error('Error checking default resume:', error);
+      }
+    };
+    
+    checkDefaultResume();
+  }, []);
+
   // If template is preselected, show the builder interface
   if (preselectedTemplate) {
     // Show preview screen with actual HTML template populated with data
     if (showPreview) {
-      const previewData = dataSource === 'default' ? sampleData : resumeData;
+      const previewData = dataSource === 'default' ? (useDefaultResume ? defaultResumeData : sampleData) : resumeData;
       
       return (
         <div className="min-h-screen bg-gray-50">
@@ -484,7 +583,7 @@ const ResumeBuilderApp = () => {
 
     // Show data review screen
     if (showDataReview && (dataSource === 'default' || dataSource === 'extract')) {
-      const reviewData = dataSource === 'default' ? sampleData : resumeData;
+      const reviewData = dataSource === 'default' ? (useDefaultResume ? defaultResumeData : sampleData) : resumeData;
       
       return (
         <div className="min-h-screen bg-gray-50">
@@ -497,6 +596,7 @@ const ResumeBuilderApp = () => {
                   onClick={() => {
                     setShowDataReview(false);
                     setDataSource(null);
+                    setUseDefaultResume(false);
                   }}
                   className="flex items-center gap-2"
                 >
@@ -506,7 +606,7 @@ const ResumeBuilderApp = () => {
                 <div>
                   <h1 className="text-xl font-semibold">Review Your Resume Data</h1>
                   <p className="text-sm text-gray-600">
-                    {dataSource === 'default' ? 'Using default resume data' : 'Data extracted from your resume'}
+                    {dataSource === 'default' ? (useDefaultResume ? 'Using your default resume data' : 'Using sample resume data') : 'Data extracted from your resume'}
                   </p>
                 </div>
               </div>
@@ -566,7 +666,7 @@ const ResumeBuilderApp = () => {
                       <div key={index} className="border-l-2 border-blue-500 pl-4">
                         <h4 className="font-semibold">{exp.title}</h4>
                         <p className="text-gray-600">{exp.company} • {exp.startDate} - {exp.endDate}</p>
-                        <p className="text-sm text-gray-500">{exp.description}</p>
+                        <p className="text-sm text-gray-500">{exp.description || (exp.responsibilities ? exp.responsibilities.join(", ") : "")}</p>
                       </div>
                     ))}
                     {reviewData.experience.length > 2 && (
@@ -692,15 +792,39 @@ const ResumeBuilderApp = () => {
             </div>
             
             <div className="space-y-4">
-              {/* Use Default Resume Option */}
-              <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleUseDefaultResume}>
+              {/* Use Default Resume Checkbox */}
+              {hasDefaultResume && (
+                <Card className="border-2 border-dashed border-gray-300">
+                  <CardContent className="p-6">
+                    <div className="flex items-center space-x-3">
+                      <Checkbox
+                        id="use-default-resume"
+                        checked={useDefaultResume}
+                        onCheckedChange={handleUseDefaultResumeChange}
+                        className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                      />
+                      <div className="flex-1">
+                        <label htmlFor="use-default-resume" className="text-lg font-semibold cursor-pointer">
+                          Use my default resume
+                        </label>
+                        <p className="text-gray-600 text-sm mt-1">
+                          Use the resume you've already uploaded to your profile
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Use Sample Resume Option */}
+              <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleUseSampleResume}>
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                       <Star className="w-6 h-6 text-purple-600" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold">Use Default Resume</h3>
+                      <h3 className="text-lg font-semibold">Use Sample Resume</h3>
                       <p className="text-gray-600">Start with our sample resume data and customize it</p>
                     </div>
                     <ArrowRight className="w-5 h-5 text-gray-400" />
@@ -708,7 +832,7 @@ const ResumeBuilderApp = () => {
                 </CardContent>
               </Card>
               
-              {/* Extract Resume Option */}
+              {/* Upload Resume Option */}
               <Card className="cursor-pointer hover:shadow-md transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
@@ -772,6 +896,7 @@ const ResumeBuilderApp = () => {
                     setShowDataReview(true);
                   } else {
                     setDataSource(null);
+                    setUseDefaultResume(false);
                   }
                 }}
                 className="flex items-center gap-2"
