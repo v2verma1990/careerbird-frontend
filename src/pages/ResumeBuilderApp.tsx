@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Eye, ArrowRight, Star, Crown, Sparkles, Palette, ArrowLeft, Download, FileText, Upload } from "lucide-react";
+import { Eye, ArrowRight, Star, Crown, Sparkles, Palette, ArrowLeft, Download, FileText, Upload, Edit, Check } from "lucide-react";
 import ResumeFileUploader from "@/components/ResumeFileUploader";
 
 interface ResumeData {
@@ -59,8 +59,8 @@ const ResumeBuilderApp = () => {
   
   const [selectedTemplate, setSelectedTemplate] = useState<string>(preselectedTemplate || '');
   const [showPreview, setShowPreview] = useState(false);
-  const [dataSource, setDataSource] = useState<'manual' | 'extract' | null>(null);
-  const [useDefaultResume, setUseDefaultResume] = useState(false);
+  const [dataSource, setDataSource] = useState<'manual' | 'extract' | 'default' | null>(null);
+  const [showDataReview, setShowDataReview] = useState(false);
   const [sampleData, setSampleData] = useState<any>(null);
   
   const [resumeData, setResumeData] = useState<ResumeData>({
@@ -337,6 +337,65 @@ const ResumeBuilderApp = () => {
     setDataSource(null);
   };
 
+  const handleUseDefaultResume = () => {
+    if (sampleData) {
+      // Populate form with sample data
+      setResumeData({
+        personalInfo: {
+          name: sampleData.name || "",
+          title: sampleData.title || "",
+          email: sampleData.email || "",
+          phone: sampleData.phone || "",
+          location: sampleData.location || "",
+          linkedin: sampleData.linkedin || "",
+          website: sampleData.website || ""
+        },
+        summary: sampleData.summary || "",
+        experience: sampleData.experience?.map((exp: any) => ({
+          title: exp.title || "",
+          company: exp.company || "",
+          location: exp.location || "",
+          startDate: exp.startDate || "",
+          endDate: exp.endDate || "",
+          responsibilities: exp.description ? [exp.description] : [""]
+        })) || [],
+        education: sampleData.education?.map((edu: any) => ({
+          degree: edu.degree || "",
+          institution: edu.institution || "",
+          location: edu.location || "",
+          startDate: edu.startDate || "",
+          endDate: edu.endDate || "",
+          gpa: edu.description?.includes("GPA") ? edu.description.split("GPA: ")[1] : ""
+        })) || [],
+        skills: sampleData.skills || [],
+        certifications: sampleData.certifications || []
+      });
+      setDataSource('default');
+      setShowDataReview(true);
+    }
+  };
+
+  const handleFileExtracted = (extractedData: any) => {
+    console.log("Data extracted:", extractedData);
+    // Update resumeData with extracted data
+    setResumeData(prev => ({ ...prev, ...extractedData }));
+    setDataSource('extract');
+    setShowDataReview(true);
+  };
+
+  const handleManualEntry = () => {
+    setDataSource('manual');
+    setShowDataReview(false); // Go directly to form for manual entry
+  };
+
+  const handleEditData = () => {
+    setShowDataReview(false); // Go to form to edit the data
+  };
+
+  const handleContinueWithData = () => {
+    setShowDataReview(false); // Go to form with the current data
+  };
+
   // Load sample data
   useEffect(() => {
     const loadSampleData = async () => {
@@ -355,7 +414,7 @@ const ResumeBuilderApp = () => {
   if (preselectedTemplate) {
     // Show preview screen with actual HTML template populated with data
     if (showPreview) {
-      const previewData = useDefaultResume ? sampleData : resumeData;
+      const previewData = dataSource === 'default' ? sampleData : resumeData;
       
       return (
         <div className="min-h-screen bg-gray-50">
@@ -365,7 +424,7 @@ const ResumeBuilderApp = () => {
               <div className="flex items-center gap-4">
                 <Button
                   variant="outline"
-                  onClick={handleBackToForm}
+                  onClick={() => setShowPreview(false)}
                   className="flex items-center gap-2"
                 >
                   <ArrowLeft className="w-4 h-4" />
@@ -379,11 +438,11 @@ const ResumeBuilderApp = () => {
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={handleExportWord} className="flex items-center gap-2">
+                <Button variant="outline" onClick={() => console.log("Export as Word")} className="flex items-center gap-2">
                   <FileText className="w-4 h-4" />
                   Export as Word
                 </Button>
-                <Button onClick={handleExportPDF} className="flex items-center gap-2">
+                <Button onClick={() => console.log("Export as PDF")} className="flex items-center gap-2">
                   <Download className="w-4 h-4" />
                   Export as PDF
                 </Button>
@@ -417,6 +476,182 @@ const ResumeBuilderApp = () => {
                   console.error(`Failed to load template: ${preselectedTemplate}.html`);
                 }}
               />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Show data review screen
+    if (showDataReview && (dataSource === 'default' || dataSource === 'extract')) {
+      const reviewData = dataSource === 'default' ? sampleData : resumeData;
+      
+      return (
+        <div className="min-h-screen bg-gray-50">
+          {/* Header */}
+          <div className="bg-white border-b border-gray-200 px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowDataReview(false);
+                    setDataSource(null);
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Back
+                </Button>
+                <div>
+                  <h1 className="text-xl font-semibold">Review Your Resume Data</h1>
+                  <p className="text-sm text-gray-600">
+                    {dataSource === 'default' ? 'Using default resume data' : 'Data extracted from your resume'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={handleEditData} className="flex items-center gap-2">
+                  <Edit className="w-4 h-4" />
+                  Edit Details
+                </Button>
+                <Button onClick={() => setShowPreview(true)} className="flex items-center gap-2">
+                  <Eye className="w-4 h-4" />
+                  Preview
+                </Button>
+              </div>
+            </div>
+          </div>
+          
+          {/* Data Review Content */}
+          <div className="max-w-4xl mx-auto p-6 space-y-6">
+            {/* Personal Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Check className="w-5 h-5 text-green-500" />
+                  Personal Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="grid grid-cols-2 gap-4">
+                  <div><strong>Name:</strong> {reviewData?.name || 'N/A'}</div>
+                  <div><strong>Title:</strong> {reviewData?.title || 'N/A'}</div>
+                  <div><strong>Email:</strong> {reviewData?.email || 'N/A'}</div>
+                  <div><strong>Phone:</strong> {reviewData?.phone || 'N/A'}</div>
+                  <div><strong>Location:</strong> {reviewData?.location || 'N/A'}</div>
+                  <div><strong>LinkedIn:</strong> {reviewData?.linkedin || 'N/A'}</div>
+                </div>
+                {reviewData?.summary && (
+                  <div className="mt-4">
+                    <strong>Summary:</strong>
+                    <p className="mt-2 text-gray-600">{reviewData.summary}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Experience */}
+            {reviewData?.experience && reviewData.experience.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Check className="w-5 h-5 text-green-500" />
+                    Work Experience ({reviewData.experience.length} entries)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {reviewData.experience.slice(0, 2).map((exp: any, index: number) => (
+                      <div key={index} className="border-l-2 border-blue-500 pl-4">
+                        <h4 className="font-semibold">{exp.title}</h4>
+                        <p className="text-gray-600">{exp.company} • {exp.startDate} - {exp.endDate}</p>
+                        <p className="text-sm text-gray-500">{exp.description}</p>
+                      </div>
+                    ))}
+                    {reviewData.experience.length > 2 && (
+                      <p className="text-sm text-gray-500">
+                        And {reviewData.experience.length - 2} more experience entries...
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Education */}
+            {reviewData?.education && reviewData.education.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Check className="w-5 h-5 text-green-500" />
+                    Education ({reviewData.education.length} entries)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {reviewData.education.map((edu: any, index: number) => (
+                      <div key={index} className="border-l-2 border-green-500 pl-4">
+                        <h4 className="font-semibold">{edu.degree}</h4>
+                        <p className="text-gray-600">{edu.institution} • {edu.startDate} - {edu.endDate}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Skills */}
+            {reviewData?.skills && reviewData.skills.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Check className="w-5 h-5 text-green-500" />
+                    Skills ({reviewData.skills.length} skills)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {reviewData.skills.map((skill: string, index: number) => (
+                      <Badge key={index} variant="secondary">{skill}</Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Certifications */}
+            {reviewData?.certifications && reviewData.certifications.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Check className="w-5 h-5 text-green-500" />
+                    Certifications ({reviewData.certifications.length} certifications)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {reviewData.certifications.map((cert: any, index: number) => (
+                      <div key={index} className="border-l-2 border-purple-500 pl-4">
+                        <h4 className="font-semibold">{cert.name}</h4>
+                        <p className="text-gray-600">{cert.issuer} • {cert.date}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex justify-center gap-4 pt-6">
+              <Button variant="outline" onClick={handleEditData} className="flex items-center gap-2">
+                <Edit className="w-4 h-4" />
+                Edit Details
+              </Button>
+              <Button onClick={handleContinueWithData} className="flex items-center gap-2">
+                Continue with this Data
+                <ArrowRight className="w-4 h-4" />
+              </Button>
             </div>
           </div>
         </div>
@@ -457,67 +692,53 @@ const ResumeBuilderApp = () => {
             </div>
             
             <div className="space-y-4">
-              {/* Default Resume Option */}
-              <ResumeFileUploader
-                onFileSelected={() => {}}
-                onUseDefaultResumeChange={(checked) => {
-                  setUseDefaultResume(checked);
-                  if (checked && sampleData) {
-                    // Populate form with sample data
-                    setResumeData({
-                      personalInfo: {
-                        name: sampleData.name || "",
-                        title: sampleData.title || "",
-                        email: sampleData.email || "",
-                        phone: sampleData.phone || "",
-                        location: sampleData.location || "",
-                        linkedin: sampleData.linkedin || "",
-                        website: sampleData.website || ""
-                      },
-                      summary: sampleData.summary || "",
-                      experience: sampleData.experience?.map((exp: any) => ({
-                        title: exp.title || "",
-                        company: exp.company || "",
-                        location: exp.location || "",
-                        startDate: exp.startDate || "",
-                        endDate: exp.endDate || "",
-                        responsibilities: exp.description ? [exp.description] : [""]
-                      })) || [],
-                      education: sampleData.education?.map((edu: any) => ({
-                        degree: edu.degree || "",
-                        institution: edu.institution || "",
-                        location: edu.location || "",
-                        startDate: edu.startDate || "",
-                        endDate: edu.endDate || "",
-                        gpa: edu.description?.includes("GPA") ? edu.description.split("GPA: ")[1] : ""
-                      })) || [],
-                      skills: sampleData.skills || [],
-                      certifications: sampleData.certifications || []
-                    });
-                    setDataSource('extract');
-                  }
-                }}
-                showDefaultResumeOption={true}
-              />
-              
-              {/* Extract Resume Option */}
-              <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleExtractResume}>
+              {/* Use Default Resume Option */}
+              <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleUseDefaultResume}>
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <Upload className="w-6 h-6 text-blue-600" />
+                    <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                      <Star className="w-6 h-6 text-purple-600" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold">Extract from Resume</h3>
-                      <p className="text-gray-600">Upload your existing resume and we'll extract the information</p>
+                      <h3 className="text-lg font-semibold">Use Default Resume</h3>
+                      <p className="text-gray-600">Start with our sample resume data and customize it</p>
                     </div>
                     <ArrowRight className="w-5 h-5 text-gray-400" />
                   </div>
                 </CardContent>
               </Card>
               
+              {/* Extract Resume Option */}
+              <Card className="cursor-pointer hover:shadow-md transition-shadow">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <Upload className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold">Upload Your Resume</h3>
+                      <p className="text-gray-600">Upload your existing resume and we'll extract the information</p>
+                      <div className="mt-3">
+                        <ResumeFileUploader
+                          onFileSelected={(file) => {
+                            if (file) {
+                              console.log("File selected for extraction:", file.name);
+                            }
+                          }}
+                          onDataExtracted={handleFileExtracted}
+                          setIsExtracting={(extracting) => {
+                            console.log("Extracting:", extracting);
+                          }}
+                          showDefaultResumeOption={false}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
               {/* Enter Manually Option */}
-              <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleEnterManually}>
+              <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleManualEntry}>
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
@@ -537,76 +758,7 @@ const ResumeBuilderApp = () => {
       );
     }
 
-    // Show extract resume interface
-    if (dataSource === 'extract') {
-      return (
-        <div className="min-h-screen bg-gray-50">
-          {/* Header */}
-          <div className="bg-white border-b border-gray-200 px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <Button
-                  variant="outline"
-                  onClick={handleBackToDataSource}
-                  className="flex items-center gap-2"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  Back
-                </Button>
-                <div>
-                  <h1 className="text-xl font-semibold">Extract Resume Data</h1>
-                  <p className="text-sm text-gray-600">Upload your resume to extract information</p>
-                </div>
-              </div>
-              <Button 
-                onClick={handlePreview} 
-                className="flex items-center gap-2"
-              >
-                <Eye className="w-4 h-4" />
-                Preview
-              </Button>
-            </div>
-          </div>
-          
-          {/* File Upload Section */}
-          <div className="max-w-2xl mx-auto p-6">
-            <ResumeFileUploader
-              onFileSelected={(file) => {
-                if (file) {
-                  console.log("File selected for extraction:", file.name);
-                  // Here you would implement the extraction logic
-                }
-              }}
-              onDataExtracted={(data) => {
-                console.log("Data extracted:", data);
-                // Update resumeData with extracted data
-                setResumeData(prev => ({ ...prev, ...data }));
-              }}
-              setIsExtracting={(extracting) => {
-                console.log("Extracting:", extracting);
-              }}
-              showDefaultResumeOption={false}
-            />
-            
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600 mb-4">
-                Once your resume is uploaded and processed, you can review and edit the extracted information.
-              </p>
-              <Button 
-                variant="outline" 
-                onClick={() => setDataSource('manual')}
-                className="flex items-center gap-2"
-              >
-                <FileText className="w-4 h-4" />
-                Enter Information Manually Instead
-              </Button>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    // Show form screen (manual entry)
+    // Show form screen (manual entry or after review)
     return (
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
@@ -615,7 +767,13 @@ const ResumeBuilderApp = () => {
             <div className="flex items-center gap-4">
               <Button
                 variant="outline"
-                onClick={handleBackToDataSource}
+                onClick={() => {
+                  if (showDataReview) {
+                    setShowDataReview(true);
+                  } else {
+                    setDataSource(null);
+                  }
+                }}
                 className="flex items-center gap-2"
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -633,7 +791,7 @@ const ResumeBuilderApp = () => {
             <div className="flex gap-2">
               <Button 
                 variant="outline" 
-                onClick={handleGenerateResume}
+                onClick={() => console.log("Generate Resume")}
                 className="flex items-center gap-2"
               >
                 <FileText className="w-4 h-4" />
@@ -641,14 +799,14 @@ const ResumeBuilderApp = () => {
               </Button>
               <Button 
                 variant="outline" 
-                onClick={handleGenerateWithAI}
+                onClick={() => console.log("Generate with AI")}
                 className="flex items-center gap-2"
               >
                 <Sparkles className="w-4 h-4" />
                 Generate with AI
               </Button>
               <Button 
-                onClick={handlePreview} 
+                onClick={() => setShowPreview(true)} 
                 className="flex items-center gap-2"
               >
                 <Eye className="w-4 h-4" />
