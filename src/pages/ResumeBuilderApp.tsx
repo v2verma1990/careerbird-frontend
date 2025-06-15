@@ -512,7 +512,7 @@ const ResumeBuilderApp = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {/* New Large Resume Style Template Grid */}
+              {/* Template Grid with Large Previews */}
               <div className="w-full flex flex-wrap justify-center gap-10 mb-8">
                 {templates.map((template) => (
                   <div
@@ -525,46 +525,45 @@ const ResumeBuilderApp = () => {
                         : "hover:ring-2 hover:ring-blue-400 hover:shadow-xl"
                       }
                       bg-white rounded-xl p-4
+                      w-[345px] md:w-[350px] lg:w-[370px] xl:w-[390px]
+                      min-h-[600px]
                     `}
+                    style={{
+                      boxShadow: selectedTemplate === template.id
+                        ? '0 12px 42px 0 rgba(30,64,175,0.18)'
+                        : '0 6px 24px 0 rgba(30,64,175,0.08)'
+                    }}
                   >
-                    {/* Resume-Style Big Card Thumbnail */}
+                    {/* Preview Resume Sheet (large thumbnail) */}
                     <div
                       className="
                         bg-white rounded-lg shadow-lg overflow-hidden relative
                         flex items-center justify-center
-                        w-[320px] md:w-[330px] lg:w-[340px] xl:w-[360px]
-                        h-[460px] md:h-[470px] lg:h-[500px]
+                        w-full h-[520px] md:h-[540px] lg:h-[550px] xl:h-[570px]
                         aspect-[210/297]
                         border border-gray-200
                         mb-4
                         transition-transform duration-300
                         group-hover:scale-[1.04]
                         "
-                      style={{
-                        boxShadow: selectedTemplate === template.id
-                          ? '0 8px 32px 0 rgba(30,64,175,0.25)'
-                          : '0 6px 24px 0 rgba(30,64,175,0.08)'
-                      }}
                     >
                       <img
                         src={template.thumbnail}
                         alt={template.name}
                         className="object-contain w-full h-full bg-white"
-                        style={{ backgroundColor: 'white', borderRadius: 10 }}
+                        style={{ backgroundColor: "white", borderRadius: 10 }}
                         onError={e => {
                           e.currentTarget.src = "/resume-templates/thumbnails/professional.png";
                         }}
                       />
-                      {/* Selection Overlay */}
                       {selectedTemplate === template.id && (
                         <div className="absolute inset-0 pointer-events-none border-[3.5px] border-blue-700 rounded-lg"></div>
                       )}
                     </div>
-                    {/* Template Name + Description */}
-                    <div className="flex flex-col items-center w-[320px] md:w-[330px] lg:w-[340px] xl:w-[360px]">
+                    {/* Template name/desc/badges */}
+                    <div className="flex flex-col items-center w-full">
                       <div className="font-semibold text-xl text-gray-900 mb-1">{template.name}</div>
                       <div className="text-gray-500 text-sm mb-1 text-center">{template.description}</div>
-                      {/* Badges (if relevant) */}
                       <div className="flex flex-wrap justify-center gap-2 mb-1">
                         {template.isRecommended && (
                           <Badge className="bg-blue-500 text-white text-xs">Recommended</Badge>
