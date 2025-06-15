@@ -111,6 +111,15 @@ const templates = [
     category: "classic",
     color: "green",
     isNew: true
+  },
+  {
+    id: "classic-profile-orange",
+    name: "Classic Profile Orange",
+    description: "Elegant resume with orange name, clean sidebar and modern readable content.",
+    thumbnail: "/lovable-uploads/aefc4f9a-f33d-406b-a191-f7aae767471d.png",
+    category: "classic",
+    color: "orange",
+    isNew: true
   }
 ];
 

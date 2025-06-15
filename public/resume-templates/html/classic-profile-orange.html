@@ -1,0 +1,182 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{Name}} - Resume</title>
+  <style>
+    body {
+      background: #f7f7fa;
+      font-family: 'Segoe UI', Arial, sans-serif; 
+      margin: 0; padding: 0; color: #222;
+    }
+    .resume-section {
+      background: #fff;
+      max-width: 840px;
+      margin: 32px auto;
+      border-radius: 12px;
+      box-shadow: 0 2px 16px rgba(30,40,90,.12);
+      padding: 44px 46px 33px 46px;
+      display: flex;
+      flex-direction: row;
+      gap: 36px;
+    }
+    .left-profile {
+      flex: 2.2;
+    }
+    .photo-row {
+      display: flex; align-items: center; gap: 14px; margin-bottom: -7px;
+    }
+    .profile-photo {
+      width: 75px; height: 75px; border-radius: 50%; object-fit: cover; border: 3px solid #FFB14A; background: #ffeeda;
+    }
+    .profile-main-info {
+      display: flex; flex-direction: column; justify-content: center;
+    }
+    .profile-name {
+      font-size: 1.82rem;
+      font-weight: bold;
+      color: #de9511;
+      margin-bottom: 3px;
+      letter-spacing: 0.2px;
+    }
+    .profile-title {
+      font-size: 1.13rem;
+      color: #5c6477;
+      font-weight: 500;
+    }
+    .section-header {
+      color: #de9511;
+      font-size: 1.09rem;
+      font-weight: bold;
+      margin-top: 22px;
+      margin-bottom: 4px;
+    }
+    .profile-summary {
+      color: #323232; 
+      margin-bottom: 7px;
+      font-size: 1.04em;
+      margin-top: 6px;
+    }
+    .linkedin-link {
+      font-size: 0.97em;
+      color: #2a72bd;
+      text-decoration: underline;
+      margin-bottom: 13px;
+      display: inline-block;
+    }
+    .employment-title {
+      font-weight: 600;
+      color: #47506a;
+      font-size: 1.04em;
+      margin-bottom: 1px;
+      margin-top: 6px;
+    }
+    .employment-meta {
+      color: #de9511;
+      font-size: 0.95em;margin-bottom: 2.5px;
+      font-weight: 500;
+    }
+    .employment-listing ul {
+      margin: 0 0 9px 19px;
+      padding: 0;
+      color: #423200;
+      font-size: 0.99em;
+    }
+
+    /* Sidebar styling */
+    .right-sidebar {
+      flex: 1.15;
+      padding-left: 32px;
+      border-left: 1.6px solid #ececec;
+      font-size: 0.99em;
+      min-width: 196px;
+    }
+    .sidebar-label {
+      color: #888a9e;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+      margin-bottom: 2.5px;
+      font-size: 0.98em;
+    }
+    .sidebar-text {
+      color: #5a5f6d;
+      margin-bottom: 12px;
+    }
+    .sidebar-list {
+      margin: 0;
+      padding-left: 1.2em;
+      color: #476073;
+    }
+    @media (max-width: 900px) {
+      .resume-section { flex-direction: column; padding: 20px 8px; gap: 12px;}
+      .right-sidebar { border-left: none; border-top: 1.2px solid #ececec; padding-left: 0; padding-top: 24px;}
+    }
+  </style>
+</head>
+<body>
+  <div class="resume-section">
+    <div class="left-profile">
+      <div class="photo-row">
+        {{#if Photo}}
+          <img src="{{Photo}}" alt="photo" class="profile-photo" />
+        {{else}}
+          <img src="https://ui-avatars.com/api/?name={{Name}}&size=128&background=ffb14a&color=fff&bold=true" alt="photo" class="profile-photo" />
+        {{/if}}
+        <div class="profile-main-info">
+          <div class="profile-name">{{Name}}</div>
+          <div class="profile-title">{{Title}}</div>
+        </div>
+      </div>
+      <div class="section-header">Profile</div>
+      <div class="profile-summary">{{Summary}}</div>
+      {{#if LinkedIn}}
+        <a href="{{LinkedIn}}" class="linkedin-link">LinkedIn {{LinkedIn}}</a>
+      {{/if}}
+
+      <div class="section-header" style="margin-top:19px;">Employment history</div>
+      {{#each Experience}}
+        <div style="margin-bottom:10px;">
+          <div class="employment-title">
+            {{Title}} 
+            {{#if Company}}
+              <span style="color:#656e82; font-weight:400;">at {{Company}}</span>
+            {{/if}}
+            {{#if Location}}
+              <span style="color: #888a9e; font-weight:400;">, {{Location}}</span>
+            {{/if}}
+          </div>
+          <div class="employment-meta">{{StartDate}} {{#if EndDate}}– {{EndDate}}{{/if}}</div>
+          <div>
+            {{#if Description}}
+              <ul>
+                {{#each Description}}
+                  <li>{{this}}</li>
+                {{/each}}
+              </ul>
+            {{/if}}
+          </div>
+        </div>
+      {{/each}}
+    </div>
+    <div class="right-sidebar">
+      <div class="sidebar-label">Address</div>
+      <div class="sidebar-text">{{Address}}</div>
+      <div class="sidebar-label">Email</div>
+      <div class="sidebar-text"><a href="mailto:{{Email}}" style="color:#207ace;">{{Email}}</a></div>
+      <div class="sidebar-label">Phone</div>
+      <div class="sidebar-text">{{Phone}}</div>
+      <div class="sidebar-label">Date/Place of birth</div>
+      <div class="sidebar-text">{{BirthDate}}, {{BirthPlace}}</div>
+      <div class="sidebar-label">Driving License</div>
+      <div class="sidebar-text">{{DrivingLicense}}</div>
+      <div class="sidebar-label">Nationality</div>
+      <div class="sidebar-text">{{Nationality}}</div>
+      <div class="sidebar-label">Languages</div>
+      <div class="sidebar-text">{{Languages}}</div>
+      <div class="sidebar-label">Hobbies</div>
+      <div class="sidebar-text">{{Hobbies}}</div>
+    </div>
+  </div>
+</body>
+</html>
