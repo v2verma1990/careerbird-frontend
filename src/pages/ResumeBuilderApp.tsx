@@ -395,8 +395,7 @@ const ResumeBuilderApp = () => {
     try {
       const result = await resumeBuilderApi.buildResume({
         resumeData: JSON.stringify(resumeData),
-        templateId: selectedTemplate,
-        templateColor: templateColors[selectedTemplate]
+        templateId: selectedTemplate
       });
 
       if (result.error) {
