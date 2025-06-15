@@ -35,6 +35,7 @@ const ResumeBuilder = () => {
         const response = await fetch('/resume-templates/sample-data.json');
         const data = await response.json();
         setSampleData(data);
+        console.log('Sample data loaded:', data);
       } catch (error) {
         console.error('Failed to load sample data:', error);
       }
@@ -224,11 +225,78 @@ const ResumeBuilder = () => {
                   if (sampleData) {
                     try {
                       const iframe = e.target as HTMLIFrameElement;
+                      console.log('Injecting sample data into iframe:', sampleData);
+                      
+                      // Wait a bit for the iframe to fully load
                       setTimeout(() => {
-                        iframe.contentWindow?.postMessage({ 
-                          type: 'POPULATE_RESUME_DATA', 
-                          data: sampleData 
-                        }, '*');
+                        try {
+                          // Try to access the iframe document
+                          const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+                          if (iframeDoc) {
+                            console.log('Iframe document accessible, populating data...');
+                            
+                            // Method 1: Try to post message to iframe
+                            iframe.contentWindow?.postMessage({ 
+                              type: 'POPULATE_RESUME_DATA', 
+                              data: sampleData 
+                            }, '*');
+                            
+                            // Method 2: Direct DOM manipulation as fallback
+                            setTimeout(() => {
+                              try {
+                                // Replace common placeholders directly in the DOM
+                                const content = iframeDoc.body.innerHTML;
+                                let updatedContent = content
+                                  .replace(/\{\{name\}\}/g, sampleData.name || 'John Doe')
+                                  .replace(/\{\{title\}\}/g, sampleData.title || 'Professional Title')
+                                  .replace(/\{\{email\}\}/g, sampleData.email || 'email@example.com')
+                                  .replace(/\{\{phone\}\}/g, sampleData.phone || '(123) 456-7890')
+                                  .replace(/\{\{location\}\}/g, sampleData.location || 'City, State')
+                                  .replace(/\{\{linkedin\}\}/g, sampleData.linkedin || 'linkedin.com/in/profile')
+                                  .replace(/\{\{website\}\}/g, sampleData.website || 'website.com')
+                                  .replace(/\{\{summary\}\}/g, sampleData.summary || 'Professional summary...');
+                                
+                                // Handle experience section
+                                if (sampleData.experience && sampleData.experience.length > 0) {
+                                  const exp = sampleData.experience[0];
+                                  updatedContent = updatedContent
+                                    .replace(/\{\{experience\.title\}\}/g, exp.title || 'Job Title')
+                                    .replace(/\{\{experience\.company\}\}/g, exp.company || 'Company Name')
+                                    .replace(/\{\{experience\.location\}\}/g, exp.location || 'Location')
+                                    .replace(/\{\{experience\.startDate\}\}/g, exp.startDate || 'Start Date')
+                                    .replace(/\{\{experience\.endDate\}\}/g, exp.endDate || 'End Date')
+                                    .replace(/\{\{experience\.description\}\}/g, exp.description || 'Job description...');
+                                }
+                                
+                                // Handle education section
+                                if (sampleData.education && sampleData.education.length > 0) {
+                                  const edu = sampleData.education[0];
+                                  updatedContent = updatedContent
+                                    .replace(/\{\{education\.degree\}\}/g, edu.degree || 'Degree')
+                                    .replace(/\{\{education\.institution\}\}/g, edu.institution || 'Institution')
+                                    .replace(/\{\{education\.location\}\}/g, edu.location || 'Location')
+                                    .replace(/\{\{education\.startDate\}\}/g, edu.startDate || 'Start Date')
+                                    .replace(/\{\{education\.endDate\}\}/g, edu.endDate || 'End Date');
+                                }
+                                
+                                // Handle skills
+                                if (sampleData.skills && sampleData.skills.length > 0) {
+                                  updatedContent = updatedContent
+                                    .replace(/\{\{skills\}\}/g, sampleData.skills.join(', '));
+                                }
+                                
+                                iframeDoc.body.innerHTML = updatedContent;
+                                console.log('Successfully populated template with sample data');
+                              } catch (domError) {
+                                console.log('DOM manipulation failed:', domError);
+                              }
+                            }, 200);
+                          } else {
+                            console.log('Cannot access iframe document due to cross-origin restrictions');
+                          }
+                        } catch (accessError) {
+                          console.log('Cannot access iframe content:', accessError);
+                        }
                       }, 500);
                     } catch (error) {
                       console.log('Could not inject sample data into preview:', error);
