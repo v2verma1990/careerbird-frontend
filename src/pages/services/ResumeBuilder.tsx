@@ -327,6 +327,15 @@ const ResumeBuilder = () => {
       category: "classic",
       color: "gray",
       isNew: true
+    },
+    {
+      id: "green-sidebar-customer-service",
+      name: "Green Sidebar Customer Service",
+      description: "Modern customer service resume with a green sidebar and clean layout",
+      thumbnail: "/lovable-uploads/4fcd8e16-5fb8-46bf-876e-def35b427c45.png",
+      category: "classic",
+      color: "green",
+      isNew: true
     }
   ];
 
