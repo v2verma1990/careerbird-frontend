@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -61,6 +61,7 @@ const ResumeBuilderApp = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [dataSource, setDataSource] = useState<'manual' | 'extract' | null>(null);
   const [useDefaultResume, setUseDefaultResume] = useState(false);
+  const [sampleData, setSampleData] = useState<any>(null);
   
   const [resumeData, setResumeData] = useState<ResumeData>({
     personalInfo: {
@@ -155,6 +156,15 @@ const ResumeBuilderApp = () => {
       thumbnail: "/resume-templates/thumbnails/tech-minimalist.png"
     }
   ];
+
+  // Function to inject sample data into template HTML
+  const getTemplateWithData = (templateId: string, data: any) => {
+    if (!data) return `/resume-templates/html/${templateId}.html`;
+    
+    // Create a data URL with the template HTML that includes the sample data
+    const templateUrl = `/resume-templates/html/${templateId}.html`;
+    return templateUrl + `?data=${encodeURIComponent(JSON.stringify(data))}`;
+  };
 
   const handleTemplateSelect = (templateId: string) => {
     setSelectedTemplate(templateId);
@@ -327,10 +337,26 @@ const ResumeBuilderApp = () => {
     setDataSource(null);
   };
 
+  // Load sample data
+  useEffect(() => {
+    const loadSampleData = async () => {
+      try {
+        const response = await fetch('/resume-templates/sample-data.json');
+        const data = await response.json();
+        setSampleData(data);
+      } catch (error) {
+        console.error('Failed to load sample data:', error);
+      }
+    };
+    loadSampleData();
+  }, []);
+
   // If template is preselected, show the builder interface
   if (preselectedTemplate) {
-    // Show preview screen with actual HTML template
+    // Show preview screen with actual HTML template populated with data
     if (showPreview) {
+      const previewData = useDefaultResume ? sampleData : resumeData;
+      
       return (
         <div className="min-h-screen bg-gray-50">
           {/* Header */}
@@ -365,13 +391,28 @@ const ResumeBuilderApp = () => {
             </div>
           </div>
           
-          {/* Template Preview using actual HTML */}
+          {/* Template Preview with Data */}
           <div className="flex justify-center p-6">
             <div className="w-full max-w-4xl bg-white shadow-lg rounded-lg overflow-hidden">
               <iframe
-                src={`/resume-templates/html/${preselectedTemplate}.html`}
+                src={getTemplateWithData(preselectedTemplate, previewData)}
                 className="w-full h-[800px] border-0"
                 title="Resume Preview"
+                onLoad={(e) => {
+                  // Inject data into the iframe if sample data is available
+                  if (previewData) {
+                    try {
+                      const iframe = e.target as HTMLIFrameElement;
+                      const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+                      if (iframeDoc) {
+                        // Post message to iframe with data
+                        iframe.contentWindow?.postMessage({ type: 'POPULATE_RESUME_DATA', data: previewData }, '*');
+                      }
+                    } catch (error) {
+                      console.log('Could not inject data into iframe:', error);
+                    }
+                  }
+                }}
                 onError={() => {
                   console.error(`Failed to load template: ${preselectedTemplate}.html`);
                 }}
@@ -421,7 +462,38 @@ const ResumeBuilderApp = () => {
                 onFileSelected={() => {}}
                 onUseDefaultResumeChange={(checked) => {
                   setUseDefaultResume(checked);
-                  if (checked) {
+                  if (checked && sampleData) {
+                    // Populate form with sample data
+                    setResumeData({
+                      personalInfo: {
+                        name: sampleData.name || "",
+                        title: sampleData.title || "",
+                        email: sampleData.email || "",
+                        phone: sampleData.phone || "",
+                        location: sampleData.location || "",
+                        linkedin: sampleData.linkedin || "",
+                        website: sampleData.website || ""
+                      },
+                      summary: sampleData.summary || "",
+                      experience: sampleData.experience?.map((exp: any) => ({
+                        title: exp.title || "",
+                        company: exp.company || "",
+                        location: exp.location || "",
+                        startDate: exp.startDate || "",
+                        endDate: exp.endDate || "",
+                        responsibilities: exp.description ? [exp.description] : [""]
+                      })) || [],
+                      education: sampleData.education?.map((edu: any) => ({
+                        degree: edu.degree || "",
+                        institution: edu.institution || "",
+                        location: edu.location || "",
+                        startDate: edu.startDate || "",
+                        endDate: edu.endDate || "",
+                        gpa: edu.description?.includes("GPA") ? edu.description.split("GPA: ")[1] : ""
+                      })) || [],
+                      skills: sampleData.skills || [],
+                      certifications: sampleData.certifications || []
+                    });
                     setDataSource('extract');
                   }
                 }}
@@ -1007,16 +1079,32 @@ const ResumeBuilderApp = () => {
           </div>
         </div>
         
-        {/* Preview Panel */}
+        {/* Preview Panel with Sample Data */}
         <div className="flex-1 p-6">
           {selectedTemplate ? (
             <div className="text-center">
               <h1 className="text-2xl font-bold mb-4">Template Preview</h1>
               <div className="bg-white shadow-lg rounded-lg overflow-hidden max-w-2xl mx-auto">
                 <iframe
-                  src={`/resume-templates/html/${selectedTemplate}.html`}
+                  src={getTemplateWithData(selectedTemplate, sampleData)}
                   className="w-full h-[600px] border-0"
                   title="Template Preview"
+                  onLoad={(e) => {
+                    // Inject sample data into the preview iframe
+                    if (sampleData) {
+                      try {
+                        const iframe = e.target as HTMLIFrameElement;
+                        setTimeout(() => {
+                          iframe.contentWindow?.postMessage({ 
+                            type: 'POPULATE_RESUME_DATA', 
+                            data: sampleData 
+                          }, '*');
+                        }, 500);
+                      } catch (error) {
+                        console.log('Could not inject sample data into preview:', error);
+                      }
+                    }
+                  }}
                 />
               </div>
               <Button 
@@ -1029,7 +1117,7 @@ const ResumeBuilderApp = () => {
           ) : (
             <div className="text-center">
               <h1 className="text-3xl font-bold mb-4">Select a Resume Template</h1>
-              <p className="text-gray-600">Choose a template from the sidebar to see the preview.</p>
+              <p className="text-gray-600">Choose a template from the sidebar to see the preview with sample data.</p>
             </div>
           )}
         </div>
