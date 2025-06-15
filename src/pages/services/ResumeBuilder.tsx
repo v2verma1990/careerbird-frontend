@@ -27,6 +27,7 @@ const ResumeBuilder = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [previewTemplate, setPreviewTemplate] = useState<string>("");
   const [sampleData, setSampleData] = useState<any>(null);
+  const [templateHtml, setTemplateHtml] = useState<string>("");
 
   // Load sample data
   useEffect(() => {
@@ -42,6 +43,152 @@ const ResumeBuilder = () => {
     };
     loadSampleData();
   }, []);
+
+  // Function to compile Handlebars-like templates with sample data
+  const compileTemplate = (html: string, data: any) => {
+    if (!data || !html) return html;
+
+    let compiledHtml = html;
+
+    try {
+      // Replace simple variables like {{name}}, {{title}}, etc.
+      compiledHtml = compiledHtml
+        .replace(/\{\{name\}\}/g, data.name || '')
+        .replace(/\{\{title\}\}/g, data.title || '')
+        .replace(/\{\{email\}\}/g, data.email || '')
+        .replace(/\{\{phone\}\}/g, data.phone || '')
+        .replace(/\{\{location\}\}/g, data.location || '')
+        .replace(/\{\{linkedin\}\}/g, data.linkedin || '')
+        .replace(/\{\{website\}\}/g, data.website || '')
+        .replace(/\{\{summary\}\}/g, data.summary || '');
+
+      // Handle experience section with #each
+      if (data.experience && data.experience.length > 0) {
+        // Replace experience loop
+        const experienceRegex = /\{\{#each experience\}\}([\s\S]*?)\{\{\/each\}\}/g;
+        compiledHtml = compiledHtml.replace(experienceRegex, (match, template) => {
+          return data.experience.map((exp: any) => {
+            return template
+              .replace(/\{\{title\}\}/g, exp.title || '')
+              .replace(/\{\{company\}\}/g, exp.company || '')
+              .replace(/\{\{location\}\}/g, exp.location || '')
+              .replace(/\{\{startDate\}\}/g, exp.startDate || '')
+              .replace(/\{\{endDate\}\}/g, exp.endDate || '')
+              .replace(/\{\{description\}\}/g, exp.description || '');
+          }).join('');
+        });
+
+        // Replace individual experience fields for first experience
+        const firstExp = data.experience[0];
+        compiledHtml = compiledHtml
+          .replace(/\{\{experience\.title\}\}/g, firstExp.title || '')
+          .replace(/\{\{experience\.company\}\}/g, firstExp.company || '')
+          .replace(/\{\{experience\.location\}\}/g, firstExp.location || '')
+          .replace(/\{\{experience\.startDate\}\}/g, firstExp.startDate || '')
+          .replace(/\{\{experience\.endDate\}\}/g, firstExp.endDate || '')
+          .replace(/\{\{experience\.description\}\}/g, firstExp.description || '');
+      }
+
+      // Handle education section
+      if (data.education && data.education.length > 0) {
+        const educationRegex = /\{\{#each education\}\}([\s\S]*?)\{\{\/each\}\}/g;
+        compiledHtml = compiledHtml.replace(educationRegex, (match, template) => {
+          return data.education.map((edu: any) => {
+            return template
+              .replace(/\{\{degree\}\}/g, edu.degree || '')
+              .replace(/\{\{institution\}\}/g, edu.institution || '')
+              .replace(/\{\{location\}\}/g, edu.location || '')
+              .replace(/\{\{startDate\}\}/g, edu.startDate || '')
+              .replace(/\{\{endDate\}\}/g, edu.endDate || '')
+              .replace(/\{\{description\}\}/g, edu.description || '');
+          }).join('');
+        });
+
+        // Replace individual education fields for first education
+        const firstEdu = data.education[0];
+        compiledHtml = compiledHtml
+          .replace(/\{\{education\.degree\}\}/g, firstEdu.degree || '')
+          .replace(/\{\{education\.institution\}\}/g, firstEdu.institution || '')
+          .replace(/\{\{education\.location\}\}/g, firstEdu.location || '')
+          .replace(/\{\{education\.startDate\}\}/g, firstEdu.startDate || '')
+          .replace(/\{\{education\.endDate\}\}/g, firstEdu.endDate || '');
+      }
+
+      // Handle skills section
+      if (data.skills && data.skills.length > 0) {
+        const skillsRegex = /\{\{#each skills\}\}([\s\S]*?)\{\{\/each\}\}/g;
+        compiledHtml = compiledHtml.replace(skillsRegex, (match, template) => {
+          return data.skills.map((skill: string) => {
+            return template.replace(/\{\{this\}\}/g, skill).replace(/\{\{\.}\}/g, skill);
+          }).join('');
+        });
+
+        // Replace skills as comma-separated list
+        compiledHtml = compiledHtml.replace(/\{\{skills\}\}/g, data.skills.join(', '));
+      }
+
+      // Handle certifications
+      if (data.certifications && data.certifications.length > 0) {
+        const certificationsRegex = /\{\{#each certifications\}\}([\s\S]*?)\{\{\/each\}\}/g;
+        compiledHtml = compiledHtml.replace(certificationsRegex, (match, template) => {
+          return data.certifications.map((cert: any) => {
+            return template
+              .replace(/\{\{name\}\}/g, cert.name || '')
+              .replace(/\{\{issuer\}\}/g, cert.issuer || '')
+              .replace(/\{\{date\}\}/g, cert.date || '');
+          }).join('');
+        });
+      }
+
+      // Handle projects
+      if (data.projects && data.projects.length > 0) {
+        const projectsRegex = /\{\{#each projects\}\}([\s\S]*?)\{\{\/each\}\}/g;
+        compiledHtml = compiledHtml.replace(projectsRegex, (match, template) => {
+          return data.projects.map((project: any) => {
+            return template
+              .replace(/\{\{name\}\}/g, project.name || '')
+              .replace(/\{\{date\}\}/g, project.date || '')
+              .replace(/\{\{description\}\}/g, project.description || '');
+          }).join('');
+        });
+      }
+
+      // Clean up any remaining Handlebars expressions
+      compiledHtml = compiledHtml
+        .replace(/\{\{#if[^}]*\}\}/g, '')
+        .replace(/\{\{\/if\}\}/g, '')
+        .replace(/\{\{#unless[^}]*\}\}/g, '')
+        .replace(/\{\{\/unless\}\}/g, '')
+        .replace(/\{\{#each[^}]*\}\}/g, '')
+        .replace(/\{\{\/each\}\}/g, '')
+        .replace(/\{\{[^}]*\}\}/g, ''); // Remove any remaining placeholders
+
+      console.log('Template compiled successfully');
+      return compiledHtml;
+    } catch (error) {
+      console.error('Error compiling template:', error);
+      return html;
+    }
+  };
+
+  // Load and compile template HTML when preview is opened
+  useEffect(() => {
+    if (showPreview && previewTemplate && sampleData) {
+      const loadTemplate = async () => {
+        try {
+          const response = await fetch(`/resume-templates/html/${previewTemplate}.html`);
+          const html = await response.text();
+          const compiledHtml = compileTemplate(html, sampleData);
+          setTemplateHtml(compiledHtml);
+          console.log('Template loaded and compiled');
+        } catch (error) {
+          console.error('Failed to load template:', error);
+          setTemplateHtml('<p>Failed to load template</p>');
+        }
+      };
+      loadTemplate();
+    }
+  }, [showPreview, previewTemplate, sampleData]);
 
   const templates: Template[] = [
     {
@@ -172,6 +319,7 @@ const ResumeBuilder = () => {
   const handleClosePreview = () => {
     setShowPreview(false);
     setPreviewTemplate("");
+    setTemplateHtml("");
   };
 
   const handleContinue = () => {
@@ -184,7 +332,7 @@ const ResumeBuilder = () => {
     navigate('/resume-builder-app');
   };
 
-  // Show preview modal
+  // Show preview modal with compiled template
   if (showPreview && previewTemplate) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -216,97 +364,24 @@ const ResumeBuilder = () => {
           {/* Preview Content */}
           <div className="p-4 overflow-auto max-h-[calc(90vh-80px)]">
             <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-              <iframe
-                src={`/resume-templates/html/${previewTemplate}.html`}
-                className="w-full h-[800px] border-0"
-                title="Template Preview"
-                onLoad={(e) => {
-                  // Inject sample data into the iframe
-                  if (sampleData) {
-                    try {
-                      const iframe = e.target as HTMLIFrameElement;
-                      console.log('Injecting sample data into iframe:', sampleData);
-                      
-                      // Wait a bit for the iframe to fully load
-                      setTimeout(() => {
-                        try {
-                          // Try to access the iframe document
-                          const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-                          if (iframeDoc) {
-                            console.log('Iframe document accessible, populating data...');
-                            
-                            // Method 1: Try to post message to iframe
-                            iframe.contentWindow?.postMessage({ 
-                              type: 'POPULATE_RESUME_DATA', 
-                              data: sampleData 
-                            }, '*');
-                            
-                            // Method 2: Direct DOM manipulation as fallback
-                            setTimeout(() => {
-                              try {
-                                // Replace common placeholders directly in the DOM
-                                const content = iframeDoc.body.innerHTML;
-                                let updatedContent = content
-                                  .replace(/\{\{name\}\}/g, sampleData.name || 'John Doe')
-                                  .replace(/\{\{title\}\}/g, sampleData.title || 'Professional Title')
-                                  .replace(/\{\{email\}\}/g, sampleData.email || 'email@example.com')
-                                  .replace(/\{\{phone\}\}/g, sampleData.phone || '(123) 456-7890')
-                                  .replace(/\{\{location\}\}/g, sampleData.location || 'City, State')
-                                  .replace(/\{\{linkedin\}\}/g, sampleData.linkedin || 'linkedin.com/in/profile')
-                                  .replace(/\{\{website\}\}/g, sampleData.website || 'website.com')
-                                  .replace(/\{\{summary\}\}/g, sampleData.summary || 'Professional summary...');
-                                
-                                // Handle experience section
-                                if (sampleData.experience && sampleData.experience.length > 0) {
-                                  const exp = sampleData.experience[0];
-                                  updatedContent = updatedContent
-                                    .replace(/\{\{experience\.title\}\}/g, exp.title || 'Job Title')
-                                    .replace(/\{\{experience\.company\}\}/g, exp.company || 'Company Name')
-                                    .replace(/\{\{experience\.location\}\}/g, exp.location || 'Location')
-                                    .replace(/\{\{experience\.startDate\}\}/g, exp.startDate || 'Start Date')
-                                    .replace(/\{\{experience\.endDate\}\}/g, exp.endDate || 'End Date')
-                                    .replace(/\{\{experience\.description\}\}/g, exp.description || 'Job description...');
-                                }
-                                
-                                // Handle education section
-                                if (sampleData.education && sampleData.education.length > 0) {
-                                  const edu = sampleData.education[0];
-                                  updatedContent = updatedContent
-                                    .replace(/\{\{education\.degree\}\}/g, edu.degree || 'Degree')
-                                    .replace(/\{\{education\.institution\}\}/g, edu.institution || 'Institution')
-                                    .replace(/\{\{education\.location\}\}/g, edu.location || 'Location')
-                                    .replace(/\{\{education\.startDate\}\}/g, edu.startDate || 'Start Date')
-                                    .replace(/\{\{education\.endDate\}\}/g, edu.endDate || 'End Date');
-                                }
-                                
-                                // Handle skills
-                                if (sampleData.skills && sampleData.skills.length > 0) {
-                                  updatedContent = updatedContent
-                                    .replace(/\{\{skills\}\}/g, sampleData.skills.join(', '));
-                                }
-                                
-                                iframeDoc.body.innerHTML = updatedContent;
-                                console.log('Successfully populated template with sample data');
-                              } catch (domError) {
-                                console.log('DOM manipulation failed:', domError);
-                              }
-                            }, 200);
-                          } else {
-                            console.log('Cannot access iframe document due to cross-origin restrictions');
-                          }
-                        } catch (accessError) {
-                          console.log('Cannot access iframe content:', accessError);
-                        }
-                      }, 500);
-                    } catch (error) {
-                      console.log('Could not inject sample data into preview:', error);
-                    }
-                  }
-                }}
-                onError={() => {
-                  console.error(`Failed to load template: ${previewTemplate}.html`);
-                }}
-              />
+              {templateHtml ? (
+                <div 
+                  className="w-full p-4"
+                  dangerouslySetInnerHTML={{ __html: templateHtml }}
+                  style={{ 
+                    fontFamily: 'Arial, sans-serif',
+                    lineHeight: '1.6',
+                    color: '#333'
+                  }}
+                />
+              ) : (
+                <div className="w-full h-[800px] flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading template preview...</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
