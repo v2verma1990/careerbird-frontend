@@ -1,7 +1,28 @@
 import { supabase } from "@/integrations/supabase/client";
 
+
 // Base URL for API calls
-const API_BASE_URL = "https://localhost:5001/api"; // Local development URL
+const determineApiBaseUrl = () => {
+
+ // return "https://localhost:5001/api";// Lovable
+
+
+  const isProduction = import.meta.env.PROD;
+  
+  const devBackendUrl = import.meta.env.VITE_API_URL;
+  if (isProduction) {
+    console.log(`in production: ${import.meta.env.VITE_API_URL}`);
+    return '/api';
+  } else if (devBackendUrl) {
+  return devBackendUrl;
+  } else {
+  return "http://localhost:5001/api";
+  }
+};
+
+// Set the API base URL
+const API_BASE_URL = determineApiBaseUrl();
+//const API_BASE_URL = "/api"; // Use relative URL for API calls to work in all environments
 
 /**
  * Simple API client for resume builder operations
@@ -41,6 +62,7 @@ export const resumeBuilderApi = {
     file?: File, 
     resumeData?: string, 
     templateId: string,
+    color?: string, // Add color parameter
     enhanceWithAI?: boolean,
     premiumEnhancement?: boolean 
   }) => {
@@ -62,6 +84,12 @@ export const resumeBuilderApi = {
       
       // Add template ID
       formData.append('templateId', params.templateId);
+      
+      // Add color parameter if provided
+      if (params.color) {
+        formData.append('color', params.color);
+        console.log(`Adding color parameter to form data: ${params.color}`);
+      }
       
       // Add AI enhancement flags
       if (params.enhanceWithAI) {

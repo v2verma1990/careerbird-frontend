@@ -10,6 +10,7 @@ namespace ResumeAI.API.Models
         public string? ResumeData { get; set; }
         [Required]
         public string TemplateId { get; set; } = string.Empty;
+        public string? Color { get; set; } // Primary color for the template
     }
 
     public class ResumeOptimizeRequestModel
@@ -39,6 +40,7 @@ namespace ResumeAI.API.Models
         public string LinkedIn { get; set; } = string.Empty;
         public string Website { get; set; } = string.Empty;
         public string Summary { get; set; } = string.Empty;
+        public string Color { get; set; } = "#2196F3"; // Default color (blue)
         public List<string> Skills { get; set; } = new List<string>();
         public List<ExperienceItem> Experience { get; set; } = new List<ExperienceItem>();
         public List<EducationItem> Education { get; set; } = new List<EducationItem>();

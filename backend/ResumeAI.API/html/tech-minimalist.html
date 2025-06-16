@@ -187,15 +187,15 @@
         <div class="terminal-content">
             <div class="terminal-line">
                 <span class="prompt">name:</span> 
-                <span class="name-display">{{name}}</span>
+                <span class="name-display">{{#if Name}}{{name}}{{else}}{{name}}{{/if}}</span>
             </div>
             <div class="terminal-line">
                 <span class="prompt">role:</span> 
-                <span class="title-display">{{title}}</span>
+                <span class="title-display">{{#if Title}}{{title}}{{else}}{{title}}{{/if}}</span>
             </div>
             <div class="terminal-line">
                 <span class="prompt">contact:</span> 
-                <span class="contact-display">{{email}} | {{phone}} | {{location}}</span>
+                <span class="contact-display">{{#if Email}}{{email}}{{else}}{{email}}{{/if}} | {{#if Phone}}{{phone}}{{else}}{{phone}}{{/if}} | {{#if Location}}{{location}}{{else}}{{location}}{{/if}}</span>
             </div>
             {{#if linkedin}}
             <div class="terminal-line">
@@ -211,14 +211,19 @@
             {{/if}}
         </div>
 
-        {{#if summary}}
+        {{#if Summary}}
         <div class="section">
             <div class="section-header">// ABOUT</div>
             <div class="code-block">{{summary}}</div>
         </div>
-        {{/if}}
+        {{else}}{{#if summary}}
+        <div class="section">
+            <div class="section-header">// ABOUT</div>
+            <div class="code-block">{{summary}}</div>
+        </div>
+        {{/if}}{{/if}}
 
-        {{#if skills}}
+        {{#if Skills.length}}
         <div class="section">
             <div class="section-header">// TECHNICAL_SKILLS</div>
             <div class="code-block"><span class="keyword">const</span> <span class="variable">skills</span> = [

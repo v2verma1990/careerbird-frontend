@@ -25,7 +25,7 @@
     .header {
       text-align: center;
       margin-bottom: 30px;
-      border-bottom: 2px solid #3498db;
+      border-bottom: 2px solid {{#if Color}}{{Color}}{{else}}#3498db{{/if}};
       padding-bottom: 20px;
     }
     .header h1 {
@@ -54,7 +54,7 @@
     }
     .section-title {
       font-size: 18px;
-      color: #3498db;
+      color: {{#if Color}}{{Color}}{{else}}#3498db{{/if}};
       margin-bottom: 15px;
       border-bottom: 1px solid #ecf0f1;
       padding-bottom: 5px;

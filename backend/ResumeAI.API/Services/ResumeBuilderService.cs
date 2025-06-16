@@ -521,6 +521,7 @@ namespace ResumeAI.API.Services
                 Console.WriteLine($"BuildResumeAsync called with templateId: {request.TemplateId}");
                 Console.WriteLine($"Has resume file: {request.ResumeFile != null}");
                 Console.WriteLine($"Has resume data: {!string.IsNullOrEmpty(request.ResumeData)}");
+                Console.WriteLine($"Color parameter: {request.Color ?? "not provided"}");
                 
                 // Get resume data either from file or from provided JSON
                 ResumeDataModel resumeData;

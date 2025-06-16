@@ -16,6 +16,7 @@ import apiClient from '@/utils/apiClient';
 import { useResume } from "@/contexts/resume/ResumeContext";
 import Handlebars from 'handlebars';
 import TemplateColorPicker from "@/components/resume/TemplateColorPicker";
+import styles from './ResumeBuilderApp.module.css';
 
 // Template data for step 1
 const templates = [
@@ -194,6 +195,8 @@ const initialData = {
   }]
 };
 
+const DEFAULT_TEMPLATE_ID = "default-template"; // Use your actual default template ID
+
 const ResumeBuilderApp = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -212,6 +215,9 @@ const ResumeBuilderApp = () => {
   const [hasDefaultResume, setHasDefaultResume] = useState(false);
   const { toast } = useToast();
   const { defaultResume, isLoading } = useResume();
+  // Hook for storing template color choices, by template ID
+  const [templateColors, setTemplateColors] = useState<{[templateId: string]: string}>({});
+  const [lastUsedTemplateId, setLastUsedTemplateId] = useState(""); // Track last used template ID
 
   // Load sample resume data for preview
   useEffect(() => {
@@ -223,26 +229,49 @@ const ResumeBuilderApp = () => {
     }
   }, [showPreview, sampleResumeData]);
 
-  // Replace local preview template fetching with backend API fetching
+  // Fetch template HTML from backend API
   useEffect(() => {
     if (showPreview && previewTemplate) {
       const loadTemplate = async () => {
         try {
-          // Fetch template HTML from backend API instead of public folder
-          const response = await fetch(`/api/templates/${previewTemplate}.html`); // Assumes backend exposes this endpoint
-          if (!response.ok) throw new Error("Failed to fetch template from backend");
+          console.log(`Fetching template from backend: /api/templates/${previewTemplate}.html`);
+          // Fetch template HTML from backend API
+          const response = await fetch(`/api/templates/${previewTemplate}.html`);
+          
+          if (!response.ok) {
+            console.error(`Failed to fetch template from backend: ${response.status} ${response.statusText}`);
+            throw new Error(`Failed to fetch template from backend: ${response.status}`);
+          }
+          
           const html = await response.text();
+          console.log(`Template HTML fetched successfully, length: ${html.length} bytes`);
+          
+          // Get the selected color for the template
+          const selectedColor = templateColors[previewTemplate] || "#2196F3";
+          console.log(`Using color for preview: ${selectedColor}`);
+          
           // Use sample data for preview
-          const dataForPreview = useSampleData && sampleResumeData ? sampleResumeData : resumeData;
-          const compiled = Handlebars.compile(html)(dataForPreview);
-          setTemplateHtml(compiled);
+          let dataForPreview = useSampleData && sampleResumeData ? { ...sampleResumeData } : { ...resumeData };
+          
+          // Add the color to the preview data
+          dataForPreview.Color = selectedColor;
+          
+          // Compile the template with Handlebars
+          try {
+            const compiled = Handlebars.compile(html)(dataForPreview);
+            setTemplateHtml(compiled);
+          } catch (compileError) {
+            console.error('Error compiling template with Handlebars:', compileError);
+            setTemplateHtml(`<p>Error compiling template: ${compileError.message}</p><pre>${html}</pre>`);
+          }
         } catch (error) {
-          setTemplateHtml('<p>Failed to load template from backend</p>');
+          console.error('Error loading template:', error);
+          setTemplateHtml(`<p>Failed to load template from backend: ${error.message}</p>`);
         }
       };
       loadTemplate();
     }
-  }, [showPreview, previewTemplate, resumeData, sampleResumeData, useSampleData]);
+  }, [showPreview, previewTemplate, resumeData, sampleResumeData, useSampleData, templateColors]);
 
   // Handle template selection
   const handleTemplateSelect = (templateId: string) => {
@@ -267,9 +296,6 @@ const ResumeBuilderApp = () => {
   const goToStep1 = () => {
     setCurrentStep(1);
   };
-
-  // Hook for storing template color choices, by template ID
-  const [templateColors, setTemplateColors] = useState<{[templateId: string]: string}>({});
 
   // Default: use the first color available for each template, or #2196F3 (blue) as fallback.
   useEffect(() => {
@@ -395,9 +421,21 @@ const ResumeBuilderApp = () => {
   const generateResume = async () => {
     setIsGenerating(true);
     try {
+      // Get the selected color for the template
+      const selectedColor = templateColors[selectedTemplate] || "#2196F3";
+      
+      // Create a copy of resumeData with the color
+      const resumeDataWithColor = {
+        ...resumeData,
+        Color: selectedColor
+      };
+      
+      console.log(`Generating resume with color: ${selectedColor}`);
+      
       const result = await resumeBuilderApi.buildResume({
-        resumeData: JSON.stringify(resumeData),
-        templateId: selectedTemplate
+        resumeData: JSON.stringify(resumeDataWithColor),
+        templateId: selectedTemplate,
+        color: selectedColor // Also pass as separate parameter for backward compatibility
       });
 
       if (result.error) {
@@ -437,10 +475,22 @@ const ResumeBuilderApp = () => {
   const generateResumeViaAI = async () => {
     setIsGenerating(true);
     try {
+      // Get the selected color for the template
+      const selectedColor = templateColors[selectedTemplate] || "#2196F3";
+      
+      // Create a copy of resumeData with the color
+      const resumeDataWithColor = {
+        ...resumeData,
+        Color: selectedColor
+      };
+      
+      console.log(`Generating AI-enhanced resume with color: ${selectedColor}`);
+      
       // Call AI-enhanced resume generation
       const result = await resumeBuilderApi.buildResume({
-        resumeData: JSON.stringify(resumeData),
+        resumeData: JSON.stringify(resumeDataWithColor),
         templateId: selectedTemplate,
+        color: selectedColor, // Pass color as separate parameter
         enhanceWithAI: true
       });
 
@@ -619,18 +669,13 @@ const ResumeBuilderApp = () => {
                     className={`
                       group flex flex-col items-center cursor-pointer transition-all duration-300
                       ${selectedTemplate === template.id
-                        ? "ring-4 ring-blue-600 shadow-2xl"
-                        : "hover:ring-2 hover:ring-blue-400 hover:shadow-xl"
+                        ? "ring-4 ring-blue-600 shadow-2xl selected-template-box"
+                        : "hover:ring-2 hover:ring-blue-400 hover:shadow-xl unselected-template-box"
                       }
                       bg-white rounded-xl p-4
                       w-[345px] md:w-[350px] lg:w-[370px] xl:w-[390px]
                       min-h-[600px]
                     `}
-                    style={{
-                      boxShadow: selectedTemplate === template.id
-                        ? '0 12px 42px 0 rgba(30,64,175,0.18)'
-                        : '0 6px 24px 0 rgba(30,64,175,0.08)'
-                    }}
                   >
                     {/* Preview Resume Sheet (large thumbnail) */}
                     <div
@@ -1183,6 +1228,13 @@ const ResumeBuilderApp = () => {
                 )}
               </Button>
             </div>
+
+            {/* Error message for default template usage */}
+            {lastUsedTemplateId === DEFAULT_TEMPLATE_ID && (
+              <div className="text-red-600 font-semibold mb-2">
+                Resume generated using the default template. Template selection failed.
+              </div>
+            )}
           </>
         )}
       </div>
