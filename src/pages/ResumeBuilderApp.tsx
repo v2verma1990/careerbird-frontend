@@ -277,6 +277,20 @@ const ResumeBuilderApp = () => {
   const handleTemplateSelect = (templateId: string) => {
     setSelectedTemplate(templateId);
     setSearchParams({ template: templateId });
+    
+    // If this is a different template than the last one used, update the lastUsedTemplateId
+    if (templateId !== lastUsedTemplateId) {
+      setLastUsedTemplateId(templateId);
+      
+      // Find the template in the templates array
+      const template = templates.find(t => t.id === templateId);
+      if (template && template.availableColors && template.availableColors.length > 0) {
+        // Set the default color for this template if it's not already set
+        if (!templateColors[templateId]) {
+          handleColorSelect(templateId, template.availableColors[0]);
+        }
+      }
+    }
   };
 
   // Go to next step (Step 2: Resume Data)
@@ -308,7 +322,12 @@ const ResumeBuilderApp = () => {
 
   // Handler for color selection
   const handleColorSelect = (templateId: string, color: string) => {
-    setTemplateColors(prev => ({ ...prev, [templateId]: color }));
+    console.log(`Color selected for template ${templateId}: ${color}`);
+    setTemplateColors(prev => {
+      const newColors = { ...prev, [templateId]: color };
+      console.log('Updated template colors:', newColors);
+      return newColors;
+    });
   };
 
   // Function to extract data from default resume
@@ -424,15 +443,17 @@ const ResumeBuilderApp = () => {
       // Get the selected color for the template
       const selectedColor = templateColors[selectedTemplate] || "#2196F3";
       
-      // Create a copy of resumeData with the color
+      // Create a copy of resumeData with the color - ensure it's both camelCase and PascalCase for compatibility
       const resumeDataWithColor = {
         ...resumeData,
-        Color: selectedColor
+        Color: selectedColor,
+        color: selectedColor
       };
       
-      console.log(`Generating resume with color: ${selectedColor}`);
+      console.log(`Generating resume with template: ${selectedTemplate}, color: ${selectedColor}`);
       
-      const result = await resumeBuilderApi.buildResume({
+      // Use apiClient instead of resumeBuilderApi for consistency
+      const result = await apiClient.resumeBuilder.buildResume({
         resumeData: JSON.stringify(resumeDataWithColor),
         templateId: selectedTemplate,
         color: selectedColor // Also pass as separate parameter for backward compatibility
@@ -448,10 +469,11 @@ const ResumeBuilderApp = () => {
       }
 
       if (result.data?.html) {
-        // Navigate to preview page with the generated HTML
+        // Navigate to preview page with the generated HTML and data
         const params = new URLSearchParams({
           template: selectedTemplate,
-          data: encodeURIComponent(JSON.stringify(resumeData))
+          data: encodeURIComponent(JSON.stringify(resumeData)),
+          html: encodeURIComponent(result.data.html) // Pass the HTML from the backend
         });
         navigate(`/resume-preview?${params.toString()}`);
 
@@ -478,16 +500,17 @@ const ResumeBuilderApp = () => {
       // Get the selected color for the template
       const selectedColor = templateColors[selectedTemplate] || "#2196F3";
       
-      // Create a copy of resumeData with the color
+      // Create a copy of resumeData with the color - ensure it's both camelCase and PascalCase for compatibility
       const resumeDataWithColor = {
         ...resumeData,
-        Color: selectedColor
+        Color: selectedColor,
+        color: selectedColor
       };
       
-      console.log(`Generating AI-enhanced resume with color: ${selectedColor}`);
+      console.log(`Generating AI-enhanced resume with template: ${selectedTemplate}, color: ${selectedColor}`);
       
-      // Call AI-enhanced resume generation
-      const result = await resumeBuilderApi.buildResume({
+      // Call AI-enhanced resume generation using apiClient for consistency
+      const result = await apiClient.resumeBuilder.buildResume({
         resumeData: JSON.stringify(resumeDataWithColor),
         templateId: selectedTemplate,
         color: selectedColor, // Pass color as separate parameter
@@ -504,10 +527,11 @@ const ResumeBuilderApp = () => {
       }
 
       if (result.data?.html) {
-        // Navigate to preview page with the generated HTML
+        // Navigate to preview page with the generated HTML and data
         const params = new URLSearchParams({
           template: selectedTemplate,
           data: encodeURIComponent(JSON.stringify(resumeData)),
+          html: encodeURIComponent(result.data.html), // Pass the HTML from the backend
           aiEnhanced: 'true'
         });
         navigate(`/resume-preview?${params.toString()}`);
@@ -532,10 +556,23 @@ const ResumeBuilderApp = () => {
   const generateAIEnhancedResume = async () => {
     setIsGenerating(true);
     try {
-      // Call premium AI-enhanced resume generation
-      const result = await resumeBuilderApi.buildResume({
-        resumeData: JSON.stringify(resumeData),
+      // Get the selected color for the template
+      const selectedColor = templateColors[selectedTemplate] || "#2196F3";
+      
+      // Create a copy of resumeData with the color - ensure it's both camelCase and PascalCase for compatibility
+      const resumeDataWithColor = {
+        ...resumeData,
+        Color: selectedColor,
+        color: selectedColor
+      };
+      
+      console.log(`Generating premium AI-enhanced resume with template: ${selectedTemplate}, color: ${selectedColor}`);
+      
+      // Call premium AI-enhanced resume generation using apiClient for consistency
+      const result = await apiClient.resumeBuilder.buildResume({
+        resumeData: JSON.stringify(resumeDataWithColor),
         templateId: selectedTemplate,
+        color: selectedColor,
         enhanceWithAI: true,
         premiumEnhancement: true
       });
@@ -550,10 +587,11 @@ const ResumeBuilderApp = () => {
       }
 
       if (result.data?.html) {
-        // Navigate to preview page with the generated HTML
+        // Navigate to preview page with the generated HTML and data
         const params = new URLSearchParams({
           template: selectedTemplate,
           data: encodeURIComponent(JSON.stringify(resumeData)),
+          html: encodeURIComponent(result.data.html), // Pass the HTML from the backend
           aiEnhanced: 'true',
           premium: 'true'
         });

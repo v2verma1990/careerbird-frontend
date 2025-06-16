@@ -8,20 +8,20 @@ export { SUPABASE_URL };
 // Determine the appropriate API base URL based on the environment
 const determineApiBaseUrl = () => {
 
-return "http://localhost:5001/api";// Lovable
+//return "http://localhost:5001/api";// Lovable
 
 
-  // const isProduction = import.meta.env.PROD;
+  const isProduction = import.meta.env.PROD;
   
-  // const devBackendUrl = import.meta.env.VITE_API_URL;
-  // if (isProduction) {
-  //   console.log(`in production: ${import.meta.env.VITE_API_URL}`);
-  //   return '/api';
-  // } else if (devBackendUrl) {
-  // return devBackendUrl;
-  // } else {
-  // return "http://localhost:5001/api";
-  // }
+  const devBackendUrl = import.meta.env.VITE_API_URL;
+  if (isProduction) {
+    console.log(`in production: ${import.meta.env.VITE_API_URL}`);
+    return '/api';
+  } else if (devBackendUrl) {
+  return devBackendUrl;
+  } else {
+  return "http://localhost:5001/api";
+  }
 };
 
 // Set the API base URL
@@ -1068,14 +1068,37 @@ export const api = {
         };
       }
     },
-    buildResume: async (params: { resumeData: string, templateId: string }) => {
+    buildResume: async (params: { 
+      resumeData: string, 
+      templateId: string, 
+      color?: string,
+      enhanceWithAI?: boolean,
+      premiumEnhancement?: boolean
+    }) => {
       try {
-        console.log(`Building resume with template ID: ${params.templateId}`);
+        console.log(`Building resume with template ID: ${params.templateId}, color: ${params.color || 'default'}`);
         const { data: { session } } = await supabase.auth.getSession();
         
         const formData = new FormData();
         formData.append('resumeData', params.resumeData);
         formData.append('templateId', params.templateId);
+        
+        // Add color parameter if provided
+        if (params.color) {
+          formData.append('color', params.color);
+          console.log(`Adding color parameter to form data: ${params.color}`);
+        }
+        
+        // Add AI enhancement flags if provided
+        if (params.enhanceWithAI) {
+          formData.append('enhanceWithAI', 'true');
+          console.log('Adding enhanceWithAI parameter: true');
+        }
+        
+        if (params.premiumEnhancement) {
+          formData.append('premiumEnhancement', 'true');
+          console.log('Adding premiumEnhancement parameter: true');
+        }
         
         const headers: Record<string, string> = {};
         if (session?.access_token) {

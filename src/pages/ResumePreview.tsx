@@ -3,8 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Download, ArrowLeft, FileText, Globe } from 'lucide-react';
+import { Download, ArrowLeft, FileText, Globe, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { api } from '@/utils/apiClient';
 
 const ResumePreview = () => {
   const [searchParams] = useSearchParams();
@@ -16,10 +17,12 @@ const ResumePreview = () => {
   
   const template = searchParams.get('template') || 'modern-executive';
   const encodedData = searchParams.get('data');
+  const encodedHtml = searchParams.get('html');
 
   useEffect(() => {
     console.log('ResumePreview - Template:', template);
     console.log('ResumePreview - Encoded data:', encodedData);
+    console.log('ResumePreview - Encoded HTML:', encodedHtml ? 'Present (length: ' + encodedHtml.length + ')' : 'Not present');
     
     if (encodedData) {
       try {
@@ -33,8 +36,23 @@ const ResumePreview = () => {
         
         setResumeData(parsedData);
         
-        // Generate the HTML resume
-        generateResumeHtml(parsedData, template);
+        // If we have HTML from the backend, use it directly
+        if (encodedHtml) {
+          try {
+            const decodedHtml = decodeURIComponent(encodedHtml);
+            console.log('ResumePreview - Using HTML from backend (length: ' + decodedHtml.length + ')');
+            setResumeHtml(decodedHtml);
+            setIsLoading(false);
+          } catch (htmlError) {
+            console.error('ResumePreview - Error decoding HTML:', htmlError);
+            // Fall back to generating HTML locally
+            generateResumeHtml(parsedData, template);
+          }
+        } else {
+          // If no HTML from backend, generate it locally (fallback)
+          console.log('ResumePreview - No HTML from backend, generating locally');
+          generateResumeHtml(parsedData, template);
+        }
       } catch (error) {
         console.error('ResumePreview - Error parsing resume data:', error);
         toast({
@@ -53,7 +71,7 @@ const ResumePreview = () => {
       });
       setIsLoading(false);
     }
-  }, [encodedData, template, toast]);
+  }, [encodedData, encodedHtml, template, toast]);
 
   const generateResumeHtml = (data: any, templateId: string) => {
     setIsLoading(true);
@@ -155,7 +173,20 @@ const ResumePreview = () => {
   const downloadAsHtml = () => {
     if (!resumeHtml) return;
     
-    const blob = new Blob([resumeHtml], { type: 'text/html' });
+    // Create a complete HTML document with proper DOCTYPE and meta tags
+    const fullHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${resumeData?.Name || 'Resume'}</title>
+</head>
+<body>
+${resumeHtml}
+</body>
+</html>`;
+    
+    const blob = new Blob([fullHtml], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -171,12 +202,53 @@ const ResumePreview = () => {
     });
   };
 
-  const downloadAsPdf = () => {
-    // This would integrate with a PDF generation service
-    toast({
-      title: "PDF Download",
-      description: "PDF download functionality will be implemented soon.",
-    });
+  const downloadAsPdf = async () => {
+    if (!resumeData || !template) return;
+    
+    try {
+      setIsLoading(true);
+      toast({
+        title: "Generating PDF",
+        description: "Please wait while we generate your PDF...",
+      });
+      
+      // Use the API client to download the resume as PDF
+      const response = await api.resumeBuilder.downloadResume({
+        resumeText: resumeHtml,
+        format: "pdf"
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to generate PDF: ${response.statusText}`);
+      }
+      
+      // Get the PDF blob from the response
+      const blob = await response.blob();
+      
+      // Create a download link for the PDF
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `resume-${template}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Success!",
+        description: "Your resume has been downloaded as PDF.",
+      });
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      toast({
+        title: "PDF Download Failed",
+        description: error instanceof Error ? error.message : "Failed to download PDF. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!encodedData) {
