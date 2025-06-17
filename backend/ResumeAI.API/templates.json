@@ -119,6 +119,13 @@
       "description": "A clean, minimalist design for tech professionals",
       "thumbnail": "/resume-templates/thumbnails/minimal.png",
       "category": "minimal"
+    },
+    {
+      "id": "navy-column-modern",
+      "name": "Navy Column Modern",
+      "description": "A modern two-column design with navy color scheme",
+      "thumbnail": "/resume-templates/thumbnails/navy-column-modern.png",
+      "category": "professional"
     }
   ]
 }

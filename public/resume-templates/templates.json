@@ -1,6 +1,13 @@
 {
   "templates": [
     {
+      "id": "navy-column-modern",
+      "name": "Navy Column Modern",
+      "description": "A modern two-column design with navy sidebar",
+      "thumbnail": "/resume-templates/thumbnails/navy-column-modern.png",
+      "category": "professional"
+    },
+    {
       "id": "modern-executive",
       "name": "Modern Executive",
       "description": "A modern executive design with a professional look",

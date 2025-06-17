@@ -1,0 +1,115 @@
+{
+    "html": "\r\n<!--\r\n  Navy Column Modern Resume Template - HTML Handlebars version\r\n  Maps with default resume fields: Name, Title, Email, Phone, Location, LinkedIn, Website, Summary, Skills, Experience, Education, etc\r\n  To be rendered with Handlebars: , Cloud Architect, etc.\r\n-->\r\n\r\n<!DOCTYPE html>\r\n<html lang=\"en\">\r\n<head>\r\n  <meta charset=\"UTF-8\">\r\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\r\n  <title> - Resume</title>\r\n  <style>\r\n    body {\r\n      font-family: 'Segoe UI', Arial, sans-serif;\r\n      background: #f5f6fa;\r\n      padding: 0;\r\n      margin: 0;\r\n    }\r\n    .resume-container {\r\n      width: 810px;\r\n      margin: 36px auto 36px auto;\r\n      background: #fff;\r\n      border-radius: 18px;\r\n      display: flex;\r\n      box-shadow: 0 2px 28px rgba(30,40,90,.13), 0 0.5px 3px rgba(30,64,175,.09);\r\n      overflow: hidden;\r\n    }\r\n    .sidebar {\r\n      background: ;\r\n      color: #fff;\r\n      width: 250px;\r\n      min-height: 100%;\r\n      padding: 36px 24px;\r\n      display: flex;\r\n      flex-direction: column;\r\n      align-items: flex-start;\r\n      box-sizing: border-box;\r\n    }\r\n    .photo {\r\n      width: 72px;\r\n      height: 72px;\r\n      border-radius: 50%;\r\n      object-fit: cover;\r\n      margin-bottom: 20px;\r\n      border: 3px solid #f1f3fa;\r\n      background: #fff;\r\n    }\r\n    .sidebar-section {\r\n      margin-bottom: 36px;\r\n      width: 100%;\r\n    }\r\n    .sidebar-section-title {\r\n      font-size: 17px;\r\n      font-weight: 800;\r\n      text-transform: uppercase;\r\n      letter-spacing: 1.2px;\r\n      margin-bottom: 10px;\r\n      color: #e6eaf5;\r\n      border-bottom: 1px solid rgba(255, 255, 255, 0.3);\r\n      padding-bottom: 4px;\r\n    }\r\n    .sidebar-details {\r\n      font-size: 14px;\r\n      line-height: 1.7;\r\n      word-break: break-word;\r\n      color: #fff;\r\n    }\r\n    .sidebar-details a {\r\n      color: #d0e6fd;\r\n      text-decoration: none;\r\n      font-size: 14px;\r\n      word-break: break-all;\r\n    }\r\n    .sidebar-skills-list {\r\n      list-style: none;\r\n      padding: 0;\r\n      margin: 0;\r\n    }\r\n    .sidebar-skills-list li {\r\n      font-size: 13.5px;\r\n      font-weight: 400;\r\n      color: #e6eaf5;\r\n      margin-bottom: 7px;\r\n      border-left: 4px solid rgba(255, 255, 255, 0.4);\r\n      padding-left: 7px;\r\n    }\r\n    .content {\r\n      flex: 1;\r\n      padding: 48px 44px 46px 44px;\r\n      color: #272d3a;\r\n      background: #fff;\r\n      min-height: 1040px;\r\n      box-sizing: border-box;\r\n      display: flex;\r\n      flex-direction: column;\r\n    }\r\n    .content h1 {\r\n      font-size: 2.04rem;\r\n      font-weight: 700;\r\n      color: #21355e;\r\n      letter-spacing: 0.5px;\r\n      margin: 0 0 2px 0;\r\n      line-height: 1.1;\r\n    }\r\n    .content h2 {\r\n      font-size: 1.29rem;\r\n      font-weight: 700;\r\n      margin: 32px 0 13px 0;\r\n      color: ;\r\n      border-bottom: 2px solid #f1f3fa;\r\n      padding-bottom: 2px;\r\n    }\r\n    .content .title {\r\n      font-size: 1.13rem;\r\n      color: ;\r\n      font-weight: 500;\r\n      margin-bottom: 22px;\r\n    }\r\n    .profile-section, .employment-section, .education-section {\r\n      margin-bottom: 22px;\r\n    }\r\n    .section-label {\r\n      font-weight: 700;\r\n      color: ;\r\n      font-size: 1.08em;\r\n      margin-bottom: 8px;\r\n    }\r\n    .profile-summary {\r\n      font-size: 1.01rem;\r\n      color: #232c47;\r\n      margin-bottom: 7px;\r\n      line-height: 1.6;\r\n    }\r\n    .employment-history-role {\r\n      font-weight: bold;\r\n      font-size: 1.07rem;\r\n      color: #193461;\r\n      margin-bottom: 2px;\r\n    }\r\n    .employment-history-company {\r\n      font-weight: 400;\r\n      color: #293e60;\r\n    }\r\n    .employment-history-dates {\r\n      font-size: 0.94rem;\r\n      color: #749ed9;\r\n      margin-bottom: 2px;\r\n      font-weight: 400;\r\n    }\r\n    .employment-history-list {\r\n      margin: 0 0 6px 0;\r\n      padding: 0 0 0 18px;\r\n      font-size: 1.01rem;\r\n      color: #242e45;\r\n    }\r\n    .education-degree {\r\n      font-weight: 700;\r\n      font-size: 1.05rem;\r\n      color: #22396e;\r\n    }\r\n    .education-institution {\r\n      font-size: 1.01rem;\r\n      margin-bottom: 2px;\r\n      color: #385886;\r\n    }\r\n    .education-dates {\r\n      font-size: 0.98rem;\r\n      color: #738dab;\r\n      margin-bottom: 4px;\r\n    }\r\n    .references-label {\r\n      color: #22396e;\r\n      font-size: 1.03rem;\r\n      font-weight: 500;\r\n      margin-top: 15px;\r\n    }\r\n  \r\n        .skills-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }\r\n        .skill-tag { background: #e2e8f0; padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.9rem; }</style>\r\n</head>\r\n<body>\r\n  <div class=\"resume-container\">\r\n    <div class=\"sidebar\">\r\n      <img src=\"https://ui-avatars.com/api/?name=&size=192&background=315389&color=fff&bold=true\" alt=\"photo\" class=\"photo\" />\r\n      <div class=\"sidebar-section\">\r\n        <div class=\"sidebar-section-title\">Details</div>\r\n        <div class=\"section\">\r\n            <h2 class=\"section-title\">Experience</h2>\r\n            <div class=\"experience-item\">\r\n                <div class=\"experience-header\">\r\n                    <div>\r\n                        <div class=\"job-title\">Cloud Architect</div>\r\n                        <div class=\"company\">Cognizant</div>\r\n                    </div>\r\n                    <div class=\"date-location\">\r\n                        APRIL 2022 - PRESENT\r\n                        <br>London\r\n                    </div>\r\n                </div>\r\n                <div class=\"description\">As a Cloud Architect (SME) my responsibilities are: Advised customers on various Cloud solution options, discussed benefits and risks of each, and recommended solutions aligned with their business needs. Collaborated with cross-functional teams to define cloud strategies, roadmaps, and migration plans. Design and implemented cloud-native solutions, microservices, serverless architectures, and containerized applications. Worked with application teams and architects to map out their migration roadmaps and target architectures. Modernizing and migrating application to Azure Cloud. Implemented and managed Azure services like AppService, LogicApps, FunctionApps, RedisCache, Key Vault, Service Bus, Site Recovery, Blob Storage, and more.</div>\r\n            </div>\r\n            <div class=\"experience-item\">\r\n                <div class=\"experience-header\">\r\n                    <div>\r\n                        <div class=\"job-title\">Cloud Migration Architect</div>\r\n                        <div class=\"company\">Wipro</div>\r\n                    </div>\r\n                    <div class=\"date-location\">\r\n                        OCTOBER 2018 - JULY 2020\r\n                        <br>\r\n                    </div>\r\n                </div>\r\n                <div class=\"description\">As an Cloud Migration Architect, my responsibilities were to understand the application architecture, Propose the To-Be architecture to migrate it to cloud (Azure Stack / IBM) based on the customer's requirement. Lead the design, planning and implementation of complex IT infrastructure solutions in Lloyds Banking Group account. Perform application portfolio analysis to prepare the check-list and identify candidate applications and workloads for migration to the Cloud. Create migration project plans, and execute against them. Develop pricing and cost models for complex engagements as part of the To-Be design. To design, develop, document, test, and debug new and existing configuration management (Terraform) infrastructure as code. Support CI/CD pipeline and identify potential problems. Leverage Azure DevOps and Jenkins subject matter expertise to support CI/CD environment.</div>\r\n            </div>\r\n            <div class=\"experience-item\">\r\n                <div class=\"experience-header\">\r\n                    <div>\r\n                        <div class=\"job-title\">Lead Software Engineer</div>\r\n                        <div class=\"company\">Danske IT and Support Services India Private Limited</div>\r\n                    </div>\r\n                    <div class=\"date-location\">\r\n                        NOVEMBER 2016 - SEPTEMBER 2018\r\n                        <br>Bangalore, India\r\n                    </div>\r\n                </div>\r\n                <div class=\"description\">As a Lead Engineer, my responsibility include: Technical requirement gathering and estimation. Direct Interaction with business and customers following agile methodology. Designed and Developed the application in C#.Net 3.5, ASP.Net, Classic ASP, Pl/SQL, WebAPI, Angular. Check In, Versioning control, for code review, creating a Work item, build management, Continuous integration using TFS. Whole responsibility to create a module to submit data to third party System (Danske Raadgiver).</div>\r\n            </div>\r\n            <div class=\"experience-item\">\r\n                <div class=\"experience-header\">\r\n                    <div>\r\n                        <div class=\"job-title\">Software Engineer</div>\r\n                        <div class=\"company\">Wells Fargo India Solutions Private Ltd.</div>\r\n                    </div>\r\n                    <div class=\"date-location\">\r\n                        DECEMBER 2013 - OCTOBER 2016\r\n                        <br>Bangalore, India\r\n                    </div>\r\n                </div>\r\n                <div class=\"description\">Responsibilities include: Working as a .Net Developer to enhance functionality of Bank Intranet website. Responsible for debugging the bugs in the existing application and development of new modules. Developed various modules for Bank to enhance the process flow including automated mailing system, document archiving system etc. Developed a Request/Response System (ADA tool) that provides a User Friendly GUI (using .Net, AJAX, JQuery) to user and enables them to submit their request (Indexes/pointers) to store data in database in xml form.</div>\r\n            </div>\r\n            <div class=\"experience-item\">\r\n                <div class=\"experience-header\">\r\n                    <div>\r\n                        <div class=\"job-title\">Technical Analyst</div>\r\n                        <div class=\"company\">Dell International Services India Private Ltd</div>\r\n                    </div>\r\n                    <div class=\"date-location\">\r\n                        APRIL 2011 - OCTOBER 2013\r\n                        <br>Noida, India\r\n                    </div>\r\n                </div>\r\n                <div class=\"description\">Responsibilities include: Developed a Web Service (WCF) to expose the functionality of CORE module to other third party. Developed an alerting System (database alerts) using PL/SQL, MSMQ, C# that automatically alerts the support team for any error. Part of team that developed Authentication System for SHL application user (Window Service) that generates authentication token for users and passes it as an object to other interacting modules. Contributed in enhancement of RE Module in SHL (.Net 3.5 Platform). Developed tool for Data Extraction to cater regular demand of data extract from client. UI/front-end development, designed web pages using Ajax, Jscript, implement sitemap for primary/secondary page navigation, master pages.</div>\r\n            </div>\r\n        </div>\r\n        <div class=\"sidebar-details\">\r\n            <div>London, United Kingdom</div>\r\n        </div>\r\n      </div>\r\n      <div class=\"sidebar-section\">\r\n        <div class=\"sidebar-section-title\">Skills</div>\r\n        <ul class=\"sidebar-skills-list\">\r\n        </ul>\r\n      </div>\r\n    </div>\r\n    <div class=\"content\">\r\n      <h1></h1>\r\n        <div class=\"title\">Cloud Architect</div>\r\n      <div class=\"profile-section\">\r\n        <div class=\"section-label\">Profile</div>\r\n        <div class=\"profile-summary\"></div>\r\n      </div>\r\n      <div class=\"employment-section\">\r\n        <h2>Employment History</h2>\r\n      </div>\r\n      <div class=\"education-section\">\r\n        <h2>Education</h2>\r\n      </div>\r\n      <div>\r\n        <span class=\"references-label\">References</span>\r\n      </div>\r\n    </div>\r\n  \r\n        <div class=\"section\">\r\n            <h2 class=\"section-title\">Skills</h2>\r\n            <div class=\"skills-list\">\r\n                <span class=\"skill-tag\">Architectural Design</span>\r\n                <span class=\"skill-tag\">DevOps</span>\r\n                <span class=\"skill-tag\">Cloud Migration</span>\r\n                <span class=\"skill-tag\">Project Plan</span>\r\n                <span class=\"skill-tag\">C# / .Net</span>\r\n                <span class=\"skill-tag\">Cloud Architecture</span>\r\n                <span class=\"skill-tag\">Urban Code/Bamboo/Octopus</span>\r\n                <span class=\"skill-tag\">Cloud Strategy and Roadmapping</span>\r\n                <span class=\"skill-tag\">Pre Sales</span>\r\n                <span class=\"skill-tag\">Azure Data Factory</span>\r\n                <span class=\"skill-tag\">Python</span>\r\n            </div>\r\n        </div>\r\n        </div>\r\n</body>\r\n</html>\r\n",
+    "data": {
+        "name": "Vishal Verma",
+        "title": "Cloud Architect",
+        "email": "v2verma1990@gmail.com",
+        "phone": "+917259577668 / +447880665787",
+        "location": "London, United Kingdom",
+        "linkedIn": "",
+        "website": "",
+        "summary": "Experienced Architect with over 14+ years of expertise in cloud architecture, specializing in Microsoft Azure services and solutions. Skilled in assessing and recommending public and hybrid Cloud solutions (IaaS, SaaS, PaaS) and advising customers on Cloud solution options. Adept at collaborating with cross-functional teams to define cloud strategies, roadmaps, and migration plans. Proven track record of architecture and implementing cloud-native solutions, microservices, serverless architectures, and containerized applications. Committed to continuous professional growth and driving innovation. Highly experienced in server/application migration to Azure Cloud.",
+        "color": "#2196F3",
+        "skills": [
+            "Architectural Design",
+            "DevOps",
+            "Cloud Migration",
+            "Project Plan",
+            "C# / .Net",
+            "Cloud Architecture",
+            "Urban Code/Bamboo/Octopus",
+            "Cloud Strategy and Roadmapping",
+            "Pre Sales",
+            "Azure Data Factory",
+            "Python"
+        ],
+        "experience": [
+            {
+                "title": "Cloud Architect",
+                "company": "Cognizant",
+                "location": "London",
+                "startDate": "APRIL 2022",
+                "endDate": "PRESENT",
+                "description": "• As a Cloud Architect (SME) my responsibilities are: Advised customers on various Cloud solution options, discussed benefits and risks of each, and recommended solutions aligned with their business needs\n• Collaborated with cross-functional teams to define cloud strategies, roadmaps, and migration plans\n• Design and implemented cloud-native solutions, microservices, serverless architectures, and containerized applications\n• Worked with application teams and architects to map out their migration roadmaps and target architectures\n• Modernizing and migrating application to Azure Cloud\n• Implemented and managed Azure services like AppService, LogicApps, FunctionApps, RedisCache, Key Vault, Service Bus, Site Recovery, Blob Storage, and more"
+            },
+            {
+                "title": "Cloud Migration Architect",
+                "company": "Wipro",
+                "location": "",
+                "startDate": "OCTOBER 2018",
+                "endDate": "JULY 2020",
+                "description": "• As an Cloud Migration Architect, my responsibilities were to understand the application architecture, Propose the To-Be architecture to migrate it to cloud (Azure Stack / IBM) based on the customer's requirement\n• Lead the design, planning and implementation of complex IT infrastructure solutions in Lloyds Banking Group account\n• Perform application portfolio analysis to prepare the check-list and identify candidate applications and workloads for migration to the Cloud\n• Create migration project plans, and execute against them\n• Develop pricing and cost models for complex engagements as part of the To-Be design\n• To design, develop, document, test, and debug new and existing configuration management (Terraform) infrastructure as code\n• Support CI/CD pipeline and identify potential problems\n• Leverage Azure DevOps and Jenkins subject matter expertise to support CI/CD environment"
+            },
+            {
+                "title": "Lead Software Engineer",
+                "company": "Danske IT and Support Services India Private Limited",
+                "location": "Bangalore, India",
+                "startDate": "NOVEMBER 2016",
+                "endDate": "SEPTEMBER 2018",
+                "description": "• As a Lead Engineer, my responsibility include: Technical requirement gathering and estimation\n• Direct Interaction with business and customers following agile methodology\n• Designed and Developed the application in C#\n• Net 3\n• 5, ASP\n• Net, Classic ASP, Pl/SQL, WebAPI, Angular\n• Check In, Versioning control, for code review, creating a Work item, build management, Continuous integration using TFS\n• Whole responsibility to create a module to submit data to third party System (Danske Raadgiver)"
+            },
+            {
+                "title": "Software Engineer",
+                "company": "Wells Fargo India Solutions Private Ltd.",
+                "location": "Bangalore, India",
+                "startDate": "DECEMBER 2013",
+                "endDate": "OCTOBER 2016",
+                "description": "• Responsibilities include: Working as a\n• Net Developer to enhance functionality of Bank Intranet website\n• Responsible for debugging the bugs in the existing application and development of new modules\n• Developed various modules for Bank to enhance the process flow including automated mailing system, document archiving system etc\n• Developed a Request/Response System (ADA tool) that provides a User Friendly GUI (using\n• Net, AJAX, JQuery) to user and enables them to submit their request (Indexes/pointers) to store data in database in xml form"
+            },
+            {
+                "title": "Technical Analyst",
+                "company": "Dell International Services India Private Ltd",
+                "location": "Noida, India",
+                "startDate": "APRIL 2011",
+                "endDate": "OCTOBER 2013",
+                "description": "• Responsibilities include: Developed a Web Service (WCF) to expose the functionality of CORE module to other third party\n• Developed an alerting System (database alerts) using PL/SQL, MSMQ, C# that automatically alerts the support team for any error\n• Part of team that developed Authentication System for SHL application user (Window Service) that generates authentication token for users and passes it as an object to other interacting modules\n• Contributed in enhancement of RE Module in SHL (\n• Net 3\n• 5 Platform)\n• Developed tool for Data Extraction to cater regular demand of data extract from client\n• UI/front-end development, designed web pages using Ajax, Jscript, implement sitemap for primary/secondary page navigation, master pages"
+            }
+        ],
+        "education": [
+            {
+                "degree": "MBA",
+                "institution": "Amity University",
+                "location": "",
+                "startDate": "",
+                "endDate": "",
+                "gpa": ""
+            },
+            {
+                "degree": "B.Tech",
+                "institution": "Uttar Pradesh Technical University",
+                "location": "Noida, India",
+                "startDate": "APRIL 2007",
+                "endDate": "MARCH 2011",
+                "gpa": ""
+            }
+        ],
+        "certifications": [
+            {
+                "name": "Microsoft Certified: Azure Developer Associate",
+                "issuer": "Microsoft",
+                "date": ""
+            },
+            {
+                "name": "AZ-300 Microsoft Azure Architect Technologies",
+                "issuer": "Microsoft",
+                "date": ""
+            },
+            {
+                "name": "Microsoft Certified: Azure Security Engineer Associate",
+                "issuer": "Microsoft",
+                "date": ""
+            },
+            {
+                "name": "AZ 900: Microsoft Certified Azure Fundamentals",
+                "issuer": "Microsoft",
+                "date": ""
+            },
+            {
+                "name": "Professional Cloud Architect by Google",
+                "issuer": "Google",
+                "date": ""
+            }
+        ],
+        "projects": []
+    }
+}

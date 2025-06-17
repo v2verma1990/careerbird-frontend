@@ -197,6 +197,227 @@ const initialData = {
 
 const DEFAULT_TEMPLATE_ID = "default-template"; // Use your actual default template ID
 
+// Function to transform data to match template expectations (PascalCase)
+const transformDataForTemplate = (data: any) => {
+  if (!data) return data;
+  
+  console.log('Input data to transform:', data);
+  
+  const transformed = { ...data };
+  
+  // Transform main fields to PascalCase if they exist in camelCase
+  const fieldMappings = {
+    'name': 'Name',
+    'title': 'Title', 
+    'email': 'Email',
+    'phone': 'Phone',
+    'location': 'Location',
+    'linkedin': 'LinkedIn',
+    'website': 'Website',
+    'summary': 'Summary',
+    'skills': 'Skills',
+    'experience': 'Experience',
+    'education': 'Education',
+    'certifications': 'Certifications',
+    'projects': 'Projects'
+  };
+  
+  // Apply field mappings
+  Object.entries(fieldMappings).forEach(([camelCase, pascalCase]) => {
+    if (data[camelCase] !== undefined) {
+      transformed[pascalCase] = data[camelCase];
+      // Keep both for compatibility
+      if (!transformed[camelCase]) {
+        transformed[camelCase] = data[camelCase];
+      }
+    }
+  });
+  
+  // Transform nested arrays (Experience, Education, etc.)
+  if (transformed.Experience || transformed.experience) {
+    const experiences = transformed.Experience || transformed.experience;
+    console.log('Original experiences:', experiences);
+    
+    if (Array.isArray(experiences)) {
+      transformed.Experience = experiences
+        .map((exp: any) => {
+          const transformedExp = {
+            ...exp,
+            Title: exp.Title || exp.title || exp.jobTitle || exp.position || '',
+            Company: exp.Company || exp.company || exp.employer || exp.organization || '',
+            Location: exp.Location || exp.location || exp.city || '',
+            StartDate: exp.StartDate || exp.startDate || exp.start_date || exp.from || '',
+            EndDate: exp.EndDate || exp.endDate || exp.end_date || exp.to || '',
+            Description: exp.Description || exp.description || exp.responsibilities || exp.duties || ''
+          };
+          console.log('Transformed experience:', transformedExp);
+          return transformedExp;
+        })
+        .filter((exp: any) => {
+          // Filter out empty experience entries
+          const hasContent = exp.Title.trim() || exp.Company.trim() || exp.Description.trim();
+          console.log('Experience has content:', hasContent, exp);
+          return hasContent;
+        });
+    }
+  }
+  
+  if (transformed.Education || transformed.education) {
+    const education = transformed.Education || transformed.education;
+    console.log('Original education:', education);
+    
+    if (Array.isArray(education)) {
+      transformed.Education = education
+        .map((edu: any) => {
+          const transformedEdu = {
+            ...edu,
+            Degree: edu.Degree || edu.degree || edu.qualification || edu.program || '',
+            Institution: edu.Institution || edu.institution || edu.school || edu.university || edu.college || '',
+            Location: edu.Location || edu.location || edu.city || '',
+            StartDate: edu.StartDate || edu.startDate || edu.start_date || edu.from || '',
+            EndDate: edu.EndDate || edu.endDate || edu.end_date || edu.to || '',
+            GPA: edu.GPA || edu.gpa || edu.grade || '',
+            Description: edu.Description || edu.description || edu.details || ''
+          };
+          console.log('Transformed education:', transformedEdu);
+          return transformedEdu;
+        })
+        .filter((edu: any) => {
+          // Filter out empty education entries
+          const hasContent = edu.Degree.trim() || edu.Institution.trim();
+          console.log('Education has content:', hasContent, edu);
+          return hasContent;
+        });
+    }
+  }
+  
+  if (transformed.Certifications || transformed.certifications) {
+    const certifications = transformed.Certifications || transformed.certifications;
+    console.log('Original certifications:', certifications);
+    
+    if (Array.isArray(certifications)) {
+      transformed.Certifications = certifications
+        .map((cert: any) => {
+          const transformedCert = {
+            ...cert,
+            Name: cert.Name || cert.name || cert.title || cert.certification || '',
+            Issuer: cert.Issuer || cert.issuer || cert.organization || cert.authority || '',
+            Date: cert.Date || cert.date || cert.issued || cert.year || ''
+          };
+          console.log('Transformed certification:', transformedCert);
+          return transformedCert;
+        })
+        .filter((cert: any) => {
+          // Filter out empty certification entries
+          const hasContent = cert.Name.trim() || cert.Issuer.trim();
+          console.log('Certification has content:', hasContent, cert);
+          return hasContent;
+        });
+    }
+  }
+  
+  if (transformed.Projects || transformed.projects) {
+    const projects = transformed.Projects || transformed.projects;
+    console.log('Original projects:', projects);
+    
+    if (Array.isArray(projects)) {
+      transformed.Projects = projects
+        .map((proj: any) => {
+          const transformedProj = {
+            ...proj,
+            Name: proj.Name || proj.name || proj.title || proj.project || '',
+            Description: proj.Description || proj.description || proj.details || proj.summary || '',
+            Technologies: proj.Technologies || proj.technologies || proj.tech || proj.tools || proj.stack || '',
+            Date: proj.Date || proj.date || proj.year || proj.period || ''
+          };
+          console.log('Transformed project:', transformedProj);
+          return transformedProj;
+        })
+        .filter((proj: any) => {
+          // Filter out empty project entries
+          const hasContent = proj.Name.trim() || proj.Description.trim();
+          console.log('Project has content:', hasContent, proj);
+          return hasContent;
+        });
+    }
+  }
+  
+  // Ensure Skills is an array
+  if (transformed.Skills || transformed.skills) {
+    const skills = transformed.Skills || transformed.skills;
+    if (typeof skills === 'string') {
+      // If skills is a string, split it into an array
+      transformed.Skills = skills.split(',').map((skill: string) => skill.trim()).filter((skill: string) => skill.length > 0);
+    } else if (Array.isArray(skills)) {
+      transformed.Skills = skills;
+    }
+  }
+  
+  // Filter out empty objects from arrays and provide fallback data if needed
+  if (transformed.Experience && Array.isArray(transformed.Experience)) {
+    // First, filter out completely empty objects
+    transformed.Experience = transformed.Experience.filter((exp: any) => {
+      const hasData = exp.Title || exp.Company || exp.Description || 
+                     exp.title || exp.company || exp.description ||
+                     exp.jobTitle || exp.employer || exp.responsibilities;
+      console.log('Experience item has data:', hasData, exp);
+      return hasData;
+    });
+    
+    // If no valid experience items, provide a sample one
+    if (transformed.Experience.length === 0) {
+      console.log('No valid experience found, providing sample data');
+      transformed.Experience = [{
+        Title: "Software Engineer",
+        Company: "Tech Company",
+        Location: "City, State",
+        StartDate: "2020",
+        EndDate: "Present",
+        Description: "Developed and maintained software applications using modern technologies."
+      }];
+    }
+  }
+  
+  if (transformed.Education && Array.isArray(transformed.Education)) {
+    // First, filter out completely empty objects
+    transformed.Education = transformed.Education.filter((edu: any) => {
+      const hasData = edu.Degree || edu.Institution || 
+                     edu.degree || edu.institution ||
+                     edu.qualification || edu.school;
+      console.log('Education item has data:', hasData, edu);
+      return hasData;
+    });
+    
+    // If no valid education items, provide a sample one
+    if (transformed.Education.length === 0) {
+      console.log('No valid education found, providing sample data');
+      transformed.Education = [{
+        Degree: "Bachelor's Degree",
+        Institution: "University",
+        Location: "City, State",
+        StartDate: "2016",
+        EndDate: "2020",
+        GPA: ""
+      }];
+    }
+  }
+  
+  if (transformed.Certifications && Array.isArray(transformed.Certifications)) {
+    transformed.Certifications = transformed.Certifications.filter((cert: any) => 
+      cert.Name || cert.Issuer || cert.name || cert.issuer
+    );
+  }
+  
+  if (transformed.Projects && Array.isArray(transformed.Projects)) {
+    transformed.Projects = transformed.Projects.filter((proj: any) => 
+      proj.Name || proj.Description || proj.name || proj.description
+    );
+  }
+  
+  console.log('Final transformed data:', transformed);
+  return transformed;
+};
+
 const ResumeBuilderApp = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -234,13 +455,13 @@ const ResumeBuilderApp = () => {
     if (showPreview && previewTemplate) {
       const loadTemplate = async () => {
         try {
-          console.log(`Fetching template from backend: /api/templates/${previewTemplate}.html`);
-          // Fetch template HTML from backend API
-          const response = await fetch(`/api/templates/${previewTemplate}.html`);
+          console.log(`Fetching template from public folder: /resume-templates/html/${previewTemplate}.html`);
+          // Fetch template HTML from public folder
+          const response = await fetch(`/resume-templates/html/${previewTemplate}.html`);
           
           if (!response.ok) {
-            console.error(`Failed to fetch template from backend: ${response.status} ${response.statusText}`);
-            throw new Error(`Failed to fetch template from backend: ${response.status}`);
+            console.error(`Failed to fetch template: ${response.status} ${response.statusText}`);
+            throw new Error(`Failed to fetch template: ${response.status}`);
           }
           
           const html = await response.text();
@@ -252,6 +473,13 @@ const ResumeBuilderApp = () => {
           
           // Use sample data for preview
           let dataForPreview = useSampleData && sampleResumeData ? { ...sampleResumeData } : { ...resumeData };
+          
+          console.log('Preview data before transformation:', dataForPreview);
+          
+          // Transform data to match template expectations
+          dataForPreview = transformDataForTemplate(dataForPreview);
+          
+          console.log('Preview data after transformation:', dataForPreview);
           
           // Add the color to the preview data
           dataForPreview.Color = selectedColor;
@@ -355,15 +583,53 @@ const ResumeBuilderApp = () => {
         Website: data.Website || data.website || "",
         Summary: data.Summary || data.summary || data.result?.summary || "",
         Skills: data.Skills || data.skills || [],
-        Experience: data.Experience || data.experience || [],
-        Education: data.Education || data.education || [],
-        Certifications: data.Certifications || data.certifications || [],
-        Projects: data.Projects || data.projects || []
+        Experience: (data.Experience || data.experience || []).map(exp => ({
+          Title: exp.Title || exp.title || "",
+          Company: exp.Company || exp.company || "",
+          Location: exp.Location || exp.location || "",
+          StartDate: exp.StartDate || exp.startDate || "",
+          EndDate: exp.EndDate || exp.endDate || "",
+          Description: exp.Description || exp.description || ""
+        })),
+        Education: (data.Education || data.education || []).map(edu => ({
+          Degree: edu.Degree || edu.degree || "",
+          Institution: edu.Institution || edu.institution || "",
+          Location: edu.Location || edu.location || "",
+          StartDate: edu.StartDate || edu.startDate || "",
+          EndDate: edu.EndDate || edu.endDate || "",
+          GPA: edu.GPA || edu.gpa || ""
+        })),
+        Certifications: (data.Certifications || data.certifications || []).map(cert => ({
+          Name: cert.Name || cert.name || "",
+          Issuer: cert.Issuer || cert.issuer || "",
+          Date: cert.Date || cert.date || ""
+        })),
+        Projects: (data.Projects || data.projects || []).map(proj => ({
+          Name: proj.Name || proj.name || "",
+          Description: proj.Description || proj.description || "",
+          Technologies: proj.Technologies || proj.technologies || "",
+          Link: proj.Link || proj.link || ""
+        }))
       };
 
       setResumeData(mappedData);
       setHasDefaultResume(true); // Only set to true on success
       console.log('Resume data after extraction:', mappedData);
+      console.log('Experience count:', mappedData.Experience?.length || 0);
+      console.log('Education count:', mappedData.Education?.length || 0);
+      console.log('Skills count:', mappedData.Skills?.length || 0);
+      console.log('Certifications count:', mappedData.Certifications?.length || 0);
+      
+      // Debug: Log the first experience item to see its structure
+      if (mappedData.Experience && mappedData.Experience.length > 0) {
+        console.log('First experience item structure:', mappedData.Experience[0]);
+      }
+      
+      // Debug: Log the first education item to see its structure
+      if (mappedData.Education && mappedData.Education.length > 0) {
+        console.log('First education item structure:', mappedData.Education[0]);
+      }
+      
       setDataSource('default');
       toast({
         title: "Resume extracted successfully!",
@@ -443,21 +709,113 @@ const ResumeBuilderApp = () => {
       // Get the selected color for the template
       const selectedColor = templateColors[selectedTemplate] || "#2196F3";
       
-      // Create a copy of resumeData with the color - ensure it's both camelCase and PascalCase for compatibility
+      // Transform resume data to match template expectations and add color
+      console.log('=== DEBUGGING RESUME GENERATION ===');
+      console.log('Original resume data before transformation:', JSON.stringify(resumeData, null, 2));
+      
+      // Check specific arrays
+      console.log('Experience array:', resumeData.Experience);
+      console.log('Education array:', resumeData.Education);
+      
+      const transformedData = transformDataForTemplate(resumeData);
+      console.log('Transformed resume data:', JSON.stringify(transformedData, null, 2));
+      
+      // Ensure all arrays are properly formatted for Handlebars
       const resumeDataWithColor = {
-        ...resumeData,
+        ...transformedData,
         Color: selectedColor,
         color: selectedColor
       };
       
+      // Double-check that Experience array is properly formatted
+      if (resumeDataWithColor.Experience && Array.isArray(resumeDataWithColor.Experience)) {
+        console.log('Experience array before sending:', resumeDataWithColor.Experience.map(exp => ({
+          Title: exp.Title,
+          Company: exp.Company,
+          Location: exp.Location,
+          StartDate: exp.StartDate,
+          EndDate: exp.EndDate,
+          Description: exp.Description ? exp.Description.substring(0, 100) + '...' : 'No description'
+        })));
+      }
+      
+      // Double-check that Education array is properly formatted
+      if (resumeDataWithColor.Education && Array.isArray(resumeDataWithColor.Education)) {
+        console.log('Education array before sending:', resumeDataWithColor.Education.map(edu => ({
+          Degree: edu.Degree,
+          Institution: edu.Institution,
+          Location: edu.Location,
+          StartDate: edu.StartDate,
+          EndDate: edu.EndDate
+        })));
+      }
+      
       console.log(`Generating resume with template: ${selectedTemplate}, color: ${selectedColor}`);
+      console.log('Final resume data being sent to backend:', resumeDataWithColor);
+      
+      // Test JSON parsing to make sure it's valid
+      const jsonString = JSON.stringify(resumeDataWithColor);
+      console.log('JSON string being sent (length):', jsonString.length);
+      console.log('JSON string being sent:', jsonString);
+      
+      // Test if we can parse it back
+      try {
+        const parsed = JSON.parse(jsonString);
+        console.log('JSON parsing test successful. Experience count:', parsed.Experience?.length);
+        console.log('First experience item:', parsed.Experience?.[0]);
+        
+        // Create a simple test data to see if backend can handle basic data
+        const testData = {
+          Name: "Test Name",
+          Title: "Test Title",
+          Experience: [{
+            Title: "Test Job",
+            Company: "Test Company",
+            Description: "Test Description"
+          }],
+          Education: [{
+            Degree: "Test Degree",
+            Institution: "Test School"
+          }]
+        };
+        console.log('Test data for backend:', testData);
+        
+      } catch (e) {
+        console.error('JSON parsing test failed:', e);
+      }
       
       // Use apiClient instead of resumeBuilderApi for consistency
       const result = await apiClient.resumeBuilder.buildResume({
-        resumeData: JSON.stringify(resumeDataWithColor),
+        resumeData: jsonString,
         templateId: selectedTemplate,
         color: selectedColor // Also pass as separate parameter for backward compatibility
       });
+
+      console.log('Resume generation result:', result);
+      console.log('Backend response type:', typeof result);
+      
+      // Get the actual data content for length calculation
+      const dataContent = result?.data;
+      let contentLength = 'N/A';
+      if (typeof dataContent === 'string') {
+        contentLength = dataContent.length.toString();
+      } else if (dataContent && typeof dataContent === 'object' && dataContent.html) {
+        contentLength = dataContent.html.length.toString();
+      }
+      console.log('Backend response length:', contentLength);
+      
+      // Check if the result contains our data
+      if (typeof dataContent === 'string') {
+        console.log('Checking if result contains experience data...');
+        console.log('Contains "Cloud Architect":', dataContent.includes('Cloud Architect'));
+        console.log('Contains "Cognizant":', dataContent.includes('Cognizant'));
+        console.log('Contains empty employment entries:', dataContent.includes('employment-history-role">, <span'));
+      } else if (dataContent && typeof dataContent === 'object' && dataContent.html) {
+        console.log('Checking if HTML result contains experience data...');
+        console.log('Contains "Cloud Architect":', dataContent.html.includes('Cloud Architect'));
+        console.log('Contains "Cognizant":', dataContent.html.includes('Cognizant'));
+        console.log('Contains empty employment entries:', dataContent.html.includes('employment-history-role">, <span'));
+      }
 
       if (result.error) {
         toast({
@@ -500,9 +858,10 @@ const ResumeBuilderApp = () => {
       // Get the selected color for the template
       const selectedColor = templateColors[selectedTemplate] || "#2196F3";
       
-      // Create a copy of resumeData with the color - ensure it's both camelCase and PascalCase for compatibility
+      // Transform resume data to match template expectations and add color
+      const transformedData = transformDataForTemplate(resumeData);
       const resumeDataWithColor = {
-        ...resumeData,
+        ...transformedData,
         Color: selectedColor,
         color: selectedColor
       };
@@ -559,9 +918,10 @@ const ResumeBuilderApp = () => {
       // Get the selected color for the template
       const selectedColor = templateColors[selectedTemplate] || "#2196F3";
       
-      // Create a copy of resumeData with the color - ensure it's both camelCase and PascalCase for compatibility
+      // Transform resume data to match template expectations and add color
+      const transformedData = transformDataForTemplate(resumeData);
       const resumeDataWithColor = {
-        ...resumeData,
+        ...transformedData,
         Color: selectedColor,
         color: selectedColor
       };
@@ -868,16 +1228,50 @@ const ResumeBuilderApp = () => {
               <Card>
                 <CardHeader>
                   <CardTitle>Resume Information</CardTitle>
+                  {/* Debug info - remove in production */}
+                  <div className="text-sm text-gray-500 mt-2">
+                    Data Status: Personal ✓ | Experience ({resumeData.Experience?.length || 0}) | Education ({resumeData.Education?.length || 0}) | Skills ({resumeData.Skills?.length || 0}) | Projects ({resumeData.Projects?.length || 0}) | Certifications ({resumeData.Certifications?.length || 0})
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <Tabs value={activeTab} onValueChange={setActiveTab}>
                     <TabsList className="grid w-full grid-cols-6">
-                      <TabsTrigger value="personal">Personal</TabsTrigger>
-                      <TabsTrigger value="experience">Experience</TabsTrigger>
-                      <TabsTrigger value="education">Education</TabsTrigger>
-                      <TabsTrigger value="skills">Skills</TabsTrigger>
-                      <TabsTrigger value="projects">Projects</TabsTrigger>
-                      <TabsTrigger value="other">Other</TabsTrigger>
+                      <TabsTrigger value="personal">
+                        Personal
+                        {(resumeData.Name || resumeData.Email || resumeData.Phone) && (
+                          <Badge variant="secondary" className="ml-1 h-4 w-4 p-0 text-xs">✓</Badge>
+                        )}
+                      </TabsTrigger>
+                      <TabsTrigger value="experience">
+                        Experience
+                        {resumeData.Experience && resumeData.Experience.length > 0 && (
+                          <Badge variant="secondary" className="ml-1 h-4 w-4 p-0 text-xs">{resumeData.Experience.length}</Badge>
+                        )}
+                      </TabsTrigger>
+                      <TabsTrigger value="education">
+                        Education
+                        {resumeData.Education && resumeData.Education.length > 0 && (
+                          <Badge variant="secondary" className="ml-1 h-4 w-4 p-0 text-xs">{resumeData.Education.length}</Badge>
+                        )}
+                      </TabsTrigger>
+                      <TabsTrigger value="skills">
+                        Skills
+                        {resumeData.Skills && resumeData.Skills.length > 0 && (
+                          <Badge variant="secondary" className="ml-1 h-4 w-4 p-0 text-xs">{resumeData.Skills.length}</Badge>
+                        )}
+                      </TabsTrigger>
+                      <TabsTrigger value="projects">
+                        Projects
+                        {resumeData.Projects && resumeData.Projects.length > 0 && (
+                          <Badge variant="secondary" className="ml-1 h-4 w-4 p-0 text-xs">{resumeData.Projects.length}</Badge>
+                        )}
+                      </TabsTrigger>
+                      <TabsTrigger value="other">
+                        Other
+                        {resumeData.Certifications && resumeData.Certifications.length > 0 && (
+                          <Badge variant="secondary" className="ml-1 h-4 w-4 p-0 text-xs">{resumeData.Certifications.length}</Badge>
+                        )}
+                      </TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="personal" className="space-y-4">
@@ -1203,6 +1597,64 @@ const ResumeBuilderApp = () => {
                         <Plus className="h-4 w-4 mr-2" />
                         Add Project
                       </Button>
+                    </TabsContent>
+
+                    <TabsContent value="other" className="space-y-4">
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold">Certifications</h3>
+                        {resumeData.Certifications.map((cert, index) => (
+                          <div key={index} className="border rounded-md p-4 space-y-2">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <Label htmlFor={`cert-${index}-name`}>Certification Name</Label>
+                                <Input
+                                  id={`cert-${index}-name`}
+                                  placeholder="Enter certification name"
+                                  value={cert.Name}
+                                  onChange={(e) => updateArrayItem('Certifications', index, { ...cert, Name: e.target.value })}
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor={`cert-${index}-issuer`}>Issuing Organization</Label>
+                                <Input
+                                  id={`cert-${index}-issuer`}
+                                  placeholder="Enter issuing organization"
+                                  value={cert.Issuer}
+                                  onChange={(e) => updateArrayItem('Certifications', index, { ...cert, Issuer: e.target.value })}
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor={`cert-${index}-date`}>Date Obtained</Label>
+                                <Input
+                                  id={`cert-${index}-date`}
+                                  placeholder="Enter date obtained"
+                                  value={cert.Date}
+                                  onChange={(e) => updateArrayItem('Certifications', index, { ...cert, Date: e.target.value })}
+                                />
+                              </div>
+                            </div>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => removeArrayItem('Certifications', index)}
+                            >
+                              <X className="h-4 w-4 mr-2" />
+                              Remove
+                            </Button>
+                          </div>
+                        ))}
+                        <Button
+                          variant="secondary"
+                          onClick={() => addArrayItem('Certifications', {
+                            Name: "",
+                            Issuer: "",
+                            Date: ""
+                          })}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Certification
+                        </Button>
+                      </div>
                     </TabsContent>
 
                   </Tabs>

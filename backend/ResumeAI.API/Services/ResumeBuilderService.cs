@@ -650,7 +650,7 @@ namespace ResumeAI.API.Services
                     templateHtml = "<html><body><p>No template available. Please select a different template.</p></body></html>";
                 }
                 
-                string resumeHtml = GenerateResumeHtml(templateHtml, resumeData ?? new object());
+                string resumeHtml = GenerateResumeHtml(templateHtml, resumeData ?? new object(), request.Color);
                 
                 // Log the first part of the generated HTML
                 Console.WriteLine($"Generated HTML (first 500 chars): {resumeHtml.Substring(0, Math.Min(500, resumeHtml.Length))}");
@@ -785,7 +785,7 @@ namespace ResumeAI.API.Services
                     templateHtml = "<html><body><p>No template available. Please select a different template.</p></body></html>";
                 }
                 
-                string resumeHtml = GenerateResumeHtml(templateHtml, resumeData ?? new object());
+                string resumeHtml = GenerateResumeHtml(templateHtml, resumeData ?? new object(), request.Color);
                 
                 // Generate a PDF from the HTML
                 // Since we don't have a PDF library integrated directly, we'll use a workaround
@@ -1706,7 +1706,7 @@ namespace ResumeAI.API.Services
             }
         }
 
-        private string GenerateResumeHtml(string? templateHtml, object? data)
+        private string GenerateResumeHtml(string? templateHtml, object? data, string? color = null)
         {
             try
             {
@@ -1789,6 +1789,9 @@ namespace ResumeAI.API.Services
                     // Add skills
                     processedDict["skills"] = resumeDataModel.Skills?.Where(s => !string.IsNullOrWhiteSpace(s)).ToList() ?? new List<string>();
                     
+                    // Add color parameter
+                    processedDict["color"] = color ?? "#153559"; // Default navy color
+                    
                     // Add certifications
                     if (resumeDataModel.Certifications != null && resumeDataModel.Certifications.Count > 0)
                     {
@@ -1824,6 +1827,21 @@ namespace ResumeAI.API.Services
                     {
                         processedDict["projects"] = new List<object>();
                     }
+                    
+                    // Add PascalCase versions for templates that use PascalCase
+                    processedDict["Name"] = processedDict["name"];
+                    processedDict["Title"] = processedDict["title"];
+                    processedDict["Email"] = processedDict["email"];
+                    processedDict["Phone"] = processedDict["phone"];
+                    processedDict["Location"] = processedDict["location"];
+                    processedDict["LinkedIn"] = processedDict["linkedin"];
+                    processedDict["Website"] = processedDict["website"];
+                    processedDict["Summary"] = processedDict["summary"];
+                    processedDict["Experience"] = processedDict["experience"];
+                    processedDict["Education"] = processedDict["education"];
+                    processedDict["Skills"] = processedDict["skills"];
+                    processedDict["Certifications"] = processedDict["certifications"];
+                    processedDict["Projects"] = processedDict["projects"];
                     
                     templateData = processedDict;
                 }
@@ -1900,6 +1918,24 @@ namespace ResumeAI.API.Services
                         }
                     }
                     
+                    // Add color parameter for JObject processing
+                    processedDict["color"] = color ?? "#153559"; // Default navy color
+                    
+                    // Add PascalCase versions for templates that use PascalCase
+                    if (processedDict.ContainsKey("name")) processedDict["Name"] = processedDict["name"];
+                    if (processedDict.ContainsKey("title")) processedDict["Title"] = processedDict["title"];
+                    if (processedDict.ContainsKey("email")) processedDict["Email"] = processedDict["email"];
+                    if (processedDict.ContainsKey("phone")) processedDict["Phone"] = processedDict["phone"];
+                    if (processedDict.ContainsKey("location")) processedDict["Location"] = processedDict["location"];
+                    if (processedDict.ContainsKey("linkedin")) processedDict["LinkedIn"] = processedDict["linkedin"];
+                    if (processedDict.ContainsKey("website")) processedDict["Website"] = processedDict["website"];
+                    if (processedDict.ContainsKey("summary")) processedDict["Summary"] = processedDict["summary"];
+                    if (processedDict.ContainsKey("experience")) processedDict["Experience"] = processedDict["experience"];
+                    if (processedDict.ContainsKey("education")) processedDict["Education"] = processedDict["education"];
+                    if (processedDict.ContainsKey("skills")) processedDict["Skills"] = processedDict["skills"];
+                    if (processedDict.ContainsKey("certifications")) processedDict["Certifications"] = processedDict["certifications"];
+                    if (processedDict.ContainsKey("projects")) processedDict["Projects"] = processedDict["projects"];
+                    
                     templateData = processedDict;
                 }
                 
@@ -1907,6 +1943,27 @@ namespace ResumeAI.API.Services
                 if (templateData is Dictionary<string, object> dict)
                 {
                     Console.WriteLine("Ensuring all required fields are present");
+                    
+                    // Ensure color is always present
+                    if (!dict.ContainsKey("color"))
+                    {
+                        dict["color"] = color ?? "#153559"; // Default navy color
+                    }
+                    
+                    // Ensure PascalCase versions are present for templates that use PascalCase
+                    if (dict.ContainsKey("name") && !dict.ContainsKey("Name")) dict["Name"] = dict["name"];
+                    if (dict.ContainsKey("title") && !dict.ContainsKey("Title")) dict["Title"] = dict["title"];
+                    if (dict.ContainsKey("email") && !dict.ContainsKey("Email")) dict["Email"] = dict["email"];
+                    if (dict.ContainsKey("phone") && !dict.ContainsKey("Phone")) dict["Phone"] = dict["phone"];
+                    if (dict.ContainsKey("location") && !dict.ContainsKey("Location")) dict["Location"] = dict["location"];
+                    if (dict.ContainsKey("linkedin") && !dict.ContainsKey("LinkedIn")) dict["LinkedIn"] = dict["linkedin"];
+                    if (dict.ContainsKey("website") && !dict.ContainsKey("Website")) dict["Website"] = dict["website"];
+                    if (dict.ContainsKey("summary") && !dict.ContainsKey("Summary")) dict["Summary"] = dict["summary"];
+                    if (dict.ContainsKey("experience") && !dict.ContainsKey("Experience")) dict["Experience"] = dict["experience"];
+                    if (dict.ContainsKey("education") && !dict.ContainsKey("Education")) dict["Education"] = dict["education"];
+                    if (dict.ContainsKey("skills") && !dict.ContainsKey("Skills")) dict["Skills"] = dict["skills"];
+                    if (dict.ContainsKey("certifications") && !dict.ContainsKey("Certifications")) dict["Certifications"] = dict["certifications"];
+                    if (dict.ContainsKey("projects") && !dict.ContainsKey("Projects")) dict["Projects"] = dict["projects"];
                     
                     // Check if name is empty or null and set it to empty string
                     if (!dict.ContainsKey("name") || dict["name"] == null || IsEmptyOrEmptyArray(dict["name"]))
@@ -2086,74 +2143,87 @@ namespace ResumeAI.API.Services
                     }
                     
                     // Add Handlebars block helpers for collections if they don't exist
-                    if (!templateHtml.Contains("{{#each experience}}") && templateData is Dictionary<string, object> expDataDict && 
-                        expDataDict.ContainsKey("experience") && expDataDict["experience"] is System.Collections.ICollection expColl && expColl.Count > 0)
-                    {
-                        Console.WriteLine("Adding experience block helper to template");
-                        
-                        // Find a good insertion point - after the summary section
-                        int insertPoint = templateHtml.IndexOf("</div>", templateHtml.IndexOf("summary")) + 6;
-                        if (insertPoint < 6) // If summary not found
-                            insertPoint = templateHtml.IndexOf("</div>", templateHtml.IndexOf("container")) - 10; // Before container closing
-                            
-                        string experienceBlock = @"
-        {{#if experience}}
-        <div class=""section"">
-            <h2 class=""section-title"">Experience</h2>
-            {{#each experience}}
-            <div class=""experience-item"">
-                <div class=""experience-header"">
-                    <div>
-                        <div class=""job-title"">{{title}}</div>
-                        <div class=""company"">{{company}}</div>
-                    </div>
-                    <div class=""date-location"">
-                        {{startDate}} - {{endDate}}
-                        <br>{{location}}
-                    </div>
-                </div>
-                <div class=""description"">{{description}}</div>
-            </div>
-            {{/each}}
-        </div>
-        {{/if}}";
-                        
-                        templateHtml = templateHtml.Insert(insertPoint, experienceBlock);
-                    }
+                    // Only add blocks for simple templates that don't have proper structure
+                    bool isStructuredTemplate = templateHtml.Contains("{{#each Experience}}") || 
+                                              templateHtml.Contains("{{#each Skills}}") ||
+                                              templateHtml.Contains("sidebar") ||
+                                              templateHtml.Contains("column");
                     
-                    // Add skills block if needed
-                    if (!templateHtml.Contains("{{#each skills}}") && templateData is Dictionary<string, object> skillsDataDict && 
-                        skillsDataDict.ContainsKey("skills") && skillsDataDict["skills"] is System.Collections.ICollection skillsColl && skillsColl.Count > 0)
+                    if (!isStructuredTemplate)
                     {
-                        Console.WriteLine("Adding skills block helper to template");
-                        
-                        // Find insertion point - before container closing
-                        int insertPoint = templateHtml.LastIndexOf("</div>", templateHtml.LastIndexOf("</body>"));
-                        
-                        string skillsBlock = @"
-        {{#if skills}}
-        <div class=""section"">
-            <h2 class=""section-title"">Skills</h2>
-            <div class=""skills-list"">
-                {{#each skills}}
-                <span class=""skill-tag"">{{this}}</span>
+                        if (!templateHtml.Contains("{{#each experience}}") && templateData is Dictionary<string, object> expDataDict && 
+                            expDataDict.ContainsKey("experience") && expDataDict["experience"] is System.Collections.ICollection expColl && expColl.Count > 0)
+                        {
+                            Console.WriteLine("Adding experience block helper to simple template");
+                            
+                            // Find a good insertion point - after the summary section
+                            int insertPoint = templateHtml.IndexOf("</div>", templateHtml.IndexOf("summary")) + 6;
+                            if (insertPoint < 6) // If summary not found
+                                insertPoint = templateHtml.IndexOf("</div>", templateHtml.IndexOf("container")) - 10; // Before container closing
+                                
+                            string experienceBlock = @"
+            {{#if experience}}
+            <div class=""section"">
+                <h2 class=""section-title"">Experience</h2>
+                {{#each experience}}
+                <div class=""experience-item"">
+                    <div class=""experience-header"">
+                        <div>
+                            <div class=""job-title"">{{title}}</div>
+                            <div class=""company"">{{company}}</div>
+                        </div>
+                        <div class=""date-location"">
+                            {{startDate}} - {{endDate}}
+                            <br>{{location}}
+                        </div>
+                    </div>
+                    <div class=""description"">{{description}}</div>
+                </div>
                 {{/each}}
             </div>
-        </div>
-        {{/if}}";
-                        
-                        templateHtml = templateHtml.Insert(insertPoint, skillsBlock);
-                        
-                        // Add CSS for skills if not present
-                        if (!templateHtml.Contains(".skill-tag"))
-                        {
-                            int styleEnd = templateHtml.IndexOf("</style>");
-                            string skillsCSS = @"
-        .skills-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-        .skill-tag { background: #e2e8f0; padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.9rem; }";
+            {{/if}}";
                             
-                            templateHtml = templateHtml.Insert(styleEnd, skillsCSS);
+                            templateHtml = templateHtml.Insert(insertPoint, experienceBlock);
                         }
+                        
+                        // Add skills block if needed
+                        if (!templateHtml.Contains("{{#each skills}}") && templateData is Dictionary<string, object> skillsDataDict && 
+                            skillsDataDict.ContainsKey("skills") && skillsDataDict["skills"] is System.Collections.ICollection skillsColl && skillsColl.Count > 0)
+                        {
+                            Console.WriteLine("Adding skills block helper to simple template");
+                            
+                            // Find insertion point - before container closing
+                            int insertPoint = templateHtml.LastIndexOf("</div>", templateHtml.LastIndexOf("</body>"));
+                            
+                            string skillsBlock = @"
+            {{#if skills}}
+            <div class=""section"">
+                <h2 class=""section-title"">Skills</h2>
+                <div class=""skills-list"">
+                    {{#each skills}}
+                    <span class=""skill-tag"">{{this}}</span>
+                    {{/each}}
+                </div>
+            </div>
+            {{/if}}";
+                            
+                            templateHtml = templateHtml.Insert(insertPoint, skillsBlock);
+                            
+                            // Add CSS for skills if not present
+                            if (!templateHtml.Contains(".skill-tag"))
+                            {
+                                int styleEnd = templateHtml.IndexOf("</style>");
+                                string skillsCSS = @"
+            .skills-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+            .skill-tag { background: #e2e8f0; padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.9rem; }";
+                                
+                                templateHtml = templateHtml.Insert(styleEnd, skillsCSS);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Structured template detected - skipping auto-block addition");
                     }
                     
                     // Compile the template
@@ -2478,7 +2548,7 @@ namespace ResumeAI.API.Services
                         templateHtml = "<html><body><p>No template available. Please select a different template.</p></body></html>";
                     }
                     
-                    string resumeHtml = GenerateResumeHtml(templateHtml, updatedResumeData);
+                    string resumeHtml = GenerateResumeHtml(templateHtml, updatedResumeData, null);
                     
                     // Normalize experience descriptions before returning to frontend
                     var normalizedData = NormalizeResumeData(updatedResumeData);
@@ -2690,7 +2760,7 @@ namespace ResumeAI.API.Services
                         templateHtml = "<html><body><p>No template available. Please select a different template.</p></body></html>";
                     }
                     
-                    string resumeHtml = GenerateResumeHtml(templateHtml, updatedResumeData);
+                    string resumeHtml = GenerateResumeHtml(templateHtml, updatedResumeData, null);
                     
                     // Normalize experience descriptions before returning to frontend
                     var normalizedData = NormalizeResumeData(updatedResumeData);
