@@ -8,7 +8,7 @@ export { SUPABASE_URL };
 // Determine the appropriate API base URL based on the environment
 const determineApiBaseUrl = () => {
 
-return "http://localhost:5001/api";// Lovable
+return "https://localhost:5001/api";// Lovable
 
 
   // const isProduction = import.meta.env.PROD;
