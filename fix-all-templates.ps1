@@ -1,18 +1,15 @@
+# PowerShell script to fix all resume templates
+# Convert PascalCase field names to lowercase
+
 $templateDir = "c:/Users/visha/Documents/careerbird-frontend/backend/ResumeAI.API/html"
+$templates = Get-ChildItem -Path $templateDir -Filter "*.html"
 
-# Get all HTML files
-$templateFiles = Get-ChildItem -Path $templateDir -Filter "*.html"
+Write-Host "Found $($templates.Count) templates to fix..."
 
-# Function to fix a template file
-function Fix-Template {
-    param (
-        [string]$filePath
-    )
+foreach ($template in $templates) {
+    Write-Host "Processing: $($template.Name)"
     
-    Write-Host "Fixing template: $filePath"
-    
-    # Read the content of the file
-    $content = Get-Content -Path $filePath -Raw
+    $content = Get-Content -Path $template.FullName -Raw
     $originalContent = $content
     
     # Fix Experience section
@@ -56,21 +53,16 @@ function Fix-Template {
     $content = $content -replace '{{#if LinkedIn}}', '{{#if linkedin}}'
     $content = $content -replace '{{#if Summary}}', '{{#if summary}}'
     
-    # Write the content back to the file
-    Set-Content -Path $filePath -Value $content -NoNewline
+    # Fix References
+    $content = $content -replace '{{#each References}}', '{{#each references}}'
     
-    # Only report if content changed
+    # Only write if content changed
     if ($content -ne $originalContent) {
-        Write-Host "  ✓ Changes made to $(Split-Path $filePath -Leaf)"
+        Set-Content -Path $template.FullName -Value $content -NoNewline
+        Write-Host "  Fixed: $($template.Name)"
     } else {
-        Write-Host "  - No changes needed for $(Split-Path $filePath -Leaf)"
+        Write-Host "  No changes: $($template.Name)"
     }
 }
 
-# Fix all template files
-Write-Host "Found $($templateFiles.Count) templates to fix..."
-foreach ($file in $templateFiles) {
-    Fix-Template -filePath $file.FullName
-}
-
-Write-Host "All templates have been fixed!"
+Write-Host "Template fixing complete!"

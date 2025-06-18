@@ -158,6 +158,31 @@
           </div>
         </div>
       {{/each}}
+
+      {{#if certifications}}
+        <div class="section-header" style="margin-top:19px;">Certifications</div>
+        {{#each certifications}}
+          <div style="margin-bottom:10px;">
+            <div class="employment-title">{{name}}</div>
+            <div class="employment-meta">{{issuer}}{{#if date}} - {{date}}{{/if}}</div>
+          </div>
+        {{/each}}
+      {{/if}}
+
+      {{#if projects}}
+        <div class="section-header" style="margin-top:19px;">Projects</div>
+        {{#each projects}}
+          <div style="margin-bottom:10px;">
+            <div class="employment-title">{{name}}</div>
+            {{#if description}}
+              <div>{{description}}</div>
+            {{/if}}
+            {{#if technologies}}
+              <div class="employment-meta">Technologies: {{technologies}}</div>
+            {{/if}}
+          </div>
+        {{/each}}
+      {{/if}}
     </div>
     <div class="right-sidebar">
       <div class="sidebar-label">Address</div>

@@ -110,49 +110,79 @@ export const resumeBuilderApi = {
         try {
           const parsedData = JSON.parse(params.resumeData);
           
-          // Convert to PascalCase if needed
+          // Convert to lowercase field names for template compatibility
           const formattedData = {
-            Name: parsedData.Name || parsedData.name || "",
-            Title: parsedData.Title || parsedData.title || "",
-            Email: parsedData.Email || parsedData.email || "",
-            Phone: parsedData.Phone || parsedData.phone || "",
-            Location: parsedData.Location || parsedData.location || "",
-            LinkedIn: parsedData.LinkedIn || parsedData.linkedin || "",
-            Website: parsedData.Website || parsedData.website || "",
-            Summary: parsedData.Summary || parsedData.summary || "",
-            Skills: Array.isArray(parsedData.Skills) ? parsedData.Skills : 
+            name: parsedData.Name || parsedData.name || "",
+            title: parsedData.Title || parsedData.title || "",
+            email: parsedData.Email || parsedData.email || "",
+            phone: parsedData.Phone || parsedData.phone || "",
+            location: parsedData.Location || parsedData.location || "",
+            linkedin: parsedData.LinkedIn || parsedData.linkedin || "",
+            website: parsedData.Website || parsedData.website || "",
+            summary: parsedData.Summary || parsedData.summary || "",
+            skills: Array.isArray(parsedData.Skills) ? parsedData.Skills : 
                    (Array.isArray(parsedData.skills) ? parsedData.skills : []),
-            Experience: Array.isArray(parsedData.Experience) ? parsedData.Experience : 
+            experience: Array.isArray(parsedData.Experience) ? parsedData.Experience.map(exp => ({
+                          title: exp.Title || exp.title || "",
+                          company: exp.Company || exp.company || "",
+                          location: exp.Location || exp.location || "",
+                          startDate: exp.StartDate || exp.startDate || "",
+                          endDate: exp.EndDate || exp.endDate || "",
+                          description: exp.Description || exp.description || ""
+                        })) : 
                        (Array.isArray(parsedData.experience) ? parsedData.experience.map(exp => ({
-                          Title: exp.Title || exp.title || "",
-                          Company: exp.Company || exp.company || "",
-                          Location: exp.Location || exp.location || "",
-                          StartDate: exp.StartDate || exp.startDate || "",
-                          EndDate: exp.EndDate || exp.endDate || "",
-                          Description: exp.Description || exp.description || ""
+                          title: exp.Title || exp.title || "",
+                          company: exp.Company || exp.company || "",
+                          location: exp.Location || exp.location || "",
+                          startDate: exp.StartDate || exp.startDate || "",
+                          endDate: exp.EndDate || exp.endDate || "",
+                          description: exp.Description || exp.description || ""
                         })) : []),
-            Education: Array.isArray(parsedData.Education) ? parsedData.Education : 
+            education: Array.isArray(parsedData.Education) ? parsedData.Education.map(edu => ({
+                         degree: edu.Degree || edu.degree || "",
+                         institution: edu.Institution || edu.institution || "",
+                         location: edu.Location || edu.location || "",
+                         startDate: edu.StartDate || edu.startDate || "",
+                         endDate: edu.EndDate || edu.endDate || "",
+                         gpa: edu.GPA || edu.gpa || ""
+                       })) : 
                       (Array.isArray(parsedData.education) ? parsedData.education.map(edu => ({
-                         Degree: edu.Degree || edu.degree || "",
-                         Institution: edu.Institution || edu.institution || "",
-                         Location: edu.Location || edu.location || "",
-                         StartDate: edu.StartDate || edu.startDate || "",
-                         EndDate: edu.EndDate || edu.endDate || "",
-                         GPA: edu.GPA || edu.gpa || ""
+                         degree: edu.Degree || edu.degree || "",
+                         institution: edu.Institution || edu.institution || "",
+                         location: edu.Location || edu.location || "",
+                         startDate: edu.StartDate || edu.startDate || "",
+                         endDate: edu.EndDate || edu.endDate || "",
+                         gpa: edu.GPA || edu.gpa || ""
                        })) : []),
-            Certifications: Array.isArray(parsedData.Certifications) ? parsedData.Certifications : 
+            certifications: Array.isArray(parsedData.Certifications) ? parsedData.Certifications.map(cert => ({
+                              name: cert.Name || cert.name || "",
+                              issuer: cert.Issuer || cert.issuer || "",
+                              date: cert.Date || cert.date || ""
+                            })) : 
                            (Array.isArray(parsedData.certifications) ? parsedData.certifications.map(cert => ({
-                              Name: cert.Name || cert.name || "",
-                              Issuer: cert.Issuer || cert.issuer || "",
-                              Date: cert.Date || cert.date || ""
+                              name: cert.Name || cert.name || "",
+                              issuer: cert.Issuer || cert.issuer || "",
+                              date: cert.Date || cert.date || ""
                             })) : []),
-            Projects: Array.isArray(parsedData.Projects) ? parsedData.Projects : 
+            projects: Array.isArray(parsedData.Projects) ? parsedData.Projects.map(proj => ({
+                        name: proj.Name || proj.name || "",
+                        description: proj.Description || proj.description || "",
+                        technologies: proj.Technologies || proj.technologies || ""
+                      })) : 
                      (Array.isArray(parsedData.projects) ? parsedData.projects.map(proj => ({
-                        Name: proj.Name || proj.name || "",
-                        Description: proj.Description || proj.description || "",
-                        Technologies: proj.Technologies || proj.technologies || ""
-                      })) : [])
+                        name: proj.Name || proj.name || "",
+                        description: proj.Description || proj.description || "",
+                        technologies: proj.Technologies || proj.technologies || ""
+                      })) : []),
+            color: parsedData.Color || parsedData.color || ""
           };
+          
+          console.log('=== OLD RESUME BUILDER API DATA TRANSFORMATION ===');
+          console.log('Original parsed data:', parsedData);
+          console.log('Formatted data:', formattedData);
+          //console.log('Formatted Experience:', formattedData.Experience);
+          //console.log('Formatted Education:', formattedData.Education);
+          console.log('Final JSON being sent:', JSON.stringify(formattedData, null, 2));
           
           formData.append('resumeData', JSON.stringify(formattedData));
         } catch (error) {

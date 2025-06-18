@@ -10,7 +10,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{Name}} - Resume</title>
+  <title>{{name}} - Resume</title>
   <style>
     body {
       font-family: 'Segoe UI', Arial, sans-serif;
@@ -28,7 +28,7 @@
       overflow: hidden;
     }
     .sidebar {
-      background: {{#if Color}}{{Color}}{{else}}#153559{{/if}};
+      background: {{#if color}}{{color}}{{else}}#153559{{/if}};
       color: #fff;
       width: 250px;
       min-height: 100%;
@@ -181,24 +181,24 @@
 <body>
   <div class="resume-container">
     <div class="sidebar">
-      <img src="https://ui-avatars.com/api/?name={{Name}}&size=192&background=315389&color=fff&bold=true" alt="photo" class="photo" />
+      <img src="https://ui-avatars.com/api/?name={{name}}&size=192&background=315389&color=fff&bold=true" alt="photo" class="photo" />
       <div class="sidebar-section">
         <div class="sidebar-section-title">Details</div>
         <div class="sidebar-details">
-          {{#if Location}}
-            <div>{{Location}}</div>
+          {{#if location}}
+            <div>{{location}}</div>
           {{/if}}
-          {{#if Email}}
-            <div><a href="mailto:{{Email}}">{{Email}}</a></div>
+          {{#if email}}
+            <div><a href="mailto:{{email}}">{{email}}</a></div>
           {{/if}}
-          {{#if Phone}}
-            <div>{{Phone}}</div>
+          {{#if phone}}
+            <div>{{phone}}</div>
           {{/if}}
-          {{#if Website}}
-            <div><a href="{{Website}}" target="_blank">{{Website}}</a></div>
+          {{#if website}}
+            <div><a href="{{website}}" target="_blank">{{website}}</a></div>
           {{/if}}
-          {{#if LinkedIn}}
-            <div><a href="{{LinkedIn}}" target="_blank">{{LinkedIn}}</a></div>
+          {{#if linkedin}}
+            <div><a href="{{linkedin}}" target="_blank">{{linkedin}}</a></div>
           {{/if}}
         </div>
       </div>
@@ -212,34 +212,36 @@
       </div>
     </div>
     <div class="content">
-      <h1>{{Name}}</h1>
-      {{#if Title}}
-        <div class="title">{{Title}}</div>
+      <h1>{{name}}</h1>
+      {{#if title}}
+        <div class="title">{{title}}</div>
       {{/if}}
       <div class="profile-section">
         <div class="section-label">Profile</div>
-        <div class="profile-summary">{{Summary}}</div>
+        <div class="profile-summary">{{summary}}</div>
       </div>
       <div class="employment-section">
         <h2>Employment History</h2>
-        {{#each Experience}}
-          <div class="employment-history-role">{{Title}}, <span class="employment-history-company">{{Company}}{{#if Location}}, {{Location}}{{/if}}</span></div>
-          {{#if StartDate}}
-            <div class="employment-history-dates">{{StartDate}}{{#if EndDate}} – {{EndDate}}{{/if}}</div>
+        <!-- DEBUG: Hardcoded test entry -->
+        <div class="employment-history-role">HARDCODED TEST TITLE, <span class="employment-history-company">HARDCODED TEST COMPANY</span></div>
+        {{#each experience}}
+          <div class="employment-history-role">{{title}}, <span class="employment-history-company">{{company}}{{#if location}}, {{location}}{{/if}}</span></div>
+          {{#if startDate}}
+            <div class="employment-history-dates">{{startDate}}{{#if endDate}} – {{endDate}}{{/if}}</div>
           {{/if}}
-          {{#if Description}}
+          {{#if description}}
             <ul class="employment-history-list">
-              <li>{{Description}}</li>
+              <li>{{description}}</li>
             </ul>
           {{/if}}
         {{/each}}
       </div>
       <div class="education-section">
         <h2>Education</h2>
-        {{#each Education}}
-          <div class="education-degree">{{Degree}}</div>
-          <div class="education-institution">{{Institution}}{{#if Location}}, {{Location}}{{/if}}</div>
-          <div class="education-dates">{{StartDate}}{{#if EndDate}} – {{EndDate}}{{/if}}</div>
+        {{#each education}}
+          <div class="education-degree">{{degree}}</div>
+          <div class="education-institution">{{institution}}{{#if location}}, {{location}}{{/if}}</div>
+          <div class="education-dates">{{startDate}}{{#if endDate}} – {{endDate}}{{/if}}</div>
         {{/each}}
       </div>
       <div>

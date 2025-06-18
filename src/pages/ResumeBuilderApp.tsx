@@ -764,32 +764,151 @@ const ResumeBuilderApp = () => {
         console.log('JSON parsing test successful. Experience count:', parsed.Experience?.length);
         console.log('First experience item:', parsed.Experience?.[0]);
         
-        // Create a simple test data to see if backend can handle basic data
-        const testData = {
-          Name: "Test Name",
-          Title: "Test Title",
-          Experience: [{
-            Title: "Test Job",
-            Company: "Test Company",
-            Description: "Test Description"
-          }],
-          Education: [{
-            Degree: "Test Degree",
-            Institution: "Test School"
-          }]
-        };
-        console.log('Test data for backend:', testData);
+        // Detailed analysis of what's being sent
+        console.log('=== DETAILED DATA ANALYSIS BEFORE API CALL ===');
+        console.log('Experience array details:');
+        if (parsed.Experience && Array.isArray(parsed.Experience)) {
+          parsed.Experience.forEach((exp, index) => {
+            console.log(`  Experience ${index}:`, {
+              Title: exp.Title,
+              Company: exp.Company,
+              Description: exp.Description,
+              StartDate: exp.StartDate,
+              EndDate: exp.EndDate,
+              isEmpty: !exp.Title && !exp.Company && !exp.Description
+            });
+          });
+        } else {
+          console.log('  No Experience array or not an array');
+        }
+        
+        console.log('Education array details:');
+        if (parsed.Education && Array.isArray(parsed.Education)) {
+          parsed.Education.forEach((edu, index) => {
+            console.log(`  Education ${index}:`, {
+              Degree: edu.Degree,
+              Institution: edu.Institution,
+              StartDate: edu.StartDate,
+              EndDate: edu.EndDate,
+              isEmpty: !edu.Degree && !edu.Institution
+            });
+          });
+        } else {
+          console.log('  No Education array or not an array');
+        }
         
       } catch (e) {
         console.error('JSON parsing test failed:', e);
       }
       
       // Use apiClient instead of resumeBuilderApi for consistency
+      console.log('=== MAKING API CALL TO BACKEND ===');
+      console.log('API Call Parameters:');
+      console.log('- resumeData (first 500 chars):', jsonString.substring(0, 500));
+      console.log('- templateId:', selectedTemplate);
+      console.log('- color:', selectedColor);
+      
+      // Let's also try with a simple test data to see if the issue is with our data structure
+      const testData = {
+        Name: "Test Name",
+        Title: "Test Title",
+        Email: "test@example.com",
+        Phone: "123-456-7890",
+        Location: "Test City",
+        Summary: "Test summary",
+        Experience: [
+          {
+            Title: "Test Job Title",
+            Company: "Test Company",
+            Location: "Test Location",
+            StartDate: "2020",
+            EndDate: "2023",
+            Description: "Test job description"
+          }
+        ],
+        Education: [
+          {
+            Degree: "Test Degree",
+            Institution: "Test University",
+            Location: "Test City",
+            StartDate: "2016",
+            EndDate: "2020"
+          }
+        ],
+        Skills: ["Test Skill 1", "Test Skill 2"],
+        Color: selectedColor
+      };
+      
+      const testJsonString = JSON.stringify(testData);
+      console.log('=== TESTING WITH SIMPLE DATA ===');
+      console.log('Test data:', testData);
+      console.log('Test JSON string:', testJsonString);
+      
+      // TEMPORARY: Let's test with the old resumeBuilderApi to see if it works
+      console.log('=== TESTING WITH OLD RESUME BUILDER API ===');
+      console.log('Selected template:', selectedTemplate);
+      console.log('Available templates:', templates.map(t => t.id));
+      
+      // Let's also try with a different template to see if it's template-specific
+      const testTemplate = 'modern-executive'; // Try a different template
+      console.log('Testing with template:', testTemplate);
+      
+      // Let's try with both the original data and simple test data
+      console.log('=== TRYING WITH SIMPLE TEST DATA FIRST ===');
+      const testResult = await resumeBuilderApi.buildResume({
+        resumeData: testJsonString,
+        templateId: selectedTemplate,
+        color: selectedColor
+      });
+      
+      if (testResult.data?.html) {
+        console.log('TEST RESULT - HTML contains "Test Job Title":', testResult.data.html.includes('Test Job Title'));
+        console.log('TEST RESULT - HTML contains "Test Company":', testResult.data.html.includes('Test Company'));
+        console.log('TEST RESULT - HTML contains "Test Degree":', testResult.data.html.includes('Test Degree'));
+      }
+      
+      console.log('=== NOW TRYING WITH ORIGINAL DATA ===');
+      console.log('JSON string being sent (first 1000 chars):', jsonString.substring(0, 1000));
+      
+      // Let's also try parsing the JSON to see what we're sending
+      try {
+        const parsedJson = JSON.parse(jsonString);
+        console.log('Parsed JSON structure:');
+        console.log('- Name:', parsedJson.Name || parsedJson.name);
+        console.log('- Title:', parsedJson.Title || parsedJson.title);
+        console.log('- Experience count:', Array.isArray(parsedJson.Experience) ? parsedJson.Experience.length : (Array.isArray(parsedJson.experience) ? parsedJson.experience.length : 0));
+        console.log('- Education count:', Array.isArray(parsedJson.Education) ? parsedJson.Education.length : (Array.isArray(parsedJson.education) ? parsedJson.education.length : 0));
+        if (parsedJson.Experience && parsedJson.Experience[0]) {
+          console.log('- First Experience:', parsedJson.Experience[0]);
+        }
+        if (parsedJson.experience && parsedJson.experience[0]) {
+          console.log('- First experience:', parsedJson.experience[0]);
+        }
+      } catch (e) {
+        console.error('Error parsing JSON:', e);
+      }
+      
+      const result = await resumeBuilderApi.buildResume({
+        resumeData: jsonString,
+        templateId: selectedTemplate, // Use selected template for now
+        color: selectedColor
+      });
+      
+      // For comparison, let's also try the new apiClient (commented out for now)
+      /*
       const result = await apiClient.resumeBuilder.buildResume({
         resumeData: jsonString,
         templateId: selectedTemplate,
         color: selectedColor // Also pass as separate parameter for backward compatibility
       });
+      */
+      
+      console.log('=== BACKEND RESPONSE RECEIVED ===');
+      console.log('Response data keys:', Object.keys(result.data || {}));
+      if (result.data?.html) {
+        console.log('Response HTML length:', result.data.html.length);
+        console.log('Response HTML preview (first 500 chars):', result.data.html.substring(0, 500));
+      }
 
       console.log('Resume generation result:', result);
       console.log('Backend response type:', typeof result);
@@ -827,12 +946,27 @@ const ResumeBuilderApp = () => {
       }
 
       if (result.data?.html) {
+        // Log the data being passed to preview
+        console.log('=== NAVIGATING TO PREVIEW ===');
+        console.log('Template:', selectedTemplate);
+        console.log('Resume data being passed to preview:', resumeData);
+        console.log('Resume data Experience array:', resumeData.Experience);
+        console.log('Resume data Education array:', resumeData.Education);
+        console.log('Backend HTML length:', result.data.html.length);
+        console.log('Backend HTML preview (first 500 chars):', result.data.html.substring(0, 500));
+        
         // Navigate to preview page with the generated HTML and data
         const params = new URLSearchParams({
           template: selectedTemplate,
           data: encodeURIComponent(JSON.stringify(resumeData)),
           html: encodeURIComponent(result.data.html) // Pass the HTML from the backend
         });
+        
+        console.log('URL params being created:');
+        console.log('- template:', selectedTemplate);
+        console.log('- data (encoded):', encodeURIComponent(JSON.stringify(resumeData)));
+        console.log('- html (encoded length):', encodeURIComponent(result.data.html).length);
+        
         navigate(`/resume-preview?${params.toString()}`);
 
         toast({
@@ -868,8 +1002,8 @@ const ResumeBuilderApp = () => {
       
       console.log(`Generating AI-enhanced resume with template: ${selectedTemplate}, color: ${selectedColor}`);
       
-      // Call AI-enhanced resume generation using apiClient for consistency
-      const result = await apiClient.resumeBuilder.buildResume({
+      // TEMPORARY: Call AI-enhanced resume generation using old resumeBuilderApi
+      const result = await resumeBuilderApi.buildResume({
         resumeData: JSON.stringify(resumeDataWithColor),
         templateId: selectedTemplate,
         color: selectedColor, // Pass color as separate parameter
@@ -886,6 +1020,15 @@ const ResumeBuilderApp = () => {
       }
 
       if (result.data?.html) {
+        // Log the data being passed to preview
+        console.log('=== NAVIGATING TO AI PREVIEW ===');
+        console.log('Template:', selectedTemplate);
+        console.log('Resume data being passed to AI preview:', resumeData);
+        console.log('Resume data Experience array:', resumeData.Experience);
+        console.log('Resume data Education array:', resumeData.Education);
+        console.log('Backend AI HTML length:', result.data.html.length);
+        console.log('Backend AI HTML preview (first 500 chars):', result.data.html.substring(0, 500));
+        
         // Navigate to preview page with the generated HTML and data
         const params = new URLSearchParams({
           template: selectedTemplate,
@@ -893,6 +1036,13 @@ const ResumeBuilderApp = () => {
           html: encodeURIComponent(result.data.html), // Pass the HTML from the backend
           aiEnhanced: 'true'
         });
+        
+        console.log('AI URL params being created:');
+        console.log('- template:', selectedTemplate);
+        console.log('- data (encoded):', encodeURIComponent(JSON.stringify(resumeData)));
+        console.log('- html (encoded length):', encodeURIComponent(result.data.html).length);
+        console.log('- aiEnhanced: true');
+        
         navigate(`/resume-preview?${params.toString()}`);
 
         toast({
@@ -928,8 +1078,8 @@ const ResumeBuilderApp = () => {
       
       console.log(`Generating premium AI-enhanced resume with template: ${selectedTemplate}, color: ${selectedColor}`);
       
-      // Call premium AI-enhanced resume generation using apiClient for consistency
-      const result = await apiClient.resumeBuilder.buildResume({
+      // TEMPORARY: Call premium AI-enhanced resume generation using old resumeBuilderApi
+      const result = await resumeBuilderApi.buildResume({
         resumeData: JSON.stringify(resumeDataWithColor),
         templateId: selectedTemplate,
         color: selectedColor,
@@ -947,6 +1097,15 @@ const ResumeBuilderApp = () => {
       }
 
       if (result.data?.html) {
+        // Log the data being passed to preview
+        console.log('=== NAVIGATING TO PREMIUM AI PREVIEW ===');
+        console.log('Template:', selectedTemplate);
+        console.log('Resume data being passed to premium AI preview:', resumeData);
+        console.log('Resume data Experience array:', resumeData.Experience);
+        console.log('Resume data Education array:', resumeData.Education);
+        console.log('Backend Premium AI HTML length:', result.data.html.length);
+        console.log('Backend Premium AI HTML preview (first 500 chars):', result.data.html.substring(0, 500));
+        
         // Navigate to preview page with the generated HTML and data
         const params = new URLSearchParams({
           template: selectedTemplate,
@@ -955,6 +1114,14 @@ const ResumeBuilderApp = () => {
           aiEnhanced: 'true',
           premium: 'true'
         });
+        
+        console.log('Premium AI URL params being created:');
+        console.log('- template:', selectedTemplate);
+        console.log('- data (encoded):', encodeURIComponent(JSON.stringify(resumeData)));
+        console.log('- html (encoded length):', encodeURIComponent(result.data.html).length);
+        console.log('- aiEnhanced: true');
+        console.log('- premium: true');
+        
         navigate(`/resume-preview?${params.toString()}`);
 
         toast({
@@ -1231,6 +1398,15 @@ const ResumeBuilderApp = () => {
                   {/* Debug info - remove in production */}
                   <div className="text-sm text-gray-500 mt-2">
                     Data Status: Personal ✓ | Experience ({resumeData.Experience?.length || 0}) | Education ({resumeData.Education?.length || 0}) | Skills ({resumeData.Skills?.length || 0}) | Projects ({resumeData.Projects?.length || 0}) | Certifications ({resumeData.Certifications?.length || 0})
+                  </div>
+                  <div className="text-xs text-gray-400 mt-1">
+                    <details>
+                      <summary className="cursor-pointer">Click to view detailed data</summary>
+                      <div className="mt-2 p-2 bg-gray-50 rounded text-xs">
+                        <div><strong>Experience:</strong> {JSON.stringify(resumeData.Experience, null, 2)}</div>
+                        <div className="mt-2"><strong>Education:</strong> {JSON.stringify(resumeData.Education, null, 2)}</div>
+                      </div>
+                    </details>
                   </div>
                 </CardHeader>
                 <CardContent>

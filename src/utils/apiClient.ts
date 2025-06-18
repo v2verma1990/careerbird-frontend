@@ -8,20 +8,20 @@ export { SUPABASE_URL };
 // Determine the appropriate API base URL based on the environment
 const determineApiBaseUrl = () => {
 
-return "https://localhost:5001/api";// Lovable
+//return "https://localhost:5001/api";// Lovable
 
 
-  // const isProduction = import.meta.env.PROD;
+  const isProduction = import.meta.env.PROD;
   
-  // const devBackendUrl = import.meta.env.VITE_API_URL;
-  // if (isProduction) {
-  //   console.log(`in production: ${import.meta.env.VITE_API_URL}`);
-  //   return '/api';
-  // } else if (devBackendUrl) {
-  // return devBackendUrl;
-  // } else {
-  // return "http://localhost:5001/api";
-  // }
+  const devBackendUrl = import.meta.env.VITE_API_URL;
+  if (isProduction) {
+    console.log(`in production: ${import.meta.env.VITE_API_URL}`);
+    return '/api';
+  } else if (devBackendUrl) {
+  return devBackendUrl;
+  } else {
+  return "http://localhost:5001/api";
+  }
 };
 
 // Set the API base URL
@@ -1080,7 +1080,71 @@ export const api = {
         const { data: { session } } = await supabase.auth.getSession();
         
         const formData = new FormData();
-        formData.append('resumeData', params.resumeData);
+        
+        // Transform resume data like the old API did
+        if (params.resumeData) {
+          try {
+            const parsedData = JSON.parse(params.resumeData);
+            
+            // Convert to PascalCase if needed (same logic as old resumeBuilderApi)
+            const formattedData = {
+              Name: parsedData.Name || parsedData.name || "",
+              Title: parsedData.Title || parsedData.title || "",
+              Email: parsedData.Email || parsedData.email || "",
+              Phone: parsedData.Phone || parsedData.phone || "",
+              Location: parsedData.Location || parsedData.location || "",
+              LinkedIn: parsedData.LinkedIn || parsedData.linkedin || "",
+              Website: parsedData.Website || parsedData.website || "",
+              Summary: parsedData.Summary || parsedData.summary || "",
+              Skills: Array.isArray(parsedData.Skills) ? parsedData.Skills : 
+                     (Array.isArray(parsedData.skills) ? parsedData.skills : []),
+              Experience: Array.isArray(parsedData.Experience) ? parsedData.Experience : 
+                         (Array.isArray(parsedData.experience) ? parsedData.experience.map((exp: any) => ({
+                            Title: exp.Title || exp.title || "",
+                            Company: exp.Company || exp.company || "",
+                            Location: exp.Location || exp.location || "",
+                            StartDate: exp.StartDate || exp.startDate || "",
+                            EndDate: exp.EndDate || exp.endDate || "",
+                            Description: exp.Description || exp.description || ""
+                          })) : []),
+              Education: Array.isArray(parsedData.Education) ? parsedData.Education : 
+                        (Array.isArray(parsedData.education) ? parsedData.education.map((edu: any) => ({
+                           Degree: edu.Degree || edu.degree || "",
+                           Institution: edu.Institution || edu.institution || "",
+                           Location: edu.Location || edu.location || "",
+                           StartDate: edu.StartDate || edu.startDate || "",
+                           EndDate: edu.EndDate || edu.endDate || "",
+                           GPA: edu.GPA || edu.gpa || ""
+                         })) : []),
+              Certifications: Array.isArray(parsedData.Certifications) ? parsedData.Certifications : 
+                             (Array.isArray(parsedData.certifications) ? parsedData.certifications.map((cert: any) => ({
+                                Name: cert.Name || cert.name || "",
+                                Issuer: cert.Issuer || cert.issuer || "",
+                                Date: cert.Date || cert.date || ""
+                              })) : []),
+              Projects: Array.isArray(parsedData.Projects) ? parsedData.Projects : 
+                       (Array.isArray(parsedData.projects) ? parsedData.projects.map((proj: any) => ({
+                          Name: proj.Name || proj.name || "",
+                          Description: proj.Description || proj.description || "",
+                          Technologies: proj.Technologies || proj.technologies || ""
+                        })) : [])
+            };
+            
+            console.log('=== DATA TRANSFORMATION IN API CLIENT ===');
+            console.log('Original data Experience:', parsedData.Experience);
+            console.log('Formatted data Experience:', formattedData.Experience);
+            console.log('Original data Education:', parsedData.Education);
+            console.log('Formatted data Education:', formattedData.Education);
+            console.log('Final JSON being sent to backend:', JSON.stringify(formattedData, null, 2));
+            
+            formData.append('resumeData', JSON.stringify(formattedData));
+          } catch (error) {
+            console.error('Error transforming resume data:', error);
+            // If parsing fails, use the original data
+            formData.append('resumeData', params.resumeData);
+          }
+        }
+        
         formData.append('templateId', params.templateId);
         
         // Add color parameter if provided

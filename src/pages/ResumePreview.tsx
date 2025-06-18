@@ -20,6 +20,7 @@ const ResumePreview = () => {
   const encodedHtml = searchParams.get('html');
 
   useEffect(() => {
+    console.log('=== RESUME PREVIEW COMPONENT LOADED ===');
     console.log('ResumePreview - Template:', template);
     console.log('ResumePreview - Encoded data:', encodedData);
     console.log('ResumePreview - Encoded HTML:', encodedHtml ? 'Present (length: ' + encodedHtml.length + ')' : 'Not present');
@@ -28,11 +29,41 @@ const ResumePreview = () => {
       try {
         // Decode the URL-encoded data
         const decodedData = decodeURIComponent(encodedData);
-        console.log('ResumePreview - Decoded data:', decodedData);
+        console.log('ResumePreview - Decoded data (first 1000 chars):', decodedData.substring(0, 1000));
         
         // Parse the JSON data
         const parsedData = JSON.parse(decodedData);
-        console.log('ResumePreview - Parsed data:', parsedData);
+        console.log('=== PARSED RESUME DATA IN PREVIEW ===');
+        console.log('ResumePreview - Full parsed data:', parsedData);
+        console.log('ResumePreview - Experience array:', parsedData.Experience);
+        console.log('ResumePreview - Education array:', parsedData.Education);
+        console.log('ResumePreview - Skills array:', parsedData.Skills);
+        console.log('ResumePreview - Experience length:', parsedData.Experience?.length || 0);
+        console.log('ResumePreview - Education length:', parsedData.Education?.length || 0);
+        
+        // Check if arrays have actual content
+        if (parsedData.Experience && parsedData.Experience.length > 0) {
+          console.log('ResumePreview - First experience item:', parsedData.Experience[0]);
+          parsedData.Experience.forEach((exp, index) => {
+            console.log(`Experience ${index}:`, {
+              Title: exp.Title,
+              Company: exp.Company,
+              Description: exp.Description,
+              hasContent: !!(exp.Title || exp.Company || exp.Description)
+            });
+          });
+        }
+        
+        if (parsedData.Education && parsedData.Education.length > 0) {
+          console.log('ResumePreview - First education item:', parsedData.Education[0]);
+          parsedData.Education.forEach((edu, index) => {
+            console.log(`Education ${index}:`, {
+              Degree: edu.Degree,
+              Institution: edu.Institution,
+              hasContent: !!(edu.Degree || edu.Institution)
+            });
+          });
+        }
         
         setResumeData(parsedData);
         
@@ -40,7 +71,62 @@ const ResumePreview = () => {
         if (encodedHtml) {
           try {
             const decodedHtml = decodeURIComponent(encodedHtml);
+            console.log('=== BACKEND HTML ANALYSIS ===');
             console.log('ResumePreview - Using HTML from backend (length: ' + decodedHtml.length + ')');
+            console.log('ResumePreview - HTML preview (first 1000 chars):', decodedHtml.substring(0, 1000));
+            
+            // Check if HTML contains experience and education sections
+            const hasExperienceSection = decodedHtml.includes('Experience') || decodedHtml.includes('Employment');
+            const hasEducationSection = decodedHtml.includes('Education');
+            const hasExperienceData = decodedHtml.includes('employment-history-role') || decodedHtml.includes('experience');
+            const hasEducationData = decodedHtml.includes('education-degree') || decodedHtml.includes('education');
+            
+            console.log('HTML Content Analysis:');
+            console.log('- Has Experience Section:', hasExperienceSection);
+            console.log('- Has Education Section:', hasEducationSection);
+            console.log('- Has Experience Data:', hasExperienceData);
+            console.log('- Has Education Data:', hasEducationData);
+            
+            // Look for specific patterns that might indicate empty sections
+            const emptyExperiencePattern = /employment-history-role">\s*,\s*<span/;
+            const hasEmptyExperience = emptyExperiencePattern.test(decodedHtml);
+            console.log('- Has Empty Experience Pattern:', hasEmptyExperience);
+            
+            // Let's examine the actual experience section in the HTML
+            const experienceMatch = decodedHtml.match(/<div class="employment-section">[\s\S]*?<\/div>/);
+            if (experienceMatch) {
+              console.log('Experience section HTML:', experienceMatch[0]);
+            }
+            
+            // Look for the actual experience entries
+            const experienceEntries = decodedHtml.match(/employment-history-role">[^<]*</g);
+            console.log('Experience entries found:', experienceEntries);
+            
+            // Check education section too
+            const educationMatch = decodedHtml.match(/<div class="education-section">[\s\S]*?<\/div>/);
+            if (educationMatch) {
+              console.log('Education section HTML:', educationMatch[0]);
+            }
+            
+            // Look for education entries
+            const educationEntries = decodedHtml.match(/education-degree">[^<]*</g);
+            console.log('Education entries found:', educationEntries);
+            
+            // Let's also check if the HTML contains the actual data values
+            console.log('=== CHECKING FOR ACTUAL DATA IN HTML ===');
+            console.log('HTML contains "Cloud Architect":', decodedHtml.includes('Cloud Architect'));
+            console.log('HTML contains "Cognizant":', decodedHtml.includes('Cognizant'));
+            console.log('HTML contains "MBA":', decodedHtml.includes('MBA'));
+            console.log('HTML contains "Amity University":', decodedHtml.includes('Amity University'));
+            
+            // Let's see the full HTML around the employment section
+            const employmentSectionStart = decodedHtml.indexOf('<div class="employment-section">');
+            const employmentSectionEnd = decodedHtml.indexOf('</div>', employmentSectionStart + 200);
+            if (employmentSectionStart !== -1 && employmentSectionEnd !== -1) {
+              const employmentSection = decodedHtml.substring(employmentSectionStart, employmentSectionEnd + 6);
+              console.log('Full employment section HTML:', employmentSection);
+            }
+            
             setResumeHtml(decodedHtml);
             setIsLoading(false);
           } catch (htmlError) {

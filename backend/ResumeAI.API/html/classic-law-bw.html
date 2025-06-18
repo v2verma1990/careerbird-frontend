@@ -3,6 +3,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{Name}} - Resume</title>
   <style>
     body {
@@ -159,14 +160,14 @@
 
     <div class="section-title">EMPLOYMENT HISTORY</div>
     <div class="section">
-      {{#each Experience}}
+      {{#each experience}}
         <div>
-          <span class="job">{{Title}}</span>
-          {{#if Company}}<span class="job-company">{{Company}}</span>{{/if}}
-          <span class="job-duration">{{StartDate}} {{#if EndDate}}– {{EndDate}}{{/if}}</span>
-          {{#if Location}}<span class="job-location">{{Location}}</span>{{/if}}
+          <span class="job">{{title}}</span>
+          {{#if company}}<span class="job-company">{{company}}</span>{{/if}}
+          <span class="job-duration">{{startDate}} {{#if endDate}}– {{endDate}}{{/if}}</span>
+          {{#if location}}<span class="job-location">{{location}}</span>{{/if}}
         </div>
-        {{#if Description}}
+        {{#if description}}
           <ul>
             {{#each Description}}
               <li>{{this}}</li>
@@ -178,11 +179,11 @@
 
     <div class="section-title">EDUCATION</div>
     <div class="section">
-      {{#each Education}}
+      {{#each education}}
         <div>
-          <span class="edu-entry">{{Degree}}</span><span class="edu-meta">{{Institution}}</span>
-          <span class="edu-dates">{{StartDate}} {{#if EndDate}}– {{EndDate}}{{/if}}</span>
-          {{#if Location}}<span class="edu-meta">{{Location}}</span>{{/if}}
+          <span class="edu-entry">{{degree}}</span><span class="edu-meta">{{institution}}</span>
+          <span class="edu-dates">{{startDate}} {{#if endDate}}– {{endDate}}{{/if}}</span>
+          {{#if location}}<span class="edu-meta">{{location}}</span>{{/if}}
         </div>
       {{/each}}
     </div>
@@ -191,7 +192,7 @@
     <div class="section">
       <table class="skills-table">
         <tbody>
-          {{#each Skills}}
+          {{#each skills}}
             <tr>
               <td>{{this}}</td>
               <td>Expert</td>
@@ -201,19 +202,49 @@
       </table>
     </div>
 
-    {{#if Internships}}
+    {{#if internships}}
       <div class="section-title">INTERNSHIPS</div>
       <div class="section">
-        {{#each Internships}}
+        {{#each internships}}
           <div class="intern-entry">{{this}}</div>
         {{/each}}
       </div>
     {{/if}}
 
-    {{#if References}}
+    {{#if certifications}}
+      <div class="section-title">CERTIFICATIONS</div>
+      <div class="section">
+        {{#each certifications}}
+          <div>
+            <span class="job">{{name}}</span>
+            <span class="job-company">{{issuer}}</span>
+            {{#if date}}<span class="job-duration">{{date}}</span>{{/if}}
+          </div>
+        {{/each}}
+      </div>
+    {{/if}}
+
+    {{#if projects}}
+      <div class="section-title">PROJECTS</div>
+      <div class="section">
+        {{#each projects}}
+          <div>
+            <span class="job">{{name}}</span>
+            {{#if description}}
+              <div class="project-desc">{{description}}</div>
+            {{/if}}
+            {{#if technologies}}
+              <span class="job-duration">Technologies: {{technologies}}</span>
+            {{/if}}
+          </div>
+        {{/each}}
+      </div>
+    {{/if}}
+
+    {{#if references}}
       <div class="section-title">REFERENCES</div>
       <div class="section">
-        {{#each References}}
+        {{#each references}}
           <div class="ref-entry">{{this}}</div>
         {{/each}}
       </div>

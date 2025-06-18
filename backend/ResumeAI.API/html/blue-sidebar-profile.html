@@ -8,6 +8,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{Name}} - Resume</title>
   <style>
     body {
@@ -208,7 +209,7 @@
       <div class="sidebar-block">
         <div class="sidebar-label">Skills</div>
         <ul class="sidebar-list">
-          {{#each Skills}}
+          {{#each skills}}
             <li>{{this}}</li>
           {{/each}}
         </ul>
@@ -231,13 +232,13 @@
       <div>
         <span class="section-title">Employment History</span>
         <div>
-          {{#each Experience}}
+          {{#each experience}}
             <div class="employment-listing">
-              <div class="employment-title">{{Title}}{{#if Company}} at {{Company}}{{/if}}{{#if Location}}, {{Location}}{{/if}}</div>
-              <div class="employment-meta">{{StartDate}}{{#if EndDate}} &ndash; {{EndDate}}{{/if}}</div>
-              {{#if Description}}
+              <div class="employment-title">{{title}}{{#if company}} at {{company}}{{/if}}{{#if location}}, {{location}}{{/if}}</div>
+              <div class="employment-meta">{{startDate}}{{#if endDate}} &ndash; {{endDate}}{{/if}}</div>
+              {{#if description}}
                 <ul class="employment-desc">
-                  {{#each Description}}
+                  {{#each description}}
                     <li>{{this}}</li>
                   {{/each}}
                 </ul>
@@ -249,17 +250,49 @@
       <div>
         <span class="section-title">Education</span>
         <div>
-          {{#each Education}}
-            <div class="education-title">{{Degree}}</div>
-            <div class="education-meta">{{Institution}}{{#if Location}}, {{Location}}{{/if}}</div>
-            <div class="education-meta">{{StartDate}}{{#if EndDate}} – {{EndDate}}{{/if}}</div>
+          {{#each education}}
+            <div class="education-title">{{degree}}</div>
+            <div class="education-meta">{{institution}}{{#if location}}, {{location}}{{/if}}</div>
+            <div class="education-meta">{{startDate}}{{#if endDate}} – {{endDate}}{{/if}}</div>
           {{/each}}
         </div>
       </div>
+      {{#if certifications}}
+      <div>
+        <span class="section-title">Certifications</span>
+        <div>
+          {{#each certifications}}
+            <div class="education-title">{{name}}</div>
+            <div class="education-meta">{{issuer}}</div>
+            {{#if date}}
+              <div class="education-meta">{{date}}</div>
+            {{/if}}
+          {{/each}}
+        </div>
+      </div>
+      {{/if}}
+      {{#if projects}}
+      <div>
+        <span class="section-title">Projects</span>
+        <div>
+          {{#each projects}}
+            <div class="employment-listing">
+              <div class="employment-title">{{name}}</div>
+              {{#if description}}
+                <div class="employment-desc">{{description}}</div>
+              {{/if}}
+              {{#if technologies}}
+                <div class="employment-meta">Technologies: {{technologies}}</div>
+              {{/if}}
+            </div>
+          {{/each}}
+        </div>
+      </div>
+      {{/if}}
       <div class="reference-section">
         <span class="section-title">References</span>
         <div class="reference-label">
-          {{#each References}}
+          {{#each references}}
             {{this}}{{#unless @last}}, {{/unless}}
           {{/each}}
         </div>
