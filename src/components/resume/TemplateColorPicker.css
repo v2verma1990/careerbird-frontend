@@ -1,0 +1,45 @@
+.template-color-picker {
+  display: flex;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  justify-content: center;
+}
+
+.color-picker-button {
+  border-radius: 50%;
+  width: 1.75rem;
+  height: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+  background-color: var(--button-color);
+}
+
+.color-picker-button:hover {
+  transform: scale(1.1);
+}
+
+.color-picker-button:focus {
+  outline: 2px solid #2196F3;
+  outline-offset: 2px;
+}
+
+.color-picker-button--selected {
+  border-width: 4px;
+  border-color: rgba(164, 129, 76, 0.8);
+}
+
+.color-picker-button--unselected {
+  border-color: #d1d5db; /* gray-300 equivalent */
+}
+
+.white-color-indicator {
+  display: block;
+  width: 1rem;
+  height: 1rem;
+  background-color: white;
+  border-radius: 50%;
+}

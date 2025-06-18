@@ -439,6 +439,29 @@ namespace ResumeAI.API.Services
                 };
             }
         }
+
+        /// <summary>
+        /// Check if user has active premium subscription (premium, pro, enterprise)
+        /// </summary>
+        public async Task<bool> HasActivePremiumSubscriptionAsync(string userId)
+        {
+            try
+            {
+                var subscription = await GetUserSubscriptionAsync(userId);
+                if (subscription == null) return false;
+
+                var premiumTypes = new[] { "premium", "pro", "enterprise" };
+                return premiumTypes.Contains(subscription.subscription_type.ToLower()) && 
+                       subscription.is_active && 
+                       !subscription.is_cancelled &&
+                       (!subscription.end_date.HasValue || subscription.end_date > DateTime.UtcNow);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception in HasActivePremiumSubscriptionAsync: {ex.Message}");
+                return false;
+            }
+        }
         
         public async Task<bool> DeactivateAllPreviousSubscriptionsAsync(string userId, string exceptSubscriptionId)
         {

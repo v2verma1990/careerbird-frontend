@@ -9,6 +9,7 @@ import TopNavigation from "@/components/TopNavigation";
 import DefaultResumeUploader from "@/components/DefaultResumeUploader";
 import ProfileMetadataEditor from "@/components/ProfileMetadataEditor";
 import ProfileCompletionSteps from "@/components/ProfileCompletionSteps";
+import ResumeRetentionStatus from "@/components/ResumeRetentionStatus";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -383,6 +384,9 @@ const AccountPage: React.FC = () => {
           {/* Resume Tab */}
           <TabsContent value="resume" className="space-y-6">
             <DefaultResumeUploader />
+            
+            {/* Resume Retention Status */}
+            <ResumeRetentionStatus />
             
             {defaultResume && defaultResume.fileName && !profileStatus?.hasBasicInfo && (
               <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-100">

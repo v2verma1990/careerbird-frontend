@@ -105,6 +105,9 @@ else
 
 builder.Services.AddSingleton<ProfileMetadataService>();
 
+// Add background service for resume data cleanup
+builder.Services.AddHostedService<ResumeDataCleanupService>();
+
 // Add health endpoint
 builder.Services.AddHealthChecks();
 builder.Services.AddSwaggerGen(c =>

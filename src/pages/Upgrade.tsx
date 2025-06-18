@@ -110,6 +110,7 @@ const Upgrade = () => {
       features: [
         'Everything in Basic',
         'Unlimited AI features',
+        'Resume visible to recruiters for 6 months*',
         'Salary insights & analytics',
         'Interview question generator',
         'Personal career coach',
@@ -380,6 +381,38 @@ const Upgrade = () => {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </div>
+
+        {/* Resume Visibility Feature Note */}
+        <div className="max-w-4xl mx-auto mt-16 p-6 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-200">
+          <div className="flex items-start space-x-4">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                <Users className="w-4 h-4 text-purple-600" />
+              </div>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-purple-900 mb-2">
+                🎯 Premium Benefit: Extended Resume Visibility
+              </h3>
+              <p className="text-purple-800 mb-3">
+                <strong>*Resume Visibility Guarantee:</strong> Once you enable resume visibility with Premium, 
+                your resume stays visible to recruiters for <strong>6 full months</strong> - even if you downgrade your subscription!
+              </p>
+              <div className="bg-white/50 rounded-lg p-4 border border-purple-200">
+                <h4 className="font-medium text-purple-900 mb-2">How it works:</h4>
+                <ul className="text-sm text-purple-800 space-y-1">
+                  <li>• <strong>Enable once with Premium</strong> → Resume visible for 6 months</li>
+                  <li>• <strong>Update your resume anytime</strong> → Extends visibility for another 6 months</li>
+                  <li>• <strong>No subscription required</strong> → Visibility continues even on Free plan</li>
+                  <li>• <strong>Upgrade again later</strong> → Instantly extends your visibility period</li>
+                </ul>
+              </div>
+              <p className="text-sm text-purple-700 mt-3 italic">
+                This gives you confidence to try Premium knowing your investment in visibility continues long-term!
+              </p>
+            </div>
           </div>
         </div>
       </div>

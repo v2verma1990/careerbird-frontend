@@ -59,5 +59,9 @@ namespace ResumeAI.API.Models
         
         [JsonPropertyName("is_visible_to_recruiters")]
         public bool IsVisibleToRecruiters { get; set; }
+        
+        // Resume Text Content for Search
+        [JsonPropertyName("resume_text")]
+        public string? ResumeText { get; set; }
     }
 }

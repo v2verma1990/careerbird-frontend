@@ -395,6 +395,144 @@ namespace ResumeAI.API.Controllers
                 return StatusCode(500, new { error = "An error occurred while updating profile metadata.", errorDetail = ex.Message });
             }
         }
+
+        /// <summary>
+        /// Enable resume visibility with premium subscription check
+        /// </summary>
+        [HttpPost("enable-visibility")]
+        public async Task<IActionResult> EnableResumeVisibility()
+        {
+            try
+            {
+                string userId = _authService.ExtractUserIdFromAuthHeader(Request.Headers["Authorization"].ToString());
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized(new { error = "Invalid or missing authorization token" });
+
+                var (success, message) = await _profileMetadataService.EnableResumeVisibilityAsync(userId, _userService);
+                
+                if (success)
+                {
+                    return Ok(new { success = true, message = message });
+                }
+                else
+                {
+                    return BadRequest(new { success = false, error = message });
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Refresh resume data retention when user updates resume
+        /// </summary>
+        [HttpPost("refresh-retention")]
+        public async Task<IActionResult> RefreshResumeDataRetention()
+        {
+            try
+            {
+                string userId = _authService.ExtractUserIdFromAuthHeader(Request.Headers["Authorization"].ToString());
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized(new { error = "Invalid or missing authorization token" });
+
+                var (success, message) = await _profileMetadataService.RefreshResumeDataRetentionAsync(userId);
+                
+                if (success)
+                {
+                    return Ok(new { success = true, message = message });
+                }
+                else
+                {
+                    return BadRequest(new { success = false, error = message });
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Get resume data retention status
+        /// </summary>
+        [HttpGet("retention-status")]
+        public async Task<IActionResult> GetResumeRetentionStatus()
+        {
+            try
+            {
+                string userId = _authService.ExtractUserIdFromAuthHeader(Request.Headers["Authorization"].ToString());
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized(new { error = "Invalid or missing authorization token" });
+
+                var metadata = await _profileMetadataService.GetProfileMetadataAsync(userId);
+                if (metadata == null)
+                {
+                    return NotFound(new { error = "No resume found" });
+                }
+
+                var deletionDate = metadata.UploadDate.AddMonths(6);
+                var daysUntilDeletion = (deletionDate - DateTime.UtcNow).Days;
+
+                return Ok(new 
+                { 
+                    uploadDate = metadata.UploadDate,
+                    deletionDate = deletionDate,
+                    daysUntilDeletion = Math.Max(0, daysUntilDeletion),
+                    isVisibleToRecruiters = metadata.IsVisibleToRecruiters,
+                    hasResumeData = !string.IsNullOrEmpty(metadata.BlobPath)
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Extract text from uploaded resume for search functionality
+        /// </summary>
+        [HttpPost("extract-text")]
+        public async Task<IActionResult> ExtractResumeText()
+        {
+            try
+            {
+                string userId = _authService.ExtractUserIdFromAuthHeader(Request.Headers["Authorization"].ToString());
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized(new { error = "Invalid or missing authorization token" });
+
+                var metadata = await _profileMetadataService.GetProfileMetadataAsync(userId);
+                if (metadata == null || string.IsNullOrEmpty(metadata.BlobPath))
+                {
+                    return NotFound(new { error = "No resume found for text extraction" });
+                }
+
+                // Extract text using the existing Python service
+                var extractedText = await _profileMetadataService.ExtractAndSaveResumeTextAsync(userId);
+                
+                if (!string.IsNullOrEmpty(extractedText))
+                {
+                    return Ok(new { 
+                        success = true, 
+                        message = "Text extracted successfully",
+                        textLength = extractedText.Length 
+                    });
+                }
+                else
+                {
+                    return BadRequest(new { 
+                        success = false, 
+                        error = "Failed to extract text from resume" 
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in ExtractResumeText: {ex.Message}");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
     }
 
     // Using the existing UpdateResumeFileInfoRequest class from ResumeMetadataController
