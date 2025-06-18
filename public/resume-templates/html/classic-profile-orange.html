@@ -1,4 +1,4 @@
-
+﻿
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -158,6 +158,31 @@
           </div>
         </div>
       {{/each}}
+
+      {{#if Certifications}}
+        <div class="section-header" style="margin-top:19px;">Certifications</div>
+        {{#each Certifications}}
+          <div style="margin-bottom:10px;">
+            <div class="employment-title">{{Name}}</div>
+            <div class="employment-meta">{{Issuer}}{{#if Date}} - {{Date}}{{/if}}</div>
+          </div>
+        {{/each}}
+      {{/if}}
+
+      {{#if Projects}}
+        <div class="section-header" style="margin-top:19px;">Projects</div>
+        {{#each Projects}}
+          <div style="margin-bottom:10px;">
+            <div class="employment-title">{{Name}}</div>
+            {{#if Description}}
+              <div>{{Description}}</div>
+            {{/if}}
+            {{#if Technologies}}
+              <div class="employment-meta">Technologies: {{Technologies}}</div>
+            {{/if}}
+          </div>
+        {{/each}}
+      {{/if}}
     </div>
     <div class="right-sidebar">
       <div class="sidebar-label">Address</div>
@@ -180,3 +205,5 @@
   </div>
 </body>
 </html>
+
+

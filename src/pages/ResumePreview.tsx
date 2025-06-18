@@ -168,36 +168,117 @@ const ResumePreview = () => {
     }
   }, [encodedData, encodedHtml, template, toast]);
 
-  const downloadAsHtml = () => {
-    if (!resumeHtml) return;
+  const downloadAsWord = async () => {
+    if (!resumeData || !template) return;
     
-    // Create a complete HTML document with proper DOCTYPE and meta tags
-    const fullHtml = `<!DOCTYPE html>
+    try {
+      setIsLoading(true);
+      toast({
+        title: "Generating Word Document",
+        description: "Please wait while we generate your Word document. This may take a few moments...",
+      });
+      
+      // Try to download as Word document first
+      try {
+        const response = await api.resumeBuilder.downloadResume({
+          resumeText: resumeHtml,
+          format: "docx"
+        });
+        
+        if (response.ok) {
+          // Check if the response is actually a Word document
+          const contentType = response.headers.get('content-type');
+          if (contentType && (contentType.includes('application/vnd.openxmlformats-officedocument.wordprocessingml.document') || contentType.includes('application/octet-stream'))) {
+            // Get the Word document blob from the response
+            const blob = await response.blob();
+            
+            // Create a download link for the Word document
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `resume-${template}.docx`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            
+            toast({
+              title: "Success!",
+              description: "Your resume has been downloaded as Word document.",
+            });
+            return;
+          } else {
+            console.warn('Response is not a Word document, content-type:', contentType);
+            throw new Error('Invalid Word document response');
+          }
+        } else {
+          throw new Error(`Word generation failed with status: ${response.status}`);
+        }
+      } catch (wordError) {
+        console.warn('Word generation failed, falling back to HTML:', wordError);
+      }
+      
+      // Fallback to HTML if Word generation fails
+      toast({
+        title: "Word Format Not Supported",
+        description: "Word format doesn't support this template's advanced formatting. Downloading as HTML instead - you can open this in any word processor.",
+        variant: "default"
+      });
+      
+      // Create a complete HTML document with proper DOCTYPE and meta tags
+      // Add some basic styling that's more compatible with Word if opened there
+      const fullHtml = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${resumeData?.Name || 'Resume'}</title>
+  <style>
+    /* Additional styles for better Word compatibility */
+    body { 
+      font-family: 'Times New Roman', serif; 
+      line-height: 1.4; 
+      margin: 1in; 
+      color: #000; 
+    }
+    @media print {
+      body { margin: 0; }
+    }
+  </style>
 </head>
 <body>
 ${resumeHtml}
+<div style="margin-top: 2em; padding-top: 1em; border-top: 1px solid #ccc; font-size: 0.8em; color: #666;">
+  <p><strong>Note:</strong> This resume was downloaded as HTML because Word format doesn't support the advanced formatting of this template. You can open this file in any web browser or word processor that supports HTML.</p>
+</div>
 </body>
 </html>`;
-    
-    const blob = new Blob([fullHtml], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `resume-${template}.html`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+      
+      const blob = new Blob([fullHtml], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `resume-${template}.html`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
 
-    toast({
-      title: "Success!",
-      description: "Your resume has been downloaded as HTML.",
-    });
+      toast({
+        title: "Downloaded as HTML",
+        description: "Your resume has been downloaded as HTML since Word format is not supported for this template.",
+      });
+      
+    } catch (error) {
+      console.error('Error downloading resume:', error);
+      toast({
+        title: "Download Failed",
+        description: error instanceof Error ? error.message : "Failed to download resume. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const downloadAsPdf = async () => {
@@ -281,9 +362,9 @@ ${resumeHtml}
           </div>
           
           <div className="flex gap-2">
-            <Button variant="outline" onClick={downloadAsHtml} disabled={isLoading}>
-              <Globe className="h-4 w-4 mr-2" />
-              Download HTML
+            <Button variant="outline" onClick={downloadAsWord} disabled={isLoading}>
+              <FileText className="h-4 w-4 mr-2" />
+              Download Word
             </Button>
             <Button onClick={downloadAsPdf} disabled={isLoading}>
               <Download className="h-4 w-4 mr-2" />
@@ -339,11 +420,11 @@ ${resumeHtml}
                 <Button 
                   variant="outline" 
                   className="w-full" 
-                  onClick={downloadAsHtml}
+                  onClick={downloadAsWord}
                   disabled={isLoading}
                 >
-                  <Globe className="h-4 w-4 mr-2" />
-                  Download as HTML
+                  <FileText className="h-4 w-4 mr-2" />
+                  Download as Word
                 </Button>
 
                 <div className="pt-4 border-t">

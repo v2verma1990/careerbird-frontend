@@ -440,6 +440,19 @@ const ResumeBuilderApp = () => {
   const [templateColors, setTemplateColors] = useState<{[templateId: string]: string}>({});
   const [lastUsedTemplateId, setLastUsedTemplateId] = useState(""); // Track last used template ID
 
+  // Initialize color from URL parameters
+  useEffect(() => {
+    const template = searchParams.get('template');
+    const color = searchParams.get('color');
+    
+    if (template && color) {
+      setTemplateColors(prev => ({
+        ...prev,
+        [template]: decodeURIComponent(color)
+      }));
+    }
+  }, [searchParams]);
+
   // Load sample resume data for preview
   useEffect(() => {
     if (showPreview && !sampleResumeData) {
@@ -482,7 +495,7 @@ const ResumeBuilderApp = () => {
           console.log('Preview data after transformation:', dataForPreview);
           
           // Add the color to the preview data
-          dataForPreview.Color = selectedColor;
+          dataForPreview.color = selectedColor;
           
           // Compile the template with Handlebars
           try {

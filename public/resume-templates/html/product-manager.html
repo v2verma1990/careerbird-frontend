@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{#if Name}}{{name}}{{else}}{{name}}{{/if}} - Product Manager Resume</title>
+  <title>{{#if Name}}{{Name}}{{else}}{{Name}}{{/if}} - Product Manager Resume</title>
   <style>
     * {
       margin: 0;
@@ -154,16 +154,16 @@
     <div class="header">
       <div class="header-content">
         <div class="header-left">
-          <h1>{{#if Name}}{{name}}{{else}}{{name}}{{/if}}</h1>
-          <p>{{#if Title}}{{title}}{{else}}{{title}}{{/if}}</p>
+          <h1>{{#if Name}}{{Name}}{{else}}{{Name}}{{/if}}</h1>
+          <p>{{#if Title}}{{Title}}{{else}}{{Title}}{{/if}}</p>
         </div>
         <div class="header-right">
           <div class="contact-info">
-            {{#if Email}}{{email}}{{else}}{{email}}{{/if}}<br>
-            {{#if Phone}}{{phone}}{{else}}{{phone}}{{/if}}<br>
-            {{#if Location}}{{location}}{{else}}{{location}}{{/if}}<br>
-            {{#if LinkedIn}}{{linkedin}}{{else}}{{#if linkedin}}{{linkedin}}{{/if}}{{/if}}<br>
-            {{#if Website}}{{website}}{{else}}{{#if website}}{{website}}{{/if}}{{/if}}
+            {{#if Email}}{{Email}}{{else}}{{Email}}{{/if}}<br>
+            {{#if Phone}}{{Phone}}{{else}}{{Phone}}{{/if}}<br>
+            {{#if Location}}{{Location}}{{else}}{{Location}}{{/if}}<br>
+            {{#if LinkedIn}}{{LinkedIn}}{{else}}{{#if LinkedIn}}{{LinkedIn}}{{/if}}{{/if}}<br>
+            {{#if Website}}{{Website}}{{else}}{{#if Website}}{{Website}}{{/if}}{{/if}}
           </div>
         </div>
       </div>
@@ -172,18 +172,18 @@
     <div class="main-content">
       {{#if Summary}}
       <div class="summary">
-        {{summary}}
+        {{Summary}}
       </div>
-      {{else}}{{#if summary}}
+      {{else}}{{#if Summary}}
       <div class="summary">
-        {{summary}}
+        {{Summary}}
       </div>
       {{/if}}{{/if}}
       
       {{#if experience.length}}
       <div class="section">
         <h2 class="section-title">Product Experience</h2>
-        {{#each experience}}
+        {{#each Experience}}
         <div class="experience-item">
           <div class="item-header">
             <span class="item-title">{{#if this.Title}}{{this.Title}}{{else}}{{this.title}}{{/if}}</span>
@@ -199,12 +199,12 @@
       {{#if projects.length}}
       <div class="section">
         <h2 class="section-title">Key Projects</h2>
-        {{#each projects}}
+        {{#each Projects}}
         <div class="experience-item">
           <div class="item-header">
             <span class="item-title">{{#if this.Name}}{{this.Name}}{{else}}{{this.name}}{{/if}}</span>
           </div>
-          <div class="item-subtitle">Technologies: {{technologies}}</div>
+          <div class="item-subtitle">Technologies: {{Technologies}}</div>
           <p class="item-description">{{#if this.Description}}{{this.Description}}{{else}}{{this.description}}{{/if}}</p>
         </div>
         {{/each}}
@@ -215,7 +215,7 @@
       <div class="section">
         <h2 class="section-title">Product Skills</h2>
         <div class="skills-list">
-          {{#each skills}}
+          {{#each Skills}}
           <span class="skill-item">{{this}}</span>
           {{/each}}
         </div>
@@ -225,7 +225,7 @@
       {{#if education.length}}
       <div class="section">
         <h2 class="section-title">Education</h2>
-        {{#each education}}
+        {{#each Education}}
         <div class="education-item">
           <div class="item-header">
             <span class="item-title">{{#if this.Degree}}{{this.Degree}}{{else}}{{this.degree}}{{/if}}</span>
@@ -245,7 +245,7 @@
       {{#if certifications.length}}
       <div class="section">
         <h2 class="section-title">Certifications</h2>
-        {{#each certifications}}
+        {{#each Certifications}}
         <div class="education-item">
           <div class="item-header">
             <span class="item-title">{{#if this.Name}}{{this.Name}}{{else}}{{this.name}}{{/if}}</span>
@@ -260,4 +260,6 @@
   </div>
 </body>
 </html>
+
+
 

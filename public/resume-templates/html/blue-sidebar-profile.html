@@ -1,4 +1,4 @@
-
+﻿
 <!--
   Blue Sidebar Profile Resume Template
   Matches the provided screenshot: profile/photo on top left, sidebar for contact, skills, languages.
@@ -8,6 +8,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{Name}} - Resume</title>
   <style>
     body {
@@ -233,11 +234,11 @@
         <div>
           {{#each Experience}}
             <div class="employment-listing">
-              <div class="employment-title">{{Title}}{{#if Company}} at {{Company}}{{/if}}{{#if Location}}, {{Location}}{{/if}}</div>
+              <div class="employment-title">{{Title}}{{#if company}} at {{Company}}{{/if}}{{#if Location}}, {{Location}}{{/if}}</div>
               <div class="employment-meta">{{StartDate}}{{#if EndDate}} &ndash; {{EndDate}}{{/if}}</div>
               {{#if Description}}
                 <ul class="employment-desc">
-                  {{#each Description}}
+                  {{#each description}}
                     <li>{{this}}</li>
                   {{/each}}
                 </ul>
@@ -256,10 +257,42 @@
           {{/each}}
         </div>
       </div>
+      {{#if Certifications}}
+      <div>
+        <span class="section-title">Certifications</span>
+        <div>
+          {{#each Certifications}}
+            <div class="education-title">{{Name}}</div>
+            <div class="education-meta">{{Issuer}}</div>
+            {{#if Date}}
+              <div class="education-meta">{{Date}}</div>
+            {{/if}}
+          {{/each}}
+        </div>
+      </div>
+      {{/if}}
+      {{#if Projects}}
+      <div>
+        <span class="section-title">Projects</span>
+        <div>
+          {{#each Projects}}
+            <div class="employment-listing">
+              <div class="employment-title">{{Name}}</div>
+              {{#if Description}}
+                <div class="employment-desc">{{Description}}</div>
+              {{/if}}
+              {{#if Technologies}}
+                <div class="employment-meta">Technologies: {{Technologies}}</div>
+              {{/if}}
+            </div>
+          {{/each}}
+        </div>
+      </div>
+      {{/if}}
       <div class="reference-section">
         <span class="section-title">References</span>
         <div class="reference-label">
-          {{#each References}}
+          {{#each references}}
             {{this}}{{#unless @last}}, {{/unless}}
           {{/each}}
         </div>
@@ -268,3 +301,5 @@
   </div>
 </body>
 </html>
+
+

@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{name}} - Creative Resume</title>
+    <title>{{Name}} - Creative Resume</title>
     <style>
         * {
             margin: 0;
@@ -177,23 +177,23 @@
         <div class="sidebar">
             <div class="profile-section">
                 <div class="profile-image">{{name.[0]}}</div>
-                <h1 class="name">{{name}}</h1>
-                <div class="title">{{title}}</div>
+                <h1 class="name">{{Name}}</h1>
+                <div class="title">{{Title}}</div>
             </div>
             
             <div class="sidebar-section">
                 <h3 class="sidebar-title">Contact</h3>
-                <div class="contact-item">{{email}}</div>
-                <div class="contact-item">{{phone}}</div>
-                <div class="contact-item">{{location}}</div>
-                {{#if linkedin}}<div class="contact-item">{{linkedin}}</div>{{/if}}
-                {{#if website}}<div class="contact-item">{{website}}</div>{{/if}}
+                <div class="contact-item">{{Email}}</div>
+                <div class="contact-item">{{Phone}}</div>
+                <div class="contact-item">{{Location}}</div>
+                {{#if LinkedIn}}<div class="contact-item">{{LinkedIn}}</div>{{/if}}
+                {{#if Website}}<div class="contact-item">{{Website}}</div>{{/if}}
             </div>
             
             {{#if skills}}
             <div class="sidebar-section">
                 <h3 class="sidebar-title">Skills</h3>
-                {{#each skills}}
+                {{#each Skills}}
                 <span class="skill-item">{{this}}</span>
                 {{/each}}
             </div>
@@ -201,17 +201,17 @@
         </div>
         
         <div class="main-content">
-            {{#if summary}}
+            {{#if Summary}}
             <div class="section">
                 <h2 class="section-title">About Me</h2>
-                <div class="summary-text">{{summary}}</div>
+                <div class="summary-text">{{Summary}}</div>
             </div>
             {{/if}}
             
             {{#if experience}}
             <div class="section">
                 <h2 class="section-title">Experience</h2>
-                {{#each experience}}
+                {{#each Experience}}
                 <div class="experience-item">
                     <div class="item-header">
                         <div class="item-title">{{this.title}}</div>
@@ -224,10 +224,10 @@
             </div>
             {{/if}}
             
-            {{#if projects}}
+            {{#if Projects}}
             <div class="section">
                 <h2 class="section-title">Projects</h2>
-                {{#each projects}}
+                {{#each Projects}}
                 <div class="project-item">
                     <div class="item-header">
                         <div class="item-title">{{this.name}}</div>
@@ -242,7 +242,7 @@
             {{#if education}}
             <div class="section">
                 <h2 class="section-title">Education</h2>
-                {{#each education}}
+                {{#each Education}}
                 <div class="education-item">
                     <div class="item-header">
                         <div class="item-title">{{this.degree}}</div>
@@ -257,4 +257,6 @@
     </div>
 </body>
 </html>
+
+
 

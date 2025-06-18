@@ -1,10 +1,10 @@
-
+﻿
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{#if Name}}{{name}}{{else}}{{name}}{{/if}} - Resume</title>
+    <title>{{#if Name}}{{Name}}{{else}}{{Name}}{{/if}} - Resume</title>
     <style>
         * {
             margin: 0;
@@ -187,26 +187,26 @@
         <div class="terminal-content">
             <div class="terminal-line">
                 <span class="prompt">name:</span> 
-                <span class="name-display">{{#if Name}}{{name}}{{else}}{{name}}{{/if}}</span>
+                <span class="name-display">{{#if Name}}{{Name}}{{else}}{{Name}}{{/if}}</span>
             </div>
             <div class="terminal-line">
                 <span class="prompt">role:</span> 
-                <span class="title-display">{{#if Title}}{{title}}{{else}}{{title}}{{/if}}</span>
+                <span class="title-display">{{#if Title}}{{Title}}{{else}}{{Title}}{{/if}}</span>
             </div>
             <div class="terminal-line">
                 <span class="prompt">contact:</span> 
-                <span class="contact-display">{{#if Email}}{{email}}{{else}}{{email}}{{/if}} | {{#if Phone}}{{phone}}{{else}}{{phone}}{{/if}} | {{#if Location}}{{location}}{{else}}{{location}}{{/if}}</span>
+                <span class="contact-display">{{#if Email}}{{Email}}{{else}}{{Email}}{{/if}} | {{#if Phone}}{{Phone}}{{else}}{{Phone}}{{/if}} | {{#if Location}}{{Location}}{{else}}{{Location}}{{/if}}</span>
             </div>
-            {{#if linkedin}}
+            {{#if LinkedIn}}
             <div class="terminal-line">
                 <span class="prompt">linkedin:</span> 
-                <span class="contact-display">{{linkedin}}</span>
+                <span class="contact-display">{{LinkedIn}}</span>
             </div>
             {{/if}}
-            {{#if website}}
+            {{#if Website}}
             <div class="terminal-line">
                 <span class="prompt">website:</span> 
-                <span class="contact-display">{{website}}</span>
+                <span class="contact-display">{{Website}}</span>
             </div>
             {{/if}}
         </div>
@@ -214,12 +214,12 @@
         {{#if Summary}}
         <div class="section">
             <div class="section-header">// ABOUT</div>
-            <div class="code-block">{{summary}}</div>
+            <div class="code-block">{{Summary}}</div>
         </div>
-        {{else}}{{#if summary}}
+        {{else}}{{#if Summary}}
         <div class="section">
             <div class="section-header">// ABOUT</div>
-            <div class="code-block">{{summary}}</div>
+            <div class="code-block">{{Summary}}</div>
         </div>
         {{/if}}{{/if}}
 
@@ -227,7 +227,7 @@
         <div class="section">
             <div class="section-header">// TECHNICAL_SKILLS</div>
             <div class="code-block"><span class="keyword">const</span> <span class="variable">skills</span> = [
-{{#each skills}}  <span class="string">"{{this}}"</span>,
+{{#each Skills}}  <span class="string">"{{this}}"</span>,
 {{/each}}];</div>
         </div>
         {{/if}}
@@ -235,31 +235,31 @@
         {{#if experience}}
         <div class="section">
             <div class="section-header">// EXPERIENCE</div>
-            {{#each experience}}
+            {{#each Experience}}
             <div class="experience-item">
-                <div class="function-signature">{{title}}() {</div>
+                <div class="function-signature">{{Title}}() {</div>
                 <div class="item-meta">
-                    <span class="comment">// Company: {{company}}</span><br>
-                    <span class="comment">// Duration: {{startDate}} - {{endDate}}</span><br>
-                    <span class="comment">// Location: {{location}}</span>
+                    <span class="comment">// Company: {{Company}}</span><br>
+                    <span class="comment">// Duration: {{StartDate}} - {{EndDate}}</span><br>
+                    <span class="comment">// Location: {{Location}}</span>
                 </div>
-                <div style="margin: 0.5rem 0; padding-left: 1rem;">{{description}}</div>
+                <div style="margin: 0.5rem 0; padding-left: 1rem;">{{Description}}</div>
                 <div>}</div>
             </div>
             {{/each}}
         </div>
         {{/if}}
 
-        {{#if projects}}
+        {{#if Projects}}
         <div class="section">
             <div class="section-header">// PROJECTS</div>
-            {{#each projects}}
+            {{#each Projects}}
             <div class="project-item">
-                <div class="function-signature">{{name}}() {</div>
+                <div class="function-signature">{{Name}}() {</div>
                 <div class="item-meta">
-                    <span class="comment">// Tech Stack: {{technologies}}</span>
+                    <span class="comment">// Tech Stack: {{Technologies}}</span>
                 </div>
-                <div style="margin: 0.5rem 0; padding-left: 1rem;">{{description}}</div>
+                <div style="margin: 0.5rem 0; padding-left: 1rem;">{{Description}}</div>
                 <div>}</div>
             </div>
             {{/each}}
@@ -269,10 +269,10 @@
         {{#if education}}
         <div class="section">
             <div class="section-header">// EDUCATION</div>
-            {{#each education}}
+            {{#each Education}}
             <div class="education-item">
-                <div class="item-title">{{degree}}</div>
-                <div class="item-meta">{{institution}} | {{startDate}} - {{endDate}} | {{location}}</div>
+                <div class="item-title">{{Degree}}</div>
+                <div class="item-meta">{{Institution}} | {{StartDate}} - {{EndDate}} | {{Location}}</div>
                 {{#if gpa}}<div class="item-meta">GPA: {{gpa}}</div>{{/if}}
             </div>
             {{/each}}
@@ -281,6 +281,8 @@
     </div>
 </body>
 </html>
+
+
 
 
 

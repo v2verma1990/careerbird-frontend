@@ -1,8 +1,9 @@
-
+﻿
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{Name}} - Resume</title>
   <style>
     body {
@@ -162,7 +163,7 @@
       {{#each Experience}}
         <div>
           <span class="job">{{Title}}</span>
-          {{#if Company}}<span class="job-company">{{Company}}</span>{{/if}}
+          {{#if company}}<span class="job-company">{{Company}}</span>{{/if}}
           <span class="job-duration">{{StartDate}} {{#if EndDate}}– {{EndDate}}{{/if}}</span>
           {{#if Location}}<span class="job-location">{{Location}}</span>{{/if}}
         </div>
@@ -201,19 +202,49 @@
       </table>
     </div>
 
-    {{#if Internships}}
+    {{#if internships}}
       <div class="section-title">INTERNSHIPS</div>
       <div class="section">
-        {{#each Internships}}
+        {{#each internships}}
           <div class="intern-entry">{{this}}</div>
         {{/each}}
       </div>
     {{/if}}
 
-    {{#if References}}
+    {{#if Certifications}}
+      <div class="section-title">CERTIFICATIONS</div>
+      <div class="section">
+        {{#each Certifications}}
+          <div>
+            <span class="job">{{Name}}</span>
+            <span class="job-company">{{Issuer}}</span>
+            {{#if Date}}<span class="job-duration">{{Date}}</span>{{/if}}
+          </div>
+        {{/each}}
+      </div>
+    {{/if}}
+
+    {{#if Projects}}
+      <div class="section-title">PROJECTS</div>
+      <div class="section">
+        {{#each Projects}}
+          <div>
+            <span class="job">{{Name}}</span>
+            {{#if Description}}
+              <div class="project-desc">{{Description}}</div>
+            {{/if}}
+            {{#if Technologies}}
+              <span class="job-duration">Technologies: {{Technologies}}</span>
+            {{/if}}
+          </div>
+        {{/each}}
+      </div>
+    {{/if}}
+
+    {{#if references}}
       <div class="section-title">REFERENCES</div>
       <div class="section">
-        {{#each References}}
+        {{#each references}}
           <div class="ref-entry">{{this}}</div>
         {{/each}}
       </div>
@@ -221,3 +252,5 @@
   </div>
 </body>
 </html>
+
+

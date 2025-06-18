@@ -1,10 +1,10 @@
-
+﻿
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{#if Name}}{{name}}{{else}}{{name}}{{/if}} - Resume</title>
+    <title>{{#if Name}}{{Name}}{{else}}{{Name}}{{/if}} - Resume</title>
     <style>
         * {
             margin: 0;
@@ -237,54 +237,54 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1 class="name">{{#if Name}}{{name}}{{else}}{{name}}{{/if}}</h1>
-            <div class="title">{{#if Title}}{{title}}{{else}}{{title}}{{/if}}</div>
+            <h1 class="name">{{#if Name}}{{Name}}{{else}}{{Name}}{{/if}}</h1>
+            <div class="title">{{#if Title}}{{Title}}{{else}}{{Title}}{{/if}}</div>
             <div class="contact-grid">
-                <div class="contact-item">{{#if Email}}{{email}}{{else}}{{email}}{{/if}}</div>
-                <div class="contact-item">{{#if Phone}}{{phone}}{{else}}{{phone}}{{/if}}</div>
-                <div class="contact-item">{{#if Location}}{{location}}{{else}}{{location}}{{/if}}</div>
-                {{#if LinkedIn}}<div class="contact-item">{{linkedin}}</div>{{else}}{{#if linkedin}}<div class="contact-item">{{linkedin}}</div>{{/if}}{{/if}}
-                {{#if Website}}<div class="contact-item">{{website}}</div>{{else}}{{#if website}}<div class="contact-item">{{website}}</div>{{/if}}{{/if}}
+                <div class="contact-item">{{#if Email}}{{Email}}{{else}}{{Email}}{{/if}}</div>
+                <div class="contact-item">{{#if Phone}}{{Phone}}{{else}}{{Phone}}{{/if}}</div>
+                <div class="contact-item">{{#if Location}}{{Location}}{{else}}{{Location}}{{/if}}</div>
+                {{#if LinkedIn}}<div class="contact-item">{{LinkedIn}}</div>{{else}}{{#if LinkedIn}}<div class="contact-item">{{LinkedIn}}</div>{{/if}}{{/if}}
+                {{#if Website}}<div class="contact-item">{{Website}}</div>{{else}}{{#if Website}}<div class="contact-item">{{Website}}</div>{{/if}}{{/if}}
             </div>
         </div>
 
-        {{#if summary}}
+        {{#if Summary}}
         <div class="section">
             <h2 class="section-title">Vision Statement</h2>
-            <div class="summary">{{summary}}</div>
+            <div class="summary">{{Summary}}</div>
         </div>
         {{/if}}
 
         {{#if experience}}
         <div class="section">
             <h2 class="section-title">Leadership Experience</h2>
-            {{#each experience}}
+            {{#each Experience}}
             <div class="experience-item">
                 <div class="item-header">
                     <div>
-                        <div class="item-title">{{title}}</div>
-                        <div class="item-company">{{company}}</div>
+                        <div class="item-title">{{Title}}</div>
+                        <div class="item-company">{{Company}}</div>
                     </div>
                     <div class="item-meta">
-                        {{startDate}} - {{endDate}}<br>
-                        {{location}}
+                        {{StartDate}} - {{EndDate}}<br>
+                        {{Location}}
                     </div>
                 </div>
-                <div class="item-description">{{description}}</div>
+                <div class="item-description">{{Description}}</div>
             </div>
             {{/each}}
         </div>
         {{/if}}
 
-        {{#if projects}}
+        {{#if Projects}}
         <div class="section">
             <h2 class="section-title">Key Projects</h2>
             <div class="projects-grid">
-                {{#each projects}}
+                {{#each Projects}}
                 <div class="project-card">
-                    <div class="project-title">{{name}}</div>
-                    <div class="project-tech">{{technologies}}</div>
-                    <div class="project-description">{{description}}</div>
+                    <div class="project-title">{{Name}}</div>
+                    <div class="project-tech">{{Technologies}}</div>
+                    <div class="project-description">{{Description}}</div>
                 </div>
                 {{/each}}
             </div>
@@ -295,7 +295,7 @@
         <div class="section">
             <h2 class="section-title">Core Competencies</h2>
             <div class="skills-list">
-                {{#each skills}}
+                {{#each Skills}}
                 <span class="skill-tag">{{this}}</span>
                 {{/each}}
             </div>
@@ -305,16 +305,16 @@
         {{#if education}}
         <div class="section">
             <h2 class="section-title">Education</h2>
-            {{#each education}}
+            {{#each Education}}
             <div class="education-item">
                 <div class="item-header">
                     <div>
-                        <div class="item-title">{{degree}}</div>
-                        <div class="item-company">{{institution}}</div>
+                        <div class="item-title">{{Degree}}</div>
+                        <div class="item-company">{{Institution}}</div>
                     </div>
                     <div class="item-meta">
-                        {{startDate}} - {{endDate}}<br>
-                        {{location}}
+                        {{StartDate}} - {{EndDate}}<br>
+                        {{Location}}
                         {{#if gpa}}<br>GPA: {{gpa}}{{/if}}
                     </div>
                 </div>
@@ -325,6 +325,8 @@
     </div>
 </body>
 </html>
+
+
 
 
 

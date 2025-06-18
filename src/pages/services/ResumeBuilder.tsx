@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, ArrowRight, Star, Crown, Sparkles, Palette, X } from "lucide-react";
+import TemplatePreviewModal from "@/components/resume/TemplatePreviewModal";
 
 interface Template {
   id: string;
@@ -25,9 +26,10 @@ const ResumeBuilder = () => {
   const [activeFilter, setActiveFilter] = useState("all");
   const [selectedColor, setSelectedColor] = useState("all");
   const [showPreview, setShowPreview] = useState(false);
-  const [previewTemplate, setPreviewTemplate] = useState<string>("");
+  const [previewTemplate, setPreviewTemplate] = useState<Template | null>(null);
   const [sampleData, setSampleData] = useState<any>(null);
   const [templateHtml, setTemplateHtml] = useState<string>("");
+  const [templateColors, setTemplateColors] = useState<{[templateId: string]: string}>({});
 
   // Load sample data
   useEffect(() => {
@@ -378,19 +380,31 @@ const ResumeBuilder = () => {
 
   const handlePreview = (templateId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setPreviewTemplate(templateId);
-    setShowPreview(true);
+    const template = templates.find(t => t.id === templateId);
+    if (template) {
+      setPreviewTemplate(template);
+      setShowPreview(true);
+    }
   };
 
   const handleClosePreview = () => {
     setShowPreview(false);
-    setPreviewTemplate("");
+    setPreviewTemplate(null);
     setTemplateHtml("");
+  };
+
+  const handleSelectTemplateWithColor = (templateId: string, selectedColor: string) => {
+    setSelectedTemplate(templateId);
+    setTemplateColors(prev => ({
+      ...prev,
+      [templateId]: selectedColor
+    }));
   };
 
   const handleContinue = () => {
     if (selectedTemplate) {
-      navigate(`/resume-builder-app?template=${selectedTemplate}`);
+      const selectedColor = templateColors[selectedTemplate] || '#3e88cf';
+      navigate(`/resume-builder-app?template=${selectedTemplate}&color=${encodeURIComponent(selectedColor)}`);
     }
   };
 
@@ -398,66 +412,23 @@ const ResumeBuilder = () => {
     navigate('/resume-builder-app');
   };
 
-  // Show preview modal with compiled template
-  if (showPreview && previewTemplate) {
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-          {/* Preview Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200">
-            <div>
-              <h2 className="text-xl font-semibold">Template Preview</h2>
-              <p className="text-sm text-gray-600">
-                {templates.find(t => t.id === previewTemplate)?.name}
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                onClick={() => {
-                  setSelectedTemplate(previewTemplate);
-                  handleClosePreview();
-                }}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                Use This Template
-              </Button>
-              <Button variant="outline" onClick={handleClosePreview}>
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-          
-          {/* Preview Content */}
-          <div className="p-4 overflow-auto max-h-[calc(90vh-80px)]">
-            <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-              {templateHtml ? (
-                <div 
-                  className="w-full p-4"
-                  dangerouslySetInnerHTML={{ __html: templateHtml }}
-                  style={{ 
-                    fontFamily: 'Arial, sans-serif',
-                    lineHeight: '1.6',
-                    color: '#333'
-                  }}
-                />
-              ) : (
-                <div className="w-full h-[800px] flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                    <p className="text-gray-600">Loading template preview...</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="container mx-auto px-4 py-12 max-w-7xl">
+    <>
+      {/* Enhanced Preview Modal */}
+      {showPreview && previewTemplate && (
+        <TemplatePreviewModal
+          template={previewTemplate}
+          isOpen={showPreview}
+          onClose={handleClosePreview}
+          onSelectTemplate={handleSelectTemplateWithColor}
+          sampleData={sampleData}
+        />
+      )}
+
+      <div className="min-h-screen bg-white">
+        <div className="container mx-auto px-4 py-12 max-w-7xl">
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
@@ -571,12 +542,33 @@ const ResumeBuilder = () => {
                   {selectedTemplate === template.id && (
                     <div className="absolute inset-0 border-4 border-blue-400 pointer-events-none rounded-lg" />
                   )}
+                  
+                  {/* Preview Button Overlay */}
+                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center">
+                    <Button
+                      onClick={(e) => handlePreview(template.id, e)}
+                      className="opacity-0 group-hover:opacity-100 transform scale-90 group-hover:scale-100 transition-all duration-200 bg-white text-gray-900 hover:bg-gray-50 shadow-lg border border-gray-200"
+                      size="sm"
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      Preview
+                    </Button>
+                  </div>
                 </div>
               </div>
               {/* Card Info */}
               <div className="px-6 py-4">
                 <div className="font-semibold text-[1.07rem] text-gray-900 mb-1 tracking-tight leading-tight">{template.name}</div>
-                <div className="text-gray-500 text-sm font-light">{template.description}</div>
+                <div className="text-gray-500 text-sm font-light mb-3">{template.description}</div>
+                <Button
+                  onClick={(e) => handlePreview(template.id, e)}
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-blue-600 border-blue-200 hover:bg-blue-50 hover:border-blue-300"
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  Preview & Customize
+                </Button>
               </div>
             </div>
           ))}
@@ -602,8 +594,9 @@ const ResumeBuilder = () => {
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
