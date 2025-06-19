@@ -78,7 +78,8 @@ const PHOTO_SUPPORTED_TEMPLATES = [
   "blue-sidebar-profile",
   "green-sidebar-receptionist",
   "classic-profile-orange",
-  "green-sidebar-customer-service"
+  "green-sidebar-customer-service",
+  "creative-designer"
 ];
 
 // Function to transform data to match template expectations (PascalCase)
@@ -1513,6 +1514,15 @@ const ResumeBuilderApp = () => {
                             placeholder="Enter your LinkedIn profile"
                             value={resumeData.LinkedIn}
                             onChange={(e) => setResumeData(prev => ({ ...prev, LinkedIn: e.target.value }))}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="website">Website</Label>
+                          <Input
+                            id="website"
+                            placeholder="Enter your website"
+                            value={resumeData.Website}
+                            onChange={(e) => setResumeData(prev => ({ ...prev, Website: e.target.value }))}
                           />
                         </div>
                       </div>
