@@ -44,7 +44,7 @@ export const RESUME_TEMPLATES: Template[] = [
     id: "creative-designer",
     name: "Creative Designer",
     description: "Bold, creative layout for designers",
-    thumbnail: "/resume-templates/thumbnails/creative.png",
+    thumbnail: "/lovable-uploads/creative-designer.PNG",
     category: "creative",
     color: "purple",
     availableColors: ["#2196F3", "#ff1e1e", "#000", "#18bc6b", "#a4814c"],

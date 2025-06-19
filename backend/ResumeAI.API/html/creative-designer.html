@@ -100,18 +100,15 @@
         .section-title {
             font-size: 1.8rem;
             color: {{#if color}}{{color}}{{else}}#7c3aed{{/if}};
-            margin-bottom: 1.5rem;
+            margin-bottom: 0.5rem;
             position: relative;
         }
         
-        .section-title:after {
-            content: '';
-            position: absolute;
-            bottom: -5px;
-            left: 0;
+        .section-underline {
             width: 50px;
             height: 3px;
             background: {{#if color}}{{color}}{{else}}#a855f7{{/if}};
+            margin-bottom: 1.5rem;
         }
         
         .experience-item, .education-item, .project-item {
@@ -209,6 +206,7 @@
             {{#if summary}}
             <div class="section">
                 <h2 class="section-title">About Me</h2>
+                <div class="section-underline"></div>
                 <div class="summary-text">{{summary}}</div>
             </div>
             {{/if}}
@@ -216,6 +214,7 @@
             {{#if experience}}
             <div class="section">
                 <h2 class="section-title">Experience</h2>
+                <div class="section-underline"></div>
                 {{#each experience}}
                 <div class="experience-item">
                     <div class="item-header">
@@ -232,6 +231,7 @@
             {{#if projects}}
             <div class="section">
                 <h2 class="section-title">Projects</h2>
+                <div class="section-underline"></div>
                 {{#each projects}}
                 <div class="project-item">
                     <div class="item-header">
@@ -247,6 +247,7 @@
             {{#if education}}
             <div class="section">
                 <h2 class="section-title">Education</h2>
+                <div class="section-underline"></div>
                 {{#each education}}
                 <div class="education-item">
                     <div class="item-header">
@@ -262,6 +263,7 @@
             {{#if certifications}}
             <div class="section">
                 <h2 class="section-title">Certifications</h2>
+                <div class="section-underline"></div>
                 {{#each certifications}}
                 <div class="education-item">
                     <div class="item-header">
@@ -277,6 +279,7 @@
             {{#if achievements}}
             <div class="section">
                 <h2 class="section-title">Achievements</h2>
+                <div class="section-underline"></div>
                 {{#each achievements}}
                 <div class="achievement-item" style="margin-bottom: 8px; padding-left: 15px; position: relative;">
                     <div style="position: absolute; left: 0; top: 0; color: #e74c3c; font-weight: bold;">•</div>
@@ -289,6 +292,7 @@
             {{#if references}}
             <div class="section">
                 <h2 class="section-title">References</h2>
+                <div class="section-underline"></div>
                 {{#each references}}
                 <div class="reference-item" style="margin-bottom: 12px;">
                     <div style="font-weight: 600; color: #2c3e50;">{{name}}</div>

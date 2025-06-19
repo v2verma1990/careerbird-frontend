@@ -1,4 +1,3 @@
-
 import api from './apiClient';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -394,6 +393,37 @@ const optimizeClonedDocumentForPDF = (clonedDoc: Document, config: Required<PDFE
     img {
       max-width: 100% !important;
       height: auto !important;
+    }
+
+    /* Creative Designer template overrides */
+    .container {
+      display: flex !important;
+      flex-direction: row !important;
+      width: 794px !important;
+      max-width: none !important;
+      min-height: auto !important;
+      height: auto !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      background: white !important;
+      overflow: visible !important;
+    }
+    .sidebar {
+      width: 240px !important;
+      min-width: 200px !important;
+      max-width: 260px !important;
+      flex-shrink: 0 !important;
+      float: left !important;
+      margin-right: 0 !important;
+      box-sizing: border-box !important;
+    }
+    .main-content {
+      flex: 1 1 0% !important;
+      width: auto !important;
+      min-width: 0 !important;
+      max-width: none !important;
+      float: right !important;
+      box-sizing: border-box !important;
     }
   `;
   clonedDoc.head.appendChild(style);

@@ -460,6 +460,7 @@ const ResumeBuilderApp = () => {
   const [lastUsedTemplateId, setLastUsedTemplateId] = useState(""); // Track last used template ID
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>("");
+  const [photoLoading, setPhotoLoading] = useState(false); // Loading state for photo upload
 
   // Initialize color from URL parameters
   useEffect(() => {
@@ -709,14 +710,28 @@ const ResumeBuilderApp = () => {
         return;
       }
 
+      setPhotoLoading(true);
       setPhotoFile(file);
-      
       // Create preview URL
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result as string;
-        setPhotoPreview(result);
-        setResumeData(prev => ({ ...prev, Photo: result }));
+        // Create an image to ensure it's fully loaded
+        const img = new window.Image();
+        img.onload = () => {
+          setPhotoPreview(result);
+          setResumeData(prev => ({ ...prev, Photo: result }));
+          setPhotoLoading(false);
+        };
+        img.onerror = () => {
+          toast({
+            title: "Image load failed",
+            description: "Could not load the selected image.",
+            variant: "destructive",
+          });
+          setPhotoLoading(false);
+        };
+        img.src = result;
       };
       reader.readAsDataURL(file);
     }
@@ -1532,7 +1547,11 @@ const ResumeBuilderApp = () => {
                         <div className="space-y-2">
                           <Label>Profile Photo (Optional)</Label>
                           <div className="flex items-center space-x-4">
-                            {photoPreview ? (
+                            {photoLoading ? (
+                              <div className="w-20 h-20 flex items-center justify-center">
+                                <span className="text-xs text-gray-500">Loading...</span>
+                              </div>
+                            ) : photoPreview ? (
                               <div className="relative">
                                 <img
                                   src={photoPreview}
@@ -1569,6 +1588,7 @@ const ResumeBuilderApp = () => {
                                 variant="outline"
                                 onClick={() => document.getElementById('photo-upload')?.click()}
                                 className="w-full"
+                                disabled={photoLoading}
                               >
                                 <Image className="h-4 w-4 mr-2" />
                                 {photoPreview ? 'Change Photo' : 'Upload Photo'}
