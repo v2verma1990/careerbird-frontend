@@ -40,12 +40,15 @@ namespace ResumeAI.API.Models
         public string LinkedIn { get; set; } = string.Empty;
         public string Website { get; set; } = string.Empty;
         public string Summary { get; set; } = string.Empty;
+        public string Photo { get; set; } = string.Empty; // URL or base64 image data
         public string Color { get; set; } = "#2196F3"; // Default color (blue)
         public List<string> Skills { get; set; } = new List<string>();
         public List<ExperienceItem> Experience { get; set; } = new List<ExperienceItem>();
         public List<EducationItem> Education { get; set; } = new List<EducationItem>();
         public List<CertificationItem> Certifications { get; set; } = new List<CertificationItem>();
         public List<ProjectItem> Projects { get; set; } = new List<ProjectItem>();
+        public List<ReferenceItem> References { get; set; } = new List<ReferenceItem>();
+        public List<string> Achievements { get; set; } = new List<string>();
     }
 
     public class ExperienceItem
@@ -56,6 +59,7 @@ namespace ResumeAI.API.Models
         public string StartDate { get; set; } = string.Empty;
         public string EndDate { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
+        public List<ProjectItem> Projects { get; set; } = new List<ProjectItem>();
     }
 
     public class EducationItem
@@ -80,5 +84,12 @@ namespace ResumeAI.API.Models
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public string Technologies { get; set; } = string.Empty;
+    }
+
+    public class ReferenceItem
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public string Contact { get; set; } = string.Empty;
     }
 }

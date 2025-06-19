@@ -1,0 +1,94 @@
+{
+  "Name": "John Doe",
+  "Title": "Senior Software Engineer",
+  "Email": "john.doe@example.com",
+  "Phone": "+1 (555) 123-4567",
+  "Location": "San Francisco, CA",
+  "LinkedIn": "linkedin.com/in/johndoe",
+  "Website": "johndoe.dev",
+  "Summary": "Experienced software engineer with 8+ years of expertise in full-stack development, cloud architecture, and team leadership. Passionate about building scalable solutions and mentoring junior developers.",
+  "Photo": "",
+  "Skills": [
+    "JavaScript",
+    "TypeScript",
+    "React",
+    "Node.js",
+    "Python",
+    "AWS",
+    "Docker",
+    "Kubernetes",
+    "PostgreSQL",
+    "MongoDB"
+  ],
+  "Experience": [
+    {
+      "Title": "Senior Software Engineer",
+      "Company": "Tech Solutions Inc.",
+      "Location": "San Francisco, CA",
+      "StartDate": "2020",
+      "EndDate": "Present",
+      "Description": "Lead development of microservices architecture serving 1M+ users. Implemented CI/CD pipelines reducing deployment time by 60%. Mentored 5 junior developers and conducted technical interviews."
+    },
+    {
+      "Title": "Software Engineer",
+      "Company": "StartupXYZ",
+      "Location": "San Francisco, CA",
+      "StartDate": "2018",
+      "EndDate": "2020",
+      "Description": "Developed full-stack web applications using React and Node.js. Built RESTful APIs and integrated third-party services. Collaborated with cross-functional teams in agile environment."
+    }
+  ],
+  "Education": [
+    {
+      "Degree": "Bachelor of Science in Computer Science",
+      "Institution": "University of California, Berkeley",
+      "Location": "Berkeley, CA",
+      "StartDate": "2014",
+      "EndDate": "2018",
+      "GPA": "3.8"
+    }
+  ],
+  "Certifications": [
+    {
+      "Name": "AWS Certified Solutions Architect",
+      "Issuer": "Amazon Web Services",
+      "Date": "2021"
+    },
+    {
+      "Name": "Certified Kubernetes Administrator",
+      "Issuer": "Cloud Native Computing Foundation",
+      "Date": "2020"
+    }
+  ],
+  "Projects": [
+    {
+      "Name": "E-commerce Platform",
+      "Description": "Built a scalable e-commerce platform handling 10K+ concurrent users with React, Node.js, and PostgreSQL.",
+      "Technologies": "React, Node.js, PostgreSQL, Redis, AWS"
+    },
+    {
+      "Name": "Real-time Chat Application",
+      "Description": "Developed a real-time messaging app with WebSocket support and message encryption.",
+      "Technologies": "Socket.io, Express, MongoDB, JWT"
+    }
+  ],
+  "Achievements": [
+    "Led team that increased application performance by 40% through code optimization",
+    "Reduced system downtime by 90% by implementing comprehensive monitoring and alerting",
+    "Mentored 10+ junior developers, with 80% receiving promotions within 18 months",
+    "Architected microservices solution that reduced infrastructure costs by $50K annually",
+    "Published 3 technical articles on Medium with 10K+ total views"
+  ],
+  "References": [
+    {
+      "Name": "Sarah Johnson",
+      "Title": "Engineering Manager",
+      "Contact": "sarah.johnson@techsolutions.com"
+    },
+    {
+      "Name": "Michael Chen",
+      "Title": "Senior Technical Lead",
+      "Contact": "michael.chen@startupxyz.com"
+    }
+  ]
+}

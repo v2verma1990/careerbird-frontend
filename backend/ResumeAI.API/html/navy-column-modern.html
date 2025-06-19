@@ -1,4 +1,3 @@
-
 <!--
   Navy Column Modern Resume Template - HTML Handlebars version
   Maps with default resume fields: Name, Title, Email, Phone, Location, LinkedIn, Website, Summary, Skills, Experience, Education, etc
@@ -17,15 +16,18 @@
       background: #f5f6fa;
       padding: 0;
       margin: 0;
+      box-sizing: border-box;
     }
     .resume-container {
-      width: 810px;
-      margin: 36px auto 36px auto;
+      max-width: 7.3in;
+      width: 100%;
+      margin: 0.5in auto;
       background: #fff;
       border-radius: 18px;
       display: flex;
       box-shadow: 0 2px 28px rgba(30,40,90,.13), 0 0.5px 3px rgba(30,64,175,.09);
       overflow: hidden;
+      box-sizing: border-box;
     }
     .sidebar {
       background: {{color}};
@@ -46,6 +48,20 @@
       margin-bottom: 20px;
       border: 3px solid #f1f3fa;
       background: #fff;
+    }
+    .photo-placeholder {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      margin-bottom: 20px;
+      border: 3px solid #f1f3fa;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: bold;
+      color: #315389;
     }
     .sidebar-section {
       margin-bottom: 36px;
@@ -215,12 +231,54 @@
       font-weight: 500;
       margin-top: 15px;
     }
+    .other-section {
+      margin-bottom: 22px;
+    }
+    .reference-item {
+      margin-bottom: 12px;
+    }
+    .reference-name {
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: #22396e;
+      margin-bottom: 2px;
+    }
+    .reference-title {
+      font-size: 0.98rem;
+      color: #385886;
+      margin-bottom: 2px;
+    }
+    .reference-contact {
+      font-size: 0.95rem;
+      color: #738dab;
+      margin-bottom: 4px;
+    }
+    .achievement-item {
+      margin-bottom: 8px;
+      font-size: 1.01rem;
+      color: #242e45;
+      line-height: 1.5;
+    }
+    .achievement-item::before {
+      content: "•";
+      color: {{color}};
+      font-weight: bold;
+      margin-right: 8px;
+    }
   </style>
 </head>
 <body>
   <div class="resume-container">
     <div class="sidebar">
-      <img src="https://ui-avatars.com/api/?name={{name}}&size=192&background=315389&color=fff&bold=true" alt="photo" class="photo" />
+      {{#if photo}}
+        <img src="{{photo}}" alt="photo" class="photo" />
+      {{else}}
+        {{#if name}}
+          <div class="photo-placeholder">{{initials}}</div>
+        {{else}}
+          <div class="photo-placeholder">??</div>
+        {{/if}}
+      {{/if}}
       <div class="sidebar-section">
         <div class="sidebar-section-title">Details</div>
         <div class="sidebar-details">
@@ -307,9 +365,35 @@
         {{/each}}
       </div>
       {{/if}}
-      <div>
-        <span class="references-label">References</span>
+      {{#if references}}
+      <div class="other-section">
+        <h2>References</h2>
+        {{#each references}}
+          <div class="reference-item">
+            <div class="reference-name">{{name}}</div>
+            {{#if title}}
+              <div class="reference-title">{{title}}</div>
+            {{/if}}
+            {{#if contact}}
+              <div class="reference-contact">{{contact}}</div>
+            {{/if}}
+          </div>
+        {{/each}}
       </div>
+      {{/if}}
+      {{#if achievements}}
+      <div class="other-section">
+        <h2>Achievements</h2>
+        {{#each achievements}}
+          <div class="achievement-item">{{this}}</div>
+        {{/each}}
+      </div>
+      {{/if}}
+      {{#unless references}}{{#unless achievements}}
+      <div>
+        <span class="references-label">References available upon request</span>
+      </div>
+      {{/unless}}{{/unless}}
     </div>
   </div>
 </body>

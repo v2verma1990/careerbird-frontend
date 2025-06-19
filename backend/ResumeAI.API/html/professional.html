@@ -107,6 +107,36 @@
       margin-left: 10px;
       color: #1a5276;
     }
+    .reference-item {
+      margin-bottom: 15px;
+    }
+    .reference-name {
+      font-weight: bold;
+      color: #2c3e50;
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+    .reference-title {
+      color: #34495e;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .reference-contact {
+      color: #7f8c8d;
+      font-size: 14px;
+    }
+    .achievement-item {
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: #34495e;
+      line-height: 1.6;
+    }
+    .achievement-item::before {
+      content: "•";
+      color: #1a5276;
+      font-weight: bold;
+      margin-right: 8px;
+    }
     @media print {
       body {
         background-color: white;
@@ -173,6 +203,23 @@
         </div>
         <div class="item-subtitle">{{#if this.Company}}{{#if this.Company}}{{this.Company}}{{else}}{{this.company}}{{/if}}{{else}}{{#if this.Company}}{{this.Company}}{{else}}{{this.company}}{{/if}}{{/if}}, {{#if this.Location}}{{#if this.Location}}{{this.Location}}{{else}}{{this.location}}{{/if}}{{else}}{{#if this.Location}}{{this.Location}}{{else}}{{this.location}}{{/if}}{{/if}}</div>
         <p class="item-description">{{#if this.Description}}{{#if this.Description}}{{this.Description}}{{else}}{{this.description}}{{/if}}{{else}}{{#if this.Description}}{{this.Description}}{{else}}{{this.description}}{{/if}}{{/if}}</p>
+        
+        {{#if this.projects.length}}
+        <div class="projects-subsection" style="margin-top: 10px; padding-left: 15px; border-left: 2px solid #e0e0e0;">
+          <h4 style="font-size: 14px; color: #2c3e50; margin-bottom: 8px;">Projects:</h4>
+          {{#each this.projects}}
+          <div style="margin-bottom: 8px;">
+            <div style="font-weight: 600; font-size: 13px; color: #2c3e50;">{{#if this.Name}}{{this.Name}}{{else}}{{this.name}}{{/if}}</div>
+            {{#if this.Technologies}}{{#if this.technologies}}
+            <div style="font-size: 12px; color: #666; font-style: italic;">Technologies: {{#if this.Technologies}}{{this.Technologies}}{{else}}{{this.technologies}}{{/if}}</div>
+            {{/if}}{{/if}}
+            {{#if this.Description}}{{#if this.description}}
+            <div style="font-size: 12px; color: #555; margin-top: 3px;">{{#if this.Description}}{{this.Description}}{{else}}{{this.description}}{{/if}}</div>
+            {{/if}}{{/if}}
+          </div>
+          {{/each}}
+        </div>
+        {{/if}}
       </div>
       {{/each}}
     </div>
@@ -304,6 +351,81 @@
     </div>
     {{/if}}
     {{/if}}
+
+    {{#if References.length}}
+    <div class="section">
+      <h2 class="section-title">References</h2>
+      {{#each References}}
+      <div class="reference-item">
+        <div class="reference-name">{{#if this.Name}}{{this.Name}}{{else}}{{this.name}}{{/if}}</div>
+        {{#if this.Title}}
+        <div class="reference-title">{{#if this.Title}}{{this.Title}}{{else}}{{this.title}}{{/if}}</div>
+        {{else}}
+        {{#if this.title}}
+        <div class="reference-title">{{#if this.Title}}{{this.Title}}{{else}}{{this.title}}{{/if}}</div>
+        {{/if}}
+        {{/if}}
+        {{#if this.Contact}}
+        <div class="reference-contact">{{#if this.Contact}}{{this.Contact}}{{else}}{{this.contact}}{{/if}}</div>
+        {{else}}
+        {{#if this.contact}}
+        <div class="reference-contact">{{#if this.Contact}}{{this.Contact}}{{else}}{{this.contact}}{{/if}}</div>
+        {{/if}}
+        {{/if}}
+      </div>
+      {{/each}}
+    </div>
+    {{else}}
+    {{#if references.length}}
+    <div class="section">
+      <h2 class="section-title">References</h2>
+      {{#each references}}
+      <div class="reference-item">
+        <div class="reference-name">{{#if this.Name}}{{this.Name}}{{else}}{{this.name}}{{/if}}</div>
+        {{#if this.Title}}
+        <div class="reference-title">{{#if this.Title}}{{this.Title}}{{else}}{{this.title}}{{/if}}</div>
+        {{else}}
+        {{#if this.title}}
+        <div class="reference-title">{{#if this.Title}}{{this.Title}}{{else}}{{this.title}}{{/if}}</div>
+        {{/if}}
+        {{/if}}
+        {{#if this.Contact}}
+        <div class="reference-contact">{{#if this.Contact}}{{this.Contact}}{{else}}{{this.contact}}{{/if}}</div>
+        {{else}}
+        {{#if this.contact}}
+        <div class="reference-contact">{{#if this.Contact}}{{this.Contact}}{{else}}{{this.contact}}{{/if}}</div>
+        {{/if}}
+        {{/if}}
+      </div>
+      {{/each}}
+    </div>
+    {{/if}}
+    {{/if}}
+
+    {{#if Achievements.length}}
+    <div class="section">
+      <h2 class="section-title">Achievements</h2>
+      {{#each Achievements}}
+      <div class="achievement-item">{{this}}</div>
+      {{/each}}
+    </div>
+    {{else}}
+    {{#if achievements.length}}
+    <div class="section">
+      <h2 class="section-title">Achievements</h2>
+      {{#each achievements}}
+      <div class="achievement-item">{{this}}</div>
+      {{/each}}
+    </div>
+    {{/if}}
+    {{/if}}
+
+    {{#unless References}}{{#unless references}}{{#unless Achievements}}{{#unless achievements}}
+    <div class="section">
+      <h2 class="section-title">References</h2>
+      <p class="item-description">References available upon request</p>
+    </div>
+    {{/unless}}{{/unless}}{{/unless}}{{/unless}}
   </div>
 </body>
 </html>

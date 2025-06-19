@@ -1,5 +1,6 @@
 import { supabase, SUPABASE_URL } from "@/integrations/supabase/client";
 import { extractFileKey } from "@/lib/utils";
+import { resumeBuilderApi } from "./resumeBuilderApi";
 
 // Re-export the SUPABASE_URL for use in other files
 export { SUPABASE_URL };
@@ -1028,7 +1029,8 @@ export const api = {
     }
   },
   resumeBuilder: {
-    getTemplates: () => apiCall<any>("GET", "/resumebuilder/templates"),
+    // Note: getTemplates method moved to resumeBuilderApi.ts to avoid duplication
+    getTemplates: resumeBuilderApi.getTemplates,
     extractResumeData: async (file: File | null, useDefaultResume: boolean = false) => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -1068,163 +1070,9 @@ export const api = {
         };
       }
     },
-    buildResume: async (params: { 
-      resumeData: string, 
-      templateId: string, 
-      color?: string,
-      enhanceWithAI?: boolean,
-      premiumEnhancement?: boolean
-    }) => {
-      try {
-        console.log(`Building resume with template ID: ${params.templateId}, color: ${params.color || 'default'}`);
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        const formData = new FormData();
-        
-        // Transform resume data like the old API did
-        if (params.resumeData) {
-          try {
-            const parsedData = JSON.parse(params.resumeData);
-            
-            // Convert to PascalCase if needed (same logic as old resumeBuilderApi)
-            const formattedData = {
-              Name: parsedData.Name || parsedData.name || "",
-              Title: parsedData.Title || parsedData.title || "",
-              Email: parsedData.Email || parsedData.email || "",
-              Phone: parsedData.Phone || parsedData.phone || "",
-              Location: parsedData.Location || parsedData.location || "",
-              LinkedIn: parsedData.LinkedIn || parsedData.linkedin || "",
-              Website: parsedData.Website || parsedData.website || "",
-              Summary: parsedData.Summary || parsedData.summary || "",
-              Skills: Array.isArray(parsedData.Skills) ? parsedData.Skills : 
-                     (Array.isArray(parsedData.skills) ? parsedData.skills : []),
-              Experience: Array.isArray(parsedData.Experience) ? parsedData.Experience : 
-                         (Array.isArray(parsedData.experience) ? parsedData.experience.map((exp: any) => ({
-                            Title: exp.Title || exp.title || "",
-                            Company: exp.Company || exp.company || "",
-                            Location: exp.Location || exp.location || "",
-                            StartDate: exp.StartDate || exp.startDate || "",
-                            EndDate: exp.EndDate || exp.endDate || "",
-                            Description: exp.Description || exp.description || ""
-                          })) : []),
-              Education: Array.isArray(parsedData.Education) ? parsedData.Education : 
-                        (Array.isArray(parsedData.education) ? parsedData.education.map((edu: any) => ({
-                           Degree: edu.Degree || edu.degree || "",
-                           Institution: edu.Institution || edu.institution || "",
-                           Location: edu.Location || edu.location || "",
-                           StartDate: edu.StartDate || edu.startDate || "",
-                           EndDate: edu.EndDate || edu.endDate || "",
-                           GPA: edu.GPA || edu.gpa || ""
-                         })) : []),
-              Certifications: Array.isArray(parsedData.Certifications) ? parsedData.Certifications : 
-                             (Array.isArray(parsedData.certifications) ? parsedData.certifications.map((cert: any) => ({
-                                Name: cert.Name || cert.name || "",
-                                Issuer: cert.Issuer || cert.issuer || "",
-                                Date: cert.Date || cert.date || ""
-                              })) : []),
-              Projects: Array.isArray(parsedData.Projects) ? parsedData.Projects : 
-                       (Array.isArray(parsedData.projects) ? parsedData.projects.map((proj: any) => ({
-                          Name: proj.Name || proj.name || "",
-                          Description: proj.Description || proj.description || "",
-                          Technologies: proj.Technologies || proj.technologies || ""
-                        })) : [])
-            };
-            
-            console.log('=== DATA TRANSFORMATION IN API CLIENT ===');
-            console.log('Original data Experience:', parsedData.Experience);
-            console.log('Formatted data Experience:', formattedData.Experience);
-            console.log('Original data Education:', parsedData.Education);
-            console.log('Formatted data Education:', formattedData.Education);
-            console.log('Final JSON being sent to backend:', JSON.stringify(formattedData, null, 2));
-            
-            formData.append('resumeData', JSON.stringify(formattedData));
-          } catch (error) {
-            console.error('Error transforming resume data:', error);
-            // If parsing fails, use the original data
-            formData.append('resumeData', params.resumeData);
-          }
-        }
-        
-        formData.append('templateId', params.templateId);
-        
-        // Add color parameter if provided
-        if (params.color) {
-          formData.append('color', params.color);
-          console.log(`Adding color parameter to form data: ${params.color}`);
-        }
-        
-        // Add AI enhancement flags if provided
-        if (params.enhanceWithAI) {
-          formData.append('enhanceWithAI', 'true');
-          console.log('Adding enhanceWithAI parameter: true');
-        }
-        
-        if (params.premiumEnhancement) {
-          formData.append('premiumEnhancement', 'true');
-          console.log('Adding premiumEnhancement parameter: true');
-        }
-        
-        const headers: Record<string, string> = {};
-        if (session?.access_token) {
-          headers["Authorization"] = `Bearer ${session.access_token}`;
-        }
-        
-        console.log(`Sending request to ${API_BASE_URL}/resumebuilder/build`);
-        
-        // Log the form data being sent
-        for (const pair of formData.entries()) {
-          if (pair[0] === 'resumeData') {
-            console.log(`Form data - ${pair[0]}: (data length: ${pair[1].toString().length})`);
-            try {
-              const parsedData = JSON.parse(pair[1].toString());
-              console.log("Parsed resume data:", parsedData);
-            } catch (e) {
-              console.error("Could not parse resume data:", e);
-            }
-          } else {
-            console.log(`Form data - ${pair[0]}: ${pair[1]}`);
-          }
-        }
-        
-        const response = await fetch(`${API_BASE_URL}/resumebuilder/build`, {
-          method: 'POST',
-          headers,
-          body: formData,
-          credentials: "include"
-        });
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error(`Resume build error (${response.status}): ${errorText}`);
-          return { data: null, error: errorText };
-        }
-        
-        const contentType = response.headers.get('content-type');
-        console.log(`Response content type: ${contentType}`);
-        
-        let data;
-        if (contentType && contentType.includes('application/json')) {
-          data = await response.json();
-          console.log(`Received JSON response with HTML length: ${data?.html?.length || 0}`);
-        } else {
-          const text = await response.text();
-          console.log(`Received non-JSON response with length: ${text.length}`);
-          try {
-            data = JSON.parse(text);
-          } catch (e) {
-            console.error('Failed to parse response as JSON:', e);
-            return { data: null, error: 'Invalid response format' };
-          }
-        }
-        return { data, error: null };
-      } catch (error) {
-        console.error("Build resume error:", error);
-        return { 
-          data: null, 
-          error: error instanceof Error ? error.message : "Failed to build resume" 
-        };
-      }
-    },
+    // Note: buildResume method moved to resumeBuilderApi.ts to avoid duplication
+    // Use resumeBuilderApi.buildResume() instead
+    buildResume: resumeBuilderApi.buildResume,
     downloadResume: async ({
       resumeText,
       format,
@@ -1233,7 +1081,9 @@ export const api = {
       resumeText: string;
       format: string;
       accessToken?: string;
-    }) => {
+    }) => {      
+      const { data: { session } } = await supabase.auth.getSession();
+      accessToken = session?.access_token;        
       const response = await fetch(`${API_BASE_URL}/resumebuilder/download`, {
         method: "POST",
         headers: {

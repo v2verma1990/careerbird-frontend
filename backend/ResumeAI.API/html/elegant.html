@@ -149,6 +149,41 @@
       font-size: 16px;
       color: #9b8578;
     }
+    .reference-item {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .reference-name {
+      font-weight: bold;
+      color: #5d4037;
+      font-size: 18px;
+      margin-bottom: 5px;
+    }
+    .reference-title {
+      color: #6d4c41;
+      font-weight: normal;
+      font-size: 16px;
+      margin-bottom: 5px;
+    }
+    .reference-contact {
+      color: #8d6e63;
+      font-size: 14px;
+      font-style: italic;
+    }
+    .achievement-item {
+      margin-bottom: 10px;
+      font-size: 14px;
+      color: #6d4c41;
+      line-height: 1.6;
+      text-align: center;
+      padding: 0 20px;
+    }
+    .achievement-item::before {
+      content: "❦";
+      color: #9b8578;
+      font-weight: bold;
+      margin-right: 8px;
+    }
     @media print {
       body {
         background-color: white;
@@ -268,6 +303,86 @@
       {{/each}}
     </div>
     {{/if}}
+
+    {{#if References.length}}
+    <div class="elegant-divider">❦</div>
+    <div class="section">
+      <h2 class="section-title">References</h2>
+      {{#each References}}
+      <div class="reference-item">
+        <div class="reference-name">{{#if this.Name}}{{this.Name}}{{else}}{{this.name}}{{/if}}</div>
+        {{#if this.Title}}
+        <div class="reference-title">{{#if this.Title}}{{this.Title}}{{else}}{{this.title}}{{/if}}</div>
+        {{else}}
+        {{#if this.title}}
+        <div class="reference-title">{{#if this.Title}}{{this.Title}}{{else}}{{this.title}}{{/if}}</div>
+        {{/if}}
+        {{/if}}
+        {{#if this.Contact}}
+        <div class="reference-contact">{{#if this.Contact}}{{this.Contact}}{{else}}{{this.contact}}{{/if}}</div>
+        {{else}}
+        {{#if this.contact}}
+        <div class="reference-contact">{{#if this.Contact}}{{this.Contact}}{{else}}{{this.contact}}{{/if}}</div>
+        {{/if}}
+        {{/if}}
+      </div>
+      {{/each}}
+    </div>
+    {{else}}
+    {{#if references.length}}
+    <div class="elegant-divider">❦</div>
+    <div class="section">
+      <h2 class="section-title">References</h2>
+      {{#each references}}
+      <div class="reference-item">
+        <div class="reference-name">{{#if this.Name}}{{this.Name}}{{else}}{{this.name}}{{/if}}</div>
+        {{#if this.Title}}
+        <div class="reference-title">{{#if this.Title}}{{this.Title}}{{else}}{{this.title}}{{/if}}</div>
+        {{else}}
+        {{#if this.title}}
+        <div class="reference-title">{{#if this.Title}}{{this.Title}}{{else}}{{this.title}}{{/if}}</div>
+        {{/if}}
+        {{/if}}
+        {{#if this.Contact}}
+        <div class="reference-contact">{{#if this.Contact}}{{this.Contact}}{{else}}{{this.contact}}{{/if}}</div>
+        {{else}}
+        {{#if this.contact}}
+        <div class="reference-contact">{{#if this.Contact}}{{this.Contact}}{{else}}{{this.contact}}{{/if}}</div>
+        {{/if}}
+        {{/if}}
+      </div>
+      {{/each}}
+    </div>
+    {{/if}}
+    {{/if}}
+
+    {{#if Achievements.length}}
+    <div class="elegant-divider">❦</div>
+    <div class="section">
+      <h2 class="section-title">Achievements</h2>
+      {{#each Achievements}}
+      <div class="achievement-item">{{this}}</div>
+      {{/each}}
+    </div>
+    {{else}}
+    {{#if achievements.length}}
+    <div class="elegant-divider">❦</div>
+    <div class="section">
+      <h2 class="section-title">Achievements</h2>
+      {{#each achievements}}
+      <div class="achievement-item">{{this}}</div>
+      {{/each}}
+    </div>
+    {{/if}}
+    {{/if}}
+
+    {{#unless References}}{{#unless references}}{{#unless Achievements}}{{#unless achievements}}
+    <div class="elegant-divider">❦</div>
+    <div class="section">
+      <h2 class="section-title">References</h2>
+      <p class="elegant-summary">References available upon request</p>
+    </div>
+    {{/unless}}{{/unless}}{{/unless}}{{/unless}}
   </div>
 </body>
 </html>

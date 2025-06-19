@@ -57,6 +57,17 @@ const TemplatePreviewModal: React.FC<TemplatePreviewModalProps> = ({
     try {
       // Apply color customization by replacing the {{color}} placeholder
       compiledHtml = compiledHtml.replace(/\{\{color\}\}/g, color);
+      compiledHtml = compiledHtml.replace(/\{\{Color\}\}/g, color);
+      
+      // Handle conditional color syntax: {{#if Color}}{{Color}}{{else}}#defaultcolor{{/if}}
+      const colorConditionalRegex = /\{\{#if Color\}\}\{\{Color\}\}\{\{else\}\}([^}]+)\{\{\/if\}\}/g;
+      compiledHtml = compiledHtml.replace(colorConditionalRegex, color);
+      
+      // Handle color with opacity: {{#if Color}}{{Color}}20{{else}}#defaultcolor{{/if}}
+      const colorOpacityRegex = /\{\{#if Color\}\}\{\{Color\}\}(\d+)\{\{else\}\}([^}]+)\{\{\/if\}\}/g;
+      compiledHtml = compiledHtml.replace(colorOpacityRegex, (match, opacity, defaultColor) => {
+        return color + opacity;
+      });
       
       // Also replace common default colors that might be hardcoded
       compiledHtml = compiledHtml.replace(/#3e88cf/g, color);
@@ -65,6 +76,9 @@ const TemplatePreviewModal: React.FC<TemplatePreviewModalProps> = ({
       compiledHtml = compiledHtml.replace(/#2867c6/g, color);
       compiledHtml = compiledHtml.replace(/#213046/g, color);
       compiledHtml = compiledHtml.replace(/#153559/g, color);
+      compiledHtml = compiledHtml.replace(/#4a5db8/g, color);
+      compiledHtml = compiledHtml.replace(/#6366f1/g, color);
+      compiledHtml = compiledHtml.replace(/#1e40af/g, color);
 
       // Replace simple variables
       compiledHtml = compiledHtml

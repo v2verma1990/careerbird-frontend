@@ -1309,6 +1309,14 @@ CRITICAL RULES:
    - name: Project name ONLY
    - date: Date or date range
    - description: Project description and details
+14. references: Array of references, each with:
+   - name: Reference person's full name
+   - title: Their job title/position
+   - contact: Contact information (email, phone, etc.)
+   Note: Look for sections like "References", "Professional References", "Character References"
+15. achievements: Array of achievements as strings
+   Note: Look for sections like "Achievements", "Accomplishments", "Awards", "Honors", "Recognition", "Key Achievements"
+   Include items like awards, recognitions, notable accomplishments, performance metrics, etc.
 
 IMPORTANT: Your response must be a valid JSON object. Do not include any text outside the JSON structure.
 
@@ -1367,7 +1375,9 @@ Resume:
                     "experience": [],
                     "education": [],
                     "certifications": [],
-                    "projects": []
+                    "projects": [],
+                    "achievements": [],
+                    "references": []
                 }
         
         # Post-process the result to fix common extraction errors
@@ -1431,6 +1441,37 @@ Resume:
                     elif not isinstance(proj.get("description"), str):
                         proj["description"] = str(proj.get("description", ""))
             
+            # Process achievements
+            if "achievements" in result:
+                if not isinstance(result["achievements"], list):
+                    result["achievements"] = []
+                else:
+                    # Ensure all achievements are strings and filter out empty ones
+                    result["achievements"] = [str(item).strip() for item in result["achievements"] if item and str(item).strip()]
+            else:
+                result["achievements"] = []
+            
+            # Process references
+            if "references" in result:
+                if not isinstance(result["references"], list):
+                    result["references"] = []
+                else:
+                    # Ensure all references have proper structure
+                    processed_refs = []
+                    for ref in result["references"]:
+                        if isinstance(ref, dict):
+                            processed_ref = {
+                                "name": str(ref.get("name", "")).strip(),
+                                "title": str(ref.get("title", "")).strip(),
+                                "contact": str(ref.get("contact", "")).strip()
+                            }
+                            # Only include references that have at least a name or contact
+                            if processed_ref["name"] or processed_ref["contact"]:
+                                processed_refs.append(processed_ref)
+                    result["references"] = processed_refs
+            else:
+                result["references"] = []
+            
             # Final check to ensure all fields are properly formatted for .NET API
             # This is a safety check to catch any fields we might have missed
             for field in ["name", "title", "email", "phone", "location", "linkedin", "website", "summary"]:
@@ -1462,7 +1503,9 @@ Resume:
                         "experience": [],
                         "education": [],
                         "certifications": [],
-                        "projects": []
+                        "projects": [],
+                        "achievements": [],
+                        "references": []
                     }
                     return minimal_json
             except Exception as inner_e:
@@ -1480,7 +1523,9 @@ Resume:
             "experience": [],
             "education": [],
             "certifications": [],
-            "projects": []
+            "projects": [],
+            "achievements": [],
+            "references": []
         }
 
 def optimize_resume_ats100_style(resume_text, plan="free"):

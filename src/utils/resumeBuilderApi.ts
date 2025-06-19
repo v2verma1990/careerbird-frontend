@@ -111,15 +111,55 @@ export const resumeBuilderApi = {
           const parsedData = JSON.parse(params.resumeData);
           
           // Convert to lowercase field names for template compatibility
+          const name = parsedData.Name || parsedData.name || "";
+          
+          // Generate initials from name for photo placeholder
+          const generateInitials = (fullName: string, email?: string, title?: string): string => {
+            // Try to get initials from full name first
+            if (fullName && fullName.trim()) {
+              const names = fullName.trim().split(/\s+/).filter(n => n.length > 0);
+              if (names.length > 0) {
+                if (names.length === 1) {
+                  return names[0].substring(0, 2).toUpperCase();
+                }
+                return names.map(n => n.charAt(0)).join('').substring(0, 2).toUpperCase();
+              }
+            }
+            
+            // Fallback to email if available
+            if (email && email.includes('@')) {
+              const emailPart = email.split('@')[0];
+              if (emailPart.length >= 2) {
+                return emailPart.substring(0, 2).toUpperCase();
+              }
+            }
+            
+            // Fallback to title if available
+            if (title && title.trim()) {
+              const titleWords = title.trim().split(/\s+/).filter(w => w.length > 0);
+              if (titleWords.length > 0) {
+                return titleWords[0].substring(0, 2).toUpperCase();
+              }
+            }
+            
+            // Final fallback
+            return "??";
+          };
+          
+          const email = parsedData.Email || parsedData.email || "";
+          const title = parsedData.Title || parsedData.title || "";
+          
           const formattedData = {
-            name: parsedData.Name || parsedData.name || "",
-            title: parsedData.Title || parsedData.title || "",
-            email: parsedData.Email || parsedData.email || "",
+            name: name,
+            initials: generateInitials(name, email, title),
+            title: title,
+            email: email,
             phone: parsedData.Phone || parsedData.phone || "",
             location: parsedData.Location || parsedData.location || "",
             linkedin: parsedData.LinkedIn || parsedData.linkedin || "",
             website: parsedData.Website || parsedData.website || "",
             summary: parsedData.Summary || parsedData.summary || "",
+            photo: parsedData.Photo || parsedData.photo || "",
             skills: Array.isArray(parsedData.Skills) ? parsedData.Skills : 
                    (Array.isArray(parsedData.skills) ? parsedData.skills : []),
             experience: Array.isArray(parsedData.Experience) ? parsedData.Experience.map(exp => ({
@@ -128,7 +168,16 @@ export const resumeBuilderApi = {
                           location: exp.Location || exp.location || "",
                           startDate: exp.StartDate || exp.startDate || "",
                           endDate: exp.EndDate || exp.endDate || "",
-                          description: exp.Description || exp.description || ""
+                          description: exp.Description || exp.description || "",
+                          projects: Array.isArray(exp.Projects) ? exp.Projects.map(proj => ({
+                            name: proj.Name || proj.name || "",
+                            description: proj.Description || proj.description || "",
+                            technologies: proj.Technologies || proj.technologies || ""
+                          })) : (Array.isArray(exp.projects) ? exp.projects.map(proj => ({
+                            name: proj.Name || proj.name || "",
+                            description: proj.Description || proj.description || "",
+                            technologies: proj.Technologies || proj.technologies || ""
+                          })) : [])
                         })) : 
                        (Array.isArray(parsedData.experience) ? parsedData.experience.map(exp => ({
                           title: exp.Title || exp.title || "",
@@ -136,7 +185,16 @@ export const resumeBuilderApi = {
                           location: exp.Location || exp.location || "",
                           startDate: exp.StartDate || exp.startDate || "",
                           endDate: exp.EndDate || exp.endDate || "",
-                          description: exp.Description || exp.description || ""
+                          description: exp.Description || exp.description || "",
+                          projects: Array.isArray(exp.Projects) ? exp.Projects.map(proj => ({
+                            name: proj.Name || proj.name || "",
+                            description: proj.Description || proj.description || "",
+                            technologies: proj.Technologies || proj.technologies || ""
+                          })) : (Array.isArray(exp.projects) ? exp.projects.map(proj => ({
+                            name: proj.Name || proj.name || "",
+                            description: proj.Description || proj.description || "",
+                            technologies: proj.Technologies || proj.technologies || ""
+                          })) : [])
                         })) : []),
             education: Array.isArray(parsedData.Education) ? parsedData.Education.map(edu => ({
                          degree: edu.Degree || edu.degree || "",
@@ -174,6 +232,18 @@ export const resumeBuilderApi = {
                         description: proj.Description || proj.description || "",
                         technologies: proj.Technologies || proj.technologies || ""
                       })) : []),
+            achievements: Array.isArray(parsedData.Achievements) ? parsedData.Achievements : 
+                         (Array.isArray(parsedData.achievements) ? parsedData.achievements : []),
+            references: Array.isArray(parsedData.References) ? parsedData.References.map(ref => ({
+                          name: ref.Name || ref.name || "",
+                          title: ref.Title || ref.title || "",
+                          contact: ref.Contact || ref.contact || ""
+                        })) : 
+                       (Array.isArray(parsedData.references) ? parsedData.references.map(ref => ({
+                          name: ref.Name || ref.name || "",
+                          title: ref.Title || ref.title || "",
+                          contact: ref.Contact || ref.contact || ""
+                        })) : []),
             color: parsedData.Color || parsedData.color || ""
           };
           

@@ -423,7 +423,9 @@ async def extract_resume_data_service(resume: UploadFile, plan: str = "free"):
             # Log experience and project counts
             exp_count = len(result.get("experience", [])) if isinstance(result.get("experience"), list) else 0
             proj_count = len(result.get("projects", [])) if isinstance(result.get("projects"), list) else 0
-            logger.info(f"Extracted {exp_count} experience items and {proj_count} projects")
+            achievements_count = len(result.get("achievements", [])) if isinstance(result.get("achievements"), list) else 0
+            references_count = len(result.get("references", [])) if isinstance(result.get("references"), list) else 0
+            logger.info(f"Extracted {exp_count} experience items, {proj_count} projects, {achievements_count} achievements, and {references_count} references")
             
             # Check if we have only summary field populated with the entire resume
             if (exp_count == 0 and proj_count == 0 and 
@@ -587,24 +589,484 @@ def create_docx_from_text(text, filename="optimized_resume.docx"):
 
 def create_pdf_from_text(text, filename="optimized_resume.pdf"):
     """
-    Create a PDF file from HTML text
+    Create a PDF file from HTML text with proper formatting and page handling
     """
     try:
         import weasyprint
+        from weasyprint import HTML, CSS
+        
+        # Ensure the text is properly formatted HTML
+        if not text.strip().lower().startswith(("<!doctype", "<html")):
+            # If it's not HTML, wrap it in a basic HTML structure
+            text = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume</title>
+    <style>
+        body {{
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+            font-size: 12px;
+        }}
+        @page {{
+            size: A4;
+            margin: 0.75in;
+            @bottom-center {{
+                content: counter(page);
+            }}
+        }}
+        .page-break {{
+            page-break-before: always;
+        }}
+        h1, h2, h3, h4, h5, h6 {{
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }}
+        p {{
+            margin: 0 0 10px 0;
+        }}
+        ul, ol {{
+            margin: 0 0 10px 20px;
+            padding: 0;
+        }}
+        li {{
+            margin-bottom: 5px;
+        }}
+    </style>
+</head>
+<body>
+{text}
+</body>
+</html>"""
+        
+        # Detect if this is a two-column layout (like navy-column-modern)
+        is_two_column = 'sidebar' in text.lower() and 'resume-container' in text.lower()
+        
+        # Add CSS for better PDF formatting
+        if is_two_column:
+            pdf_css = CSS(string="""
+                @page {
+                    size: A4;
+                    margin: 0.5in;
+                    @bottom-center {
+                        content: counter(page);
+                    }
+                }
+                
+                body {
+                    font-family: 'Arial', sans-serif;
+                    line-height: 1.6;
+                    margin: 0;
+                    padding: 0;
+                    color: #333;
+                    font-size: 11px;
+                    word-wrap: break-word;
+                    overflow-wrap: break-word;
+                    background: #fff !important;
+                }
+                
+                /* Convert flexbox layout to table layout for PDF */
+                .resume-container {
+                    max-width: 100% !important;
+                    width: 100% !important;
+                    margin: 0 !important;
+                    background: #fff !important;
+                    border-radius: 0 !important;
+                    display: table !important;
+                    box-shadow: none !important;
+                    overflow: visible !important;
+                    table-layout: fixed !important;
+                }
+                
+                /* Sidebar as table cell */
+                .sidebar {
+                    display: table-cell !important;
+                    width: 30% !important;
+                    vertical-align: top !important;
+                    padding: 20px 15px !important;
+                    margin: 0 !important;
+                    box-sizing: border-box !important;
+                    background-color: #2c3e50 !important; /* Fallback color */
+                    color: #fff !important;
+                }
+                
+                /* Content area as table cell */
+                .content {
+                    display: table-cell !important;
+                    width: 70% !important;
+                    vertical-align: top !important;
+                    padding: 20px 15px !important;
+                    margin: 0 !important;
+                    box-sizing: border-box !important;
+                    background: #fff !important;
+                    color: #333 !important;
+                }
+                
+                /* Prevent content from being cut off */
+                * {
+                    box-sizing: border-box;
+                    max-width: 100%;
+                }
+                
+                /* Header styles */
+                h1, h2, h3, h4, h5, h6 {
+                    margin-top: 0;
+                    margin-bottom: 8px;
+                    font-weight: bold;
+                    page-break-after: avoid;
+                    word-wrap: break-word;
+                }
+                
+                .content h1 { 
+                    font-size: 18px; 
+                    color: #2c3e50 !important;
+                    margin-bottom: 5px;
+                }
+                .content h2 { 
+                    font-size: 14px; 
+                    color: #2c3e50 !important;
+                    margin-top: 20px;
+                    margin-bottom: 10px;
+                }
+                .content h3 { 
+                    font-size: 13px; 
+                    color: #34495e !important;
+                }
+                h4, h5, h6 { font-size: 11px; }
+                
+                /* Sidebar header styles */
+                .sidebar h1, .sidebar h2, .sidebar h3 {
+                    color: #fff !important;
+                }
+                
+                /* Paragraph styles */
+                p {
+                    margin: 0 0 8px 0;
+                    word-wrap: break-word;
+                    overflow-wrap: break-word;
+                }
+                
+                /* List styles */
+                ul, ol {
+                    margin: 0 0 8px 15px;
+                    padding: 0;
+                }
+                
+                li {
+                    margin-bottom: 4px;
+                    word-wrap: break-word;
+                }
+                
+                /* Sidebar specific styles */
+                .sidebar-section {
+                    margin-bottom: 20px;
+                    page-break-inside: avoid;
+                }
+                
+                .sidebar-section-title {
+                    font-size: 12px !important;
+                    margin-bottom: 8px !important;
+                    color: #ecf0f1 !important;
+                    font-weight: bold !important;
+                    text-transform: uppercase;
+                    letter-spacing: 1px;
+                }
+                
+                .sidebar-details {
+                    font-size: 10px !important;
+                    line-height: 1.4 !important;
+                    color: #fff !important;
+                }
+                
+                .sidebar-details a {
+                    color: #bdc3c7 !important;
+                    text-decoration: none;
+                }
+                
+                .sidebar-skills-list {
+                    list-style: none !important;
+                    padding: 0 !important;
+                    margin: 0 !important;
+                }
+                
+                .sidebar-skills-list li {
+                    font-size: 10px !important;
+                    margin-bottom: 4px !important;
+                    color: #ecf0f1 !important;
+                    padding-left: 8px;
+                    border-left: 3px solid rgba(255, 255, 255, 0.3);
+                }
+                
+                /* Photo styling */
+                .photo {
+                    width: 50px !important;
+                    height: 50px !important;
+                    margin-bottom: 15px !important;
+                    border-radius: 50%;
+                    border: 2px solid #fff;
+                }
+                
+                /* Content section styles */
+                .profile-section, .employment-section, .education-section, 
+                .projects-section, .certifications-section {
+                    margin-bottom: 15px;
+                    page-break-inside: avoid;
+                }
+                
+                .content .title {
+                    font-size: 14px !important;
+                    color: #7f8c8d !important;
+                    margin-bottom: 15px;
+                    font-weight: normal;
+                }
+                
+                .employment-history-role {
+                    font-weight: bold;
+                    font-size: 12px;
+                    color: #2c3e50 !important;
+                    margin-bottom: 2px;
+                }
+                
+                .employment-history-company {
+                    font-size: 11px;
+                    color: #34495e !important;
+                    margin-bottom: 2px;
+                }
+                
+                .employment-history-dates {
+                    font-size: 10px;
+                    color: #7f8c8d !important;
+                    margin-bottom: 5px;
+                }
+                
+                .employment-history-list {
+                    margin: 5px 0 10px 15px;
+                    padding: 0;
+                    font-size: 10px;
+                    color: #2c3e50 !important;
+                }
+                
+                .education-degree {
+                    font-weight: bold;
+                    font-size: 12px;
+                    color: #2c3e50 !important;
+                }
+                
+                .education-institution {
+                    font-size: 11px;
+                    color: #34495e !important;
+                    margin-bottom: 2px;
+                }
+                
+                .education-dates {
+                    font-size: 10px;
+                    color: #7f8c8d !important;
+                    margin-bottom: 5px;
+                }
+                
+                /* Prevent orphans and widows */
+                p, li {
+                    orphans: 2;
+                    widows: 2;
+                }
+                
+                /* Remove problematic properties */
+                * {
+                    position: static !important;
+                    float: none !important;
+                    transform: none !important;
+                    box-shadow: none !important;
+                }
+                
+                /* Ensure proper page breaks */
+                .page-break {
+                    page-break-before: always;
+                }
+                
+                /* Fix table layout issues */
+                table {
+                    table-layout: fixed;
+                    width: 100%;
+                }
+                
+                td, th {
+                    word-wrap: break-word;
+                    overflow-wrap: break-word;
+                }
+            """)
+        else:
+            pdf_css = CSS(string="""
+                @page {
+                    size: A4;
+                    margin: 0.75in;
+                    @bottom-center {
+                        content: counter(page);
+                    }
+                }
+                
+                body {
+                    font-family: 'Arial', sans-serif;
+                    line-height: 1.6;
+                    margin: 0;
+                    padding: 0;
+                    color: #333;
+                    font-size: 12px;
+                    word-wrap: break-word;
+                    overflow-wrap: break-word;
+                }
+                
+                /* Prevent content from being cut off */
+                * {
+                    box-sizing: border-box;
+                    max-width: 100%;
+                }
+                
+                /* Header styles */
+                h1, h2, h3, h4, h5, h6 {
+                    margin-top: 0;
+                    margin-bottom: 10px;
+                    font-weight: bold;
+                    page-break-after: avoid;
+                    word-wrap: break-word;
+                }
+                
+                h1 { font-size: 18px; }
+                h2 { font-size: 16px; }
+                h3 { font-size: 14px; }
+                h4, h5, h6 { font-size: 12px; }
+                
+                /* Paragraph styles */
+                p {
+                    margin: 0 0 10px 0;
+                    word-wrap: break-word;
+                    overflow-wrap: break-word;
+                }
+                
+                /* List styles */
+                ul, ol {
+                    margin: 0 0 10px 20px;
+                    padding: 0;
+                }
+                
+                li {
+                    margin-bottom: 5px;
+                    word-wrap: break-word;
+                }
+                
+                /* Table styles */
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 15px;
+                    table-layout: fixed;
+                }
+                
+                th, td {
+                    padding: 8px;
+                    text-align: left;
+                    border-bottom: 1px solid #ddd;
+                    word-wrap: break-word;
+                    overflow-wrap: break-word;
+                }
+                
+                /* Section styles */
+                .section {
+                    margin-bottom: 20px;
+                    page-break-inside: avoid;
+                }
+                
+                /* Contact info styles */
+                .contact-info {
+                    margin-bottom: 15px;
+                }
+                
+                /* Experience and education styles */
+                .experience-item, .education-item {
+                    margin-bottom: 15px;
+                    page-break-inside: avoid;
+                }
+                
+                /* Skills styles */
+                .skills-list {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 10px;
+                }
+                
+                .skill-item {
+                    background-color: #f0f0f0;
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    font-size: 11px;
+                }
+                
+                /* Prevent orphans and widows */
+                p, li {
+                    orphans: 2;
+                    widows: 2;
+                }
+                
+                /* Ensure proper page breaks */
+                .page-break {
+                    page-break-before: always;
+                }
+                
+                /* Remove empty space at the end */
+                body::after {
+                    content: "";
+                    display: block;
+                    height: 0;
+                    clear: both;
+                }
+                
+                /* Fix for right-side cutoff */
+                .container {
+                    max-width: 100%;
+                    overflow: hidden;
+                }
+                
+                /* Responsive text sizing */
+                @media print {
+                    body {
+                        font-size: 11px;
+                    }
+                    h1 { font-size: 16px; }
+                    h2 { font-size: 14px; }
+                    h3 { font-size: 13px; }
+                }
+            """)
+        
         # Create a temporary HTML file
         html_path = os.path.join(tempfile.gettempdir(), "temp_resume.html")
         with open(html_path, "w", encoding="utf-8") as html_file:
             html_file.write(text)
+        
         # Define the output PDF path
         pdf_path = os.path.join(tempfile.gettempdir(), filename)
         
-        # Convert HTML to PDF using WeasyPrint
-        weasyprint.HTML(filename=html_path).write_pdf(pdf_path)
+        # Convert HTML to PDF using WeasyPrint with custom CSS
+        html_doc = HTML(filename=html_path)
+        html_doc.write_pdf(pdf_path, stylesheets=[pdf_css])
+        
+        # Clean up temporary HTML file
+        try:
+            os.remove(html_path)
+        except:
+            pass
         
         return pdf_path
     except ImportError:
         logger.error("WeasyPrint is not installed. Cannot generate PDF.")
         raise RuntimeError("WeasyPrint is required for PDF generation. Please install it with 'pip install weasyprint'.")
+    except Exception as e:
+        logger.error(f"Error creating PDF: {str(e)}")
+        raise RuntimeError(f"Failed to create PDF: {str(e)}")
 
 def html_to_docx_with_mammoth(html_str, filename="optimized_resume.docx"):
     """Convert HTML to DOCX using mammoth, return file path."""
@@ -637,9 +1099,20 @@ def html_to_docx_with_mammoth(html_str, filename="optimized_resume.docx"):
 
 def html_to_docx_preserve_formatting(html_str, filename="optimized_resume.docx"):
     """Convert HTML to DOCX, preserving basic formatting, color, and nested inline styles recursively."""
-    from docx.shared import RGBColor
+    from docx.shared import RGBColor, Inches
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.shared import Pt
+    
     soup = BeautifulSoup(html_str, "html.parser")
     doc = Document()
+    
+    # Set document margins to prevent content cutoff
+    sections = doc.sections
+    for section in sections:
+        section.top_margin = Inches(0.75)
+        section.bottom_margin = Inches(0.75)
+        section.left_margin = Inches(0.75)
+        section.right_margin = Inches(0.75)
 
     def parse_style(style_str):
         style = {}
@@ -743,12 +1216,102 @@ def html_to_docx_preserve_formatting(html_str, filename="optimized_resume.docx")
     doc.save(docx_path)
     return docx_path
 
+def clean_html_for_pdf(html_content):
+    """Clean HTML content to prevent blank pages and formatting issues"""
+    try:
+        soup = BeautifulSoup(html_content, "html.parser")
+        
+        # Remove empty paragraphs and divs
+        for tag in soup.find_all(['p', 'div', 'span']):
+            if not tag.get_text(strip=True) and not tag.find_all(['img', 'br']):
+                tag.decompose()
+        
+        # Remove excessive whitespace and empty lines
+        for tag in soup.find_all(text=True):
+            if isinstance(tag, str):
+                # Replace multiple whitespaces with single space
+                cleaned_text = re.sub(r'\s+', ' ', tag.strip())
+                if cleaned_text != tag:
+                    tag.replace_with(cleaned_text)
+        
+        # Special handling for two-column layouts
+        is_two_column = soup.find(class_='sidebar') and soup.find(class_='resume-container')
+        if is_two_column:
+            # Ensure sidebar and content are properly structured
+            sidebar = soup.find(class_='sidebar')
+            content = soup.find(class_='content')
+            resume_container = soup.find(class_='resume-container')
+            
+            if sidebar and content and resume_container:
+                # Remove any empty sections in sidebar
+                for section in sidebar.find_all(class_='sidebar-section'):
+                    if not section.get_text(strip=True):
+                        section.decompose()
+                
+                # Ensure content sections are properly separated
+                for section in content.find_all(['div', 'section']):
+                    if section.get('class') and any('section' in cls for cls in section.get('class', [])):
+                        # Add page-break-inside: avoid to prevent sections from breaking
+                        current_style = section.get('style', '')
+                        if 'page-break-inside' not in current_style:
+                            section['style'] = current_style + '; page-break-inside: avoid;'
+                
+                # Ensure the resume container has the right structure for table layout
+                # Remove any problematic CSS that might interfere with table layout
+                for element in [resume_container, sidebar, content]:
+                    if element:
+                        current_style = element.get('style', '')
+                        # Remove flexbox properties
+                        current_style = re.sub(r'display:\s*flex[^;]*;?', '', current_style)
+                        current_style = re.sub(r'flex[^:]*:[^;]*;?', '', current_style)
+                        # Remove float properties
+                        current_style = re.sub(r'float:[^;]*;?', '', current_style)
+                        # Remove position properties that might cause issues
+                        current_style = re.sub(r'position:\s*(absolute|fixed)[^;]*;?', '', current_style)
+                        element['style'] = current_style
+        
+        # Remove empty sections at the end that might cause blank pages
+        body = soup.body if soup.body else soup
+        if body:
+            # Remove trailing empty elements
+            for tag in reversed(list(body.children)):
+                if hasattr(tag, 'name') and tag.name:
+                    if not tag.get_text(strip=True):
+                        tag.decompose()
+                    else:
+                        break
+        
+        # Fix any problematic CSS that might cause layout issues
+        style_tags = soup.find_all('style')
+        for style_tag in style_tags:
+            if style_tag.string:
+                # Remove problematic CSS properties
+                css_content = style_tag.string
+                # Remove box-shadow which can cause rendering issues
+                css_content = re.sub(r'box-shadow:[^;]+;?', '', css_content)
+                # Remove transform properties that can cause positioning issues
+                css_content = re.sub(r'transform:[^;]+;?', '', css_content)
+                # Remove position: fixed/absolute that can cause issues
+                css_content = re.sub(r'position:\s*(fixed|absolute)[^;]*;?', 'position: static;', css_content)
+                style_tag.string = css_content
+        
+        return str(soup)
+    except Exception as e:
+        logger.warning(f"Failed to clean HTML: {e}")
+        return html_content
+
 async def download_resume_service(resume_text, format="docx"):
     """Service to download resume in specified format"""
     try:
         logger.info(f"Downloading resume in format: {format}")
         is_html = resume_text.strip().lower().startswith(("<!doctype", "<html"))
         logger.info(f"Content appears to be HTML: {is_html}")
+        
+        # Clean the resume text if it's HTML
+        if is_html:
+            resume_text = clean_html_for_pdf(resume_text)
+            logger.info("HTML content cleaned for better formatting")
+        
         if format.lower() == "docx":
             if is_html:
                 logger.info("Converting HTML to DOCX with formatting preservation")
@@ -761,11 +1324,8 @@ async def download_resume_service(resume_text, format="docx"):
                 media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             )
         elif format.lower() == "pdf":
-            if is_html:
-                logger.info("Converting HTML to PDF using WeasyPrint")
-                file_path = create_pdf_from_text(resume_text)
-            else:
-                file_path = create_pdf_from_text(resume_text)
+            logger.info("Converting to PDF using WeasyPrint")
+            file_path = create_pdf_from_text(resume_text)
             return FileResponse(
                 path=file_path,
                 filename="resume.pdf",

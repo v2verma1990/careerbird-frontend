@@ -3,9 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Download, ArrowLeft, FileText, Globe, AlertCircle } from 'lucide-react';
+import { Download, ArrowLeft, FileText, Globe, AlertCircle, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/utils/apiClient';
+import { PDFExportButton, PDFExportDropdown } from '@/components/PDFExportButton';
+import { useResumeExport } from '@/hooks/use-pdf-export';
 
 const ResumePreview = () => {
   const [searchParams] = useSearchParams();
@@ -14,6 +16,8 @@ const ResumePreview = () => {
   const [resumeHtml, setResumeHtml] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [resumeData, setResumeData] = useState<any>(null);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const { exportResume, exportResumeHighQuality, isExporting } = useResumeExport();
   
   const template = searchParams.get('template') || 'modern-executive';
   const encodedData = searchParams.get('data');
@@ -281,52 +285,76 @@ ${resumeHtml}
     }
   };
 
+  // New frontend-based PDF download function
   const downloadAsPdf = async () => {
-    if (!resumeData || !template) return;
-    
-    try {
-      setIsLoading(true);
+    if (!resumeData || !resumeHtml) {
       toast({
-        title: "Generating PDF",
-        description: "Please wait while we generate your PDF...",
-      });
-      
-      // Use the API client to download the resume as PDF
-      const response = await api.resumeBuilder.downloadResume({
-        resumeText: resumeHtml,
-        format: "pdf"
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to generate PDF: ${response.statusText}`);
-      }
-      
-      // Get the PDF blob from the response
-      const blob = await response.blob();
-      
-      // Create a download link for the PDF
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `resume-${template}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      
-      toast({
-        title: "Success!",
-        description: "Your resume has been downloaded as PDF.",
-      });
-    } catch (error) {
-      console.error('Error downloading PDF:', error);
-      toast({
-        title: "PDF Download Failed",
-        description: error instanceof Error ? error.message : "Failed to download PDF. Please try again.",
+        title: "Error",
+        description: "Resume data not available. Please try again.",
         variant: "destructive"
       });
-    } finally {
-      setIsLoading(false);
+      return;
+    }
+
+    try {
+      // Get candidate name from resume data
+      const candidateName = resumeData?.PersonalInfo?.Name || 
+                           resumeData?.personalInfo?.name || 
+                           resumeData?.name || 
+                           'resume';
+
+      // Use the new frontend PDF export
+      await exportResume('resume-preview-container', candidateName, resumeData);
+      
+    } catch (error) {
+      console.error('Frontend PDF export failed, trying fallback:', error);
+      
+      // Fallback to the old API method if frontend fails
+      try {
+        setIsLoading(true);
+        toast({
+          title: "Trying alternative method",
+          description: "Generating PDF using server...",
+        });
+        
+        const response = await api.resumeBuilder.downloadResume({
+          resumeText: resumeHtml,
+          format: "pdf"
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Server PDF generation failed: ${response.status}`);
+        }
+        
+        const blob = await response.blob();
+        if (blob.size === 0) {
+          throw new Error('Generated PDF is empty');
+        }
+        
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `resume-${template}-${new Date().toISOString().split('T')[0]}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        toast({
+          title: "Success!",
+          description: "Your resume has been downloaded as PDF.",
+        });
+        
+      } catch (fallbackError) {
+        console.error('Both frontend and backend PDF generation failed:', fallbackError);
+        toast({
+          title: "PDF Download Failed",
+          description: "Unable to generate PDF. Please try again or contact support.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -362,20 +390,41 @@ ${resumeHtml}
           </div>
           
           <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsPreviewMode(!isPreviewMode)}
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              {isPreviewMode ? 'Exit Preview' : 'Preview Mode'}
+            </Button>
+            
             <Button variant="outline" onClick={downloadAsWord} disabled={isLoading}>
               <FileText className="h-4 w-4 mr-2" />
               Download Word
             </Button>
-            <Button onClick={downloadAsPdf} disabled={isLoading}>
-              <Download className="h-4 w-4 mr-2" />
-              Download PDF
-            </Button>
+            
+            <PDFExportDropdown
+              resumeElementId="resume-preview-container"
+              candidateName={resumeData?.PersonalInfo?.Name || resumeData?.personalInfo?.name || resumeData?.name || 'resume'}
+              resumeData={resumeData}
+            />
           </div>
         </div>
 
         {/* Preview Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <div className="lg:col-span-3">
+        <div className={`grid grid-cols-1 lg:grid-cols-4 gap-6 ${isPreviewMode ? 'fixed inset-0 z-50 bg-gray-100 overflow-auto p-4' : ''}`}>
+          {isPreviewMode && (
+            <div className="fixed top-4 right-4 z-60">
+              <Button
+                variant="secondary"
+                onClick={() => setIsPreviewMode(false)}
+              >
+                Exit Preview
+              </Button>
+            </div>
+          )}
+          
+          <div className={isPreviewMode ? 'col-span-full' : 'lg:col-span-3'}>
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -393,7 +442,16 @@ ${resumeHtml}
                   </div>
                 ) : (
                   <div 
-                    className="bg-white border rounded-lg p-4 min-h-[800px]"
+                    id="resume-preview-container"
+                    className={`bg-white min-h-[800px] ${
+                      isPreviewMode 
+                        ? 'mx-auto shadow-lg max-w-[210mm] p-0' 
+                        : 'border rounded-lg p-4'
+                    }`}
+                    style={{
+                      width: isPreviewMode ? '210mm' : 'auto',
+                      minHeight: isPreviewMode ? '297mm' : '800px'
+                    }}
                     dangerouslySetInnerHTML={{ __html: resumeHtml }}
                   />
                 )}
@@ -402,20 +460,36 @@ ${resumeHtml}
           </div>
 
           {/* Actions Panel */}
-          <div className="lg:col-span-1">
+          {!isPreviewMode && (
+            <div className="lg:col-span-1">
             <Card className="sticky top-4">
               <CardHeader>
                 <CardTitle>Download Options</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Button 
-                  className="w-full" 
-                  onClick={downloadAsPdf}
-                  disabled={isLoading}
+                <PDFExportButton
+                  resumeElementId="resume-preview-container"
+                  candidateName={resumeData?.PersonalInfo?.Name || resumeData?.personalInfo?.name || resumeData?.name || 'resume'}
+                  resumeData={resumeData}
+                  className="w-full"
+                  disabled={isLoading || isExporting}
                 >
                   <Download className="h-4 w-4 mr-2" />
-                  Download as PDF
-                </Button>
+                  {isExporting ? 'Generating PDF...' : 'Download as PDF'}
+                </PDFExportButton>
+                
+                <PDFExportButton
+                  resumeElementId="resume-preview-container"
+                  candidateName={resumeData?.PersonalInfo?.Name || resumeData?.personalInfo?.name || resumeData?.name || 'resume'}
+                  resumeData={resumeData}
+                  variant="outline"
+                  className="w-full"
+                  highQuality={true}
+                  disabled={isLoading || isExporting}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  {isExporting ? 'Generating...' : 'High Quality PDF'}
+                </PDFExportButton>
                 
                 <Button 
                   variant="outline" 
@@ -450,7 +524,8 @@ ${resumeHtml}
                 )}
               </CardContent>
             </Card>
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

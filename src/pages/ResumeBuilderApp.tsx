@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Upload, FileText, Download, Eye, User, Briefcase, GraduationCap, Award, Code, Plus, X, Sparkles, Zap, FileCheck, ArrowLeft, ArrowRight, Edit, Palette } from 'lucide-react';
+import { Upload, FileText, Download, Eye, User, Briefcase, GraduationCap, Award, Code, Plus, X, Sparkles, Zap, FileCheck, ArrowLeft, ArrowRight, Edit, Palette, Camera, Image } from 'lucide-react';
 import ResumeFileUploader from '@/components/ResumeFileUploader';
 import { resumeBuilderApi } from '@/utils/resumeBuilderApi';
 import { useToast } from '@/hooks/use-toast';
@@ -17,144 +17,10 @@ import { useResume } from "@/contexts/resume/ResumeContext";
 import Handlebars from 'handlebars';
 import TemplateColorPicker from "@/components/resume/TemplateColorPicker";
 import styles from './ResumeBuilderApp.module.css';
+import { getAllTemplates, type Template } from '@/config/resumeTemplates';
 
-// Template data for step 1
-const templates = [
-  {
-    id: "navy-column-modern",
-    name: "Navy Column Modern",
-    description: "Professional layout with navy sidebar and clean white content area",
-    thumbnail: "/lovable-uploads/111bb875-e937-4ebf-8470-bc9c0fd0e801.png",
-    category: "professional",
-    color: "navy",
-    availableColors: ["#a4814c", "#18bc6b", "#2196F3", "#ff1e1e", "#000"],
-    isRecommended: true,
-    isNew: true
-  },
-  {
-    id: "modern-executive",
-    name: "Modern Executive",
-    description: "Clean, professional design perfect for executives",
-    thumbnail: "/lovable-uploads/be00c166-3bf1-4879-af44-a2f578e88bf7.png",
-    category: "professional",
-    color: "blue",
-    availableColors: ["#18bc6b", "#2196F3", "#ff1e1e", "#000", "#a4814c"],
-    isPopular: true,
-    isRecommended: true
-  },
-  {
-    id: "creative-designer",
-    name: "Creative Designer",
-    description: "Bold, creative layout for designers",
-    thumbnail: "/resume-templates/thumbnails/creative.png",
-    category: "creative",
-    color: "purple",
-    availableColors: ["#2196F3", "#ff1e1e", "#000", "#18bc6b", "#a4814c"],
-    isPremium: true
-  },
-  {
-    id: "tech-minimalist",
-    name: "Tech Minimalist",
-    description: "Clean, minimal design for tech professionals",
-    thumbnail: "/resume-templates/thumbnails/tech.PNG",
-    category: "tech",
-    color: "green",
-    isNew: true,
-    availableColors: ["#18bc6b", "#2196F3", "#000", "#a4814c", "#ff1e1e"]
-  },
-  {
-    id: "academic-scholar",
-    name: "Academic Scholar",
-    description: "Traditional format for researchers",
-    thumbnail: "/resume-templates/thumbnails/academic.PNG",
-    category: "academic",
-    color: "gray",
-    isRecommended: true,
-    availableColors: ["#a4814c", "#2196F3", "#18bc6b", "#ff1e1e", "#000"]
-  },
-  {
-    id: "startup-founder",
-    name: "Startup Founder",
-    description: "Dynamic layout for entrepreneurs",
-    thumbnail: "/resume-templates/thumbnails/professional.png",
-    category: "professional",
-    color: "orange",
-    isPremium: true,
-    availableColors: ["#ff1e1e", "#18bc6b", "#2196F3", "#000", "#a4814c"]
-  },
-  {
-    id: "fresh-graduate",
-    name: "Fresh Graduate",
-    description: "Perfect for new graduates and entry-level positions",
-    thumbnail: "/resume-templates/thumbnails/entry-level.PNG",
-    category: "entry-level",
-    color: "teal",
-    isPopular: true,
-    isRecommended: true,
-    availableColors: ["#2196F3", "#18bc6b", "#ff1e1e", "#000", "#a4814c"]
-  },
-  {
-    id: "grey-classic-profile",
-    name: "Grey Classic Profile",
-    description: "Elegant and clear template with sidebar and modern layout",
-    thumbnail: "/lovable-uploads/2d518c3a-cd43-4fb4-b391-8729c98e1479.png",
-    category: "classic",
-    color: "gray",
-    isRecommended: false,
-    isNew: true,
-    availableColors: ["#000", "#2196F3", "#18bc6b", "#ff1e1e", "#a4814c"]
-  },
-  {
-    id: "blue-sidebar-profile",
-    name: "Blue Sidebar Profile",
-    description: "Elegant template with left sidebar and section dividers, matching classic professional format.",
-    thumbnail: "/lovable-uploads/502adb7a-83b3-4ebe-a1c2-6450915f1ed0.png",
-    category: "classic",
-    color: "blue",
-    isNew: true,
-    availableColors: ["#2196F3", "#18bc6b", "#ff1e1e", "#000", "#a4814c"]
-  },
-  {
-    id: "green-sidebar-receptionist",
-    name: "Green Sidebar Receptionist",
-    description: "Fresh and approachable sidebar template matching receptionist roles",
-    thumbnail: "/lovable-uploads/e72aeeac-84f9-493e-85af-c1994a03dc55.png",
-    category: "classic",
-    color: "green",
-    isNew: true,
-    availableColors: ["#18bc6b", "#2196F3", "#ff1e1e", "#000", "#a4814c"]
-  },
-  {
-    id: "classic-profile-orange",
-    name: "Classic Profile Orange",
-    description: "Elegant resume with orange name, clean sidebar and modern readable content.",
-    thumbnail: "/lovable-uploads/aefc4f9a-f33d-406b-a191-f7aae767471d.png",
-    category: "classic",
-    color: "orange",
-    isNew: true,
-    availableColors: ["#a4814c", "#18bc6b", "#2196F3", "#ff1e1e", "#000"]
-  },
-  {
-    id: "classic-law-bw",
-    name: "Classic Law Black & White",
-    description: "Traditional black & white legal resume with section dividers and simple typographic elegance.",
-    thumbnail: "/lovable-uploads/411cd4d2-9f96-4fa4-abaf-60b6828225fb.png",
-    category: "classic",
-    color: "gray",
-    isNew: true,
-    availableColors: ["#000", "#a4814c", "#18bc6b", "#2196F3", "#ff1e1e"]
-  },
-  {
-    id: "green-sidebar-customer-service",
-    name: "Green Sidebar Customer Service",
-    description: "Modern customer service resume with a green sidebar and clean layout",
-    thumbnail: "/lovable-uploads/4fcd8e16-5fb8-46bf-876e-def35b427c45.png",
-    category: "classic",
-    color: "green",
-    isNew: true,
-    availableColors: ["#18bc6b", "#2196F3", "#ff1e1e", "#000", "#a4814c"]
-  }
-];
+// Use centralized template configuration
+const templates = getAllTemplates();
 
 // Light placeholder data that clears on click
 const initialData = {
@@ -166,6 +32,7 @@ const initialData = {
   LinkedIn: "",
   Website: "",
   Summary: "",
+  Photo: "",
   Skills: [],
   Experience: [{
     Title: "",
@@ -173,7 +40,8 @@ const initialData = {
     Location: "",
     StartDate: "",
     EndDate: "",
-    Description: ""
+    Description: "",
+    Projects: []
   }],
   Education: [{
     Degree: "",
@@ -192,10 +60,26 @@ const initialData = {
     Name: "",
     Description: "",
     Technologies: ""
+  }],
+  Achievements: [],
+  References: [{
+    Name: "",
+    Title: "",
+    Contact: ""
   }]
 };
 
 const DEFAULT_TEMPLATE_ID = "default-template"; // Use your actual default template ID
+
+// Templates that support profile photos
+const PHOTO_SUPPORTED_TEMPLATES = [
+  "navy-column-modern",
+  "grey-classic-profile", 
+  "blue-sidebar-profile",
+  "green-sidebar-receptionist",
+  "classic-profile-orange",
+  "green-sidebar-customer-service"
+];
 
 // Function to transform data to match template expectations (PascalCase)
 const transformDataForTemplate = (data: any) => {
@@ -215,11 +99,14 @@ const transformDataForTemplate = (data: any) => {
     'linkedin': 'LinkedIn',
     'website': 'Website',
     'summary': 'Summary',
+    'photo': 'Photo',
     'skills': 'Skills',
     'experience': 'Experience',
     'education': 'Education',
     'certifications': 'Certifications',
-    'projects': 'Projects'
+    'projects': 'Projects',
+    'achievements': 'Achievements',
+    'references': 'References'
   };
   
   // Apply field mappings
@@ -248,7 +135,16 @@ const transformDataForTemplate = (data: any) => {
             Location: exp.Location || exp.location || exp.city || '',
             StartDate: exp.StartDate || exp.startDate || exp.start_date || exp.from || '',
             EndDate: exp.EndDate || exp.endDate || exp.end_date || exp.to || '',
-            Description: exp.Description || exp.description || exp.responsibilities || exp.duties || ''
+            Description: exp.Description || exp.description || exp.responsibilities || exp.duties || '',
+            Projects: Array.isArray(exp.Projects) ? exp.Projects.map((proj: any) => ({
+              Name: proj.Name || proj.name || proj.title || '',
+              Description: proj.Description || proj.description || proj.details || '',
+              Technologies: proj.Technologies || proj.technologies || proj.tech || proj.tools || ''
+            })) : (Array.isArray(exp.projects) ? exp.projects.map((proj: any) => ({
+              Name: proj.Name || proj.name || proj.title || '',
+              Description: proj.Description || proj.description || proj.details || '',
+              Technologies: proj.Technologies || proj.technologies || proj.tech || proj.tools || ''
+            })) : [])
           };
           console.log('Transformed experience:', transformedExp);
           return transformedExp;
@@ -342,6 +238,63 @@ const transformDataForTemplate = (data: any) => {
     }
   }
   
+  // Migrate standalone projects to experience projects (for backward compatibility)
+  if (transformed.Projects && Array.isArray(transformed.Projects) && transformed.Projects.length > 0) {
+    if (transformed.Experience && Array.isArray(transformed.Experience) && transformed.Experience.length > 0) {
+      // Check if any experience already has projects
+      const hasExistingProjects = transformed.Experience.some((exp: any) => 
+        exp.Projects && Array.isArray(exp.Projects) && exp.Projects.length > 0
+      );
+      
+      // If no experience has projects, add standalone projects to the first experience
+      if (!hasExistingProjects) {
+        console.log('Migrating standalone projects to first experience entry');
+        transformed.Experience[0].Projects = [...transformed.Projects];
+      }
+    }
+    // Keep standalone projects for backward compatibility but mark for potential removal
+    console.log('Standalone projects will be maintained for backward compatibility');
+  }
+  
+  // Handle achievements
+  if (transformed.Achievements || transformed.achievements) {
+    const achievements = transformed.Achievements || transformed.achievements;
+    console.log('Original achievements:', achievements);
+    
+    if (Array.isArray(achievements)) {
+      transformed.Achievements = achievements.filter((achievement: string) => achievement && achievement.trim().length > 0);
+    } else if (typeof achievements === 'string') {
+      // If achievements is a string, split it into an array
+      transformed.Achievements = achievements.split('\n').map((achievement: string) => achievement.trim()).filter((achievement: string) => achievement.length > 0);
+    }
+  }
+  
+  // Handle references
+  if (transformed.References || transformed.references) {
+    const references = transformed.References || transformed.references;
+    console.log('Original references:', references);
+    
+    if (Array.isArray(references)) {
+      transformed.References = references
+        .map((ref: any) => {
+          const transformedRef = {
+            ...ref,
+            Name: ref.Name || ref.name || ref.fullName || ref.person || '',
+            Title: ref.Title || ref.title || ref.position || ref.jobTitle || '',
+            Contact: ref.Contact || ref.contact || ref.email || ref.phone || ref.contactInfo || ''
+          };
+          console.log('Transformed reference:', transformedRef);
+          return transformedRef;
+        })
+        .filter((ref: any) => {
+          // Filter out empty reference entries
+          const hasContent = ref.Name.trim() || ref.Contact.trim();
+          console.log('Reference has content:', hasContent, ref);
+          return hasContent;
+        });
+    }
+  }
+  
   // Ensure Skills is an array
   if (transformed.Skills || transformed.skills) {
     const skills = transformed.Skills || transformed.skills;
@@ -373,7 +326,8 @@ const transformDataForTemplate = (data: any) => {
         Location: "City, State",
         StartDate: "2020",
         EndDate: "Present",
-        Description: "Developed and maintained software applications using modern technologies."
+        Description: "Developed and maintained software applications using modern technologies.",
+        Projects: []
       }];
     }
   }
@@ -414,6 +368,74 @@ const transformDataForTemplate = (data: any) => {
     );
   }
   
+  // Add lowercase versions for template compatibility
+  if (transformed.Achievements) {
+    transformed.achievements = transformed.Achievements;
+  }
+  
+  if (transformed.References) {
+    // Convert References to lowercase format expected by templates
+    transformed.references = transformed.References.map((ref: any) => ({
+      name: ref.Name || ref.name || '',
+      title: ref.Title || ref.title || '',
+      contact: ref.Contact || ref.contact || ''
+    }));
+  }
+  
+  // Also add lowercase versions for other fields for template compatibility
+  if (transformed.Skills) {
+    transformed.skills = transformed.Skills;
+  }
+  
+  if (transformed.Experience) {
+    transformed.experience = transformed.Experience.map((exp: any) => ({
+      title: exp.Title || exp.title || '',
+      company: exp.Company || exp.company || '',
+      location: exp.Location || exp.location || '',
+      startDate: exp.StartDate || exp.startDate || '',
+      endDate: exp.EndDate || exp.endDate || '',
+      description: exp.Description || exp.description || ''
+    }));
+  }
+  
+  if (transformed.Education) {
+    transformed.education = transformed.Education.map((edu: any) => ({
+      degree: edu.Degree || edu.degree || '',
+      institution: edu.Institution || edu.institution || '',
+      location: edu.Location || edu.location || '',
+      startDate: edu.StartDate || edu.startDate || '',
+      endDate: edu.EndDate || edu.endDate || '',
+      gpa: edu.GPA || edu.gpa || ''
+    }));
+  }
+  
+  if (transformed.Certifications) {
+    transformed.certifications = transformed.Certifications.map((cert: any) => ({
+      name: cert.Name || cert.name || '',
+      issuer: cert.Issuer || cert.issuer || '',
+      date: cert.Date || cert.date || ''
+    }));
+  }
+  
+  if (transformed.Projects) {
+    transformed.projects = transformed.Projects.map((proj: any) => ({
+      name: proj.Name || proj.name || '',
+      description: proj.Description || proj.description || '',
+      technologies: proj.Technologies || proj.technologies || ''
+    }));
+  }
+  
+  // Add basic lowercase fields
+  transformed.name = transformed.Name || transformed.name || '';
+  transformed.title = transformed.Title || transformed.title || '';
+  transformed.email = transformed.Email || transformed.email || '';
+  transformed.phone = transformed.Phone || transformed.phone || '';
+  transformed.location = transformed.Location || transformed.location || '';
+  transformed.linkedin = transformed.LinkedIn || transformed.linkedin || '';
+  transformed.website = transformed.Website || transformed.website || '';
+  transformed.summary = transformed.Summary || transformed.summary || '';
+  transformed.photo = transformed.Photo || transformed.photo || '';
+  
   console.log('Final transformed data:', transformed);
   return transformed;
 };
@@ -428,17 +450,15 @@ const ResumeBuilderApp = () => {
   const [isExtracting, setIsExtracting] = useState(false);
   const [activeTab, setActiveTab] = useState('personal');
   const [dataSource, setDataSource] = useState('manual'); // 'manual', 'upload', or 'default'
-  const [showPreview, setShowPreview] = useState(false);
-  const [previewTemplate, setPreviewTemplate] = useState<string | null>(null);
-  const [templateHtml, setTemplateHtml] = useState<string>("");
-  const [sampleResumeData, setSampleResumeData] = useState<any>(null);
-  const [useSampleData, setUseSampleData] = useState(true); // Always use sample data for preview for now
+  // Template preview functionality removed - using backend HTML only
   const [hasDefaultResume, setHasDefaultResume] = useState(false);
   const { toast } = useToast();
   const { defaultResume, isLoading } = useResume();
   // Hook for storing template color choices, by template ID
   const [templateColors, setTemplateColors] = useState<{[templateId: string]: string}>({});
   const [lastUsedTemplateId, setLastUsedTemplateId] = useState(""); // Track last used template ID
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string>("");
 
   // Initialize color from URL parameters
   useEffect(() => {
@@ -453,66 +473,7 @@ const ResumeBuilderApp = () => {
     }
   }, [searchParams]);
 
-  // Load sample resume data for preview
-  useEffect(() => {
-    if (showPreview && !sampleResumeData) {
-      fetch('/resume-templates/sample-data.json')
-        .then(res => res.json())
-        .then(data => setSampleResumeData(data))
-        .catch(() => setSampleResumeData(null));
-    }
-  }, [showPreview, sampleResumeData]);
-
-  // Fetch template HTML from backend API
-  useEffect(() => {
-    if (showPreview && previewTemplate) {
-      const loadTemplate = async () => {
-        try {
-          console.log(`Fetching template from public folder: /resume-templates/html/${previewTemplate}.html`);
-          // Fetch template HTML from public folder
-          const response = await fetch(`/resume-templates/html/${previewTemplate}.html`);
-          
-          if (!response.ok) {
-            console.error(`Failed to fetch template: ${response.status} ${response.statusText}`);
-            throw new Error(`Failed to fetch template: ${response.status}`);
-          }
-          
-          const html = await response.text();
-          console.log(`Template HTML fetched successfully, length: ${html.length} bytes`);
-          
-          // Get the selected color for the template
-          const selectedColor = templateColors[previewTemplate] || "#2196F3";
-          console.log(`Using color for preview: ${selectedColor}`);
-          
-          // Use sample data for preview
-          let dataForPreview = useSampleData && sampleResumeData ? { ...sampleResumeData } : { ...resumeData };
-          
-          console.log('Preview data before transformation:', dataForPreview);
-          
-          // Transform data to match template expectations
-          dataForPreview = transformDataForTemplate(dataForPreview);
-          
-          console.log('Preview data after transformation:', dataForPreview);
-          
-          // Add the color to the preview data
-          dataForPreview.color = selectedColor;
-          
-          // Compile the template with Handlebars
-          try {
-            const compiled = Handlebars.compile(html)(dataForPreview);
-            setTemplateHtml(compiled);
-          } catch (compileError) {
-            console.error('Error compiling template with Handlebars:', compileError);
-            setTemplateHtml(`<p>Error compiling template: ${compileError.message}</p><pre>${html}</pre>`);
-          }
-        } catch (error) {
-          console.error('Error loading template:', error);
-          setTemplateHtml(`<p>Failed to load template from backend: ${error.message}</p>`);
-        }
-      };
-      loadTemplate();
-    }
-  }, [showPreview, previewTemplate, resumeData, sampleResumeData, useSampleData, templateColors]);
+  // Note: Template preview functionality removed since we only use backend HTML templates
 
   // Handle template selection
   const handleTemplateSelect = (templateId: string) => {
@@ -595,6 +556,7 @@ const ResumeBuilderApp = () => {
         LinkedIn: data.LinkedIn || data.linkedin || "",
         Website: data.Website || data.website || "",
         Summary: data.Summary || data.summary || data.result?.summary || "",
+        Photo: data.Photo || data.photo || "",
         Skills: data.Skills || data.skills || [],
         Experience: (data.Experience || data.experience || []).map(exp => ({
           Title: exp.Title || exp.title || "",
@@ -622,6 +584,12 @@ const ResumeBuilderApp = () => {
           Description: proj.Description || proj.description || "",
           Technologies: proj.Technologies || proj.technologies || "",
           Link: proj.Link || proj.link || ""
+        })),
+        Achievements: data.Achievements || data.achievements || [],
+        References: (data.References || data.references || []).map(ref => ({
+          Name: ref.Name || ref.name || "",
+          Title: ref.Title || ref.title || "",
+          Contact: ref.Contact || ref.contact || ""
         }))
       };
 
@@ -716,6 +684,54 @@ const ResumeBuilderApp = () => {
     }));
   };
 
+  // Photo handling functions
+  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please select an image file (JPG, PNG, etc.)",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please select an image smaller than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setPhotoFile(file);
+      
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setPhotoPreview(result);
+        setResumeData(prev => ({ ...prev, Photo: result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removePhoto = () => {
+    setPhotoFile(null);
+    setPhotoPreview("");
+    setResumeData(prev => ({ ...prev, Photo: "" }));
+  };
+
+  // Check if current template supports photos
+  const currentTemplateSupportsPhoto = () => {
+    return PHOTO_SUPPORTED_TEMPLATES.includes(selectedTemplate);
+  };
+
   const generateResume = async () => {
     setIsGenerating(true);
     try {
@@ -761,6 +777,24 @@ const ResumeBuilderApp = () => {
           StartDate: edu.StartDate,
           EndDate: edu.EndDate
         })));
+      }
+      
+      // Double-check that Achievements array is properly formatted
+      if (resumeDataWithColor.Achievements) {
+        console.log('Achievements array before sending:', resumeDataWithColor.Achievements);
+      } else {
+        console.log('No Achievements found in resume data');
+      }
+      
+      // Double-check that References array is properly formatted
+      if (resumeDataWithColor.References && Array.isArray(resumeDataWithColor.References)) {
+        console.log('References array before sending:', resumeDataWithColor.References.map(ref => ({
+          Name: ref.Name,
+          Title: ref.Title,
+          Contact: ref.Contact
+        })));
+      } else {
+        console.log('No References found in resume data');
       }
       
       console.log(`Generating resume with template: ${selectedTemplate}, color: ${selectedColor}`);
@@ -810,6 +844,30 @@ const ResumeBuilderApp = () => {
           console.log('  No Education array or not an array');
         }
         
+        console.log('Achievements details:');
+        if (parsed.Achievements) {
+          console.log('  Achievements:', parsed.Achievements);
+          console.log('  Achievements type:', typeof parsed.Achievements);
+          console.log('  Achievements is array:', Array.isArray(parsed.Achievements));
+          console.log('  Achievements length:', parsed.Achievements.length);
+        } else {
+          console.log('  No Achievements found');
+        }
+        
+        console.log('References details:');
+        if (parsed.References && Array.isArray(parsed.References)) {
+          parsed.References.forEach((ref, index) => {
+            console.log(`  Reference ${index}:`, {
+              Name: ref.Name,
+              Title: ref.Title,
+              Contact: ref.Contact,
+              isEmpty: !ref.Name && !ref.Title && !ref.Contact
+            });
+          });
+        } else {
+          console.log('  No References array or not an array');
+        }
+        
       } catch (e) {
         console.error('JSON parsing test failed:', e);
       }
@@ -821,66 +879,7 @@ const ResumeBuilderApp = () => {
       console.log('- templateId:', selectedTemplate);
       console.log('- color:', selectedColor);
       
-      // Let's also try with a simple test data to see if the issue is with our data structure
-      const testData = {
-        Name: "Test Name",
-        Title: "Test Title",
-        Email: "test@example.com",
-        Phone: "123-456-7890",
-        Location: "Test City",
-        Summary: "Test summary",
-        Experience: [
-          {
-            Title: "Test Job Title",
-            Company: "Test Company",
-            Location: "Test Location",
-            StartDate: "2020",
-            EndDate: "2023",
-            Description: "Test job description"
-          }
-        ],
-        Education: [
-          {
-            Degree: "Test Degree",
-            Institution: "Test University",
-            Location: "Test City",
-            StartDate: "2016",
-            EndDate: "2020"
-          }
-        ],
-        Skills: ["Test Skill 1", "Test Skill 2"],
-        Color: selectedColor
-      };
-      
-      const testJsonString = JSON.stringify(testData);
-      console.log('=== TESTING WITH SIMPLE DATA ===');
-      console.log('Test data:', testData);
-      console.log('Test JSON string:', testJsonString);
-      
-      // TEMPORARY: Let's test with the old resumeBuilderApi to see if it works
-      console.log('=== TESTING WITH OLD RESUME BUILDER API ===');
-      console.log('Selected template:', selectedTemplate);
-      console.log('Available templates:', templates.map(t => t.id));
-      
-      // Let's also try with a different template to see if it's template-specific
-      const testTemplate = 'modern-executive'; // Try a different template
-      console.log('Testing with template:', testTemplate);
-      
-      // Let's try with both the original data and simple test data
-      console.log('=== TRYING WITH SIMPLE TEST DATA FIRST ===');
-      const testResult = await resumeBuilderApi.buildResume({
-        resumeData: testJsonString,
-        templateId: selectedTemplate,
-        color: selectedColor
-      });
-      
-      if (testResult.data?.html) {
-        console.log('TEST RESULT - HTML contains "Test Job Title":', testResult.data.html.includes('Test Job Title'));
-        console.log('TEST RESULT - HTML contains "Test Company":', testResult.data.html.includes('Test Company'));
-        console.log('TEST RESULT - HTML contains "Test Degree":', testResult.data.html.includes('Test Degree'));
-      }
-      
-      console.log('=== NOW TRYING WITH ORIGINAL DATA ===');
+      console.log('=== BUILDING RESUME WITH USER DATA ===');
       console.log('JSON string being sent (first 1000 chars):', jsonString.substring(0, 1000));
       
       // Let's also try parsing the JSON to see what we're sending
@@ -1273,9 +1272,6 @@ const ResumeBuilderApp = () => {
                         alt={template.name}
                         className="object-contain w-full h-full bg-white"
                         style={{ backgroundColor: "white", borderRadius: 10 }}
-                        onError={e => {
-                          e.currentTarget.src = "/resume-templates/thumbnails/professional.png";
-                        }}
                       />
                       {selectedTemplate === template.id && (
                         <div className="absolute inset-0 pointer-events-none border-[3.5px] border-blue-700 rounded-lg"></div>
@@ -1449,16 +1445,15 @@ const ResumeBuilderApp = () => {
                           <Badge variant="secondary" className="ml-1 h-4 w-4 p-0 text-xs">{resumeData.Skills.length}</Badge>
                         )}
                       </TabsTrigger>
-                      <TabsTrigger value="projects">
-                        Projects
-                        {resumeData.Projects && resumeData.Projects.length > 0 && (
-                          <Badge variant="secondary" className="ml-1 h-4 w-4 p-0 text-xs">{resumeData.Projects.length}</Badge>
-                        )}
-                      </TabsTrigger>
+
                       <TabsTrigger value="other">
                         Other
-                        {resumeData.Certifications && resumeData.Certifications.length > 0 && (
-                          <Badge variant="secondary" className="ml-1 h-4 w-4 p-0 text-xs">{resumeData.Certifications.length}</Badge>
+                        {((resumeData.Certifications && resumeData.Certifications.length > 0) || 
+                          (resumeData.Achievements && resumeData.Achievements.length > 0) || 
+                          (resumeData.References && resumeData.References.length > 0)) && (
+                          <Badge variant="secondary" className="ml-1 h-4 w-4 p-0 text-xs">
+                            {(resumeData.Certifications?.length || 0) + (resumeData.Achievements?.length || 0) + (resumeData.References?.length || 0)}
+                          </Badge>
                         )}
                       </TabsTrigger>
                     </TabsList>
@@ -1521,6 +1516,61 @@ const ResumeBuilderApp = () => {
                           />
                         </div>
                       </div>
+
+                      {/* Photo Upload Section - Only show for supported templates */}
+                      {currentTemplateSupportsPhoto() && (
+                        <div className="space-y-2">
+                          <Label>Profile Photo (Optional)</Label>
+                          <div className="flex items-center space-x-4">
+                            {photoPreview ? (
+                              <div className="relative">
+                                <img
+                                  src={photoPreview}
+                                  alt="Profile preview"
+                                  className="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="destructive"
+                                  size="sm"
+                                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                                  onClick={removePhoto}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="w-20 h-20 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center">
+                                <Camera className="h-8 w-8 text-gray-400" />
+                              </div>
+                            )}
+                            <div className="flex-1">
+                              <input
+                                type="file"
+                                id="photo-upload"
+                                accept="image/*"
+                                onChange={handlePhotoUpload}
+                                className="hidden"
+                                title="Upload your profile photo"
+                                placeholder="Choose a profile photo"
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => document.getElementById('photo-upload')?.click()}
+                                className="w-full"
+                              >
+                                <Image className="h-4 w-4 mr-2" />
+                                {photoPreview ? 'Change Photo' : 'Upload Photo'}
+                              </Button>
+                              <p className="text-xs text-gray-500 mt-1">
+                                Recommended: Square image, max 5MB (JPG, PNG)
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
                       <div>
                         <Label htmlFor="summary">Professional Summary</Label>
                         <Textarea
@@ -1593,13 +1643,109 @@ const ResumeBuilderApp = () => {
                               rows={3}
                             />
                           </div>
+                          
+                          {/* Projects section for this experience */}
+                          <div className="mt-4 border-t pt-4">
+                            <div className="flex items-center justify-between mb-3">
+                              <h4 className="text-sm font-semibold text-gray-700">Projects (Optional)</h4>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  const updatedExp = {
+                                    ...exp,
+                                    Projects: [...(exp.Projects || []), { Name: "", Description: "", Technologies: "" }]
+                                  };
+                                  updateArrayItem('Experience', index, updatedExp);
+                                }}
+                              >
+                                <Plus className="h-4 w-4 mr-1" />
+                                Add Project
+                              </Button>
+                            </div>
+                            
+                            {exp.Projects && exp.Projects.length > 0 && (
+                              <div className="space-y-3">
+                                {exp.Projects.map((project, projectIndex) => (
+                                  <div key={projectIndex} className="bg-gray-50 rounded-md p-3 space-y-2">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                      <div>
+                                        <Label htmlFor={`exp-${index}-project-${projectIndex}-name`} className="text-xs">Project Name</Label>
+                                        <Input
+                                          id={`exp-${index}-project-${projectIndex}-name`}
+                                          placeholder="Enter project name"
+                                          value={project.Name}
+                                          onChange={(e) => {
+                                            const updatedProjects = [...exp.Projects];
+                                            updatedProjects[projectIndex] = { ...project, Name: e.target.value };
+                                            const updatedExp = { ...exp, Projects: updatedProjects };
+                                            updateArrayItem('Experience', index, updatedExp);
+                                          }}
+                                          className="h-8"
+                                        />
+                                      </div>
+                                      <div>
+                                        <Label htmlFor={`exp-${index}-project-${projectIndex}-technologies`} className="text-xs">Technologies</Label>
+                                        <Input
+                                          id={`exp-${index}-project-${projectIndex}-technologies`}
+                                          placeholder="Enter technologies used"
+                                          value={project.Technologies}
+                                          onChange={(e) => {
+                                            const updatedProjects = [...exp.Projects];
+                                            updatedProjects[projectIndex] = { ...project, Technologies: e.target.value };
+                                            const updatedExp = { ...exp, Projects: updatedProjects };
+                                            updateArrayItem('Experience', index, updatedExp);
+                                          }}
+                                          className="h-8"
+                                        />
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <Label htmlFor={`exp-${index}-project-${projectIndex}-description`} className="text-xs">Project Description</Label>
+                                      <Textarea
+                                        id={`exp-${index}-project-${projectIndex}-description`}
+                                        placeholder="Enter project description"
+                                        value={project.Description}
+                                        onChange={(e) => {
+                                          const updatedProjects = [...exp.Projects];
+                                          updatedProjects[projectIndex] = { ...project, Description: e.target.value };
+                                          const updatedExp = { ...exp, Projects: updatedProjects };
+                                          updateArrayItem('Experience', index, updatedExp);
+                                        }}
+                                        rows={2}
+                                        className="text-sm"
+                                      />
+                                    </div>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        const updatedProjects = exp.Projects.filter((_, i) => i !== projectIndex);
+                                        const updatedExp = { ...exp, Projects: updatedProjects };
+                                        updateArrayItem('Experience', index, updatedExp);
+                                      }}
+                                      className="h-7 text-xs"
+                                    >
+                                      <X className="h-3 w-3 mr-1" />
+                                      Remove Project
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            
+                            {(!exp.Projects || exp.Projects.length === 0) && (
+                              <p className="text-xs text-gray-500 italic">No projects added yet. Click "Add Project" to add projects for this experience.</p>
+                            )}
+                          </div>
+                          
                           <Button
                             variant="destructive"
                             size="sm"
                             onClick={() => removeArrayItem('Experience', index)}
                           >
                             <X className="h-4 w-4 mr-2" />
-                            Remove
+                            Remove Experience
                           </Button>
                         </div>
                       ))}
@@ -1611,7 +1757,8 @@ const ResumeBuilderApp = () => {
                           Location: "",
                           StartDate: "",
                           EndDate: "",
-                          Description: ""
+                          Description: "",
+                          Projects: []
                         })}
                       >
                         <Plus className="h-4 w-4 mr-2" />
@@ -1732,61 +1879,6 @@ const ResumeBuilderApp = () => {
                       </Button>
                     </TabsContent>
 
-                    <TabsContent value="projects" className="space-y-4">
-                      {resumeData.Projects.map((project, index) => (
-                        <div key={index} className="border rounded-md p-4 space-y-2">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <Label htmlFor={`project-${index}-name`}>Name</Label>
-                              <Input
-                                id={`project-${index}-name`}
-                                placeholder="Enter project name"
-                                value={project.Name}
-                                onChange={(e) => updateArrayItem('Projects', index, { ...project, Name: e.target.value })}
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor={`project-${index}-technologies`}>Technologies</Label>
-                              <Input
-                                id={`project-${index}-technologies`}
-                                placeholder="Enter technologies used"
-                                value={project.Technologies}
-                                onChange={(e) => updateArrayItem('Projects', index, { ...project, Technologies: e.target.value })}
-                              />
-                            </div>
-                          </div>
-                          <div>
-                            <Label htmlFor={`project-${index}-description`}>Description</Label>
-                            <Textarea
-                              id={`project-${index}-description`}
-                              placeholder="Enter project description"
-                              value={project.Description}
-                              onChange={(e) => updateArrayItem('Projects', index, { ...project, Description: e.target.value })}
-                              rows={3}
-                            />
-                          </div>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => removeArrayItem('Projects', index)}
-                          >
-                            <X className="h-4 w-4 mr-2" />
-                            Remove
-                          </Button>
-                        </div>
-                      ))}
-                      <Button
-                        variant="secondary"
-                        onClick={() => addArrayItem('Projects', {
-                          Name: "",
-                          Description: "",
-                          Technologies: ""
-                        })}
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Project
-                      </Button>
-                    </TabsContent>
 
                     <TabsContent value="other" className="space-y-4">
                       <div className="space-y-4">
@@ -1842,6 +1934,108 @@ const ResumeBuilderApp = () => {
                         >
                           <Plus className="h-4 w-4 mr-2" />
                           Add Certification
+                        </Button>
+
+                        <Separator className="my-6" />
+
+                        <h3 className="text-lg font-semibold">Achievements</h3>
+                        {resumeData.Achievements.map((achievement, index) => (
+                          <div key={index} className="border rounded-md p-4 space-y-2">
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1">
+                                <Label htmlFor={`achievement-${index}`}>Achievement</Label>
+                                <Textarea
+                                  id={`achievement-${index}`}
+                                  placeholder="Enter your achievement or accomplishment"
+                                  value={achievement}
+                                  onChange={(e) => {
+                                    const newAchievements = [...resumeData.Achievements];
+                                    newAchievements[index] = e.target.value;
+                                    setResumeData(prev => ({ ...prev, Achievements: newAchievements }));
+                                  }}
+                                  rows={2}
+                                />
+                              </div>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => {
+                                  const newAchievements = resumeData.Achievements.filter((_, i) => i !== index);
+                                  setResumeData(prev => ({ ...prev, Achievements: newAchievements }));
+                                }}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                        <Button
+                          variant="secondary"
+                          onClick={() => {
+                            setResumeData(prev => ({ 
+                              ...prev, 
+                              Achievements: [...prev.Achievements, ""] 
+                            }));
+                          }}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Achievement
+                        </Button>
+
+                        <Separator className="my-6" />
+
+                        <h3 className="text-lg font-semibold">References</h3>
+                        {resumeData.References.map((reference, index) => (
+                          <div key={index} className="border rounded-md p-4 space-y-2">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <Label htmlFor={`ref-${index}-name`}>Full Name</Label>
+                                <Input
+                                  id={`ref-${index}-name`}
+                                  placeholder="Enter reference's full name"
+                                  value={reference.Name}
+                                  onChange={(e) => updateArrayItem('References', index, { ...reference, Name: e.target.value })}
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor={`ref-${index}-title`}>Job Title</Label>
+                                <Input
+                                  id={`ref-${index}-title`}
+                                  placeholder="Enter reference's job title"
+                                  value={reference.Title}
+                                  onChange={(e) => updateArrayItem('References', index, { ...reference, Title: e.target.value })}
+                                />
+                              </div>
+                              <div className="md:col-span-2">
+                                <Label htmlFor={`ref-${index}-contact`}>Contact Information</Label>
+                                <Input
+                                  id={`ref-${index}-contact`}
+                                  placeholder="Enter email or phone number"
+                                  value={reference.Contact}
+                                  onChange={(e) => updateArrayItem('References', index, { ...reference, Contact: e.target.value })}
+                                />
+                              </div>
+                            </div>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => removeArrayItem('References', index)}
+                            >
+                              <X className="h-4 w-4 mr-2" />
+                              Remove
+                            </Button>
+                          </div>
+                        ))}
+                        <Button
+                          variant="secondary"
+                          onClick={() => addArrayItem('References', {
+                            Name: "",
+                            Title: "",
+                            Contact: ""
+                          })}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Reference
                         </Button>
                       </div>
                     </TabsContent>

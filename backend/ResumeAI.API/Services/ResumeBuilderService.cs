@@ -400,6 +400,28 @@ namespace ResumeAI.API.Services
                             }
                         }
                         
+                        // Handle projects within this experience
+                        if (expDict.TryGetValue("projects", out var expProjectsObj) && expProjectsObj is IEnumerable<object> expProjectItems)
+                        {
+                            expItem.Projects = new List<ProjectItem>();
+                            foreach (var projItem in expProjectItems)
+                            {
+                                if (projItem is IDictionary<string, object> projDict)
+                                {
+                                    var project = new ProjectItem();
+                                    if (projDict.TryGetValue("name", out var projName)) project.Name = projName?.ToString() ?? string.Empty;
+                                    if (projDict.TryGetValue("description", out var projDesc)) project.Description = projDesc?.ToString() ?? string.Empty;
+                                    if (projDict.TryGetValue("technologies", out var projTech)) project.Technologies = projTech?.ToString() ?? string.Empty;
+                                    
+                                    // Only add project if it has meaningful content
+                                    if (!string.IsNullOrEmpty(project.Name) || !string.IsNullOrEmpty(project.Description))
+                                    {
+                                        expItem.Projects.Add(project);
+                                    }
+                                }
+                            }
+                        }
+                        
                         resumeData.Experience.Add(expItem);
                     }
                 }
@@ -479,7 +501,8 @@ namespace ResumeAI.API.Services
                         Location = exp.Location,
                         StartDate = exp.StartDate,
                         EndDate = exp.EndDate,
-                        Description = string.Empty
+                        Description = string.Empty,
+                        Projects = new List<ProjectItem>(exp.Projects ?? new List<ProjectItem>())
                     };
                     
                     // Normalize description - ensure it's not empty and properly formatted
@@ -1720,8 +1743,10 @@ namespace ResumeAI.API.Services
                     templateHtml = "<html><body><p>No template available. Please select a different template.</p></body></html>";
                 }
                 
+                Console.WriteLine("=== GENERATE RESUME HTML DEBUG ===");
                 Console.WriteLine("Template HTML first 100 chars: " + templateHtml.Substring(0, Math.Min(100, templateHtml.Length)));
                 Console.WriteLine("Data type: " + data.GetType().Name);
+                Console.WriteLine($"Color parameter received: '{color ?? "null"}'");
                 
                 // Convert data to dictionary if it's a JObject
                 object templateData = data;
@@ -1743,6 +1768,7 @@ namespace ResumeAI.API.Services
                     processedDict["linkedin"] = resumeDataModel.LinkedIn ?? "";
                     processedDict["website"] = resumeDataModel.Website ?? "";
                     processedDict["summary"] = resumeDataModel.Summary ?? "";
+                    processedDict["photo"] = resumeDataModel.Photo ?? "";
                     
                     // Add experience
                     if (resumeDataModel.Experience != null && resumeDataModel.Experience.Count > 0)
@@ -1789,8 +1815,11 @@ namespace ResumeAI.API.Services
                     // Add skills
                     processedDict["skills"] = resumeDataModel.Skills?.Where(s => !string.IsNullOrWhiteSpace(s)).ToList() ?? new List<string>();
                     
-                    // Add color parameter
-                    processedDict["color"] = color ?? "#153559"; // Default navy color
+                    // Add color parameter (both cases for template compatibility)
+                    string finalColor = color ?? "#153559"; // Default navy color
+                    processedDict["color"] = finalColor;
+                    processedDict["Color"] = finalColor;
+                    Console.WriteLine($"Added color to processedDict: color='{finalColor}', Color='{finalColor}'");
                     
                     // Add certifications
                     if (resumeDataModel.Certifications != null && resumeDataModel.Certifications.Count > 0)
@@ -1828,6 +1857,27 @@ namespace ResumeAI.API.Services
                         processedDict["projects"] = new List<object>();
                     }
                     
+                    // Add references
+                    if (resumeDataModel.References != null && resumeDataModel.References.Count > 0)
+                    {
+                        processedDict["references"] = resumeDataModel.References
+                            .Where(r => r != null)
+                            .Select(r => new Dictionary<string, object>
+                            {
+                                ["name"] = r.Name ?? "",
+                                ["title"] = r.Title ?? "",
+                                ["contact"] = r.Contact ?? ""
+                            })
+                            .ToList();
+                    }
+                    else
+                    {
+                        processedDict["references"] = new List<object>();
+                    }
+                    
+                    // Add achievements
+                    processedDict["achievements"] = resumeDataModel.Achievements?.Where(a => !string.IsNullOrWhiteSpace(a)).ToList() ?? new List<string>();
+                    
                     // Add PascalCase versions for templates that use PascalCase
                     processedDict["Name"] = processedDict["name"];
                     processedDict["Title"] = processedDict["title"];
@@ -1837,11 +1887,14 @@ namespace ResumeAI.API.Services
                     processedDict["LinkedIn"] = processedDict["linkedin"];
                     processedDict["Website"] = processedDict["website"];
                     processedDict["Summary"] = processedDict["summary"];
+                    processedDict["Photo"] = processedDict["photo"];
                     processedDict["Experience"] = processedDict["experience"];
                     processedDict["Education"] = processedDict["education"];
                     processedDict["Skills"] = processedDict["skills"];
                     processedDict["Certifications"] = processedDict["certifications"];
                     processedDict["Projects"] = processedDict["projects"];
+                    processedDict["References"] = processedDict["references"];
+                    processedDict["Achievements"] = processedDict["achievements"];
                     
                     templateData = processedDict;
                 }
@@ -1918,8 +1971,11 @@ namespace ResumeAI.API.Services
                         }
                     }
                     
-                    // Add color parameter for JObject processing
-                    processedDict["color"] = color ?? "#153559"; // Default navy color
+                    // Add color parameter for JObject processing (both cases for template compatibility)
+                    string finalColor = color ?? "#153559"; // Default navy color
+                    processedDict["color"] = finalColor;
+                    processedDict["Color"] = finalColor;
+                    Console.WriteLine($"Added color to JObject processedDict: color='{finalColor}', Color='{finalColor}'");
                     
                     // Add PascalCase versions for templates that use PascalCase
                     if (processedDict.ContainsKey("name")) processedDict["Name"] = processedDict["name"];
@@ -1944,11 +2000,17 @@ namespace ResumeAI.API.Services
                 {
                     Console.WriteLine("Ensuring all required fields are present");
                     
-                    // Ensure color is always present
+                    // Ensure color is always present (both cases for template compatibility)
+                    string finalColor = color ?? "#153559"; // Default navy color
                     if (!dict.ContainsKey("color"))
                     {
-                        dict["color"] = color ?? "#153559"; // Default navy color
+                        dict["color"] = finalColor;
                     }
+                    if (!dict.ContainsKey("Color"))
+                    {
+                        dict["Color"] = finalColor;
+                    }
+                    Console.WriteLine($"Ensured color in dict: color='{dict["color"]}', Color='{dict["Color"]}'");
                     
                     // Ensure PascalCase versions are present for templates that use PascalCase
                     if (dict.ContainsKey("name") && !dict.ContainsKey("Name")) dict["Name"] = dict["name"];
@@ -2224,6 +2286,24 @@ namespace ResumeAI.API.Services
                     else
                     {
                         Console.WriteLine("Structured template detected - skipping auto-block addition");
+                    }
+                    
+                    // Debug: Log the final template data before compilation
+                    Console.WriteLine("=== FINAL TEMPLATE DATA BEFORE HANDLEBARS COMPILATION ===");
+                    if (templateData is Dictionary<string, object> finalDict)
+                    {
+                        Console.WriteLine($"Template data keys: {string.Join(", ", finalDict.Keys)}");
+                        if (finalDict.ContainsKey("color"))
+                            Console.WriteLine($"color value: '{finalDict["color"]}'");
+                        if (finalDict.ContainsKey("Color"))
+                            Console.WriteLine($"Color value: '{finalDict["Color"]}'");
+                        if (finalDict.ContainsKey("name"))
+                            Console.WriteLine($"name value: '{finalDict["name"]}'");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Template data type: {templateData?.GetType().Name ?? "null"}");
+                        Console.WriteLine($"Template data: {JsonConvert.SerializeObject(templateData)}");
                     }
                     
                     // Compile the template

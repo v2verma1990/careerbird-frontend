@@ -184,6 +184,33 @@
           </div>
         {{/each}}
       {{/if}}
+
+      {{#if achievements}}
+        <div class="section-header" style="margin-top:19px;">Achievements</div>
+        {{#each achievements}}
+          <div style="margin-bottom:8px; padding-left:15px; position:relative;">
+            <div style="position:absolute; left:0; top:0; color:#a4814c; font-weight:bold;">•</div>
+            {{this}}
+          </div>
+        {{/each}}
+      {{/if}}
+
+      {{#if references}}
+        <div class="section-header" style="margin-top:19px;">References</div>
+        {{#each references}}
+          <div style="margin-bottom:12px;">
+            <div class="employment-title">{{name}}</div>
+            {{#if title}}<div class="employment-meta">{{title}}</div>{{/if}}
+            {{#if contact}}<div style="color:#666; font-size:0.9em;">{{contact}}</div>{{/if}}
+          </div>
+        {{/each}}
+      {{/if}}
+
+      {{#unless references}}{{#unless achievements}}
+        <div style="margin-top:19px; text-align:center; color:#666; font-style:italic;">
+          References available upon request
+        </div>
+      {{/unless}}{{/unless}}
     </div>
     <div class="right-sidebar">
       <div class="sidebar-label">Address</div>

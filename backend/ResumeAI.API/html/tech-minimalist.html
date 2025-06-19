@@ -278,6 +278,50 @@
             {{/each}}
         </div>
         {{/if}}
+
+        {{#if certifications}}
+        <div class="section">
+            <div class="section-header">// CERTIFICATIONS</div>
+            {{#each certifications}}
+            <div class="certification-item">
+                <div class="item-title">{{name}}</div>
+                <div class="item-meta">{{issuer}}{{#if date}} | {{date}}{{/if}}</div>
+            </div>
+            {{/each}}
+        </div>
+        {{/if}}
+
+        {{#if achievements}}
+        <div class="section">
+            <div class="section-header">// ACHIEVEMENTS</div>
+            <div class="code-block"><span class="keyword">const</span> <span class="variable">achievements</span> = [
+{{#each achievements}}  <span class="string">"{{this}}"</span>,
+{{/each}}];</div>
+        </div>
+        {{/if}}
+
+        {{#if references}}
+        <div class="section">
+            <div class="section-header">// REFERENCES</div>
+            {{#each references}}
+            <div class="reference-item">
+                <div class="function-signature">{{name}}() {</div>
+                <div class="item-meta">
+                    {{#if title}}<span class="comment">// Title: {{title}}</span><br>{{/if}}
+                    {{#if contact}}<span class="comment">// Contact: {{contact}}</span>{{/if}}
+                </div>
+                <div>}</div>
+            </div>
+            {{/each}}
+        </div>
+        {{/if}}
+
+        {{#unless references}}{{#unless achievements}}
+        <div class="section">
+            <div class="section-header">// REFERENCES</div>
+            <div class="code-block"><span class="comment">// References available upon request</span></div>
+        </div>
+        {{/unless}}{{/unless}}
     </div>
 </body>
 </html>
