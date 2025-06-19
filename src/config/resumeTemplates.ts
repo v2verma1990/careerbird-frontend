@@ -54,7 +54,7 @@ export const RESUME_TEMPLATES: Template[] = [
     id: "tech-minimalist",
     name: "Tech Minimalist",
     description: "Clean, minimal design for tech professionals",
-    thumbnail: "/resume-templates/thumbnails/tech.PNG",
+    thumbnail: "/lovable-uploads/tech-minimalist.PNG",
     category: "tech",
     color: "green",
     isNew: true,

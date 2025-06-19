@@ -136,6 +136,7 @@ export const exportResumeAsPDF = async (
     // Get the element to export
     const element = document.getElementById(elementId);
     if (!element) {
+      showErrorToast(`Export failed: Could not find resume preview in the page. Please make sure the preview is visible before exporting.`);
       throw new Error(`Element with ID '${elementId}' not found`);
     }
 
@@ -210,7 +211,7 @@ export const exportResumeAsPDF = async (
       });
 
       // Handle multi-page content properly
-      await handleMultiPageContent(pdf, canvas, config, pageWidth, pageHeight, scaledWidth, scaledHeight);
+      await handleMultiPageContent(pdf, canvas, config, pageWidth, pageHeight, scaledWidth);
 
       // Save the PDF
       pdf.save(`${filename}.pdf`);
@@ -223,6 +224,11 @@ export const exportResumeAsPDF = async (
 
     } catch (error) {
       hideLoadingToast(loadingToast);
+      // Prevent fallback to API if the error is due to missing preview element
+      if (error.message && error.message.includes("not found")) {
+        showErrorToast('Resume export failed: Resume preview is not visible. Please open the preview and try again.');
+        return;
+      }
       throw error;
     } finally {
       // Restore element after PDF export
@@ -346,85 +352,102 @@ const optimizeClonedDocumentForPDF = (clonedDoc: Document, config: Required<PDFE
       background: white !important;
       overflow: visible !important;
     }
-    
-    /* Ensure proper spacing and avoid compression */
-    section, .section, .resume-section {
-      margin-bottom: 20px !important;
-      page-break-inside: avoid;
-    }
-    
-    /* Fix flexbox layouts that might compress content */
-    .flex, .d-flex, [style*="display: flex"] {
-      display: block !important;
-      height: auto !important;
-    }
-    
-    /* Ensure proper rendering of two-column layouts */
-    .sidebar, .content {
-      page-break-inside: avoid;
-      display: block !important;
-      height: auto !important;
-      min-height: auto !important;
-    }
-    
-    .sidebar {
-      float: left !important;
-      width: 30% !important;
-      margin-right: 3% !important;
-    }
-    
-    .content {
-      float: right !important;
-      width: 67% !important;
-    }
-    
-    /* Ensure text doesn't get compressed */
-    p, div, span, h1, h2, h3, h4, h5, h6 {
-      line-height: 1.4 !important;
-      margin-bottom: 8px !important;
-    }
-    
-    /* Fix any absolute positioning that might cause issues */
-    [style*="position: absolute"], [style*="position: fixed"] {
-      position: relative !important;
-    }
-    
-    /* Ensure proper image sizing */
-    img {
-      max-width: 100% !important;
-      height: auto !important;
-    }
-
-    /* Creative Designer template overrides */
+    /* --- TECH MINIMALIST TEMPLATE OVERRIDES --- */
     .container {
-      display: flex !important;
-      flex-direction: row !important;
-      width: 794px !important;
-      max-width: none !important;
-      min-height: auto !important;
-      height: auto !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      background: white !important;
-      overflow: visible !important;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace !important;
+      background: #fff !important;
+      color: #1a202c !important;
+      max-width: 8.5in !important;
+      min-height: 11in !important;
+      padding: 1in !important;
     }
-    .sidebar {
-      width: 240px !important;
-      min-width: 200px !important;
-      max-width: 260px !important;
-      flex-shrink: 0 !important;
-      float: left !important;
-      margin-right: 0 !important;
-      box-sizing: border-box !important;
+    .terminal-header {
+      background: #2d3748 !important;
+      color: #68d391 !important;
+      font-family: monospace !important;
     }
-    .main-content {
-      flex: 1 1 0% !important;
-      width: auto !important;
-      min-width: 0 !important;
-      max-width: none !important;
-      float: right !important;
-      box-sizing: border-box !important;
+    .terminal-content {
+      background: #1a202c !important;
+      color: #e2e8f0 !important;
+      font-family: monospace !important;
     }
+    .name-display {
+      color: #fbb6ce !important;
+    }
+    .title-display {
+      color: #90cdf4 !important;
+    }
+    .contact-display {
+      color: #faf089 !important;
+    }
+    .section-header {
+      color: #059669 !important;
+      background: #f7fafc !important;
+      font-family: monospace !important;
+    }
+    .code-block {
+      background: #f7fafc !important;
+      font-family: monospace !important;
+    }
+    .function-signature {
+      color: #805ad5 !important;
+    }
+    .comment {
+      color: #718096 !important;
+    }
+    .variable {
+      color: #d69e2e !important;
+    }
+    .string {
+      color: #38a169 !important;
+    }
+    .keyword {
+      color: #3182ce !important;
+    }
+    .experience-item, .education-item, .project-item {
+      background: #f8f9fa !important;
+      border-left: 4px solid #e2e8f0 !important;
+    }
+    .item-title {
+      color: #2d3748 !important;
+    }
+    .item-meta {
+      color: #718096 !important;
+    }
+    .skills-grid {
+      background: none !important;
+    }
+    .skill-category {
+      background: #edf2f7 !important;
+      border-left: 3px solid #059669 !important;
+    }
+    .skill-list {
+      color: #4a5568 !important;
+    }
+    /* Prevent page breaks inside important blocks for tech-minimalist */
+    .section, .experience-item, .education-item, .project-item, .certification-item, .reference-item {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+      box-decoration-break: clone !important;
+      background: #fff !important;
+      padding-bottom: 48px !important;
+      margin-bottom: 48px !important;
+    }
+    /* Add extra white background to all pages */
+    body, .container {
+      background: #fff !important;
+    }
+    /* Add a visible gap between items to reduce cut-off */
+    .experience-item, .education-item, .project-item, .certification-item, .reference-item {
+      border-bottom: 12px solid #fff !important;
+    }
+    @media print {
+      .container {
+        max-width: none !important;
+        padding: 0.5in !important;
+      }
+    }
+    /* --- END TECH MINIMALIST OVERRIDES --- */
   `;
   clonedDoc.head.appendChild(style);
 };
@@ -438,17 +461,18 @@ const handleMultiPageContent = async (
   config: Required<PDFExportOptions>,
   pageWidth: number,
   pageHeight: number,
-  scaledWidth: number,
-  scaledHeight: number
+  scaledWidth: number
 ): Promise<void> => {
   const contentHeight = pageHeight - config.margin.top - config.margin.bottom;
   const canvasHeight = canvas.height;
   const canvasWidth = canvas.width;
   const scale = config.scale;
-  
+  const contentWidth = pageWidth - config.margin.left - config.margin.right;
+  const scaledHeight = (canvasHeight / config.scale) * (contentWidth / (canvasWidth / config.scale));
+
   // Calculate how much canvas height fits in one page
   const canvasHeightPerPage = (contentHeight / scaledHeight) * canvasHeight;
-  
+
   let yPosition = 0;
   let pageNumber = 0;
 
@@ -462,12 +486,12 @@ const handleMultiPageContent = async (
     const sourceY = yPosition;
     const remainingHeight = canvasHeight - yPosition;
     const sourceHeight = Math.min(canvasHeightPerPage, remainingHeight);
-    
+
     // Create a temporary canvas for this page slice
     const pageCanvas = document.createElement('canvas');
     pageCanvas.width = canvasWidth;
     pageCanvas.height = sourceHeight;
-    
+
     const pageCtx = pageCanvas.getContext('2d');
     if (pageCtx) {
       // Draw the slice of the original canvas onto the page canvas
@@ -481,10 +505,10 @@ const handleMultiPageContent = async (
 
       // Convert page canvas to image
       const pageImgData = pageCanvas.toDataURL('image/jpeg', config.quality);
-      
+
       // Calculate the height for this page slice in PDF units
       const pageSliceHeight = (sourceHeight / canvasHeight) * scaledHeight;
-      
+
       // Add the image to the PDF
       pdf.addImage(
         pageImgData, 

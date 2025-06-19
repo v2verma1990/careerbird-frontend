@@ -151,10 +151,17 @@ export const ResumePreviewWithExport: React.FC<ResumePreviewWithExportProps> = (
               Print
             </Button>
           </div>
-          
           <p className="text-sm text-muted-foreground mt-2">
-            The PDF will be generated exactly as shown in the preview below.
-            Use "Preview Mode" to see how it will look when exported.
+            The PDF will be generated exactly as shown in the preview below.<br/>
+            <strong>For best results and perfect formatting, use your browser's <u>Print to PDF</u> feature:</strong><br/>
+            <span>
+              <ol className="list-decimal ml-4">
+                <li>Click the <b>Print</b> button above or press <b>Ctrl+P</b> (Windows) / <b>Cmd+P</b> (Mac).</li>
+                <li>Select <b>Save as PDF</b> as the printer.</li>
+                <li>Adjust margins and layout as needed.</li>
+                <li>Click <b>Save</b> to download your perfectly formatted PDF.</li>
+              </ol>
+            </span>
           </p>
         </CardContent>
       </Card>
