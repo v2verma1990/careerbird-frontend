@@ -351,19 +351,8 @@ namespace ResumeAI.API.Services
                 
                 if (subscriptions.Count == 0)
                 {
-                    // Return an in-memory free subscription (do NOT insert into DB)
-                    return new Subscription
-                    {
-                        id = string.Empty,
-                        user_id = userId,
-                        subscription_type = "free",
-                        start_date = DateTime.UtcNow,
-                        end_date = null,
-                        created_at = DateTime.UtcNow,
-                        updated_at = DateTime.UtcNow,
-                        is_active = true,
-                        is_cancelled = false
-                    };
+                    Console.WriteLine($"No subscriptions found for user: {userId}");
+                    throw new InvalidOperationException($"No subscription found for user {userId}. Please contact support to set up your subscription.");
                 }
                 
                 // Log all subscriptions for debugging
@@ -402,41 +391,15 @@ namespace ResumeAI.API.Services
                     return activeSubscription;
                 }
                 
-                // If no active subscription found, return a free subscription
-                Console.WriteLine("No active subscription found, returning free subscription");
-                
-                // We don't want to look for any other subscriptions - if we get here, the user should be on the free plan
-                var freeSubscription = new Subscription
-                {
-                    id = string.Empty,
-                    user_id = userId,
-                    subscription_type = "free",
-                    start_date = DateTime.UtcNow,
-                    end_date = null,
-                    created_at = DateTime.UtcNow,
-                    updated_at = DateTime.UtcNow,
-                    is_active = true,
-                    is_cancelled = false
-                };
-                
-                return freeSubscription;
+                // If no active subscription found, throw error instead of defaulting to free
+                Console.WriteLine("No active subscription found for user");
+                throw new InvalidOperationException($"No active subscription found for user {userId}. All subscriptions are either expired, cancelled, or inactive. Please contact support.");
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Exception in GetUserSubscriptionAsync: {ex.Message}");
-                // Return an in-memory free subscription (do NOT insert into DB)
-                return new Subscription
-                {
-                    id = string.Empty,
-                    user_id = userId,
-                    subscription_type = "free",
-                    start_date = DateTime.UtcNow,
-                    end_date = null,
-                    created_at = DateTime.UtcNow,
-                    updated_at = DateTime.UtcNow,
-                    is_active = true,
-                    is_cancelled = false
-                };
+                // Re-throw the exception instead of defaulting to free subscription
+                throw new InvalidOperationException($"Error retrieving subscription for user {userId}: {ex.Message}", ex);
             }
         }
 

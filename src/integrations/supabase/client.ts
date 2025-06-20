@@ -8,4 +8,19 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  auth: {
+    // Set JWT expiration to 2 hours (7200 seconds)
+    // This will force re-authentication after 2 hours
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    // Custom JWT expiration - 2 hours
+    flowType: 'pkce'
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'careerbird-frontend'
+    }
+  }
+});

@@ -35,7 +35,11 @@ const Index = () => {
         console.log("Redirecting recruiter to /dashboard");
         navigate('/dashboard', { replace: true });
       } else if (userType === 'candidate') {
-        if (subscriptionStatus?.type === 'free') {
+        if (subscriptionStatus === null) {
+          console.log("Subscription status is null - not redirecting");
+          // Don't redirect, let the user stay on the home page or show error
+          return;
+        } else if (subscriptionStatus?.type === 'free') {
           console.log("Redirecting free candidate to /free-plan-dashboard");
           navigate('/free-plan-dashboard', { replace: true });
         } else {

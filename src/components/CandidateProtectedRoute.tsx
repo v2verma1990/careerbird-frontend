@@ -56,6 +56,29 @@ export default function CandidateProtectedRoute({ children }: { children: JSX.El
     console.log("User not authenticated or not a candidate, redirecting to login");
     return <Navigate to="/login" replace />;
   }
+
+  // If subscription status is null (backend error), show error instead of redirecting
+  if (subscriptionStatus === null) {
+    console.log("Subscription status is null - backend may be unavailable");
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-center">
+          <div className="text-red-600 text-xl font-semibold mb-4">
+            Subscription Service Unavailable
+          </div>
+          <p className="text-gray-600 mb-4">
+            Unable to load your subscription information. Please contact support or try again later.
+          </p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
   
   // Handle subscription-specific routing
   const currentPath = location.pathname;

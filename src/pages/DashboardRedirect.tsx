@@ -34,7 +34,11 @@ export default function DashboardRedirect() {
       console.log("User is a recruiter, redirecting to recruiter dashboard");
       dashboardPath = '/dashboard';
     } else if (userType === 'candidate') {
-      if (subscriptionStatus?.type === 'free' || !subscriptionStatus?.active) {
+      if (subscriptionStatus === null) {
+        console.log("Subscription status is null - showing error instead of redirecting");
+        // Don't redirect, let the component handle the null state
+        return;
+      } else if (subscriptionStatus?.type === 'free' || !subscriptionStatus?.active) {
         console.log("User is a candidate with free plan, redirecting to free dashboard");
         dashboardPath = '/free-plan-dashboard';
       } else {
@@ -47,6 +51,28 @@ export default function DashboardRedirect() {
     navigate(dashboardPath, { replace: true });
   }, [user, userType, subscriptionStatus, restoringSession, navigate]);
   
+  // Show error if subscription status is null for candidates
+  if (user && userType === 'candidate' && subscriptionStatus === null && !restoringSession) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-center">
+          <div className="text-red-600 text-xl font-semibold mb-4">
+            Subscription Service Unavailable
+          </div>
+          <p className="text-gray-600 mb-4">
+            Unable to load your subscription information. Please contact support or try again later.
+          </p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex justify-center items-center h-screen">
       <div className="text-center">

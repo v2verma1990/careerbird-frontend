@@ -20,6 +20,53 @@ export const AuthProvider = ({ children }) => {
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
   const [subscriptionLoading, setSubscriptionLoading] = useState(false);
   const [restoringSession, setRestoringSession] = useState(true); // Start with true to prevent flashing
+  const [sessionTimeout, setSessionTimeout] = useState(null);
+
+  // Session timeout management
+  const startSessionTimeout = () => {
+    // Clear existing timeout
+    if (sessionTimeout) {
+      clearTimeout(sessionTimeout);
+    }
+    
+    // Set new timeout for 2 hours (7200000 milliseconds)
+    const timeout = setTimeout(() => {
+      console.log("Session timeout reached, logging out user");
+      signOut();
+      toast({
+        variant: "destructive",
+        title: "Session Expired",
+        description: "You have been logged out due to inactivity."
+      });
+    }, 2 * 60 * 60 * 1000); // 2 hours
+    
+    setSessionTimeout(timeout);
+  };
+
+  const resetSessionTimeout = () => {
+    if (user) {
+      startSessionTimeout();
+    }
+  };
+
+  // Reset session timeout on user activity
+  useEffect(() => {
+    if (user) {
+      const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+      
+      const resetTimeout = () => resetSessionTimeout();
+      
+      events.forEach(event => {
+        document.addEventListener(event, resetTimeout, true);
+      });
+      
+      return () => {
+        events.forEach(event => {
+          document.removeEventListener(event, resetTimeout, true);
+        });
+      };
+    }
+  }, [user]);
 
   /**
    * Fetch the user's subscription data.
@@ -48,13 +95,8 @@ export const AuthProvider = ({ children }) => {
       const { data, error } = await api.subscription.getUserSubscription();
       if (error) {
         console.error("Error fetching subscription:", error);
-        // Set a default free subscription if there's an error
-        setSubscriptionStatus({
-          active: true,
-          type: 'free',
-          endDate: null,
-          cancelled: false,
-        });
+        // Don't default to free - show the actual error
+        throw new Error(`Subscription error: ${error}`);
       } else {
         console.log("Fetched Subscription Data:", data);
         setSubscriptionStatus({
@@ -66,12 +108,13 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error("Error in fetchSubscriptionStatus:", error);
-      // Set a default free subscription if there's an exception
-      setSubscriptionStatus({
-        active: true,
-        type: 'free',
-        endDate: null,
-        cancelled: false,
+      // Don't set default subscription - let the error bubble up
+      setSubscriptionStatus(null);
+      // Show error toast to user
+      toast({
+        variant: "destructive",
+        title: "Subscription Error",
+        description: error.message || "Unable to load subscription information. Please contact support."
       });
     } finally {
       setSubscriptionLoading(false);
@@ -100,6 +143,47 @@ export const AuthProvider = ({ children }) => {
         
         if (supabaseSession?.user) {
           console.log("Session found, user ID:", supabaseSession.user.id);
+          
+          // Check if token is expired (2 hours = 7200 seconds)
+          const tokenExp = supabaseSession.expires_at;
+          const currentTime = Math.floor(Date.now() / 1000);
+          
+          if (tokenExp && (tokenExp - currentTime) < 0) {
+            console.log("Token has expired, clearing session");
+            await supabase.auth.signOut();
+            setSession(null);
+            setUser(null);
+            setUserType(null);
+            setProfile(null);
+            setSubscriptionStatus(null);
+            toast({
+              variant: "destructive",
+              title: "Session Expired",
+              description: "Your session has expired. Please log in again."
+            });
+            return;
+          }
+          
+          // Check if token will expire soon (within 10 minutes) and refresh
+          if (tokenExp && (tokenExp - currentTime) < 600) {
+            console.log("Token expiring soon, attempting refresh");
+            const { error } = await supabase.auth.refreshSession();
+            if (error) {
+              console.error("Failed to refresh token:", error);
+              await supabase.auth.signOut();
+              setSession(null);
+              setUser(null);
+              setUserType(null);
+              setProfile(null);
+              setSubscriptionStatus(null);
+              toast({
+                variant: "destructive",
+                title: "Session Expired",
+                description: "Unable to refresh your session. Please log in again."
+              });
+              return;
+            }
+          }
           
           // Set session and user state
           const userData = { 
@@ -154,15 +238,18 @@ export const AuthProvider = ({ children }) => {
             }
           } catch (error) {
             console.error("Error fetching profile or subscription:", error);
+            // Don't set default subscription data - let the error be handled
             profileData = {
               userType: defaultUserType,
-              subscriptionType: 'free',
+              subscriptionType: null,
             };
-            subscriptionData = {
-              active: 'free',
-              type: 'free',
-              endDate: null,
-            };
+            subscriptionData = null;
+            // Show error to user
+            toast({
+              variant: "destructive",
+              title: "Authentication Error",
+              description: "Unable to load user subscription. Please try logging in again or contact support."
+            });
           }
           
           // Batch update all state at once
@@ -174,6 +261,9 @@ export const AuthProvider = ({ children }) => {
           setUserType(profileData.userType);
           setProfile(profileData);
           setSubscriptionStatus(subscriptionData);
+          
+          // Start session timeout
+          startSessionTimeout();
           
         } else {
           console.log("No session found, user is not authenticated");
@@ -252,6 +342,9 @@ export const AuthProvider = ({ children }) => {
           subscriptionType: data.profile?.subscriptionType || 'free',
         });
         
+        // Start session timeout
+        startSessionTimeout();
+        
         // Show success toast
         toast({ title: "Signed in successfully!" });
         
@@ -262,13 +355,16 @@ export const AuthProvider = ({ children }) => {
           
           if (subscriptionError) {
             console.error("Error fetching subscription:", subscriptionError);
-            // Set default subscription if there's an error
-            setSubscriptionStatus({
-              active: true,
-              type: 'free',
-              endDate: null,
-              cancelled: false,
+            // Don't default to free - show error and redirect to safe page
+            setSubscriptionStatus(null);
+            toast({
+              variant: "destructive",
+              title: "Subscription Error",
+              description: "Unable to load subscription information. Please contact support."
             });
+            // Redirect to a safe page
+            navigate("/", { replace: true });
+            return;
           } else {
             console.log("Subscription data received:", subscriptionData);
             // Set the actual subscription data
@@ -316,22 +412,16 @@ export const AuthProvider = ({ children }) => {
           }
         } catch (error) {
           console.error("Error in subscription fetch:", error);
-          // Set default subscription if there's an exception
-          setSubscriptionStatus({
-            active: true,
-            type: 'free',
-            endDate: null,
-            cancelled: false,
+          // Don't set default subscription - show error
+          setSubscriptionStatus(null);
+          toast({
+            variant: "destructive",
+            title: "Subscription Error",
+            description: "Unable to load subscription information. Please contact support."
           });
           
-          // Navigate to a safe default
-          if (data.profile?.userType === "recruiter") {
-            console.log("Error occurred, but still navigating to recruiter dashboard");
-            navigate("/dashboard", { replace: true });
-          } else {
-            console.log("Error occurred, navigating to free plan dashboard");
-            navigate("/free-plan-dashboard", { replace: true });
-          }
+          // Navigate to home page instead of dashboard
+          navigate("/", { replace: true });
         } finally {
           // Set restoring session to false after navigation
           setTimeout(() => {
