@@ -1,5 +1,9 @@
-/* ResumeBuilderApp styles */
+/* DEPRECATED - Use centralized templates.css instead */
+/* This file is kept for backward compatibility only */
 
+@import './templates.css';
+
+/* Legacy template color variable - will be removed */
 .template-color {
-  background-color: var(--template-color, #6b7280);
+  background-color: var(--template-color, #315389);
 }

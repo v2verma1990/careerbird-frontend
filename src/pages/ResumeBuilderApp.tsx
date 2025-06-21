@@ -8,16 +8,19 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Upload, FileText, Download, Eye, User, Briefcase, GraduationCap, Award, Code, Plus, X, Sparkles, Zap, FileCheck, ArrowLeft, ArrowRight, Edit, Palette, Camera, Image } from 'lucide-react';
+import { Upload, FileText, Download, Eye, User, Briefcase, GraduationCap, Award, Code, Plus, X, Sparkles, Zap, FileCheck, ArrowLeft, ArrowRight, Edit, Palette, Camera, Image, RefreshCw } from 'lucide-react';
 import ResumeFileUploader from '@/components/ResumeFileUploader';
 import { resumeBuilderApi } from '@/utils/resumeBuilderApi';
 import { useToast } from '@/hooks/use-toast';
 import apiClient from '@/utils/apiClient';
 import { useResume } from "@/contexts/resume/ResumeContext";
+import { useResumeColors } from "@/contexts/resume/ResumeColorContext";
+import { templateRenderingService } from '@/services/templateRenderingService';
 import Handlebars from 'handlebars';
 import TemplateColorPicker from "@/components/resume/TemplateColorPicker";
-import styles from './ResumeBuilderApp.module.css';
 import { getAllTemplates, type Template } from '@/config/resumeTemplates';
+// Import centralized styles
+import '@/styles/templates.css';
 
 // Use centralized template configuration
 const templates = getAllTemplates();
@@ -547,6 +550,29 @@ const ResumeBuilderApp = () => {
     }
   }, [photoPreview]);
 
+  // Targeted reset when component mounts (when coming back from preview)
+  useEffect(() => {
+    console.log('ResumeBuilderApp - Component mounted, performing targeted template reset');
+    
+    // Clear only template rendering caches and styles
+    templateRenderingService.clearAllCaches();
+    templateRenderingService.forceClearSidebarColors();
+    
+    // Only clear template-related DOM styles from resume containers
+    const resumeContainers = document.querySelectorAll('#resume-preview-container, .resume-preview-container, .resume-container');
+    resumeContainers.forEach(container => {
+      const elementsWithStyles = container.querySelectorAll('[style]');
+      elementsWithStyles.forEach((element: HTMLElement) => {
+        if (element.style.cssText.includes('background') || element.style.cssText.includes('color')) {
+          console.log('ResumeBuilderApp - Clearing template styles from:', element.tagName);
+          element.removeAttribute('style');
+        }
+      });
+    });
+    
+    console.log('ResumeBuilderApp - Targeted reset completed');
+  }, []); // Run only once on mount
+
   // Initialize color from URL parameters
   useEffect(() => {
     const template = searchParams.get('template');
@@ -612,17 +638,25 @@ const ResumeBuilderApp = () => {
   // Handler for color selection
   const handleColorSelect = (templateId: string, color: string) => {
     console.log(`Color selected for template ${templateId}: ${color}`);
+    
+    // MINI NUCLEAR RESET when color changes to prevent any color persistence
+    console.log('ResumeBuilderApp - Color changed, performing mini nuclear reset');
+    templateRenderingService.clearAllCaches();
+    templateRenderingService.forceClearSidebarColors();
+    
     setTemplateColors(prev => {
       const newColors = { ...prev, [templateId]: color };
       console.log('Updated template colors:', newColors);
       return newColors;
     });
+    
     // Update the color in the URL search params for preview to pick up
     setSearchParams(prev => ({
       ...Object.fromEntries([...searchParams]),
       template: templateId,
       color: encodeURIComponent(color)
     }));
+    
     // Do NOT auto-generate the resume here; generation should only happen on explicit user action
   };
 
@@ -687,8 +721,26 @@ const ResumeBuilderApp = () => {
         }))
       };
 
+      console.log('=== RESUME EXTRACTION DEBUG ===');
+      console.log('Raw API response data:', data);
+      console.log('Mapped data before update:', mappedData);
+      console.log('Basic fields:', {
+        Name: mappedData.Name,
+        Title: mappedData.Title,
+        Email: mappedData.Email,
+        Phone: mappedData.Phone,
+        Summary: mappedData.Summary
+      });
+      
       updateResumeData(mappedData);
       setHasDefaultResume(true); // Only set to true on success
+      
+      // Wait a bit and then check if the state was actually updated
+      setTimeout(() => {
+        console.log('Current resumeData state after update:', resumeData);
+        console.log('State update verification - Name field:', resumeData.Name);
+      }, 100);
+      
       console.log('Resume data after extraction:', mappedData);
       console.log('Experience count:', mappedData.Experience?.length || 0);
       console.log('Education count:', mappedData.Education?.length || 0);
@@ -843,8 +895,45 @@ const ResumeBuilderApp = () => {
   const generateResume = async () => {
     setIsGenerating(true);
     try {
-      // Get the selected color for the template
+      // ALWAYS use the currently selected color - no caching, no storage lookup
       const selectedColor = templateColors[selectedTemplate] || "#2196F3";
+      
+      console.log('=== GENERATING COMPLETELY FRESH RESUME ===');
+      console.log('Selected template:', selectedTemplate);
+      console.log('Selected color (FRESH):', selectedColor);
+      
+      // NUCLEAR RESET: Clear everything that could possibly interfere
+      console.log('ResumeBuilderApp: Performing NUCLEAR RESET of all caches and styles');
+      
+      // Clear all template rendering caches
+      templateRenderingService.clearAllCaches();
+      
+      // Force clear sidebar colors multiple times to be absolutely sure
+      templateRenderingService.forceClearSidebarColors();
+      
+      // Only clear specific template-related localStorage items, not all
+      const templateKeysToRemove = [
+        'templateColors',
+        'selectedTemplate',
+        'lastUsedTemplate'
+      ];
+      templateKeysToRemove.forEach(key => {
+        if (localStorage.getItem(key)) {
+          console.log('ResumeBuilderApp: Removing template localStorage key:', key);
+          localStorage.removeItem(key);
+        }
+      });
+      
+      // Only clear specific template-related sessionStorage items
+      templateKeysToRemove.forEach(key => {
+        if (sessionStorage.getItem(key)) {
+          console.log('ResumeBuilderApp: Removing template sessionStorage key:', key);
+          sessionStorage.removeItem(key);
+        }
+      });
+      
+      // Wait a moment for all clearing operations to complete
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       // Transform resume data to match template expectations and add color
       console.log('=== DEBUGGING RESUME GENERATION ===');
@@ -1111,8 +1200,16 @@ const ResumeBuilderApp = () => {
   const generateResumeViaAI = async () => {
     setIsGenerating(true);
     try {
-      // Get the selected color for the template
+      // ALWAYS use the currently selected color - no caching, no storage lookup
       const selectedColor = templateColors[selectedTemplate] || "#2196F3";
+      
+      console.log('=== GENERATING FRESH RESUME VIA AI ===');
+      console.log('Selected template:', selectedTemplate);
+      console.log('Selected color (FRESH):', selectedColor);
+      
+      // Clear ALL caches and storage to ensure fresh generation
+      templateRenderingService.clearAllCaches();
+      templateRenderingService.forceClearSidebarColors();
       
       // Transform resume data to match template expectations and add color
       const transformedData = transformDataForTemplate(resumeData);

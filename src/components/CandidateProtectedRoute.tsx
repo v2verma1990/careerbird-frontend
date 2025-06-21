@@ -22,23 +22,32 @@ export default function CandidateProtectedRoute({ children }: { children: JSX.El
     return () => clearTimeout(timer);
   }, [restoringSession]);
   
-  // Debug effect to track auth state changes
+  // Memoize subscription status to prevent unnecessary re-renders due to Date object recreation
+  const stableSubscriptionStatus = React.useMemo(() => {
+    if (!subscriptionStatus) return null;
+    return {
+      type: subscriptionStatus.type,
+      active: subscriptionStatus.active,
+      cancelled: subscriptionStatus.cancelled,
+      endDate: subscriptionStatus.endDate ? subscriptionStatus.endDate.getTime() : null // Use timestamp instead of Date object
+    };
+  }, [subscriptionStatus?.type, subscriptionStatus?.active, subscriptionStatus?.cancelled, subscriptionStatus?.endDate?.getTime()]);
+
+  // Debug effect to track auth state changes (reduced logging)
   React.useEffect(() => {
-    console.log("CandidateProtectedRoute auth state:", {
-      user: !!user,
-      userType,
-      subscriptionStatus: subscriptionStatus ? { 
-        type: subscriptionStatus.type, 
-        active: subscriptionStatus.active,
-        cancelled: subscriptionStatus.cancelled,
-        endDate: subscriptionStatus.endDate ? subscriptionStatus.endDate.toString() : null
-      } : null,
-      subscriptionLoading,
-      restoringSession,
-      componentTimeout,
-      path: location.pathname
-    });
-  }, [user, userType, subscriptionStatus, subscriptionLoading, restoringSession, componentTimeout, location.pathname]);
+    // Only log when there are significant state changes, not on every render
+    if (restoringSession || subscriptionLoading || componentTimeout) {
+      console.log("CandidateProtectedRoute auth state change:", {
+        user: !!user,
+        userType,
+        subscriptionType: stableSubscriptionStatus?.type,
+        subscriptionLoading,
+        restoringSession,
+        componentTimeout,
+        path: location.pathname
+      });
+    }
+  }, [user, userType, stableSubscriptionStatus, subscriptionLoading, restoringSession, componentTimeout, location.pathname]);
   
   // Check if we're coming from the account page
   const isFromAccountPage = React.useMemo(() => {
@@ -111,46 +120,35 @@ export default function CandidateProtectedRoute({ children }: { children: JSX.El
         // Handle subscription-specific routing
         const currentPath = location.pathname;
         
-        // Enhanced logging for subscription routing decisions
-        console.log("CandidateProtectedRoute - Making routing decision:", {
-          currentPath,
-          subscriptionType: subscriptionStatus?.type,
-          subscriptionActive: subscriptionStatus?.active,
-          subscriptionCancelled: subscriptionStatus?.cancelled,
-          subscriptionEndDate: subscriptionStatus?.endDate ? subscriptionStatus.endDate.toString() : null,
-          userType,
-          decision: "analyzing..."
-        });
+        // Check if user has an active non-free subscription using stable subscription status
+        const hasActivePaidSubscription = stableSubscriptionStatus && 
+          stableSubscriptionStatus.type !== 'free' && 
+          stableSubscriptionStatus.active && 
+          (!stableSubscriptionStatus.cancelled || (stableSubscriptionStatus.endDate && Date.now() < stableSubscriptionStatus.endDate));
         
-        // Check if user has an active non-free subscription
-        const hasActivePaidSubscription = subscriptionStatus && 
-          subscriptionStatus.type !== 'free' && 
-          subscriptionStatus.active && 
-          (!subscriptionStatus.cancelled || (subscriptionStatus.endDate && new Date() < subscriptionStatus.endDate));
+        // Only log when there's a potential redirect or on specific paths
+        const shouldLog = currentPath === '/free-plan-dashboard' || currentPath === '/candidate-dashboard';
         
-        console.log("CandidateProtectedRoute - Subscription analysis:", {
-          hasActivePaidSubscription,
-          type: subscriptionStatus?.type,
-          active: subscriptionStatus?.active,
-          cancelled: subscriptionStatus?.cancelled,
-          endDateInFuture: subscriptionStatus?.endDate ? new Date() < subscriptionStatus.endDate : false,
-          currentDate: new Date().toString(),
-          endDate: subscriptionStatus?.endDate ? subscriptionStatus.endDate.toString() : null
-        });
+        if (shouldLog) {
+          console.log("CandidateProtectedRoute - Routing decision for:", currentPath, {
+            subscriptionType: stableSubscriptionStatus?.type,
+            hasActivePaidSubscription,
+            willRedirect: (currentPath === '/free-plan-dashboard' && hasActivePaidSubscription) || 
+                         (currentPath === '/candidate-dashboard' && !hasActivePaidSubscription)
+          });
+        }
         
         // If user is on free-plan-dashboard but has an active paid subscription, redirect to candidate-dashboard
         if (currentPath === '/free-plan-dashboard' && hasActivePaidSubscription) {
-          console.log(`REDIRECT: From free-plan-dashboard to candidate-dashboard because user has active ${subscriptionStatus?.type} subscription`);
+          console.log(`REDIRECT: From free-plan-dashboard to candidate-dashboard (${stableSubscriptionStatus?.type} subscription)`);
           return <Navigate to="/candidate-dashboard" replace />;
         }
         
         // If user is on candidate-dashboard but doesn't have an active paid subscription, redirect to free-plan-dashboard
         if (currentPath === '/candidate-dashboard' && !hasActivePaidSubscription) {
-          console.log(`REDIRECT: From candidate-dashboard to free-plan-dashboard because user subscription is not active paid (type: ${subscriptionStatus?.type}, active: ${subscriptionStatus?.active}, cancelled: ${subscriptionStatus?.cancelled})`);
+          console.log(`REDIRECT: From candidate-dashboard to free-plan-dashboard (subscription: ${stableSubscriptionStatus?.type})`);
           return <Navigate to="/free-plan-dashboard" replace />;
         }
-        
-        console.log("CandidateProtectedRoute - No redirect needed, rendering children");
         return children;
       })()}
     </SubscriptionErrorBoundary>

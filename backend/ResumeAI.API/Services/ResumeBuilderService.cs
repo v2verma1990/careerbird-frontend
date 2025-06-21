@@ -544,7 +544,15 @@ namespace ResumeAI.API.Services
                 Console.WriteLine($"BuildResumeAsync called with templateId: {request.TemplateId}");
                 Console.WriteLine($"Has resume file: {request.ResumeFile != null}");
                 Console.WriteLine($"Has resume data: {!string.IsNullOrEmpty(request.ResumeData)}");
-                Console.WriteLine($"Color parameter: {request.Color ?? "not provided"}");
+                Console.WriteLine($"✓ COLOR PARAMETER FROM REQUEST: '{request.Color ?? "not provided"}'");
+                if (string.IsNullOrEmpty(request.Color))
+                {
+                    Console.WriteLine("✗ WARNING: Color parameter is null or empty - will use default color");
+                }
+                else
+                {
+                    Console.WriteLine($"✓ Color parameter is valid: '{request.Color}'");
+                }
                 
                 // Get resume data either from file or from provided JSON
                 ResumeDataModel resumeData;
@@ -1748,6 +1756,18 @@ namespace ResumeAI.API.Services
                 Console.WriteLine("Data type: " + data.GetType().Name);
                 Console.WriteLine($"Color parameter received: '{color ?? "null"}'");
                 
+                // Check if template contains {{color}} placeholders
+                if (templateHtml.Contains("{{color}}"))
+                {
+                    Console.WriteLine("✓ Template contains {{color}} placeholders - this is CORRECT");
+                    int colorCount = templateHtml.Split("{{color}}").Length - 1;
+                    Console.WriteLine($"✓ Found {colorCount} {{color}} placeholders in template");
+                }
+                else
+                {
+                    Console.WriteLine("✗ Template does NOT contain {{color}} placeholders - this might be an issue");
+                }
+                
                 // Convert data to dictionary if it's a JObject
                 object templateData = data;
                 
@@ -2010,7 +2030,8 @@ namespace ResumeAI.API.Services
                     {
                         dict["Color"] = finalColor;
                     }
-                    Console.WriteLine($"Ensured color in dict: color='{dict["color"]}', Color='{dict["Color"]}'");
+                    Console.WriteLine($"✓ ENSURED COLOR IN TEMPLATE DATA: color='{dict["color"]}', Color='{dict["Color"]}'");
+                    Console.WriteLine($"✓ Final color value that will be used in template: '{finalColor}'");
                     
                     // Ensure PascalCase versions are present for templates that use PascalCase
                     if (dict.ContainsKey("name") && !dict.ContainsKey("Name")) dict["Name"] = dict["name"];
@@ -2314,6 +2335,29 @@ namespace ResumeAI.API.Services
                     
                     // Log the first part of the generated HTML
                     Console.WriteLine($"Generated HTML (first 100 chars): {result.Substring(0, Math.Min(100, result.Length))}");
+                    
+                    // Check if color placeholders were properly replaced
+                    if (result.Contains("{{color}}"))
+                    {
+                        Console.WriteLine("✗ ERROR: Generated HTML still contains {{color}} placeholders - Handlebars did NOT replace them!");
+                        int remainingColorCount = result.Split("{{color}}").Length - 1;
+                        Console.WriteLine($"✗ Found {remainingColorCount} unreplaced {{color}} placeholders in generated HTML");
+                    }
+                    else
+                    {
+                        Console.WriteLine("✓ SUCCESS: All {{color}} placeholders were replaced by Handlebars");
+                    }
+                    
+                    // Check if the final color value appears in the generated HTML
+                    string finalColorToCheck = color ?? "#315389";
+                    if (result.Contains(finalColorToCheck))
+                    {
+                        Console.WriteLine($"✓ SUCCESS: Final color '{finalColorToCheck}' appears in generated HTML");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"✗ WARNING: Final color '{finalColorToCheck}' does NOT appear in generated HTML");
+                    }
                     
                     // Check if the HTML still has empty tags despite data being present
                     if (result.Contains("<h1></h1>") && templateData is Dictionary<string, object> resultDataDict && !string.IsNullOrEmpty(resultDataDict["name"]?.ToString()))

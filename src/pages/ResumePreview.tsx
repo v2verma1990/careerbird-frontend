@@ -1,104 +1,112 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Download, ArrowLeft, FileText, Globe, AlertCircle, Eye } from 'lucide-react';
+import { Download, ArrowLeft, FileText, Globe, AlertCircle, Eye, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/utils/apiClient';
 import { PDFExportButton, PDFExportDropdown } from '@/components/PDFExportButton';
 import { useResumeExport } from '@/hooks/use-pdf-export';
-import { templateService } from '@/services/templateService';
+import { frontendTemplateService } from '@/services/frontendTemplateService';
+import { useResumeColors } from '@/contexts/resume/ResumeColorContext';
+// Import centralized styles
+import '@/styles/templates.css';
 
 const ResumePreview = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [resumeHtml, setResumeHtml] = useState<string>('');
+  const { clearAllColorCaches } = useResumeColors();
+  
+  // Centralized state
+  const [renderedTemplate, setRenderedTemplate] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [resumeData, setResumeData] = useState<any>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
-  const { exportResume, exportResumeHighQuality, isExporting } = useResumeExport();
   
-  const template = searchParams.get('template') || 'modern-executive';
+  const template = searchParams.get('template') || 'navy-column-modern';
   const encodedData = searchParams.get('data');
   const encodedHtml = searchParams.get('html');
   const selectedColor = searchParams.get('color') ? decodeURIComponent(searchParams.get('color')!) : '#315389';
 
-  // Apply centralized styles for supported templates
-  const applyTemplateStyles = async () => {
-    if (template === 'navy-column-modern' || template === 'modern-executive') {
-      try {
-        console.log('ResumePreview - Fetching centralized CSS with color:', selectedColor);
-        const css = await templateService.getTemplateCss(template, selectedColor);
-        
-        // Remove any existing template styles
-        const existingStyles = document.querySelectorAll('style[data-template-styles]');
-        existingStyles.forEach(style => style.remove());
-        
-        // Create and inject the unified styles
-        const styleElement = document.createElement('style');
-        styleElement.setAttribute('data-template-styles', 'true');
-        styleElement.textContent = css;
-        
-        // Insert at the beginning of head for maximum priority
-        if (document.head.firstChild) {
-          document.head.insertBefore(styleElement, document.head.firstChild);
-        } else {
-          document.head.appendChild(styleElement);
-        }
-        
-        console.log('ResumePreview - Applied centralized CSS successfully');
-      } catch (error) {
-        console.error('ResumePreview - Failed to fetch template CSS:', error);
-      }
+  // IMMEDIATELY apply color on component initialization to prevent any flash
+  useLayoutEffect(() => {
+    console.log('ResumePreview - IMMEDIATE color application on mount:', selectedColor);
+    frontendTemplateService.applyTemplateStyles(template, selectedColor);
+  }, [template, selectedColor]);
+
+  const [previewKey, setPreviewKey] = useState(() => `${template}-${selectedColor}-${Date.now()}`);
+  const { exportResume, exportResumeHighQuality, isExporting } = useResumeExport();
+  
+  console.log('ResumePreview: Initialized with:', { template, selectedColor, hasData: !!encodedData, hasHtml: !!encodedHtml });
+  console.log('ResumePreview: URL search params:', Object.fromEntries(searchParams.entries()));
+  console.log('ResumePreview: Raw color param:', searchParams.get('color'));
+  console.log('ResumePreview: Decoded selectedColor:', selectedColor);
+
+  /**
+   * Refresh preview with latest template rendering
+   */
+  const refreshPreview = async () => {
+    if (!resumeData) return;
+    
+    setIsRefreshing(true);
+    try {
+      console.log('ResumePreview: Refreshing preview with fresh rendering');
+      
+      // Apply styles immediately to prevent flash
+      frontendTemplateService.applyTemplateStyles(template, selectedColor);
+      
+      // Get fresh render
+      const rendered = await frontendTemplateService.renderResume(
+        template,
+        resumeData,
+        selectedColor
+      );
+      
+      setRenderedTemplate(rendered);
+      
+      console.log('ResumePreview: Successfully refreshed preview');
+      
+    } catch (error) {
+      console.error('ResumePreview: Failed to refresh preview:', error);
+      toast({
+        title: "Refresh Failed",
+        description: "Failed to refresh preview. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
-  // Function to regenerate HTML with correct color
-  const regenerateHtmlWithCorrectColor = async (resumeData: any, color: string) => {
+  // Function to regenerate template with correct color using frontend service
+  const regenerateTemplateWithCorrectColor = async (resumeData: any, color: string) => {
     try {
-      console.log('ResumePreview - Regenerating HTML with color:', color);
+      console.log('ResumePreview - Regenerating template with color:', color);
       setIsLoading(true);
       
-      // Call the backend to generate new HTML with correct color
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://localhost:5001/api'}/resume-builder/build`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          resumeData: JSON.stringify(resumeData),
-          templateId: template,
-          color: color
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
+      // Apply styles immediately to prevent flash
+      frontendTemplateService.applyTemplateStyles(template, color);
       
-      if (result.success && result.data?.html) {
-        console.log('ResumePreview - Successfully regenerated HTML with correct color');
-        setResumeHtml(result.data.html);
-        await applyTemplateStyles();
-      } else {
-        throw new Error('Failed to regenerate HTML');
-      }
+      // Get fresh render
+      const rendered = await frontendTemplateService.renderResume(
+        template,
+        resumeData,
+        color
+      );
+      
+      setRenderedTemplate(rendered);
+      
+      console.log('ResumePreview - Successfully regenerated template with correct color');
+      
     } catch (error) {
-      console.error('ResumePreview - Failed to regenerate HTML:', error);
+      console.error('ResumePreview - Failed to regenerate template:', error);
       toast({
         title: "Error",
-        description: "Failed to update resume color. Using original version.",
+        description: "Failed to update resume color. Please try refreshing the preview.",
         variant: "destructive"
       });
-      // Fallback to original HTML
-      if (encodedHtml) {
-        const decodedHtml = decodeURIComponent(encodedHtml);
-        setResumeHtml(decodedHtml);
-        await applyTemplateStyles();
-      }
     } finally {
       setIsLoading(false);
     }
@@ -108,110 +116,90 @@ const ResumePreview = () => {
     console.log('=== RESUME PREVIEW COMPONENT LOADED ===');
     console.log('ResumePreview - Template:', template);
     console.log('ResumePreview - Selected Color:', selectedColor);
-    console.log('ResumePreview - Encoded data:', encodedData);
-    console.log('ResumePreview - Encoded HTML:', encodedHtml ? 'Present (length: ' + encodedHtml.length + ')' : 'Not present');
+    console.log('ResumePreview - Has data:', !!encodedData);
+    
+    // IMMEDIATELY apply the color to prevent showing default blue
+    console.log('ResumePreview - Applying color IMMEDIATELY on component load:', selectedColor);
+    frontendTemplateService.applyTemplateStyles(template, selectedColor);
     
     const initializePreview = async () => {
-      if (encodedData) {
-      try {
-        // Decode the URL-encoded data
-        const decodedData = decodeURIComponent(encodedData);
-        console.log('ResumePreview - Decoded data (first 1000 chars):', decodedData.substring(0, 1000));
-        
-        // Parse the JSON data
-        const parsedData = JSON.parse(decodedData);
-        console.log('=== PARSED RESUME DATA IN PREVIEW ===');
-        console.log('ResumePreview - Full parsed data:', parsedData);
-        
-        setResumeData(parsedData);
-        
-        // If we have HTML from the backend, check if color matches
-        if (encodedHtml) {
-          try {
-            const decodedHtml = decodeURIComponent(encodedHtml);
-            console.log('=== BACKEND HTML ANALYSIS ===');
-            console.log('ResumePreview - HTML from backend (length: ' + decodedHtml.length + ')');
-            console.log('ResumePreview - Current selected color:', selectedColor);
-            
-            // Check if the HTML contains the current selected color
-            const htmlContainsCurrentColor = decodedHtml.includes(selectedColor);
-            console.log('ResumePreview - HTML contains current color:', htmlContainsCurrentColor);
-            
-            // Also check for common color variations (with/without #, rgb format, etc.)
-            const colorVariations = [
-              selectedColor,
-              selectedColor.replace('#', ''),
-              selectedColor.toLowerCase(),
-              selectedColor.toUpperCase()
-            ];
-            
-            const hasAnyColorVariation = colorVariations.some(variation => decodedHtml.includes(variation));
-            console.log('ResumePreview - HTML contains any color variation:', hasAnyColorVariation);
-            
-            // If color doesn't match and it's not the default color, regenerate HTML
-            if (!hasAnyColorVariation && selectedColor !== '#315389') {
-              console.log('ResumePreview - Color mismatch detected! Regenerating HTML with correct color...');
-              await regenerateHtmlWithCorrectColor(parsedData, selectedColor);
-            } else {
-              console.log('ResumePreview - Color matches or is default, using existing HTML');
-              setResumeHtml(decodedHtml);
-              // Apply template styles after HTML is set
-              applyTemplateStyles();
-              setIsLoading(false);
-            }
-          } catch (htmlError) {
-            console.error('ResumePreview - Error decoding HTML from backend:', htmlError);
-            toast({
-              title: "Error",
-              description: "Failed to load resume preview. Please try generating again.",
-              variant: "destructive"
-            });
-            setIsLoading(false);
-          }
-        } else {
-          // No HTML from backend - this shouldn't happen in normal flow
-          console.error('ResumePreview - No HTML provided from backend');
-          toast({
-            title: "Error",
-            description: "Resume preview not available. Please try generating the resume again.",
-            variant: "destructive"
-          });
-          setIsLoading(false);
-        }
-      } catch (error) {
-        console.error('ResumePreview - Error parsing resume data:', error);
+      if (!encodedData) {
+        console.error('ResumePreview - No resume data found');
         toast({
           title: "Error",
-          description: "Failed to load resume data. Please try again.",
+          description: "No resume data found. Please go back and try again.",
           variant: "destructive"
         });
         setIsLoading(false);
+        return;
       }
-    } else {
-      console.error('ResumePreview - No resume data found');
-      toast({
-        title: "Error",
-        description: "No resume data found. Please go back and try again.",
-        variant: "destructive"
-      });
-      setIsLoading(false);
-    }
+
+      try {
+        setIsLoading(true);
+        
+        // Decode and parse resume data
+        const decodedData = decodeURIComponent(encodedData);
+        const parsedData = JSON.parse(decodedData);
+        
+        console.log('ResumePreview - Parsed resume data:', {
+          name: parsedData.Name || parsedData.name,
+          template,
+          color: selectedColor
+        });
+        
+        setResumeData(parsedData);
+        
+        // Apply styles immediately to prevent flash
+        console.log('ResumePreview - Applying styles immediately to prevent flash with color:', selectedColor);
+        frontendTemplateService.applyTemplateStyles(template, selectedColor);
+        
+        // Get fresh render
+        console.log('ResumePreview - Getting fresh render');
+        const rendered = await frontendTemplateService.renderResume(
+          template,
+          parsedData,
+          selectedColor
+        );
+        
+        setRenderedTemplate(rendered);
+        
+        console.log('ResumePreview - Successfully initialized with FRESH rendering using color:', selectedColor);
+        
+      } catch (error) {
+        console.error('ResumePreview - Failed to initialize preview:', error);
+        toast({
+          title: "Preview Error",
+          description: "Failed to load resume preview. Please try generating the resume again.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    // Call the async function
     initializePreview();
 
-    // Cleanup function to remove template styles when component unmounts
+    // Cleanup function - Clean cleanup when component unmounts
     return () => {
-      const styleToRemove = document.querySelector('style[data-template-styles]');
-      if (styleToRemove) {
-        styleToRemove.remove();
-      }
+      console.log('ResumePreview - Component unmounting, performing cleanup');
+      frontendTemplateService.cleanup();
     };
-  }, [encodedData, encodedHtml, template, toast, selectedColor]);
+  }, [encodedData, template, selectedColor, toast]);
+
+  // Handle color changes - regenerate template when color changes
+  useEffect(() => {
+    // Update preview key for re-render
+    setPreviewKey(`${template}-${selectedColor}-${Date.now()}`);
+    
+    // Only regenerate if we have data and this is a color change (not initial load)
+    if (resumeData && renderedTemplate && selectedColor) {
+      console.log('ResumePreview - Color changed, regenerating template with new color:', selectedColor);
+      regenerateTemplateWithCorrectColor(resumeData, selectedColor);
+    }
+  }, [selectedColor]); // Only watch for color changes
 
   const downloadAsHTML = async () => {
-    if (!resumeHtml) return;
+    if (!renderedTemplate || !resumeData) return;
 
     try {
       setIsLoading(true);
@@ -223,31 +211,10 @@ const ResumePreview = () => {
         resumeData?.Name ||
         'resume';
 
-      // Get the centralized CSS from the DOM (already applied in preview)
-      const styleTag = document.querySelector('style[data-template-styles]');
-      const css = styleTag ? styleTag.textContent : '';
+      console.log('ResumePreview - Downloading HTML using centralized template');
 
-      // Build the HTML file using the exact preview HTML and CSS
-      const fullHtml = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${candidateName} - Resume</title>
-  <style>
-    ${css}
-    body {
-      font-family: 'Segoe UI', Arial, sans-serif;
-      background: #f5f6fa;
-      padding: 0.5in;
-      margin: 0;
-    }
-  </style>
-</head>
-<body>
-  ${resumeHtml}
-</body>
-</html>`;
+      // Use the complete HTML from centralized rendering service
+      const fullHtml = renderedTemplate.fullHtml;
 
       // Download logic
       const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
@@ -262,7 +229,7 @@ const ResumePreview = () => {
 
       toast({
         title: "HTML Downloaded Successfully",
-        description: "Your resume has been saved as an HTML file that preserves all formatting.",
+        description: "Your resume has been saved as an HTML file with exact preview formatting.",
       });
     } catch (error) {
       console.error('HTML export failed:', error);
@@ -276,9 +243,9 @@ const ResumePreview = () => {
     }
   };
 
-  // New frontend-based PDF download function
+  // Centralized PDF download function - ensures exact same rendering as preview
   const downloadAsPdf = async () => {
-    if (!resumeHtml) return;
+    if (!resumeData) return;
 
     try {
       setIsLoading(true);
@@ -290,35 +257,20 @@ const ResumePreview = () => {
         resumeData?.Name ||
         'resume';
 
-      // Get the centralized CSS from the DOM (already applied in preview)
-      const styleTag = document.querySelector('style[data-template-styles]');
-      const css = styleTag ? styleTag.textContent : '';
+      console.log('ResumePreview - Downloading PDF using centralized rendering service');
 
-      // Build the HTML file using the exact preview HTML and CSS
-      const fullHtml = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${candidateName} - Resume</title>
-  <style>
-    ${css}
-    body {
-      font-family: 'Segoe UI', Arial, sans-serif;
-      background: #f5f6fa;
-      padding: 0.5in;
-      margin: 0;
-    }
-  </style>
-</head>
-<body>
-  ${resumeHtml}
-</body>
-</html>`;
+      // Get fresh render for PDF to ensure accuracy
+      const pdfRender = await frontendTemplateService.renderResume(
+        template,
+        resumeData,
+        selectedColor
+      );
 
-      // Send the full HTML to your backend for PDF generation
+      console.log('ResumePreview - Got fresh PDF render, sending to backend');
+
+      // Send the complete HTML to backend for PDF generation
       const response = await api.resumeBuilder.downloadResume({
-        resumeText: fullHtml,
+        resumeText: pdfRender.fullHtml,
         format: "pdf"
       });
 
@@ -342,9 +294,12 @@ const ResumePreview = () => {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
+      // Ensure styles are still applied after PDF download
+      frontendTemplateService.applyTemplateStyles(template, selectedColor);
+
       toast({
         title: "PDF Downloaded Successfully",
-        description: "Your resume has been saved as a PDF file.",
+        description: "Your resume has been saved as a PDF file with exact preview formatting.",
       });
     } catch (error) {
       console.error('PDF export failed:', error);
@@ -419,16 +374,40 @@ const ResumePreview = () => {
                       <p className="text-gray-600">Loading resume preview...</p>
                     </div>
                   </div>
+                ) : renderedTemplate ? (
+                  <div className="space-y-4">
+                    {/* Refresh Button */}
+                    <div className="flex justify-end">
+                      <Button
+                        onClick={refreshPreview}
+                        disabled={isRefreshing}
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-2"
+                      >
+                        <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        {isRefreshing ? 'Refreshing...' : 'Refresh Preview'}
+                      </Button>
+                    </div>
+                    
+                    {/* Preview Container - Key forces re-render on color change */}
+                    <div
+                      key={previewKey}
+                      id="resume-preview-container"
+                      className="resume-preview-container template-transition"
+                      dangerouslySetInnerHTML={{ __html: renderedTemplate.html }}
+                    />
+                  </div>
                 ) : (
-                  <div
-                    id="resume-preview-container"
-                    className="resume-preview-container"
-                    style={{
-                      width: isPreviewMode ? '210mm' : 'auto',
-                      minHeight: isPreviewMode ? '297mm' : '800px'
-                    }}
-                    dangerouslySetInnerHTML={{ __html: resumeHtml }}
-                  />
+                  <div className="template-error">
+                    <div>
+                      <AlertCircle className="h-8 w-8 mx-auto mb-2" />
+                      <p>Failed to load resume preview</p>
+                      <Button onClick={refreshPreview} className="mt-4">
+                        Try Again
+                      </Button>
+                    </div>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -474,7 +453,7 @@ const ResumePreview = () => {
                   variant="outline" 
                   className="w-full" 
                   onClick={downloadAsHTML}
-                  disabled={isLoading || !resumeHtml}
+                  disabled={isLoading || !renderedTemplate}
                 >
                   <Globe className="h-4 w-4 mr-2" />
                   Download as HTML

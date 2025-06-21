@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/contexts/auth/AuthContext';
 import { ResumeProvider } from '@/contexts/resume/ResumeContext';
-import { ResumeColorProvider, useInitResumeColors } from '@/contexts/resume/ResumeColorContext';
+import { ResumeColorProvider } from '@/contexts/resume/ResumeColorContext';
 import { Toaster } from '@/components/ui/toaster';
 import CookieConsent from '@/components/CookieConsent';
 
@@ -58,15 +58,12 @@ import Navbar from '@/components/Navbar';
 const queryClient = new QueryClient();
 
 const App = () => {
-  // Initialize resume colors from localStorage if available
-  const initialColors = useInitResumeColors();
-  
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
         <AuthProvider>
           <ResumeProvider>
-            <ResumeColorProvider initialColors={initialColors}>
+            <ResumeColorProvider>
               <div className="App">
               <Navbar />
               <Routes>

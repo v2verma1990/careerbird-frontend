@@ -12,7 +12,7 @@ namespace ResumeAI.API.Services
         public string GetTemplateCss(string templateId, string? color = null)
         {
             // Default color if none provided
-            var templateColor = color ?? "#315389";
+            var templateColor = color ;
             
             switch (templateId.ToLower())
             {

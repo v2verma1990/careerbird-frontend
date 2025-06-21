@@ -123,13 +123,6 @@ export const AuthProvider = ({ children }) => {
 
   // Session restoration and auth state management
   useEffect(() => {
-    // Skip if we already have a session and user data
-    if (session && user && userType) {
-      console.log("Session already exists with user data, skipping restoration");
-      setRestoringSession(false);
-      return;
-    }
-    
     console.log("Starting session restoration process");
     
     // Set restoring flag to true at the beginning
@@ -307,7 +300,7 @@ export const AuthProvider = ({ children }) => {
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [session]);
+  }, []); // Run only once on mount
 
   // --- SIGN IN ---
   const signIn = async (email, password) => {

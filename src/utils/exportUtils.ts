@@ -1,7 +1,7 @@
 import api from './apiClient';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { applyStylesToDocument } from './resumeStyles';
+import { frontendTemplateService } from '../services/frontendTemplateService';
 
 /**
  * Download a text file to the user's device
@@ -147,14 +147,14 @@ export const exportResumeAsPDF = async (
     const loadingToast = showLoadingToast('Generating PDF...');
 
     try {
-      // Apply backend CSS as single source of truth BEFORE PDF generation
+      // Apply frontend CSS as single source of truth BEFORE PDF generation
       if (config.templateColor) {
         try {
-          console.log('PDF Export - Applying backend CSS with color:', config.templateColor);
-          await applyStylesToDocument(document, config.templateColor, 'navy-column-modern');
-          console.log('PDF Export - Backend CSS applied successfully');
+          console.log('PDF Export - Applying frontend CSS with color:', config.templateColor);
+          frontendTemplateService.applyTemplateStyles('navy-column-modern', config.templateColor);
+          console.log('PDF Export - Frontend CSS applied successfully');
         } catch (cssError) {
-          console.error('PDF Export - Failed to apply backend CSS:', cssError);
+          console.error('PDF Export - Failed to apply frontend CSS:', cssError);
           // Continue with export but log the error
         }
       }
@@ -507,7 +507,6 @@ const optimizeNavyColumnModernForPDF = (clonedDoc: Document, templateColor: stri
         element.style.setProperty('background-color', templateColor, 'important');
         element.style.setProperty('color', '#ffffff', 'important');
         (element.style as any).webkitPrintColorAdjust = 'exact';
-        (element.style as any).colorAdjust = 'exact';
         element.style.printColorAdjust = 'exact';
       }
     }

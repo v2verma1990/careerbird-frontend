@@ -9,20 +9,20 @@ export { SUPABASE_URL };
 // Determine the appropriate API base URL based on the environment
 const determineApiBaseUrl = () => {
 
-  return "https://localhost:5001/api";// Lovable
+ // return "https://localhost:5001/api";// Lovable
 
 
-  // const isProduction = import.meta.env.PROD;
+  const isProduction = import.meta.env.PROD;
   
-  // const devBackendUrl = import.meta.env.VITE_API_URL;
-  // if (isProduction) {
-  //   console.log(`in production: ${import.meta.env.VITE_API_URL}`);
-  //   return '/api';
-  // } else if (devBackendUrl) {
-  // return devBackendUrl;
-  // } else {
-  // return "http://localhost:5001/api";
-  // }
+  const devBackendUrl = import.meta.env.VITE_API_URL;
+  if (isProduction) {
+    console.log(`in production: ${import.meta.env.VITE_API_URL}`);
+    return '/api';
+  } else if (devBackendUrl) {
+  return devBackendUrl;
+  } else {
+  return "http://localhost:5001/api";
+  }
 };
 
 // Set the API base URL
@@ -1073,6 +1073,69 @@ export const api = {
     // Note: buildResume method moved to resumeBuilderApi.ts to avoid duplication
     // Use resumeBuilderApi.buildResume() instead
     buildResume: resumeBuilderApi.buildResume,
+    
+    // Special method for template rendering that uses FormData like resumeBuilderApi
+    // This matches the backend's expected format
+    buildResumeForTemplate: async (params: { resumeData: string; templateId: string; color: string }): Promise<{ data: any | null; error: string | null }> => {
+      console.log('API: Building resume for template with params:', { templateId: params.templateId, color: params.color });
+      
+      // Validate required parameters
+      if (!params.templateId) {
+        console.error('API: TemplateId is required but was not provided:', params.templateId);
+        return { data: null, error: 'TemplateId is required' };
+      }
+      
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        // Create FormData like resumeBuilderApi does
+        const formData = new FormData();
+        formData.append('templateId', params.templateId);
+        formData.append('resumeData', params.resumeData);
+        if (params.color) {
+          formData.append('color', params.color);
+        }
+        
+        console.log('API: Sending FormData to /resumebuilder/build with:', {
+          templateId: params.templateId,
+          color: params.color,
+          resumeDataLength: params.resumeData.length
+        });
+
+        const headers: Record<string, string> = {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        };
+        
+        if (session?.access_token) {
+          headers["Authorization"] = `Bearer ${session.access_token}`;
+        }
+
+        const response = await fetch(`${API_BASE_URL}/resumebuilder/build`, {
+          method: 'POST',
+          headers,
+          body: formData,
+          credentials: 'include'
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('API: Template build failed:', response.status, errorText);
+          return { data: null, error: `Request failed with status ${response.status}: ${errorText}` };
+        }
+
+        const result = await response.json();
+        console.log('API: Template build response:', result);
+        return { data: result, error: null };
+        
+      } catch (error) {
+        console.error('API: Template build error:', error);
+        return { 
+          data: null, 
+          error: error instanceof Error ? error.message : "Failed to build resume for template" 
+        };
+      }
+    },
     downloadResume: async ({
       resumeText,
       format,
@@ -1547,6 +1610,34 @@ export const api = {
     generate: (params: { jobTitle: string, company: string, jobDescription: string }) =>
       apiCall<any>("POST", "/cover-letters/generate", params)
   },
+  template: {
+    getCss: async (templateId: string, color: string): Promise<{ data: string | null; error: string | null }> => {
+      const endpoint = `/template/${templateId}/css?color=${encodeURIComponent(color)}&timestamp=${Date.now()}`;
+      console.log('API: Fetching template CSS for:', templateId, 'color:', color);
+      
+      const result = await apiCall<string>("GET", endpoint, undefined, {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      });
+      
+      if (result.data && !result.data.includes(color)) {
+        console.warn('API: CSS does not contain requested color:', color);
+      }
+      
+      return result;
+    },
+    
+    getHtml: async (templateId: string): Promise<{ data: string | null; error: string | null }> => {
+      const endpoint = `/template/${templateId}/html`;
+      console.log('API: Fetching template HTML for:', templateId);
+      
+      return await apiCall<string>("GET", endpoint, undefined, {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      });
+    }
+  },
+  
   fileUtils: {
     extractTextFromFile: async (file: File): Promise<string> => {
       return new Promise((resolve, reject) => {

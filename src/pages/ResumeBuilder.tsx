@@ -1,4 +1,14 @@
-// This file is now deprecated. All template selection and preview functionality is in ResumeBuilderApp.
-export default function DeprecatedResumeBuilder() {
+// This file has been removed - functionality moved to ResumeBuilderApp
+// Redirect to ResumeBuilderApp
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+export default function ResumeBuilderRedirect() {
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    navigate('/resume-builder-app', { replace: true });
+  }, [navigate]);
+  
   return null;
 }
