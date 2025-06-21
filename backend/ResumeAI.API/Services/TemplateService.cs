@@ -18,6 +18,8 @@ namespace ResumeAI.API.Services
             {
                 case "navy-column-modern":
                     return GenerateNavyColumnModernCss(templateColor);
+                case "modern-executive":
+                    return GenerateModernExecutiveCss(templateColor);
                 default:
                     throw new ArgumentException($"Template '{templateId}' not found");
             }
@@ -477,6 +479,391 @@ html .sidebar {{
   }}
 }}
 ";
+        }
+
+        private string GenerateModernExecutiveCss(string templateColor)
+        {
+            var lighterShade = GetLighterShade(templateColor);
+            var darkerShade = GetDarkerShade(templateColor);
+            
+            return $@"
+/* UNIFIED MODERN EXECUTIVE CSS - SINGLE SOURCE OF TRUTH */
+/* This CSS is used across backend, preview, and PDF export */
+
+* {{
+  -webkit-print-color-adjust: exact !important;
+  color-adjust: exact !important;
+  print-color-adjust: exact !important;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}}
+
+body {{
+  font-family: 'Arial', sans-serif;
+  line-height: 1.6;
+  color: #333;
+  background: #fff;
+  padding: 0;
+  margin: 0;
+}}
+
+.container {{
+  max-width: 8.5in;
+  margin: 0 auto;
+  padding: 0.5in;
+  min-height: 11in;
+  background: #fff;
+}}
+
+/* HEADER SECTION */
+.header {{
+  background: linear-gradient(135deg, {templateColor}, {darkerShade});
+  color: white;
+  padding: 2.5rem 2rem;
+  text-align: center;
+  margin-bottom: 2rem;
+  border-radius: 8px;
+  -webkit-print-color-adjust: exact !important;
+  color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}}
+
+.header h1 {{
+  font-size: 2.8rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  letter-spacing: 1px;
+  color: white !important;
+}}
+
+.header .title {{
+  font-size: 1.3rem;
+  opacity: 0.9;
+  margin-bottom: 1.5rem;
+  font-weight: 300;
+  color: white !important;
+}}
+
+.contact-info {{
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+  font-size: 0.95rem;
+}}
+
+.contact-info span {{
+  opacity: 0.95;
+  color: white !important;
+}}
+
+/* SECTIONS */
+.section {{
+  margin-bottom: 2.5rem;
+}}
+
+.section-title {{
+  font-size: 1.5rem;
+  color: {templateColor};
+  border-bottom: 3px solid {templateColor};
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.5rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}}
+
+.summary {{
+  font-size: 1rem;
+  line-height: 1.8;
+  text-align: justify;
+  color: #374151;
+  padding: 0.5rem 0;
+}}
+
+/* EXPERIENCE AND EDUCATION */
+.experience-item, .education-item {{
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}}
+
+.experience-item:last-child, .education-item:last-child {{
+  border-bottom: none;
+}}
+
+.experience-header {{
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}}
+
+.job-title {{
+  font-weight: bold;
+  font-size: 1.2rem;
+  color: {templateColor};
+  margin-bottom: 0.3rem;
+}}
+
+.company {{
+  font-weight: 600;
+  color: #374151;
+  font-size: 1rem;
+}}
+
+.date-location {{
+  color: #6b7280;
+  font-style: italic;
+  text-align: right;
+  font-size: 0.9rem;
+}}
+
+.description {{
+  margin-top: 1rem;
+  line-height: 1.7;
+  color: #374151;
+}}
+
+.description ul {{
+  margin-left: 1.5rem;
+  margin-top: 0.5rem;
+}}
+
+.description li {{
+  margin-bottom: 0.5rem;
+}}
+
+/* SKILLS */
+.skills-list {{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+}}
+
+.skill-tag {{
+  background: {lighterShade};
+  color: {templateColor};
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border: 1px solid {templateColor}88;
+}}
+
+/* CERTIFICATIONS */
+.certifications ul {{
+  list-style: none;
+  padding: 0;
+}}
+
+.certifications li {{
+  background: #f8fafc;
+  padding: 0.8rem 1rem;
+  margin-bottom: 0.5rem;
+  border-left: 4px solid {templateColor};
+  border-radius: 4px;
+}}
+
+/* PROJECTS */
+.projects-section {{
+  margin-bottom: 22px;
+}}
+
+.project-name {{
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: {templateColor};
+  margin-bottom: 4px;
+}}
+
+.project-description {{
+  font-size: 1.01rem;
+  color: #242e45;
+  margin-bottom: 4px;
+  line-height: 1.5;
+}}
+
+.project-technologies {{
+  font-size: 0.95rem;
+  color: #738dab;
+  margin-bottom: 8px;
+  font-style: italic;
+}}
+
+/* ACHIEVEMENTS */
+.achievement-item {{
+  margin-bottom: 8px;
+  font-size: 1.01rem;
+  color: #242e45;
+  line-height: 1.5;
+}}
+
+.achievement-item::before {{
+  content: ""•"";
+  color: {templateColor};
+  font-weight: bold;
+  margin-right: 8px;
+}}
+
+/* REFERENCES */
+.reference-item {{
+  margin-bottom: 12px;
+}}
+
+.reference-name {{
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: {templateColor};
+  margin-bottom: 2px;
+}}
+
+.reference-title {{
+  font-size: 0.98rem;
+  color: #385886;
+  margin-bottom: 2px;
+}}
+
+.reference-contact {{
+  font-size: 0.95rem;
+  color: #738dab;
+  margin-bottom: 4px;
+}}
+
+/* PDF EXPORT OPTIMIZATIONS */
+@media print {{
+  body {{
+    background: white;
+    padding: 0;
+    margin: 0;
+  }}
+  
+  .container {{
+    max-width: none;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+  }}
+  
+  .header {{
+    border-radius: 0;
+    background: linear-gradient(135deg, {templateColor}, {darkerShade}) !important;
+    -webkit-print-color-adjust: exact !important;
+    color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }}
+  
+  .header h1,
+  .header .title,
+  .header .contact-info span {{
+    color: white !important;
+    -webkit-print-color-adjust: exact !important;
+    color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }}
+  
+  .section-title {{
+    color: {templateColor} !important;
+    border-bottom-color: {templateColor} !important;
+  }}
+  
+  .job-title,
+  .project-name,
+  .reference-name {{
+    color: {templateColor} !important;
+  }}
+  
+  .skill-tag {{
+    background: {lighterShade} !important;
+    color: {templateColor} !important;
+    border-color: {templateColor}88 !important;
+  }}
+  
+  .certifications li {{
+    border-left-color: {templateColor} !important;
+  }}
+  
+  .achievement-item::before {{
+    color: {templateColor} !important;
+  }}
+  
+  /* Page break handling */
+  .section {{
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }}
+  
+  .experience-item,
+  .education-item {{
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }}
+}}
+
+/* Responsive design for smaller screens */
+@media (max-width: 768px) {{
+  .container {{
+    padding: 0.25in;
+  }}
+  
+  .header {{
+    padding: 1.5rem 1rem;
+    border-radius: 4px;
+  }}
+  
+  .header h1 {{
+    font-size: 2rem;
+  }}
+  
+  .header .title {{
+    font-size: 1.1rem;
+  }}
+  
+  .contact-info {{
+    gap: 1rem;
+    font-size: 0.9rem;
+  }}
+  
+  .experience-header {{
+    flex-direction: column;
+    align-items: flex-start;
+  }}
+  
+  .date-location {{
+    text-align: left;
+    margin-top: 0.5rem;
+  }}
+}}
+";
+        }
+
+        private string GetLighterShade(string color)
+        {
+            // Remove # if present
+            var hex = color.Replace("#", "");
+            
+            if (hex.Length != 6) return color + "33"; // Return original with opacity if invalid
+            
+            try
+            {
+                // Parse RGB values
+                var r = Convert.ToInt32(hex.Substring(0, 2), 16);
+                var g = Convert.ToInt32(hex.Substring(2, 2), 16);
+                var b = Convert.ToInt32(hex.Substring(4, 2), 16);
+                
+                // Lighten by increasing each component towards 255
+                var lighterR = Math.Min(255, r + (255 - r) * 0.8);
+                var lighterG = Math.Min(255, g + (255 - g) * 0.8);
+                var lighterB = Math.Min(255, b + (255 - b) * 0.8);
+                
+                // Convert back to hex
+                return $"#{(int)lighterR:X2}{(int)lighterG:X2}{(int)lighterB:X2}";
+            }
+            catch
+            {
+                return color + "33"; // Return original with opacity if parsing fails
+            }
         }
 
         private string GetDarkerShade(string color)

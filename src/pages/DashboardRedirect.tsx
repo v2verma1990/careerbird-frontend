@@ -52,6 +52,12 @@ export default function DashboardRedirect() {
   }, [user, userType, subscriptionStatus, restoringSession, navigate]);
   
   // Show error if subscription status is null for candidates
+  if (user && userType === 'candidate' && !subscriptionStatus && !restoringSession) {
+    navigate('/', { replace: true });
+    return null;
+  }
+
+  // Show error if subscription status is null for candidates
   if (user && userType === 'candidate' && subscriptionStatus === null && !restoringSession) {
     return (
       <div className="flex justify-center items-center h-screen">

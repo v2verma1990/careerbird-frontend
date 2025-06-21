@@ -127,10 +127,9 @@ export default function CandidateProtectedRoute({ children }: { children: JSX.El
         
         // If user is on candidate-dashboard but has a free subscription or their subscription has ended, redirect to free-plan-dashboard
         if (currentPath === '/candidate-dashboard' && 
-            (subscriptionStatus?.type === 'free' || !subscriptionStatus?.active || 
+            (!subscriptionStatus || subscriptionStatus?.type === 'free' || !subscriptionStatus?.active || 
              (subscriptionStatus?.cancelled && subscriptionStatus?.endDate && new Date() >= subscriptionStatus.endDate))) {
-          console.log(`Redirecting from candidate-dashboard to free-plan-dashboard (subscription: ${subscriptionStatus?.type}, active: ${subscriptionStatus?.active}, cancelled: ${subscriptionStatus?.cancelled}, endDate: ${subscriptionStatus?.endDate})`);
-          return <Navigate to="/free-plan-dashboard" replace />;
+          return <Navigate to="/" replace />;
         }
         
         // If subscription is cancelled but still active (end date not reached), stay on candidate dashboard

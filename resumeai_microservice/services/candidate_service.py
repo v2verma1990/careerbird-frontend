@@ -1,5 +1,5 @@
 from fastapi import UploadFile, File, Form, HTTPException
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse, Response
 from utils.cache import get_cached_response, set_cached_response, hash_inputs, cache_if_successful
 from utils.openai_utils import (
     analyze_resume, optimize_resume_jobscan_style, customize_resume, benchmark_resume, 
@@ -22,6 +22,7 @@ from openai import OpenAI
 import json
 import re
 from bs4 import BeautifulSoup
+import pyppeteer
 
 logger = logging.getLogger("candidate_service")
 
@@ -1300,7 +1301,7 @@ def clean_html_for_pdf(html_content):
         logger.warning(f"Failed to clean HTML: {e}")
         return html_content
 
-async def download_resume_service(resume_text, format="docx"):
+async def download_resume_service(resume_text: str, format: str):
     """Service to download resume in specified format"""
     try:
         logger.info(f"Downloading resume in format: {format}")

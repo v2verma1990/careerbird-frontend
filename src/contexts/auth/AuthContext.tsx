@@ -362,7 +362,7 @@ export const AuthProvider = ({ children }) => {
               title: "Subscription Error",
               description: "Unable to load subscription information. Please contact support."
             });
-            // Redirect to a safe page
+            // Redirect to home if no subscription
             navigate("/", { replace: true });
             return;
           } else {

@@ -24,9 +24,9 @@ const ResumePreview = () => {
   const encodedHtml = searchParams.get('html');
   const selectedColor = searchParams.get('color') ? decodeURIComponent(searchParams.get('color')!) : '#315389';
 
-  // Apply centralized styles for navy-column-modern template
+  // Apply centralized styles for supported templates
   const applyTemplateStyles = async () => {
-    if (template === 'navy-column-modern') {
+    if (template === 'navy-column-modern' || template === 'modern-executive') {
       try {
         console.log('ResumePreview - Fetching centralized CSS with color:', selectedColor);
         const css = await templateService.getTemplateCss(template, selectedColor);
@@ -211,26 +211,23 @@ const ResumePreview = () => {
   }, [encodedData, encodedHtml, template, toast, selectedColor]);
 
   const downloadAsHTML = async () => {
-    if (!resumeData || !template || !resumeHtml) return;
-    
+    if (!resumeHtml) return;
+
     try {
       setIsLoading(true);
-      toast({
-        title: "Generating HTML Document",
-        description: "Creating a perfectly formatted HTML version of your resume...",
-      });
-      
+
       // Get candidate name for filename
-      const candidateName = resumeData?.PersonalInfo?.Name || 
-                           resumeData?.personalInfo?.name || 
-                           resumeData?.name || 
-                           resumeData?.Name ||
-                           'resume';
-      
-      // Get centralized CSS
-      const css = await templateService.getTemplateCss(template, selectedColor);
-      
-      // Create a complete HTML document that preserves exact preview formatting
+      const candidateName = resumeData?.PersonalInfo?.Name ||
+        resumeData?.personalInfo?.name ||
+        resumeData?.name ||
+        resumeData?.Name ||
+        'resume';
+
+      // Get the centralized CSS from the DOM (already applied in preview)
+      const styleTag = document.querySelector('style[data-template-styles]');
+      const css = styleTag ? styleTag.textContent : '';
+
+      // Build the HTML file using the exact preview HTML and CSS
       const fullHtml = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -238,10 +235,7 @@ const ResumePreview = () => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${candidateName} - Resume</title>
   <style>
-    /* CENTRALIZED STYLES - SINGLE SOURCE OF TRUTH */
     ${css}
-    
-    /* Additional HTML export specific styles */
     body {
       font-family: 'Segoe UI', Arial, sans-serif;
       background: #f5f6fa;
@@ -250,24 +244,12 @@ const ResumePreview = () => {
     }
   </style>
 </head>
-<body class="${template}">
-${resumeHtml}
-
-<div style="margin-top: 2em; padding: 1em; background: #f8f9fa; border-radius: 8px; font-size: 0.9em; color: #666; text-align: center;">
-  <p><strong>📄 Resume Generated Successfully</strong></p>
-  <p>This HTML file preserves the exact formatting from your preview. You can:</p>
-  <ul style="list-style: none; padding: 0; margin: 0.5em 0;">
-    <li>• Open in any web browser for viewing</li>
-    <li>• Print directly from your browser (Ctrl+P / Cmd+P)</li>
-    <li>• Import into word processors that support HTML</li>
-    <li>• Share via email or cloud storage</li>
-  </ul>
-  <p style="margin-top: 0.5em;"><em>Template: ${template} | Generated: ${new Date().toLocaleDateString()}</em></p>
-</div>
+<body>
+  ${resumeHtml}
 </body>
 </html>`;
-      
-      // Create and download the HTML file
+
+      // Download logic
       const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -296,77 +278,83 @@ ${resumeHtml}
 
   // New frontend-based PDF download function
   const downloadAsPdf = async () => {
-    if (!resumeData || !resumeHtml) {
-      toast({
-        title: "Error",
-        description: "Resume data not available. Please try again.",
-        variant: "destructive"
-      });
-      return;
-    }
+    if (!resumeHtml) return;
 
     try {
-      // Get candidate name for filename
-      const candidateName = resumeData?.PersonalInfo?.Name || 
-                           resumeData?.personalInfo?.name || 
-                           resumeData?.name || 
-                           resumeData?.Name ||
-                           'resume';
+      setIsLoading(true);
 
-      // Use the new frontend PDF export with selected color
-      console.log('PDF Export - Passing color to export function:', selectedColor);
-      await exportResume('resume-preview-container', candidateName, resumeData, selectedColor);
-      
-    } catch (error) {
-      console.error('Frontend PDF export failed, trying fallback:', error);
-      
-      // Fallback to the old API method if frontend fails
-      try {
-        setIsLoading(true);
-        toast({
-          title: "Generating PDF",
-          description: "Creating your resume PDF using fallback method...",
-        });
-        
-        const response = await api.resumeBuilder.downloadResume({
-          resumeText: resumeHtml,
-          format: "pdf"
-        });
-        
-        if (!response || !response.ok) {
-          throw new Error(`Server responded with status: ${response?.status || 'unknown'}`);
-        }
-        
-        const arrayBuffer = await response.arrayBuffer();
-        const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
-        
-        if (blob.size === 0) {
-          throw new Error('Generated PDF is empty');
-        }
-        
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `resume-${template}-${new Date().toISOString().split('T')[0]}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        
-        toast({
-          title: "PDF Downloaded Successfully",
-          description: "Your resume has been saved as a PDF file.",
-        });
-      } catch (fallbackError) {
-        console.error('Fallback PDF export also failed:', fallbackError);
-        toast({
-          title: "PDF Download Failed",
-          description: "Unable to generate PDF. Please try again or contact support.",
-          variant: "destructive"
-        });
-      } finally {
-        setIsLoading(false);
+      // Get candidate name for filename
+      const candidateName = resumeData?.PersonalInfo?.Name ||
+        resumeData?.personalInfo?.name ||
+        resumeData?.name ||
+        resumeData?.Name ||
+        'resume';
+
+      // Get the centralized CSS from the DOM (already applied in preview)
+      const styleTag = document.querySelector('style[data-template-styles]');
+      const css = styleTag ? styleTag.textContent : '';
+
+      // Build the HTML file using the exact preview HTML and CSS
+      const fullHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${candidateName} - Resume</title>
+  <style>
+    ${css}
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f5f6fa;
+      padding: 0.5in;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  ${resumeHtml}
+</body>
+</html>`;
+
+      // Send the full HTML to your backend for PDF generation
+      const response = await api.resumeBuilder.downloadResume({
+        resumeText: fullHtml,
+        format: "pdf"
+      });
+
+      if (!response || !response.ok) {
+        throw new Error(`Server responded with status: ${response?.status || 'unknown'}`);
       }
+
+      const arrayBuffer = await response.arrayBuffer();
+      const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
+
+      if (blob.size === 0) {
+        throw new Error('Generated PDF is empty');
+      }
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${candidateName.toLowerCase().replace(/\s+/g, '_')}_resume.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "PDF Downloaded Successfully",
+        description: "Your resume has been saved as a PDF file.",
+      });
+    } catch (error) {
+      console.error('PDF export failed:', error);
+      toast({
+        title: "PDF Download Failed",
+        description: "Unable to generate PDF. Please try again or contact support.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -486,7 +474,7 @@ ${resumeHtml}
                   variant="outline" 
                   className="w-full" 
                   onClick={downloadAsHTML}
-                  disabled={isLoading}
+                  disabled={isLoading || !resumeHtml}
                 >
                   <Globe className="h-4 w-4 mr-2" />
                   Download as HTML

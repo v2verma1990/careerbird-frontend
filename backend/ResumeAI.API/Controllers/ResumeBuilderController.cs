@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using ResumeAI.API.Models;
 using ResumeAI.API.Services;
 using Newtonsoft.Json;
+using PuppeteerSharp;
 
 namespace ResumeAI.API.Controllers
 {
@@ -428,40 +429,31 @@ namespace ResumeAI.API.Controllers
         }
 
         [HttpPost("download")]
-        public async Task<IActionResult> DownloadResume([FromBody] DownloadResumeRequest request)
+        public async Task<IActionResult> DownloadResume([FromBody] ResumeDownloadRequest request)
         {
-            try
-            {
-                string userId = _authService.ExtractUserIdFromAuthHeader(Request.Headers["Authorization"].ToString());
-                if (string.IsNullOrEmpty(userId))
-                    return Unauthorized(new { error = "Invalid or missing authorization token" });
+            if (request.Format != "pdf")
+                return BadRequest("Only PDF supported");
 
-                if (string.IsNullOrEmpty(request.ResumeText))
-                    return BadRequest(new { error = "Resume text is required" });
-
-                // Call your service to proxy the request to Python and get the file
-                (byte[] fileBytes, string fileName, string contentType) = await _resumeBuilderService.DownloadResumeAsync(request.ResumeText, request.Format, userId);
-
-                return File(fileBytes, contentType, fileName);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { error = ex.Message });
-            }
+            await new BrowserFetcher().DownloadAsync();
+            using var browser = await Puppeteer.LaunchAsync(new LaunchOptions { Headless = true });
+            using var page = await browser.NewPageAsync();
+            await page.SetContentAsync(request.ResumeText);
+            var pdfBytes = await page.PdfDataAsync(new PdfOptions { Format = PuppeteerSharp.Media.PaperFormat.A4 });
+            return File(pdfBytes, "application/pdf", "resume.pdf");
         }
-
-        // Add this DTO if not present
-        public class DownloadResumeRequest
-        {
-            public string ResumeText { get; set; } = string.Empty;
-            public string Format { get; set; } = "pdf";
-        }
-        public class ExtractResumeDataModel
-        {
-            
-            public IFormFile? ResumeFile { get; set; }
-            public bool UseDefaultResume { get; set; } = false;
-        }
-        
     }
+
+    public class ResumeDownloadRequest
+    {
+        public string ResumeText { get; set; }
+        public string Format { get; set; }
+    }
+
+    public class ExtractResumeDataModel
+    {
+            
+        public IFormFile? ResumeFile { get; set; }
+        public bool UseDefaultResume { get; set; } = false;
+    }
+        
 }

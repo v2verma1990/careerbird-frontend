@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/auth/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -28,7 +27,9 @@ const Signup = () => {
       if (authUserType === 'recruiter') {
         navigate('/dashboard');
       } else if (authUserType === 'candidate') {
-        if (subscriptionStatus?.type === 'free') {
+        if (!subscriptionStatus) {
+          navigate('/');
+        } else if (subscriptionStatus?.type === 'free') {
           navigate('/free-plan-dashboard');
         } else {
           navigate('/candidate-dashboard');
