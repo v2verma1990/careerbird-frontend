@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth/AuthContext';
@@ -13,7 +14,7 @@ export default function DashboardRedirect() {
   useEffect(() => {
     // Wait for auth to be ready
     if (restoringSession) {
-      console.log("Waiting for session restoration...");
+      console.log("DashboardRedirect: Waiting for session restoration...");
       return;
     }
     
@@ -21,42 +22,54 @@ export default function DashboardRedirect() {
       user: !!user,
       userType,
       subscriptionType: subscriptionStatus?.type,
-      active: subscriptionStatus?.active
+      active: subscriptionStatus?.active,
+      cancelled: subscriptionStatus?.cancelled,
+      endDate: subscriptionStatus?.endDate ? subscriptionStatus.endDate.toString() : null
     });
     
     // Determine the correct dashboard path
     let dashboardPath = '/';
     
     if (!user) {
-      console.log("No user found, redirecting to login");
+      console.log("DashboardRedirect: No user found, redirecting to login");
       dashboardPath = '/login';
     } else if (userType === 'recruiter') {
-      console.log("User is a recruiter, redirecting to recruiter dashboard");
+      console.log("DashboardRedirect: User is a recruiter, redirecting to recruiter dashboard");
       dashboardPath = '/dashboard';
     } else if (userType === 'candidate') {
       if (subscriptionStatus === null) {
-        console.log("Subscription status is null - showing error instead of redirecting");
+        console.log("DashboardRedirect: Subscription status is null - showing error instead of redirecting");
         // Don't redirect, let the component handle the null state
         return;
-      } else if (subscriptionStatus?.type === 'free' || !subscriptionStatus?.active) {
-        console.log("User is a candidate with free plan, redirecting to free dashboard");
-        dashboardPath = '/free-plan-dashboard';
       } else {
-        console.log("User is a candidate with paid plan, redirecting to candidate dashboard");
-        dashboardPath = '/candidate-dashboard';
+        // Check if user has an active non-free subscription
+        const hasActivePaidSubscription = subscriptionStatus && 
+          subscriptionStatus.type !== 'free' && 
+          subscriptionStatus.active && 
+          (!subscriptionStatus.cancelled || (subscriptionStatus.endDate && new Date() < subscriptionStatus.endDate));
+        
+        console.log("DashboardRedirect: Subscription analysis:", {
+          hasActivePaidSubscription,
+          type: subscriptionStatus?.type,
+          active: subscriptionStatus?.active,
+          cancelled: subscriptionStatus?.cancelled,
+          endDateInFuture: subscriptionStatus?.endDate ? new Date() < subscriptionStatus.endDate : false
+        });
+        
+        if (hasActivePaidSubscription) {
+          console.log("DashboardRedirect: User is a candidate with active paid plan, redirecting to candidate dashboard");
+          dashboardPath = '/candidate-dashboard';
+        } else {
+          console.log("DashboardRedirect: User is a candidate with free plan or inactive subscription, redirecting to free dashboard");
+          dashboardPath = '/free-plan-dashboard';
+        }
       }
     }
     
-    console.log(`Redirecting to: ${dashboardPath}`);
+    console.log(`DashboardRedirect: Redirecting to: ${dashboardPath}`);
     navigate(dashboardPath, { replace: true });
   }, [user, userType, subscriptionStatus, restoringSession, navigate]);
   
-  // Show error if subscription status is null for candidates
-  if (user && userType === 'candidate' && !subscriptionStatus && !restoringSession) {
-    navigate('/', { replace: true });
-    return null;
-  }
-
   // Show error if subscription status is null for candidates
   if (user && userType === 'candidate' && subscriptionStatus === null && !restoringSession) {
     return (

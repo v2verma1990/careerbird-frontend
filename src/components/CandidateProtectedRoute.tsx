@@ -27,7 +27,12 @@ export default function CandidateProtectedRoute({ children }: { children: JSX.El
     console.log("CandidateProtectedRoute auth state:", {
       user: !!user,
       userType,
-      subscriptionStatus: subscriptionStatus ? { type: subscriptionStatus.type, active: subscriptionStatus.active } : null,
+      subscriptionStatus: subscriptionStatus ? { 
+        type: subscriptionStatus.type, 
+        active: subscriptionStatus.active,
+        cancelled: subscriptionStatus.cancelled,
+        endDate: subscriptionStatus.endDate ? subscriptionStatus.endDate.toString() : null
+      } : null,
       subscriptionLoading,
       restoringSession,
       componentTimeout,
@@ -103,41 +108,49 @@ export default function CandidateProtectedRoute({ children }: { children: JSX.El
       onRetry={() => fetchSubscriptionStatus && fetchSubscriptionStatus()}
     >
       {(() => {
-  
         // Handle subscription-specific routing
         const currentPath = location.pathname;
         
-        // Only log when there are actual changes to avoid spam
-        React.useEffect(() => {
-          console.log("CandidateProtectedRoute - Current state:", {
-            path: currentPath,
-            subscriptionType: subscriptionStatus?.type,
-            userType,
-            active: subscriptionStatus?.active
-          });
-        }, [currentPath, subscriptionStatus?.type, userType, subscriptionStatus?.active]);
+        // Enhanced logging for subscription routing decisions
+        console.log("CandidateProtectedRoute - Making routing decision:", {
+          currentPath,
+          subscriptionType: subscriptionStatus?.type,
+          subscriptionActive: subscriptionStatus?.active,
+          subscriptionCancelled: subscriptionStatus?.cancelled,
+          subscriptionEndDate: subscriptionStatus?.endDate ? subscriptionStatus.endDate.toString() : null,
+          userType,
+          decision: "analyzing..."
+        });
+        
+        // Check if user has an active non-free subscription
+        const hasActivePaidSubscription = subscriptionStatus && 
+          subscriptionStatus.type !== 'free' && 
+          subscriptionStatus.active && 
+          (!subscriptionStatus.cancelled || (subscriptionStatus.endDate && new Date() < subscriptionStatus.endDate));
+        
+        console.log("CandidateProtectedRoute - Subscription analysis:", {
+          hasActivePaidSubscription,
+          type: subscriptionStatus?.type,
+          active: subscriptionStatus?.active,
+          cancelled: subscriptionStatus?.cancelled,
+          endDateInFuture: subscriptionStatus?.endDate ? new Date() < subscriptionStatus.endDate : false,
+          currentDate: new Date().toString(),
+          endDate: subscriptionStatus?.endDate ? subscriptionStatus.endDate.toString() : null
+        });
         
         // If user is on free-plan-dashboard but has an active paid subscription, redirect to candidate-dashboard
-        // Updated logic to handle all non-free subscription types including "basic"
-        if (currentPath === '/free-plan-dashboard' && 
-            subscriptionStatus?.type !== 'free' && 
-            subscriptionStatus?.active && 
-            (!subscriptionStatus?.cancelled || (subscriptionStatus?.endDate && new Date() < subscriptionStatus.endDate))) {
-          console.log(`Redirecting from free-plan-dashboard to candidate-dashboard (subscription: ${subscriptionStatus?.type}, active: ${subscriptionStatus?.active}, cancelled: ${subscriptionStatus?.cancelled}, endDate: ${subscriptionStatus?.endDate})`);
+        if (currentPath === '/free-plan-dashboard' && hasActivePaidSubscription) {
+          console.log(`REDIRECT: From free-plan-dashboard to candidate-dashboard because user has active ${subscriptionStatus?.type} subscription`);
           return <Navigate to="/candidate-dashboard" replace />;
         }
         
-        // If user is on candidate-dashboard but has a free subscription or their subscription has ended, redirect to free-plan-dashboard
-        if (currentPath === '/candidate-dashboard' && 
-            (!subscriptionStatus || subscriptionStatus?.type === 'free' || !subscriptionStatus?.active || 
-             (subscriptionStatus?.cancelled && subscriptionStatus?.endDate && new Date() >= subscriptionStatus.endDate))) {
-          console.log(`Redirecting from candidate-dashboard to free-plan-dashboard (subscription: ${subscriptionStatus?.type}, active: ${subscriptionStatus?.active})`);
+        // If user is on candidate-dashboard but doesn't have an active paid subscription, redirect to free-plan-dashboard
+        if (currentPath === '/candidate-dashboard' && !hasActivePaidSubscription) {
+          console.log(`REDIRECT: From candidate-dashboard to free-plan-dashboard because user subscription is not active paid (type: ${subscriptionStatus?.type}, active: ${subscriptionStatus?.active}, cancelled: ${subscriptionStatus?.cancelled})`);
           return <Navigate to="/free-plan-dashboard" replace />;
         }
         
-        // If subscription is cancelled but still active (end date not reached), stay on candidate dashboard
-        // This is handled implicitly by the above conditions
-        
+        console.log("CandidateProtectedRoute - No redirect needed, rendering children");
         return children;
       })()}
     </SubscriptionErrorBoundary>
