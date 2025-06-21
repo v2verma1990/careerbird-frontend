@@ -617,6 +617,13 @@ const ResumeBuilderApp = () => {
       console.log('Updated template colors:', newColors);
       return newColors;
     });
+    // Update the color in the URL search params for preview to pick up
+    setSearchParams(prev => ({
+      ...Object.fromEntries([...searchParams]),
+      template: templateId,
+      color: encodeURIComponent(color)
+    }));
+    // Do NOT auto-generate the resume here; generation should only happen on explicit user action
   };
 
   // Function to extract data from default resume
