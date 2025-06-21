@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { api } from '@/utils/apiClient';
 import { PDFExportButton, PDFExportDropdown } from '@/components/PDFExportButton';
 import { useResumeExport } from '@/hooks/use-pdf-export';
+import { templateService } from '@/services/templateService';
 
 const ResumePreview = () => {
   const [searchParams] = useSearchParams();
@@ -22,14 +22,97 @@ const ResumePreview = () => {
   const template = searchParams.get('template') || 'modern-executive';
   const encodedData = searchParams.get('data');
   const encodedHtml = searchParams.get('html');
+  const selectedColor = searchParams.get('color') ? decodeURIComponent(searchParams.get('color')!) : '#315389';
+
+  // Apply centralized styles for navy-column-modern template
+  const applyTemplateStyles = async () => {
+    if (template === 'navy-column-modern') {
+      try {
+        console.log('ResumePreview - Fetching centralized CSS with color:', selectedColor);
+        const css = await templateService.getTemplateCss(template, selectedColor);
+        
+        // Remove any existing template styles
+        const existingStyles = document.querySelectorAll('style[data-template-styles]');
+        existingStyles.forEach(style => style.remove());
+        
+        // Create and inject the unified styles
+        const styleElement = document.createElement('style');
+        styleElement.setAttribute('data-template-styles', 'true');
+        styleElement.textContent = css;
+        
+        // Insert at the beginning of head for maximum priority
+        if (document.head.firstChild) {
+          document.head.insertBefore(styleElement, document.head.firstChild);
+        } else {
+          document.head.appendChild(styleElement);
+        }
+        
+        console.log('ResumePreview - Applied centralized CSS successfully');
+      } catch (error) {
+        console.error('ResumePreview - Failed to fetch template CSS:', error);
+      }
+    }
+  };
+
+  // Function to regenerate HTML with correct color
+  const regenerateHtmlWithCorrectColor = async (resumeData: any, color: string) => {
+    try {
+      console.log('ResumePreview - Regenerating HTML with color:', color);
+      setIsLoading(true);
+      
+      // Call the backend to generate new HTML with correct color
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://localhost:5001/api'}/resume-builder/build`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          resumeData: JSON.stringify(resumeData),
+          templateId: template,
+          color: color
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success && result.data?.html) {
+        console.log('ResumePreview - Successfully regenerated HTML with correct color');
+        setResumeHtml(result.data.html);
+        await applyTemplateStyles();
+      } else {
+        throw new Error('Failed to regenerate HTML');
+      }
+    } catch (error) {
+      console.error('ResumePreview - Failed to regenerate HTML:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update resume color. Using original version.",
+        variant: "destructive"
+      });
+      // Fallback to original HTML
+      if (encodedHtml) {
+        const decodedHtml = decodeURIComponent(encodedHtml);
+        setResumeHtml(decodedHtml);
+        await applyTemplateStyles();
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     console.log('=== RESUME PREVIEW COMPONENT LOADED ===');
     console.log('ResumePreview - Template:', template);
+    console.log('ResumePreview - Selected Color:', selectedColor);
     console.log('ResumePreview - Encoded data:', encodedData);
     console.log('ResumePreview - Encoded HTML:', encodedHtml ? 'Present (length: ' + encodedHtml.length + ')' : 'Not present');
     
-    if (encodedData) {
+    const initializePreview = async () => {
+      if (encodedData) {
       try {
         // Decode the URL-encoded data
         const decodedData = decodeURIComponent(encodedData);
@@ -39,100 +122,43 @@ const ResumePreview = () => {
         const parsedData = JSON.parse(decodedData);
         console.log('=== PARSED RESUME DATA IN PREVIEW ===');
         console.log('ResumePreview - Full parsed data:', parsedData);
-        console.log('ResumePreview - Experience array:', parsedData.Experience);
-        console.log('ResumePreview - Education array:', parsedData.Education);
-        console.log('ResumePreview - Skills array:', parsedData.Skills);
-        console.log('ResumePreview - Experience length:', parsedData.Experience?.length || 0);
-        console.log('ResumePreview - Education length:', parsedData.Education?.length || 0);
-        
-        // Check if arrays have actual content
-        if (parsedData.Experience && parsedData.Experience.length > 0) {
-          console.log('ResumePreview - First experience item:', parsedData.Experience[0]);
-          parsedData.Experience.forEach((exp, index) => {
-            console.log(`Experience ${index}:`, {
-              Title: exp.Title,
-              Company: exp.Company,
-              Description: exp.Description,
-              hasContent: !!(exp.Title || exp.Company || exp.Description)
-            });
-          });
-        }
-        
-        if (parsedData.Education && parsedData.Education.length > 0) {
-          console.log('ResumePreview - First education item:', parsedData.Education[0]);
-          parsedData.Education.forEach((edu, index) => {
-            console.log(`Education ${index}:`, {
-              Degree: edu.Degree,
-              Institution: edu.Institution,
-              hasContent: !!(edu.Degree || edu.Institution)
-            });
-          });
-        }
         
         setResumeData(parsedData);
         
-        // If we have HTML from the backend, use it directly
+        // If we have HTML from the backend, check if color matches
         if (encodedHtml) {
           try {
             const decodedHtml = decodeURIComponent(encodedHtml);
             console.log('=== BACKEND HTML ANALYSIS ===');
-            console.log('ResumePreview - Using HTML from backend (length: ' + decodedHtml.length + ')');
-            console.log('ResumePreview - HTML preview (first 1000 chars):', decodedHtml.substring(0, 1000));
+            console.log('ResumePreview - HTML from backend (length: ' + decodedHtml.length + ')');
+            console.log('ResumePreview - Current selected color:', selectedColor);
             
-            // Check if HTML contains experience and education sections
-            const hasExperienceSection = decodedHtml.includes('Experience') || decodedHtml.includes('Employment');
-            const hasEducationSection = decodedHtml.includes('Education');
-            const hasExperienceData = decodedHtml.includes('employment-history-role') || decodedHtml.includes('experience');
-            const hasEducationData = decodedHtml.includes('education-degree') || decodedHtml.includes('education');
+            // Check if the HTML contains the current selected color
+            const htmlContainsCurrentColor = decodedHtml.includes(selectedColor);
+            console.log('ResumePreview - HTML contains current color:', htmlContainsCurrentColor);
             
-            console.log('HTML Content Analysis:');
-            console.log('- Has Experience Section:', hasExperienceSection);
-            console.log('- Has Education Section:', hasEducationSection);
-            console.log('- Has Experience Data:', hasExperienceData);
-            console.log('- Has Education Data:', hasEducationData);
+            // Also check for common color variations (with/without #, rgb format, etc.)
+            const colorVariations = [
+              selectedColor,
+              selectedColor.replace('#', ''),
+              selectedColor.toLowerCase(),
+              selectedColor.toUpperCase()
+            ];
             
-            // Look for specific patterns that might indicate empty sections
-            const emptyExperiencePattern = /employment-history-role">\s*,\s*<span/;
-            const hasEmptyExperience = emptyExperiencePattern.test(decodedHtml);
-            console.log('- Has Empty Experience Pattern:', hasEmptyExperience);
+            const hasAnyColorVariation = colorVariations.some(variation => decodedHtml.includes(variation));
+            console.log('ResumePreview - HTML contains any color variation:', hasAnyColorVariation);
             
-            // Let's examine the actual experience section in the HTML
-            const experienceMatch = decodedHtml.match(/<div class="employment-section">[\s\S]*?<\/div>/);
-            if (experienceMatch) {
-              console.log('Experience section HTML:', experienceMatch[0]);
+            // If color doesn't match and it's not the default color, regenerate HTML
+            if (!hasAnyColorVariation && selectedColor !== '#315389') {
+              console.log('ResumePreview - Color mismatch detected! Regenerating HTML with correct color...');
+              await regenerateHtmlWithCorrectColor(parsedData, selectedColor);
+            } else {
+              console.log('ResumePreview - Color matches or is default, using existing HTML');
+              setResumeHtml(decodedHtml);
+              // Apply template styles after HTML is set
+              applyTemplateStyles();
+              setIsLoading(false);
             }
-            
-            // Look for the actual experience entries
-            const experienceEntries = decodedHtml.match(/employment-history-role">[^<]*</g);
-            console.log('Experience entries found:', experienceEntries);
-            
-            // Check education section too
-            const educationMatch = decodedHtml.match(/<div class="education-section">[\s\S]*?<\/div>/);
-            if (educationMatch) {
-              console.log('Education section HTML:', educationMatch[0]);
-            }
-            
-            // Look for education entries
-            const educationEntries = decodedHtml.match(/education-degree">[^<]*</g);
-            console.log('Education entries found:', educationEntries);
-            
-            // Let's also check if the HTML contains the actual data values
-            console.log('=== CHECKING FOR ACTUAL DATA IN HTML ===');
-            console.log('HTML contains "Cloud Architect":', decodedHtml.includes('Cloud Architect'));
-            console.log('HTML contains "Cognizant":', decodedHtml.includes('Cognizant'));
-            console.log('HTML contains "MBA":', decodedHtml.includes('MBA'));
-            console.log('HTML contains "Amity University":', decodedHtml.includes('Amity University'));
-            
-            // Let's see the full HTML around the employment section
-            const employmentSectionStart = decodedHtml.indexOf('<div class="employment-section">');
-            const employmentSectionEnd = decodedHtml.indexOf('</div>', employmentSectionStart + 200);
-            if (employmentSectionStart !== -1 && employmentSectionEnd !== -1) {
-              const employmentSection = decodedHtml.substring(employmentSectionStart, employmentSectionEnd + 6);
-              console.log('Full employment section HTML:', employmentSection);
-            }
-            
-            setResumeHtml(decodedHtml);
-            setIsLoading(false);
           } catch (htmlError) {
             console.error('ResumePreview - Error decoding HTML from backend:', htmlError);
             toast({
@@ -170,114 +196,97 @@ const ResumePreview = () => {
       });
       setIsLoading(false);
     }
-  }, [encodedData, encodedHtml, template, toast]);
+    };
 
-  const downloadAsWord = async () => {
-    if (!resumeData || !template) return;
+    // Call the async function
+    initializePreview();
+
+    // Cleanup function to remove template styles when component unmounts
+    return () => {
+      const styleToRemove = document.querySelector('style[data-template-styles]');
+      if (styleToRemove) {
+        styleToRemove.remove();
+      }
+    };
+  }, [encodedData, encodedHtml, template, toast, selectedColor]);
+
+  const downloadAsHTML = async () => {
+    if (!resumeData || !template || !resumeHtml) return;
     
     try {
       setIsLoading(true);
       toast({
-        title: "Generating Word Document",
-        description: "Please wait while we generate your Word document. This may take a few moments...",
+        title: "Generating HTML Document",
+        description: "Creating a perfectly formatted HTML version of your resume...",
       });
       
-      // Try to download as Word document first
-      try {
-        const response = await api.resumeBuilder.downloadResume({
-          resumeText: resumeHtml,
-          format: "docx"
-        });
-        
-        if (response.ok) {
-          // Check if the response is actually a Word document
-          const contentType = response.headers.get('content-type');
-          if (contentType && (contentType.includes('application/vnd.openxmlformats-officedocument.wordprocessingml.document') || contentType.includes('application/octet-stream'))) {
-            // Get the Word document blob from the response
-            const blob = await response.blob();
-            
-            // Create a download link for the Word document
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `resume-${template}.docx`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-            
-            toast({
-              title: "Success!",
-              description: "Your resume has been downloaded as Word document.",
-            });
-            return;
-          } else {
-            console.warn('Response is not a Word document, content-type:', contentType);
-            throw new Error('Invalid Word document response');
-          }
-        } else {
-          throw new Error(`Word generation failed with status: ${response.status}`);
-        }
-      } catch (wordError) {
-        console.warn('Word generation failed, falling back to HTML:', wordError);
-      }
+      // Get candidate name for filename
+      const candidateName = resumeData?.PersonalInfo?.Name || 
+                           resumeData?.personalInfo?.name || 
+                           resumeData?.name || 
+                           resumeData?.Name ||
+                           'resume';
       
-      // Fallback to HTML if Word generation fails
-      toast({
-        title: "Word Format Not Supported",
-        description: "Word format doesn't support this template's advanced formatting. Downloading as HTML instead - you can open this in any word processor.",
-        variant: "default"
-      });
+      // Get centralized CSS
+      const css = await templateService.getTemplateCss(template, selectedColor);
       
-      // Create a complete HTML document with proper DOCTYPE and meta tags
-      // Add some basic styling that's more compatible with Word if opened there
+      // Create a complete HTML document that preserves exact preview formatting
       const fullHtml = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${resumeData?.Name || 'Resume'}</title>
+  <title>${candidateName} - Resume</title>
   <style>
-    /* Additional styles for better Word compatibility */
-    body { 
-      font-family: 'Times New Roman', serif; 
-      line-height: 1.4; 
-      margin: 1in; 
-      color: #000; 
-    }
-    @media print {
-      body { margin: 0; }
+    /* CENTRALIZED STYLES - SINGLE SOURCE OF TRUTH */
+    ${css}
+    
+    /* Additional HTML export specific styles */
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f5f6fa;
+      padding: 0.5in;
+      margin: 0;
     }
   </style>
 </head>
-<body>
+<body class="${template}">
 ${resumeHtml}
-<div style="margin-top: 2em; padding-top: 1em; border-top: 1px solid #ccc; font-size: 0.8em; color: #666;">
-  <p><strong>Note:</strong> This resume was downloaded as HTML because Word format doesn't support the advanced formatting of this template. You can open this file in any web browser or word processor that supports HTML.</p>
+
+<div style="margin-top: 2em; padding: 1em; background: #f8f9fa; border-radius: 8px; font-size: 0.9em; color: #666; text-align: center;">
+  <p><strong>📄 Resume Generated Successfully</strong></p>
+  <p>This HTML file preserves the exact formatting from your preview. You can:</p>
+  <ul style="list-style: none; padding: 0; margin: 0.5em 0;">
+    <li>• Open in any web browser for viewing</li>
+    <li>• Print directly from your browser (Ctrl+P / Cmd+P)</li>
+    <li>• Import into word processors that support HTML</li>
+    <li>• Share via email or cloud storage</li>
+  </ul>
+  <p style="margin-top: 0.5em;"><em>Template: ${template} | Generated: ${new Date().toLocaleDateString()}</em></p>
 </div>
 </body>
 </html>`;
       
-      const blob = new Blob([fullHtml], { type: 'text/html' });
+      // Create and download the HTML file
+      const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `resume-${template}.html`;
+      link.download = `${candidateName.toLowerCase().replace(/\s+/g, '_')}_resume_${template}.html`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
       toast({
-        title: "Downloaded as HTML",
-        description: "Your resume has been downloaded as HTML since Word format is not supported for this template.",
+        title: "HTML Downloaded Successfully",
+        description: "Your resume has been saved as an HTML file that preserves all formatting.",
       });
-      
     } catch (error) {
-      console.error('Error downloading resume:', error);
+      console.error('HTML export failed:', error);
       toast({
-        title: "Download Failed",
-        description: error instanceof Error ? error.message : "Failed to download resume. Please try again.",
+        title: "Export Failed",
+        description: "Failed to generate HTML file. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -297,14 +306,16 @@ ${resumeHtml}
     }
 
     try {
-      // Get candidate name from resume data
+      // Get candidate name for filename
       const candidateName = resumeData?.PersonalInfo?.Name || 
                            resumeData?.personalInfo?.name || 
                            resumeData?.name || 
+                           resumeData?.Name ||
                            'resume';
 
-      // Use the new frontend PDF export
-      await exportResume('resume-preview-container', candidateName, resumeData);
+      // Use the new frontend PDF export with selected color
+      console.log('PDF Export - Passing color to export function:', selectedColor);
+      await exportResume('resume-preview-container', candidateName, resumeData, selectedColor);
       
     } catch (error) {
       console.error('Frontend PDF export failed, trying fallback:', error);
@@ -313,8 +324,8 @@ ${resumeHtml}
       try {
         setIsLoading(true);
         toast({
-          title: "Trying alternative method",
-          description: "Generating PDF using server...",
+          title: "Generating PDF",
+          description: "Creating your resume PDF using fallback method...",
         });
         
         const response = await api.resumeBuilder.downloadResume({
@@ -322,11 +333,13 @@ ${resumeHtml}
           format: "pdf"
         });
         
-        if (!response.ok) {
-          throw new Error(`Server PDF generation failed: ${response.status}`);
+        if (!response || !response.ok) {
+          throw new Error(`Server responded with status: ${response?.status || 'unknown'}`);
         }
         
-        const blob = await response.blob();
+        const arrayBuffer = await response.arrayBuffer();
+        const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
+        
         if (blob.size === 0) {
           throw new Error('Generated PDF is empty');
         }
@@ -341,12 +354,11 @@ ${resumeHtml}
         URL.revokeObjectURL(url);
         
         toast({
-          title: "Success!",
-          description: "Your resume has been downloaded as PDF.",
+          title: "PDF Downloaded Successfully",
+          description: "Your resume has been saved as a PDF file.",
         });
-        
       } catch (fallbackError) {
-        console.error('Both frontend and backend PDF generation failed:', fallbackError);
+        console.error('Fallback PDF export also failed:', fallbackError);
         toast({
           title: "PDF Download Failed",
           description: "Unable to generate PDF. Please try again or contact support.",
@@ -389,42 +401,21 @@ ${resumeHtml}
             </div>
           </div>
           
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
               onClick={() => setIsPreviewMode(!isPreviewMode)}
+              className="flex items-center gap-2"
             >
-              <Eye className="h-4 w-4 mr-2" />
+              <Eye className="h-4 w-4" />
               {isPreviewMode ? 'Exit Preview' : 'Preview Mode'}
             </Button>
-            
-            <Button variant="outline" onClick={downloadAsWord} disabled={isLoading}>
-              <FileText className="h-4 w-4 mr-2" />
-              Download Word
-            </Button>
-            
-            <PDFExportDropdown
-              resumeElementId="resume-preview-container"
-              candidateName={resumeData?.PersonalInfo?.Name || resumeData?.personalInfo?.name || resumeData?.name || 'resume'}
-              resumeData={resumeData}
-            />
           </div>
         </div>
 
-        {/* Preview Content */}
-        <div className={`grid grid-cols-1 lg:grid-cols-4 gap-6 ${isPreviewMode ? 'fixed inset-0 z-50 bg-gray-100 overflow-auto p-4' : ''}`}>
-          {isPreviewMode && (
-            <div className="fixed top-4 right-4 z-60">
-              <Button
-                variant="secondary"
-                onClick={() => setIsPreviewMode(false)}
-              >
-                Exit Preview
-              </Button>
-            </div>
-          )}
-          
-          <div className={isPreviewMode ? 'col-span-full' : 'lg:col-span-3'}>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Main Content */}
+          <div className="lg:col-span-3">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -434,20 +425,16 @@ ${resumeHtml}
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <div className="h-[800px] flex items-center justify-center">
+                  <div className="flex items-center justify-center h-96">
                     <div className="text-center">
                       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                      <p className="text-gray-600">Generating your resume...</p>
+                      <p className="text-gray-600">Loading resume preview...</p>
                     </div>
                   </div>
                 ) : (
-                  <div 
+                  <div
                     id="resume-preview-container"
-                    className={`bg-white min-h-[800px] ${
-                      isPreviewMode 
-                        ? 'mx-auto shadow-lg max-w-[210mm] p-0' 
-                        : 'border rounded-lg p-4'
-                    }`}
+                    className="resume-preview-container"
                     style={{
                       width: isPreviewMode ? '210mm' : 'auto',
                       minHeight: isPreviewMode ? '297mm' : '800px'
@@ -459,29 +446,33 @@ ${resumeHtml}
             </Card>
           </div>
 
-          {/* Actions Panel */}
-          {!isPreviewMode && (
-            <div className="lg:col-span-1">
-            <Card className="sticky top-4">
+          {/* Sidebar */}
+          <div className="lg:col-span-1">
+            <Card>
               <CardHeader>
-                <CardTitle>Download Options</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Download className="h-5 w-5" />
+                  Export Options
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <PDFExportButton
                   resumeElementId="resume-preview-container"
-                  candidateName={resumeData?.PersonalInfo?.Name || resumeData?.personalInfo?.name || resumeData?.name || 'resume'}
+                  candidateName={resumeData?.PersonalInfo?.Name || resumeData?.personalInfo?.name || resumeData?.name || resumeData?.Name || 'resume'}
                   resumeData={resumeData}
+                  templateColor={selectedColor}
                   className="w-full"
                   disabled={isLoading || isExporting}
                 >
                   <Download className="h-4 w-4 mr-2" />
-                  {isExporting ? 'Generating PDF...' : 'Download as PDF'}
+                  {isExporting ? 'Generating...' : 'Download PDF'}
                 </PDFExportButton>
-                
+
                 <PDFExportButton
                   resumeElementId="resume-preview-container"
-                  candidateName={resumeData?.PersonalInfo?.Name || resumeData?.personalInfo?.name || resumeData?.name || 'resume'}
+                  candidateName={resumeData?.PersonalInfo?.Name || resumeData?.personalInfo?.name || resumeData?.name || resumeData?.Name || 'resume'}
                   resumeData={resumeData}
+                  templateColor={selectedColor}
                   variant="outline"
                   className="w-full"
                   highQuality={true}
@@ -494,11 +485,11 @@ ${resumeHtml}
                 <Button 
                   variant="outline" 
                   className="w-full" 
-                  onClick={downloadAsWord}
+                  onClick={downloadAsHTML}
                   disabled={isLoading}
                 >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Download as Word
+                  <Globe className="h-4 w-4 mr-2" />
+                  Download as HTML
                 </Button>
 
                 <div className="pt-4 border-t">
@@ -524,8 +515,7 @@ ${resumeHtml}
                 )}
               </CardContent>
             </Card>
-            </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

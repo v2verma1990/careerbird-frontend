@@ -39,6 +39,11 @@
       flex-direction: column;
       align-items: flex-start;
       box-sizing: border-box;
+      flex-shrink: 0;
+      overflow: visible;
+      -webkit-print-color-adjust: exact;
+      color-adjust: exact;
+      print-color-adjust: exact;
     }
     .photo {
       width: 72px;
@@ -301,11 +306,7 @@
       </div>
       <div class="sidebar-section">
         <div class="sidebar-section-title">Skills</div>
-        <ul class="sidebar-skills-list">
-          {{#each skills}}
-            <li>{{this}}</li>
-          {{/each}}
-        </ul>
+        <ul class="sidebar-skills-list">{{#each skills}}<li>{{this}}</li>{{/each}}</ul>
       </div>
     </div>
     <div class="content">

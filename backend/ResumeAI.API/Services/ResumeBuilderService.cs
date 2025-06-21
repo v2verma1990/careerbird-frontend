@@ -1816,7 +1816,7 @@ namespace ResumeAI.API.Services
                     processedDict["skills"] = resumeDataModel.Skills?.Where(s => !string.IsNullOrWhiteSpace(s)).ToList() ?? new List<string>();
                     
                     // Add color parameter (both cases for template compatibility)
-                    string finalColor = color ?? "#153559"; // Default navy color
+                    string finalColor = color ?? "#315389"; // Default navy color
                     processedDict["color"] = finalColor;
                     processedDict["Color"] = finalColor;
                     Console.WriteLine($"Added color to processedDict: color='{finalColor}', Color='{finalColor}'");
@@ -1972,7 +1972,7 @@ namespace ResumeAI.API.Services
                     }
                     
                     // Add color parameter for JObject processing (both cases for template compatibility)
-                    string finalColor = color ?? "#153559"; // Default navy color
+                    string finalColor = color ?? "#315389"; // Default navy color
                     processedDict["color"] = finalColor;
                     processedDict["Color"] = finalColor;
                     Console.WriteLine($"Added color to JObject processedDict: color='{finalColor}', Color='{finalColor}'");
@@ -2001,7 +2001,7 @@ namespace ResumeAI.API.Services
                     Console.WriteLine("Ensuring all required fields are present");
                     
                     // Ensure color is always present (both cases for template compatibility)
-                    string finalColor = color ?? "#153559"; // Default navy color
+                    string finalColor = color ?? "#315389"; // Default navy color
                     if (!dict.ContainsKey("color"))
                     {
                         dict["color"] = finalColor;

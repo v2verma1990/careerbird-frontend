@@ -84,6 +84,7 @@ builder.Services.AddSingleton<AuthService>();
 builder.Services.AddSingleton<RecruiterSubscriptionService>();
 builder.Services.AddSingleton<CandidateSubscriptionService>();
 builder.Services.AddSingleton<ResumeBuilderService>();
+builder.Services.AddSingleton<ITemplateService, TemplateService>();
 
 // Configure storage service based on configuration
 var storageProvider = builder.Configuration["Storage:Provider"] ?? "AzureBlobStorage";

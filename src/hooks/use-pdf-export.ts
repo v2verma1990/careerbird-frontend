@@ -119,9 +119,18 @@ export const useResumeExport = () => {
   const exportResume = useCallback(async (
     resumeElementId: string = 'resume-preview',
     candidateName: string = 'resume',
-    resumeData?: any
+    resumeData?: any,
+    templateColor?: string
   ) => {
     const filename = candidateName.toLowerCase().replace(/\s+/g, '_');
+    
+    // Ensure we have a valid color
+    const finalColor = templateColor && templateColor !== 'undefined' && templateColor.trim() !== '' 
+      ? templateColor 
+      : '#315389';
+    
+    console.log('useResumeExport - Received template color:', templateColor);
+    console.log('useResumeExport - Using final color:', finalColor);
     
     const options: UsePDFExportOptions = {
       format: 'a4',
@@ -132,8 +141,11 @@ export const useResumeExport = () => {
       includeBackground: true,
       optimizeForPrint: true,
       fallbackToAPI: true,
-      apiResumeData: resumeData
+      apiResumeData: resumeData,
+      templateColor: finalColor
     };
+    
+    console.log('useResumeExport - Final options with color:', options.templateColor);
 
     await exportPDF(resumeElementId, filename, options);
   }, [exportPDF]);
@@ -141,9 +153,15 @@ export const useResumeExport = () => {
   const exportResumeHighQuality = useCallback(async (
     resumeElementId: string = 'resume-preview',
     candidateName: string = 'resume',
-    resumeData?: any
+    resumeData?: any,
+    templateColor?: string
   ) => {
     const filename = `${candidateName.toLowerCase().replace(/\s+/g, '_')}_hq`;
+    
+    // Ensure we have a valid color
+    const finalColor = templateColor && templateColor !== 'undefined' && templateColor.trim() !== '' 
+      ? templateColor 
+      : '#315389';
     
     const options: UsePDFExportOptions = {
       format: 'a4',
@@ -154,7 +172,8 @@ export const useResumeExport = () => {
       includeBackground: true,
       optimizeForPrint: true,
       fallbackToAPI: true,
-      apiResumeData: resumeData
+      apiResumeData: resumeData,
+      templateColor: finalColor
     };
 
     await exportPDF(resumeElementId, filename, options);

@@ -441,12 +441,63 @@ const transformDataForTemplate = (data: any) => {
   return transformed;
 };
 
+// Helper functions for localStorage persistence
+const RESUME_DATA_KEY = 'careerbird_resume_builder_data';
+const RESUME_PHOTO_KEY = 'careerbird_resume_builder_photo';
+
+const saveResumeDataToStorage = (data: any) => {
+  try {
+    localStorage.setItem(RESUME_DATA_KEY, JSON.stringify(data));
+  } catch (error) {
+    console.warn('Failed to save resume data to localStorage:', error);
+  }
+};
+
+const loadResumeDataFromStorage = () => {
+  try {
+    const saved = localStorage.getItem(RESUME_DATA_KEY);
+    if (saved) {
+      const parsedData = JSON.parse(saved);
+      // Validate that the data has the expected structure
+      if (parsedData && typeof parsedData === 'object') {
+        return parsedData;
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to load resume data from localStorage:', error);
+  }
+  return null;
+};
+
+const savePhotoToStorage = (photoUrl: string) => {
+  try {
+    localStorage.setItem(RESUME_PHOTO_KEY, photoUrl);
+  } catch (error) {
+    console.warn('Failed to save photo to localStorage:', error);
+  }
+};
+
+const loadPhotoFromStorage = () => {
+  try {
+    return localStorage.getItem(RESUME_PHOTO_KEY) || '';
+  } catch (error) {
+    console.warn('Failed to load photo from localStorage:', error);
+    return '';
+  }
+};
+
 const ResumeBuilderApp = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const [selectedTemplate, setSelectedTemplate] = useState(searchParams.get('template') || '');
   const [currentStep, setCurrentStep] = useState(selectedTemplate ? 2 : 1);
-  const [resumeData, setResumeData] = useState(initialData);
+  
+  // Initialize resume data from localStorage if available, otherwise use initialData
+  const [resumeData, setResumeData] = useState(() => {
+    const savedData = loadResumeDataFromStorage();
+    return savedData || initialData;
+  });
+  
   const [isGenerating, setIsGenerating] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
   const [activeTab, setActiveTab] = useState('personal');
@@ -459,8 +510,42 @@ const ResumeBuilderApp = () => {
   const [templateColors, setTemplateColors] = useState<{[templateId: string]: string}>({});
   const [lastUsedTemplateId, setLastUsedTemplateId] = useState(""); // Track last used template ID
   const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string>("");
+  
+  // Initialize photo preview from localStorage if available
+  const [photoPreview, setPhotoPreview] = useState(() => {
+    return loadPhotoFromStorage();
+  });
+  
   const [photoLoading, setPhotoLoading] = useState(false); // Loading state for photo upload
+
+  // Create a wrapper function for setResumeData that also saves to localStorage
+  const updateResumeData = (newData: any) => {
+    setResumeData(newData);
+    saveResumeDataToStorage(newData);
+  };
+
+  // Auto-save resume data to localStorage whenever it changes
+  useEffect(() => {
+    // Only save if the data is not empty (has meaningful content)
+    const hasContent = resumeData && (
+      resumeData.Name?.trim() || 
+      resumeData.Email?.trim() || 
+      resumeData.Summary?.trim() ||
+      (resumeData.Experience && resumeData.Experience.length > 0 && resumeData.Experience[0].Title?.trim()) ||
+      (resumeData.Education && resumeData.Education.length > 0 && resumeData.Education[0].Degree?.trim())
+    );
+    
+    if (hasContent) {
+      saveResumeDataToStorage(resumeData);
+    }
+  }, [resumeData]);
+
+  // Auto-save photo preview to localStorage whenever it changes
+  useEffect(() => {
+    if (photoPreview) {
+      savePhotoToStorage(photoPreview);
+    }
+  }, [photoPreview]);
 
   // Initialize color from URL parameters
   useEffect(() => {
@@ -595,7 +680,7 @@ const ResumeBuilderApp = () => {
         }))
       };
 
-      setResumeData(mappedData);
+      updateResumeData(mappedData);
       setHasDefaultResume(true); // Only set to true on success
       console.log('Resume data after extraction:', mappedData);
       console.log('Experience count:', mappedData.Experience?.length || 0);
@@ -666,7 +751,7 @@ const ResumeBuilderApp = () => {
   };
 
   const addArrayItem = (field: string, newItem: any) => {
-    setResumeData(prev => ({
+    updateResumeData(prev => ({
       ...prev,
       [field]: [...prev[field], newItem]
     }));
@@ -987,11 +1072,13 @@ const ResumeBuilderApp = () => {
         const params = new URLSearchParams({
           template: selectedTemplate,
           data: encodeURIComponent(JSON.stringify(resumeData)),
-          html: encodeURIComponent(result.data.html) // Pass the HTML from the backend
+          html: encodeURIComponent(result.data.html), // Pass the HTML from the backend
+          color: encodeURIComponent(selectedColor) // Pass the selected color
         });
         
         console.log('URL params being created:');
         console.log('- template:', selectedTemplate);
+        console.log('- color:', selectedColor);
         console.log('- data (encoded):', encodeURIComponent(JSON.stringify(resumeData)));
         console.log('- html (encoded length):', encodeURIComponent(result.data.html).length);
         
@@ -1062,11 +1149,13 @@ const ResumeBuilderApp = () => {
           template: selectedTemplate,
           data: encodeURIComponent(JSON.stringify(resumeData)),
           html: encodeURIComponent(result.data.html), // Pass the HTML from the backend
+          color: encodeURIComponent(selectedColor), // Pass the selected color
           aiEnhanced: 'true'
         });
         
         console.log('AI URL params being created:');
         console.log('- template:', selectedTemplate);
+        console.log('- color:', selectedColor);
         console.log('- data (encoded):', encodeURIComponent(JSON.stringify(resumeData)));
         console.log('- html (encoded length):', encodeURIComponent(result.data.html).length);
         console.log('- aiEnhanced: true');
@@ -1139,12 +1228,14 @@ const ResumeBuilderApp = () => {
           template: selectedTemplate,
           data: encodeURIComponent(JSON.stringify(resumeData)),
           html: encodeURIComponent(result.data.html), // Pass the HTML from the backend
+          color: encodeURIComponent(selectedColor), // Pass the selected color
           aiEnhanced: 'true',
           premium: 'true'
         });
         
         console.log('Premium AI URL params being created:');
         console.log('- template:', selectedTemplate);
+        console.log('- color:', selectedColor);
         console.log('- data (encoded):', encodeURIComponent(JSON.stringify(resumeData)));
         console.log('- html (encoded length):', encodeURIComponent(result.data.html).length);
         console.log('- aiEnhanced: true');

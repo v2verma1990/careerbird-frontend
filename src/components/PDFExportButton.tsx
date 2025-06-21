@@ -8,6 +8,7 @@ interface PDFExportButtonProps {
   resumeElementId?: string;
   candidateName?: string;
   resumeData?: any;
+  templateColor?: string;
   variant?: 'default' | 'outline' | 'ghost' | 'link' | 'destructive' | 'secondary';
   size?: 'default' | 'sm' | 'lg' | 'icon';
   className?: string;
@@ -23,6 +24,7 @@ export const PDFExportButton: React.FC<PDFExportButtonProps> = ({
   resumeElementId = 'resume-preview',
   candidateName = 'resume',
   resumeData,
+  templateColor,
   variant = 'default',
   size = 'default',
   className,
@@ -40,9 +42,9 @@ export const PDFExportButton: React.FC<PDFExportButtonProps> = ({
       onExportStart?.();
       
       if (highQuality) {
-        await exportResumeHighQuality(resumeElementId, candidateName, resumeData);
+        await exportResumeHighQuality(resumeElementId, candidateName, resumeData, templateColor);
       } else {
-        await exportResume(resumeElementId, candidateName, resumeData);
+        await exportResume(resumeElementId, candidateName, resumeData, templateColor);
       }
       
       onExportComplete?.();
@@ -97,6 +99,7 @@ interface PDFExportDropdownProps {
   resumeElementId?: string;
   candidateName?: string;
   resumeData?: any;
+  templateColor?: string;
   className?: string;
 }
 
@@ -104,6 +107,7 @@ export const PDFExportDropdown: React.FC<PDFExportDropdownProps> = ({
   resumeElementId,
   candidateName,
   resumeData,
+  templateColor,
   className
 }) => {
   const { exportResume, exportResumeHighQuality, isExporting } = useResumeExport();
@@ -114,6 +118,7 @@ export const PDFExportDropdown: React.FC<PDFExportDropdownProps> = ({
         resumeElementId={resumeElementId}
         candidateName={candidateName}
         resumeData={resumeData}
+        templateColor={templateColor}
         variant="default"
       >
         Download PDF
@@ -123,6 +128,7 @@ export const PDFExportDropdown: React.FC<PDFExportDropdownProps> = ({
         resumeElementId={resumeElementId}
         candidateName={candidateName}
         resumeData={resumeData}
+        templateColor={templateColor}
         variant="outline"
         size="sm"
         highQuality={true}
