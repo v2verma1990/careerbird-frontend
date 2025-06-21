@@ -14,20 +14,6 @@ namespace ResumeAI.API.Controllers
             _templateService = templateService;
         }
 
-        [HttpGet("{templateId}/css")]
-        public IActionResult GetTemplateCss(string templateId, [FromQuery] string? color = null)
-        {
-            try
-            {
-                var css = _templateService.GetTemplateCss(templateId, color);
-                return Content(css, "text/css");
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-        }
-
         [HttpGet("{templateId}/html")]
         public IActionResult GetTemplateHtml(string templateId)
         {

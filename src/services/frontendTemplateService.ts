@@ -70,22 +70,14 @@ class FrontendTemplateService {
    * Force immediate color application to prevent flash
    */
   private forceImmediateColorApplication(color: string): void {
-    // Apply color immediately to any existing sidebar elements
-    const sidebarElements = document.querySelectorAll('.sidebar, [class*="sidebar"]');
-    sidebarElements.forEach((element: HTMLElement) => {
-      element.style.setProperty('background-color', color, 'important');
-      element.style.setProperty('background', color, 'important');
-    });
-
-    // Apply color to other template-colored elements
-    const coloredElements = document.querySelectorAll('.section-label, h2, .title');
-    coloredElements.forEach((element: HTMLElement) => {
-      element.style.setProperty('color', color, 'important');
-    });
+    // Since backend no longer generates inline styles, 
+    // the CSS custom property should be sufficient
+    // This method is kept for any edge cases
+    console.log('FrontendTemplateService: CSS custom property should handle color application');
   }
 
   /**
-   * Add a style tag to override any existing color styles (including inline styles)
+   * Add a style tag to set the color CSS custom property
    */
   private addColorOverrideStyle(color: string): void {
     // Remove any existing override style
@@ -94,53 +86,19 @@ class FrontendTemplateService {
       existingOverride.remove();
     }
 
-    // Create new override style with MAXIMUM specificity to override inline styles
+    // Create new color style with CSS custom property
     const overrideStyle = document.createElement('style');
     overrideStyle.setAttribute('data-color-override', 'true');
     overrideStyle.textContent = `
       :root {
         --template-color: ${color} !important;
       }
-      
-      /* Override ALL possible sidebar selectors with maximum specificity */
-      .navy-column-modern .sidebar,
-      .navy-column-modern .sidebar[style],
-      .navy-column-modern div.sidebar,
-      .navy-column-modern div.sidebar[style],
-      #resume-preview-container .sidebar,
-      #resume-preview-container .sidebar[style],
-      #resume-preview-container div.sidebar,
-      #resume-preview-container div.sidebar[style] {
-        background: ${color} !important;
-        background-color: ${color} !important;
-        background-image: none !important;
-      }
-      
-      /* Override ALL possible text color selectors */
-      .navy-column-modern .content h2,
-      .navy-column-modern .content h2[style],
-      .navy-column-modern .section-label,
-      .navy-column-modern .section-label[style],
-      .navy-column-modern .content .title,
-      .navy-column-modern .content .title[style],
-      #resume-preview-container h2,
-      #resume-preview-container h2[style],
-      #resume-preview-container .section-label,
-      #resume-preview-container .section-label[style],
-      #resume-preview-container .title,
-      #resume-preview-container .title[style] {
-        color: ${color} !important;
-      }
-      
-      .navy-column-modern .achievement-item::before {
-        color: ${color} !important;
-      }
     `;
     
     // Insert at the end of head for maximum priority
     document.head.appendChild(overrideStyle);
     
-    console.log('FrontendTemplateService: Added AGGRESSIVE color override style with color:', color);
+    console.log('FrontendTemplateService: Set CSS custom property --template-color to:', color);
   }
 
   /**
@@ -300,14 +258,6 @@ class FrontendTemplateService {
     const supportedTemplates = ['navy-column-modern'];
     supportedTemplates.forEach(template => {
       document.body.classList.remove(template);
-    });
-    
-    // Remove any forced inline styles
-    const elementsWithForcedStyles = document.querySelectorAll('[style*="background"], [style*="color"]');
-    elementsWithForcedStyles.forEach((element: HTMLElement) => {
-      element.style.removeProperty('background-color');
-      element.style.removeProperty('background');
-      element.style.removeProperty('color');
     });
   }
 }
