@@ -224,16 +224,18 @@ export const AuthProvider = ({ children }) => {
             if (!subscriptionResponse.error && subscriptionResponse.data) {
               console.log("Subscription data received:", subscriptionResponse.data);
               subscriptionData = {
-                active: subscriptionResponse.data.subscription_type || 'free',
+                active: subscriptionResponse.data.is_active !== undefined ? subscriptionResponse.data.is_active : true,
                 type: subscriptionResponse.data.subscription_type || 'free',
                 endDate: subscriptionResponse.data.end_date ? new Date(subscriptionResponse.data.end_date) : null,
+                cancelled: subscriptionResponse.data.is_cancelled || false,
               };
             } else {
               console.warn("No subscription data or error:", subscriptionResponse.error);
               subscriptionData = {
-                active: 'free',
+                active: true,
                 type: 'free',
                 endDate: null,
+                cancelled: false,
               };
             }
           } catch (error) {
@@ -326,10 +328,6 @@ export const AuthProvider = ({ children }) => {
 
         console.log("User data before setting:", userData);
         
-        // Prepare subscription data - we need to fetch the actual subscription data
-        // from the backend instead of relying on the profile data from login
-        let subscriptionData = null;
-        
         // Set basic user data first
         setSession({
           user: userData,
@@ -390,9 +388,8 @@ export const AuthProvider = ({ children }) => {
               cancelled: subscriptionData?.is_cancelled
             });
             
-            // If subscription is active and not free, go to candidate dashboard
-            // Otherwise go to free plan dashboard
-            if (subType !== 'free' && isActive) {
+            // Fixed logic: Check if subscription is active AND not free
+            if (isActive && subType !== 'free') {
               console.log("Navigating to premium candidate dashboard");
               navigate("/candidate-dashboard", { replace: true });
             } else {
@@ -791,7 +788,8 @@ export const AuthProvider = ({ children }) => {
         updateSubscription,
         cancelSubscription, 
         incrementUsageCount, 
-        resetUsageCount 
+        resetUsageCount,
+        fetchSubscriptionStatus
       }}
     >
       {children}

@@ -102,6 +102,7 @@ export type Database = {
           location: string | null
           phone_number: string | null
           professional_bio: string | null
+          resume_text: string | null
           skills: string[] | null
           updated_at: string | null
           upload_date: string | null
@@ -122,6 +123,7 @@ export type Database = {
           location?: string | null
           phone_number?: string | null
           professional_bio?: string | null
+          resume_text?: string | null
           skills?: string[] | null
           updated_at?: string | null
           upload_date?: string | null
@@ -142,6 +144,7 @@ export type Database = {
           location?: string | null
           phone_number?: string | null
           professional_bio?: string | null
+          resume_text?: string | null
           skills?: string[] | null
           updated_at?: string | null
           upload_date?: string | null

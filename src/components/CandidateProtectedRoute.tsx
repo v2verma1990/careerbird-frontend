@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useAuth } from "@/contexts/auth/AuthContext";
 import { Navigate, useLocation } from "react-router-dom";
@@ -111,12 +112,13 @@ export default function CandidateProtectedRoute({ children }: { children: JSX.El
           console.log("CandidateProtectedRoute - Current state:", {
             path: currentPath,
             subscriptionType: subscriptionStatus?.type,
-            userType
+            userType,
+            active: subscriptionStatus?.active
           });
-        }, [currentPath, subscriptionStatus?.type, userType]);
+        }, [currentPath, subscriptionStatus?.type, userType, subscriptionStatus?.active]);
         
         // If user is on free-plan-dashboard but has an active paid subscription, redirect to candidate-dashboard
-        // If subscription is cancelled but still active (end date not reached), also redirect to candidate-dashboard
+        // Updated logic to handle all non-free subscription types including "basic"
         if (currentPath === '/free-plan-dashboard' && 
             subscriptionStatus?.type !== 'free' && 
             subscriptionStatus?.active && 
@@ -129,7 +131,8 @@ export default function CandidateProtectedRoute({ children }: { children: JSX.El
         if (currentPath === '/candidate-dashboard' && 
             (!subscriptionStatus || subscriptionStatus?.type === 'free' || !subscriptionStatus?.active || 
              (subscriptionStatus?.cancelled && subscriptionStatus?.endDate && new Date() >= subscriptionStatus.endDate))) {
-          return <Navigate to="/" replace />;
+          console.log(`Redirecting from candidate-dashboard to free-plan-dashboard (subscription: ${subscriptionStatus?.type}, active: ${subscriptionStatus?.active})`);
+          return <Navigate to="/free-plan-dashboard" replace />;
         }
         
         // If subscription is cancelled but still active (end date not reached), stay on candidate dashboard
