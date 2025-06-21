@@ -1,0 +1,342 @@
+/**
+ * Elegant Template Styles
+ * Elegant design with sophisticated typography and layout
+ */
+
+.elegant .resume-container {
+  max-width: 8.2in;
+  margin: 0 auto;
+  background-color: white;
+  padding: 45px;
+  font-family: 'Playfair Display', 'Georgia', serif;
+  line-height: 1.7;
+  color: #2c3e50;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+  border: 1px solid #f0f0f0;
+}
+
+.elegant .header {
+  text-align: center;
+  margin-bottom: 45px;
+  padding-bottom: 25px;
+  position: relative;
+}
+
+.elegant .header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--template-color, #8b5a3c), transparent);
+}
+
+.elegant .header h1 {
+  font-size: 34px;
+  color: var(--template-color, #8b5a3c);
+  margin-bottom: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  font-family: 'Playfair Display', serif;
+}
+
+.elegant .header p {
+  font-size: 18px;
+  color: #5d6d7e;
+  margin-bottom: 20px;
+  font-style: italic;
+  font-weight: 400;
+}
+
+.elegant .contact-info {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 25px;
+  font-size: 14px;
+  color: #5d6d7e;
+  font-family: 'Lato', sans-serif;
+}
+
+.elegant .contact-info span {
+  position: relative;
+  padding: 0 15px;
+}
+
+.elegant .contact-info span:not(:last-child)::after {
+  content: '•';
+  position: absolute;
+  right: -8px;
+  color: var(--template-color, #8b5a3c);
+}
+
+.elegant .section {
+  margin-bottom: 40px;
+}
+
+.elegant .section-title {
+  font-size: 20px;
+  color: var(--template-color, #8b5a3c);
+  margin-bottom: 25px;
+  font-weight: 600;
+  font-family: 'Playfair Display', serif;
+  position: relative;
+  text-align: center;
+  padding-bottom: 10px;
+}
+
+.elegant .section-title::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 1px;
+  background: var(--template-color, #8b5a3c);
+}
+
+.elegant .experience-item,
+.elegant .education-item {
+  margin-bottom: 30px;
+  padding-bottom: 25px;
+  border-bottom: 1px solid #f5f5f5;
+  position: relative;
+}
+
+.elegant .experience-item:last-child,
+.elegant .education-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.elegant .item-header {
+  margin-bottom: 12px;
+}
+
+.elegant .item-title {
+  font-weight: 600;
+  color: var(--template-color, #8b5a3c);
+  font-size: 18px;
+  margin-bottom: 6px;
+  font-family: 'Playfair Display', serif;
+}
+
+.elegant .item-subtitle {
+  color: #34495e;
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 6px;
+  font-style: italic;
+}
+
+.elegant .item-date {
+  color: #7f8c8d;
+  font-size: 14px;
+  font-weight: 400;
+  font-family: 'Lato', sans-serif;
+}
+
+.elegant .item-description {
+  font-size: 15px;
+  color: #34495e;
+  line-height: 1.8;
+  margin-top: 10px;
+  font-family: 'Lato', sans-serif;
+}
+
+.elegant .skills-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+
+.elegant .skill-item {
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  color: var(--template-color, #8b5a3c);
+  padding: 8px 18px;
+  border-radius: 25px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'Lato', sans-serif;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+.elegant .skill-item:hover {
+  background: var(--template-color, #8b5a3c);
+  color: white;
+  transform: translateY(-1px);
+}
+
+.elegant .reference-item {
+  margin-bottom: 25px;
+  text-align: center;
+  padding: 20px;
+  background: #fafbfc;
+  border-radius: 8px;
+  border: 1px solid #f0f0f0;
+}
+
+.elegant .reference-name {
+  font-weight: 600;
+  color: var(--template-color, #8b5a3c);
+  font-size: 16px;
+  margin-bottom: 6px;
+  font-family: 'Playfair Display', serif;
+}
+
+.elegant .reference-title {
+  color: #34495e;
+  font-weight: 500;
+  margin-bottom: 6px;
+  font-style: italic;
+}
+
+.elegant .reference-contact {
+  color: #7f8c8d;
+  font-size: 14px;
+  font-family: 'Lato', sans-serif;
+}
+
+.elegant .achievement-item {
+  margin-bottom: 12px;
+  font-size: 15px;
+  color: #34495e;
+  line-height: 1.8;
+  text-align: center;
+  position: relative;
+  padding: 0 20px;
+}
+
+.elegant .achievement-item::before {
+  content: "❖";
+  color: var(--template-color, #8b5a3c);
+  position: absolute;
+  left: 0;
+  font-size: 12px;
+  top: 3px;
+}
+
+.elegant .achievement-item::after {
+  content: "❖";
+  color: var(--template-color, #8b5a3c);
+  position: absolute;
+  right: 0;
+  font-size: 12px;
+  top: 3px;
+}
+
+.elegant .certification-item {
+  margin-bottom: 25px;
+  text-align: center;
+  padding: 15px;
+  background: #fafbfc;
+  border-radius: 8px;
+  border: 1px solid #f0f0f0;
+}
+
+.elegant .certification-name {
+  font-weight: 600;
+  color: var(--template-color, #8b5a3c);
+  font-size: 16px;
+  margin-bottom: 6px;
+  font-family: 'Playfair Display', serif;
+}
+
+.elegant .certification-issuer {
+  color: #34495e;
+  font-weight: 500;
+  margin-bottom: 4px;
+  font-style: italic;
+}
+
+.elegant .certification-date {
+  color: #7f8c8d;
+  font-size: 14px;
+  font-family: 'Lato', sans-serif;
+}
+
+.elegant .project-item {
+  margin-bottom: 30px;
+  padding: 20px;
+  background: #fafbfc;
+  border-radius: 8px;
+  border: 1px solid #f0f0f0;
+  text-align: center;
+}
+
+.elegant .project-name {
+  font-weight: 600;
+  color: var(--template-color, #8b5a3c);
+  font-size: 16px;
+  margin-bottom: 10px;
+  font-family: 'Playfair Display', serif;
+}
+
+.elegant .project-description {
+  font-size: 15px;
+  color: #34495e;
+  line-height: 1.8;
+  margin-bottom: 10px;
+  font-family: 'Lato', sans-serif;
+}
+
+.elegant .project-technologies {
+  font-size: 12px;
+  color: #7f8c8d;
+  font-style: italic;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-family: 'Lato', sans-serif;
+}
+
+/* Decorative elements */
+.elegant .decorative-line {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--template-color, #8b5a3c), transparent);
+  margin: 20px 0;
+}
+
+/* Print styles */
+@media print {
+  .elegant .resume-container {
+    box-shadow: none;
+    border: none;
+    padding: 30px;
+    max-width: none;
+  }
+  
+  .elegant * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .elegant .resume-container {
+    padding: 30px 20px;
+  }
+  
+  .elegant .header h1 {
+    font-size: 28px;
+  }
+  
+  .elegant .contact-info {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .elegant .contact-info span::after {
+    display: none;
+  }
+  
+  .elegant .skills-list {
+    justify-content: flex-start;
+  }
+}

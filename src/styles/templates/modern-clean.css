@@ -1,0 +1,227 @@
+/**
+ * Modern Clean Template Styles
+ * Clean, modern design with professional look
+ */
+
+.modern-clean .resume-container {
+  max-width: 7.7in;
+  width: 100%;
+  margin: 0 auto;
+  background-color: white;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  padding: 40px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+  color: #333;
+}
+
+.modern-clean .header {
+  text-align: center;
+  margin-bottom: 30px;
+  border-bottom: 2px solid var(--template-color, #3498db);
+  padding-bottom: 20px;
+}
+
+.modern-clean .header h1 {
+  font-size: 28px;
+  color: #2c3e50;
+  margin-bottom: 5px;
+  font-weight: 700;
+}
+
+.modern-clean .header p {
+  font-size: 16px;
+  color: #7f8c8d;
+}
+
+.modern-clean .contact-info {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.modern-clean .contact-info span {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+}
+
+.modern-clean .section {
+  margin-bottom: 25px;
+}
+
+.modern-clean .section-title {
+  font-size: 18px;
+  color: var(--template-color, #3498db);
+  margin-bottom: 15px;
+  border-bottom: 1px solid #ecf0f1;
+  padding-bottom: 5px;
+  font-weight: 600;
+}
+
+.modern-clean .experience-item,
+.modern-clean .education-item {
+  margin-bottom: 20px;
+}
+
+.modern-clean .item-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+
+.modern-clean .item-title {
+  font-weight: bold;
+  color: #2c3e50;
+  font-size: 16px;
+}
+
+.modern-clean .item-date {
+  color: #7f8c8d;
+  font-size: 14px;
+}
+
+.modern-clean .item-subtitle {
+  font-style: italic;
+  margin-bottom: 5px;
+  color: #34495e;
+  font-weight: 500;
+}
+
+.modern-clean .item-description {
+  font-size: 14px;
+  color: #555;
+  line-height: 1.5;
+}
+
+.modern-clean .skills-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.modern-clean .skill-item {
+  background-color: #ecf0f1;
+  padding: 5px 10px;
+  border-radius: 3px;
+  font-size: 14px;
+  color: #2c3e50;
+  margin-right: 8px;
+  margin-bottom: 8px;
+  display: inline-block;
+  font-weight: 500;
+}
+
+.modern-clean .reference-item {
+  margin-bottom: 15px;
+}
+
+.modern-clean .reference-name {
+  font-weight: bold;
+  color: #2c3e50;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.modern-clean .reference-title {
+  color: #34495e;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.modern-clean .reference-contact {
+  color: #7f8c8d;
+  font-size: 14px;
+}
+
+.modern-clean .achievement-item {
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #555;
+  line-height: 1.5;
+}
+
+.modern-clean .achievement-item::before {
+  content: "•";
+  color: var(--template-color, #3498db);
+  font-weight: bold;
+  margin-right: 8px;
+}
+
+.modern-clean .certification-item {
+  margin-bottom: 15px;
+}
+
+.modern-clean .certification-name {
+  font-weight: bold;
+  color: #2c3e50;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.modern-clean .certification-issuer {
+  color: #34495e;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.modern-clean .certification-date {
+  color: #7f8c8d;
+  font-size: 14px;
+}
+
+.modern-clean .project-item {
+  margin-bottom: 15px;
+}
+
+.modern-clean .project-name {
+  font-weight: bold;
+  color: #2c3e50;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.modern-clean .project-description {
+  font-size: 14px;
+  color: #555;
+  line-height: 1.5;
+  margin-bottom: 4px;
+}
+
+.modern-clean .project-technologies {
+  font-size: 13px;
+  color: #7f8c8d;
+  font-style: italic;
+}
+
+/* Print styles */
+@media print {
+  .modern-clean .resume-container {
+    box-shadow: none;
+    padding: 20px;
+    max-width: none;
+  }
+  
+  .modern-clean * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .modern-clean .resume-container {
+    padding: 20px;
+  }
+  
+  .modern-clean .header h1 {
+    font-size: 24px;
+  }
+  
+  .modern-clean .contact-info {
+    flex-direction: column;
+    gap: 10px;
+  }
+}

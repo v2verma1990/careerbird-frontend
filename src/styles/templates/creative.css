@@ -1,0 +1,304 @@
+/**
+ * Creative Template Styles
+ * Creative design for design and creative professionals
+ */
+
+.creative .resume-container {
+  max-width: 8in;
+  margin: 0 auto;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+  color: #333;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.creative .header {
+  background: var(--template-color, #667eea);
+  background: linear-gradient(135deg, var(--template-color, #667eea) 0%, var(--template-color, #764ba2) 100%);
+  color: white;
+  padding: 40px;
+  text-align: center;
+  position: relative;
+}
+
+.creative .header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+  opacity: 0.3;
+}
+
+.creative .header h1 {
+  font-size: 36px;
+  margin-bottom: 10px;
+  font-weight: 700;
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.creative .header p {
+  font-size: 18px;
+  margin-bottom: 20px;
+  position: relative;
+  z-index: 1;
+  opacity: 0.9;
+}
+
+.creative .contact-info {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 20px;
+  font-size: 14px;
+  position: relative;
+  z-index: 1;
+}
+
+.creative .contact-info span {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 8px 15px;
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+}
+
+.creative .content {
+  padding: 40px;
+  background: white;
+}
+
+.creative .section {
+  margin-bottom: 35px;
+  position: relative;
+}
+
+.creative .section-title {
+  font-size: 20px;
+  color: var(--template-color, #667eea);
+  margin-bottom: 20px;
+  font-weight: 700;
+  position: relative;
+  padding-left: 25px;
+}
+
+.creative .section-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 15px;
+  height: 15px;
+  background: var(--template-color, #667eea);
+  border-radius: 50%;
+}
+
+.creative .experience-item,
+.creative .education-item {
+  margin-bottom: 25px;
+  padding: 20px;
+  background: #f8f9ff;
+  border-radius: 10px;
+  border-left: 4px solid var(--template-color, #667eea);
+  position: relative;
+}
+
+.creative .item-title {
+  font-weight: 700;
+  color: #2c3e50;
+  font-size: 18px;
+  margin-bottom: 5px;
+}
+
+.creative .item-subtitle {
+  color: var(--template-color, #667eea);
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.creative .item-date {
+  color: #7f8c8d;
+  font-size: 14px;
+  font-weight: 500;
+  background: #ecf0f1;
+  padding: 4px 10px;
+  border-radius: 15px;
+  display: inline-block;
+  margin-bottom: 10px;
+}
+
+.creative .item-description {
+  font-size: 14px;
+  color: #555;
+  line-height: 1.6;
+}
+
+.creative .skills-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.creative .skill-item {
+  background: linear-gradient(135deg, var(--template-color, #667eea), #764ba2);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 25px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  transition: transform 0.2s ease;
+}
+
+.creative .skill-item:hover {
+  transform: translateY(-2px);
+}
+
+.creative .reference-item {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #f8f9ff;
+  border-radius: 8px;
+}
+
+.creative .reference-name {
+  font-weight: 700;
+  color: #2c3e50;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.creative .reference-title {
+  color: var(--template-color, #667eea);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.creative .reference-contact {
+  color: #7f8c8d;
+  font-size: 14px;
+}
+
+.creative .achievement-item {
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: #555;
+  line-height: 1.6;
+  padding-left: 20px;
+  position: relative;
+}
+
+.creative .achievement-item::before {
+  content: "★";
+  color: var(--template-color, #667eea);
+  position: absolute;
+  left: 0;
+  font-size: 16px;
+}
+
+.creative .certification-item {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #f8f9ff;
+  border-radius: 8px;
+  border-left: 3px solid var(--template-color, #667eea);
+}
+
+.creative .certification-name {
+  font-weight: 700;
+  color: #2c3e50;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.creative .certification-issuer {
+  color: var(--template-color, #667eea);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.creative .certification-date {
+  color: #7f8c8d;
+  font-size: 14px;
+}
+
+.creative .project-item {
+  margin-bottom: 25px;
+  padding: 20px;
+  background: #f8f9ff;
+  border-radius: 10px;
+  border-left: 4px solid var(--template-color, #667eea);
+}
+
+.creative .project-name {
+  font-weight: 700;
+  color: #2c3e50;
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.creative .project-description {
+  font-size: 14px;
+  color: #555;
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+
+.creative .project-technologies {
+  font-size: 12px;
+  color: var(--template-color, #667eea);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Print styles */
+@media print {
+  .creative .resume-container {
+    box-shadow: none;
+    border-radius: 0;
+    background: white;
+  }
+  
+  .creative .header {
+    background: var(--template-color, #667eea) !important;
+  }
+  
+  .creative * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .creative .resume-container {
+    margin: 10px;
+  }
+  
+  .creative .header {
+    padding: 30px 20px;
+  }
+  
+  .creative .header h1 {
+    font-size: 28px;
+  }
+  
+  .creative .content {
+    padding: 30px 20px;
+  }
+  
+  .creative .contact-info {
+    flex-direction: column;
+    gap: 10px;
+  }
+}

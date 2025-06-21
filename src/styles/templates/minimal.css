@@ -1,0 +1,243 @@
+/**
+ * Minimal Template Styles
+ * Minimalist design focusing on content with clean typography
+ */
+
+.minimal .resume-container {
+  max-width: 8in;
+  margin: 0 auto;
+  background-color: white;
+  padding: 50px;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.7;
+  color: #333;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.minimal .header {
+  margin-bottom: 40px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.minimal .header h1 {
+  font-size: 32px;
+  color: #222;
+  margin-bottom: 8px;
+  font-weight: 300;
+  letter-spacing: -0.5px;
+}
+
+.minimal .header p {
+  font-size: 16px;
+  color: #666;
+  font-weight: 400;
+}
+
+.minimal .contact-info {
+  display: flex;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 25px;
+  margin-top: 15px;
+  font-size: 14px;
+  color: #666;
+}
+
+.minimal .section {
+  margin-bottom: 35px;
+}
+
+.minimal .section-title {
+  font-size: 16px;
+  color: var(--template-color, #444);
+  margin-bottom: 20px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  position: relative;
+}
+
+.minimal .section-title::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  width: 30px;
+  height: 2px;
+  background-color: var(--template-color, #444);
+}
+
+.minimal .experience-item,
+.minimal .education-item {
+  margin-bottom: 25px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.minimal .experience-item:last-child,
+.minimal .education-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.minimal .item-header {
+  margin-bottom: 8px;
+}
+
+.minimal .item-title {
+  font-weight: 600;
+  color: #222;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.minimal .item-subtitle {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.minimal .item-date {
+  color: #888;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.minimal .item-description {
+  font-size: 14px;
+  color: #555;
+  line-height: 1.6;
+  margin-top: 8px;
+}
+
+.minimal .skills-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.minimal .skill-item {
+  background-color: #f8f8f8;
+  color: #555;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid #e8e8e8;
+}
+
+.minimal .reference-item {
+  margin-bottom: 20px;
+}
+
+.minimal .reference-name {
+  font-weight: 600;
+  color: #222;
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+
+.minimal .reference-title {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.minimal .reference-contact {
+  color: #888;
+  font-size: 13px;
+}
+
+.minimal .achievement-item {
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #555;
+  line-height: 1.6;
+  padding-left: 15px;
+  position: relative;
+}
+
+.minimal .achievement-item::before {
+  content: "—";
+  color: var(--template-color, #444);
+  position: absolute;
+  left: 0;
+  font-weight: 600;
+}
+
+.minimal .certification-item {
+  margin-bottom: 20px;
+}
+
+.minimal .certification-name {
+  font-weight: 600;
+  color: #222;
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+
+.minimal .certification-issuer {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.minimal .certification-date {
+  color: #888;
+  font-size: 13px;
+}
+
+.minimal .project-item {
+  margin-bottom: 20px;
+}
+
+.minimal .project-name {
+  font-weight: 600;
+  color: #222;
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+
+.minimal .project-description {
+  font-size: 14px;
+  color: #555;
+  line-height: 1.6;
+  margin-bottom: 4px;
+}
+
+.minimal .project-technologies {
+  font-size: 12px;
+  color: #888;
+  font-style: italic;
+}
+
+/* Print styles */
+@media print {
+  .minimal .resume-container {
+    box-shadow: none;
+    padding: 30px;
+    max-width: none;
+  }
+  
+  .minimal * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .minimal .resume-container {
+    padding: 30px 20px;
+  }
+  
+  .minimal .header h1 {
+    font-size: 28px;
+  }
+  
+  .minimal .contact-info {
+    flex-direction: column;
+    gap: 10px;
+  }
+}

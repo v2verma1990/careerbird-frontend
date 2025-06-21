@@ -1,0 +1,237 @@
+/**
+ * Professional Template Styles
+ * Traditional professional resume layout with serif fonts
+ */
+
+.professional .resume-container {
+  max-width: 8.5in;
+  margin: 0 auto;
+  background-color: white;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  padding: 40px;
+  font-family: 'Georgia', 'Times New Roman', serif;
+  line-height: 1.6;
+  color: #333;
+}
+
+.professional .header {
+  text-align: center;
+  margin-bottom: 30px;
+  border-bottom: 2px solid var(--template-color, #1a5276);
+  padding-bottom: 20px;
+}
+
+.professional .header h1 {
+  font-size: 28px;
+  color: var(--template-color, #1a5276);
+  margin-bottom: 5px;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.professional .header p {
+  font-size: 18px;
+  color: #34495e;
+  margin-bottom: 15px;
+  font-style: italic;
+}
+
+.professional .contact-info {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 20px;
+  font-size: 14px;
+  color: #34495e;
+}
+
+.professional .section {
+  margin-bottom: 30px;
+}
+
+.professional .section-title {
+  font-size: 18px;
+  color: var(--template-color, #1a5276);
+  margin-bottom: 15px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: bold;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 5px;
+}
+
+.professional .experience-item,
+.professional .education-item {
+  margin-bottom: 25px;
+}
+
+.professional .item-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.professional .item-title {
+  font-weight: bold;
+  color: #2c3e50;
+  font-size: 16px;
+}
+
+.professional .item-date {
+  color: #7f8c8d;
+  font-size: 14px;
+  font-style: italic;
+}
+
+.professional .item-subtitle {
+  margin-bottom: 8px;
+  color: #34495e;
+  font-weight: 600;
+}
+
+.professional .item-description {
+  font-size: 14px;
+  color: #34495e;
+  line-height: 1.6;
+}
+
+.professional .skills-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.professional .skill-item {
+  font-size: 14px;
+  color: #34495e;
+  margin-right: 15px;
+  margin-bottom: 8px;
+  display: inline-block;
+  position: relative;
+  padding-left: 15px;
+}
+
+.professional .skill-item::before {
+  content: "▪";
+  color: var(--template-color, #1a5276);
+  font-weight: bold;
+  position: absolute;
+  left: 0;
+}
+
+.professional .reference-item {
+  margin-bottom: 20px;
+}
+
+.professional .reference-name {
+  font-weight: bold;
+  color: #2c3e50;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.professional .reference-title {
+  color: #34495e;
+  font-weight: 600;
+  margin-bottom: 4px;
+  font-style: italic;
+}
+
+.professional .reference-contact {
+  color: #7f8c8d;
+  font-size: 14px;
+}
+
+.professional .achievement-item {
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: #34495e;
+  line-height: 1.6;
+  padding-left: 15px;
+  position: relative;
+}
+
+.professional .achievement-item::before {
+  content: "•";
+  color: var(--template-color, #1a5276);
+  font-weight: bold;
+  position: absolute;
+  left: 0;
+}
+
+.professional .certification-item {
+  margin-bottom: 20px;
+}
+
+.professional .certification-name {
+  font-weight: bold;
+  color: #2c3e50;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.professional .certification-issuer {
+  color: #34495e;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.professional .certification-date {
+  color: #7f8c8d;
+  font-size: 14px;
+  font-style: italic;
+}
+
+.professional .project-item {
+  margin-bottom: 20px;
+}
+
+.professional .project-name {
+  font-weight: bold;
+  color: #2c3e50;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.professional .project-description {
+  font-size: 14px;
+  color: #34495e;
+  line-height: 1.6;
+  margin-bottom: 4px;
+}
+
+.professional .project-technologies {
+  font-size: 13px;
+  color: #7f8c8d;
+  font-style: italic;
+}
+
+/* Print styles */
+@media print {
+  .professional .resume-container {
+    box-shadow: none;
+    padding: 20px;
+    max-width: none;
+  }
+  
+  .professional * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .professional .resume-container {
+    padding: 20px;
+  }
+  
+  .professional .header h1 {
+    font-size: 24px;
+  }
+  
+  .professional .contact-info {
+    flex-direction: column;
+    gap: 10px;
+  }
+}

@@ -1,0 +1,110 @@
+/**
+ * All Templates CSS - Single Source of Truth
+ * This file imports all individual template styles
+ * Use this as the main CSS file for all resume templates
+ */
+
+/* Base template styles (shared across all templates) */
+@import './templates.css';
+
+/* Individual template styles */
+@import './templates/navy-column-modern.css';
+@import './templates/modern-clean.css';
+@import './templates/professional.css';
+@import './templates/minimal.css';
+@import './templates/creative.css';
+@import './templates/executive.css';
+@import './templates/tech.css';
+@import './templates/elegant.css';
+
+/* Additional templates will be added here as they are created */
+/* @import './templates/elegant.css'; */
+/* @import './templates/academic.css'; */
+/* @import './templates/entry-level.css'; */
+/* @import './templates/chronological.css'; */
+/* @import './templates/academic-scholar.css'; */
+/* @import './templates/creative-designer.css'; */
+/* @import './templates/finance-expert.css'; */
+/* @import './templates/marketing-pro.css'; */
+/* @import './templates/startup-founder.css'; */
+/* @import './templates/tech-minimalist.css'; */
+
+/**
+ * Global template utilities and overrides
+ */
+
+/* Ensure all templates use CSS custom properties for colors */
+:root {
+  --template-color: #3498db; /* Default fallback color */
+}
+
+/* Force color application across all templates */
+[class*="template-"] h1,
+[class*="template-"] h2,
+[class*="template-"] h3,
+[class*="template-"] .section-title,
+[class*="template-"] .item-title {
+  color: var(--template-color) !important;
+}
+
+/* Print optimization for all templates */
+@media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  body {
+    background: white !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* Loading and error states */
+.template-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  font-size: 16px;
+  color: #666;
+  font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+.template-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  font-size: 16px;
+  color: #dc2626;
+  text-align: center;
+  padding: 20px;
+  font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+/* Smooth transitions */
+.template-transition {
+  transition: all 0.3s ease-in-out;
+}
+
+/* Responsive utilities */
+@media (max-width: 768px) {
+  [class*="template-"] .resume-container {
+    padding: 20px !important;
+  }
+  
+  [class*="template-"] .header h1 {
+    font-size: 24px !important;
+  }
+  
+  [class*="template-"] .contact-info {
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+}

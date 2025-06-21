@@ -48,6 +48,10 @@ class FrontendTemplateService {
     // STEP 4: Add a style tag to override any existing styles
     this.addColorOverrideStyle(color);
     
+    // STEP 5: Debug - log the current CSS custom property value
+    const computedColor = getComputedStyle(document.documentElement).getPropertyValue('--template-color');
+    console.log('FrontendTemplateService: CSS custom property --template-color is now:', computedColor.trim());
+    
     console.log('FrontendTemplateService: Styles applied successfully with color:', color);
   }
 
@@ -55,7 +59,26 @@ class FrontendTemplateService {
    * Ensure body has the correct template class
    */
   private ensureTemplateClass(templateId: string): void {
-    const supportedTemplates = ['navy-column-modern']; // Add more as needed
+    const supportedTemplates = [
+      'navy-column-modern',
+      'modern-clean',
+      'professional',
+      'minimal',
+      'creative',
+      'executive',
+      'tech',
+      'elegant',
+      'academic',
+      'entry-level',
+      'chronological',
+      'academic-scholar',
+      'creative-designer',
+      'finance-expert',
+      'marketing-pro',
+      'startup-founder',
+      'tech-minimalist',
+      'modern-executive'
+    ];
     
     // Remove all template classes
     supportedTemplates.forEach(template => {
@@ -86,12 +109,32 @@ class FrontendTemplateService {
       existingOverride.remove();
     }
 
-    // Create new color style with CSS custom property
+    // Create new color style with CSS custom property and specific overrides
     const overrideStyle = document.createElement('style');
     overrideStyle.setAttribute('data-color-override', 'true');
     overrideStyle.textContent = `
       :root {
         --template-color: ${color} !important;
+      }
+      
+      /* Force navy-column-modern sidebar color */
+      .navy-column-modern .sidebar {
+        background: ${color} !important;
+        background-color: ${color} !important;
+      }
+      
+      /* Force navy-column-modern content colors */
+      .navy-column-modern .content h2,
+      .navy-column-modern .section-label,
+      .navy-column-modern .content .title {
+        color: ${color} !important;
+      }
+      
+      /* Force all template colors */
+      .section-title,
+      .item-title,
+      h1, h2, h3, h4, h5, h6 {
+        color: var(--template-color, ${color}) !important;
       }
     `;
     
@@ -141,7 +184,7 @@ class FrontendTemplateService {
       `;
 
       // Create full HTML with frontend CSS link
-      const fullHtml = this.createFullHtml(html, css, templateId);
+      const fullHtml = await this.createFullHtml(html, css, templateId);
 
       return {
         html,
@@ -161,7 +204,9 @@ class FrontendTemplateService {
   /**
    * Create complete HTML document with frontend CSS
    */
-  private createFullHtml(bodyHtml: string, css: string, templateId: string): string {
+  private async createFullHtml(bodyHtml: string, css: string, templateId: string): Promise<string> {
+    const frontendCSS = await this.getFrontendCSS();
+    
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -169,8 +214,8 @@ class FrontendTemplateService {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Resume</title>
   <style>
-    /* Frontend CSS would be embedded here for PDF generation */
-    ${this.getFrontendCSS()}
+    /* Frontend CSS embedded for PDF generation */
+    ${frontendCSS}
     ${css}
   </style>
 </head>
@@ -182,62 +227,76 @@ class FrontendTemplateService {
 
   /**
    * Get the frontend CSS content (for PDF generation)
-   * In a real implementation, this would read from the CSS file
+   * This method loads the complete CSS from all-templates.css
    */
-  private getFrontendCSS(): string {
-    // This is a simplified version - in production, you'd read from templates.css
+  private async getFrontendCSS(): Promise<string> {
+    try {
+      // In a real implementation, you would fetch the CSS file content
+      // For now, we'll return a comprehensive CSS that includes all templates
+      const response = await fetch('/src/styles/all-templates.css');
+      if (response.ok) {
+        return await response.text();
+      }
+    } catch (error) {
+      console.warn('Could not load all-templates.css, using fallback CSS');
+    }
+    
+    // Fallback CSS with essential styles for all templates
     return `
-      /* Base styles */
+      /* Base styles for all templates */
+      :root {
+        --template-color: #3498db;
+      }
+      
       body {
         font-family: 'Segoe UI', Arial, sans-serif;
-        background: #f5f6fa;
+        background: white;
         padding: 0;
         margin: 0;
         box-sizing: border-box;
       }
       
-      /* Navy Column Modern Template */
-      .navy-column-modern .resume-container {
-        max-width: 7.3in;
-        width: 100%;
-        margin: 0.5in auto;
-        background: #fff;
-        border-radius: 18px;
-        display: flex;
-        box-shadow: 0 2px 28px rgba(30,40,90,.13), 0 0.5px 3px rgba(30,64,175,.09);
-        overflow: hidden;
+      * {
         box-sizing: border-box;
       }
       
-      .navy-column-modern .sidebar {
-        background: var(--template-color, #315389) !important;
-        color: #fff !important;
-        width: 250px;
-        min-height: 100%;
-        padding: 36px 24px;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        box-sizing: border-box;
-        flex-shrink: 0;
-        overflow: visible;
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
+      /* Common template styles */
+      .resume-container {
+        max-width: 8.5in;
+        margin: 0 auto;
+        background-color: white;
+        padding: 40px;
+        line-height: 1.6;
+        color: #333;
       }
       
-      .navy-column-modern .content h2 {
-        color: var(--template-color, #315389) !important;
+      .section-title {
+        color: var(--template-color) !important;
+        font-weight: 600;
+        margin-bottom: 15px;
       }
       
-      .navy-column-modern .section-label {
-        color: var(--template-color, #315389) !important;
+      .item-title {
+        font-weight: 600;
+        margin-bottom: 5px;
       }
       
-      .navy-column-modern .content .title {
-        color: var(--template-color, #315389) !important;
+      /* Print styles */
+      @media print {
+        * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        
+        body {
+          background: white !important;
+        }
+        
+        .resume-container {
+          box-shadow: none !important;
+          max-width: none !important;
+        }
       }
-      
-      /* Add more styles as needed */
     `;
   }
 
@@ -255,7 +314,26 @@ class FrontendTemplateService {
     }
     
     // Remove template classes
-    const supportedTemplates = ['navy-column-modern'];
+    const supportedTemplates = [
+      'navy-column-modern',
+      'modern-clean',
+      'professional',
+      'minimal',
+      'creative',
+      'executive',
+      'tech',
+      'elegant',
+      'academic',
+      'entry-level',
+      'chronological',
+      'academic-scholar',
+      'creative-designer',
+      'finance-expert',
+      'marketing-pro',
+      'startup-founder',
+      'tech-minimalist',
+      'modern-executive'
+    ];
     supportedTemplates.forEach(template => {
       document.body.classList.remove(template);
     });
