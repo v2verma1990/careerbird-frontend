@@ -1,0 +1,13 @@
+
+    /* Minimal backend styles - main styles are in frontend CSS */
+    :root {
+      --template-color: {{color}};
+    }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f5f6fa;
+      padding: 0;
+      margin: 0;
+      box-sizing: border-box;
+    }
+  

@@ -120,7 +120,8 @@ export const useResumeExport = () => {
     resumeElementId: string = 'resume-preview',
     candidateName: string = 'resume',
     resumeData?: any,
-    templateColor?: string
+    templateColor?: string,
+    templateId?: string
   ) => {
     const filename = candidateName.toLowerCase().replace(/\s+/g, '_');
     
@@ -142,7 +143,8 @@ export const useResumeExport = () => {
       optimizeForPrint: true,
       fallbackToAPI: true,
       apiResumeData: resumeData,
-      templateColor: finalColor
+      templateColor: finalColor,
+      templateId: templateId || 'navy-column-modern'
     };
     
     console.log('useResumeExport - Final options with color:', options.templateColor);
@@ -154,7 +156,8 @@ export const useResumeExport = () => {
     resumeElementId: string = 'resume-preview',
     candidateName: string = 'resume',
     resumeData?: any,
-    templateColor?: string
+    templateColor?: string,
+    templateId?: string
   ) => {
     const filename = `${candidateName.toLowerCase().replace(/\s+/g, '_')}_hq`;
     
@@ -173,7 +176,8 @@ export const useResumeExport = () => {
       optimizeForPrint: true,
       fallbackToAPI: true,
       apiResumeData: resumeData,
-      templateColor: finalColor
+      templateColor: finalColor,
+      templateId: templateId || 'navy-column-modern'
     };
 
     await exportPDF(resumeElementId, filename, options);

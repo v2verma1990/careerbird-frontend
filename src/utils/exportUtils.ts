@@ -114,6 +114,7 @@ export interface PDFExportOptions {
   includeBackground?: boolean;
   optimizeForPrint?: boolean;
   templateColor?: string; // Selected color for the template
+  templateId?: string; // Template identifier for proper styling
 }
 
 export const exportResumeAsPDF = async (
@@ -131,7 +132,8 @@ export const exportResumeAsPDF = async (
       margin: { top: 15, right: 15, bottom: 15, left: 15 },
       includeBackground: true,
       optimizeForPrint: true,
-      templateColor: '#315389' // Default navy color
+      templateColor: '#315389', // Default navy color
+      templateId: 'navy-column-modern' // Default template
     };
 
     const config = { ...defaultOptions, ...options };
@@ -148,10 +150,10 @@ export const exportResumeAsPDF = async (
 
     try {
       // Apply frontend CSS as single source of truth BEFORE PDF generation
-      if (config.templateColor) {
+      if (config.templateColor && config.templateId) {
         try {
-          console.log('PDF Export - Applying frontend CSS with color:', config.templateColor);
-          frontendTemplateService.applyTemplateStyles('navy-column-modern', config.templateColor);
+          console.log('PDF Export - Applying frontend CSS with template:', config.templateId, 'color:', config.templateColor);
+          frontendTemplateService.applyTemplateStyles(config.templateId, config.templateColor);
           console.log('PDF Export - Frontend CSS applied successfully');
         } catch (cssError) {
           console.error('PDF Export - Failed to apply frontend CSS:', cssError);
@@ -168,7 +170,22 @@ export const exportResumeAsPDF = async (
       // Get actual dimensions after preparation
       const elementRect = element.getBoundingClientRect();
       const actualWidth = Math.max(element.scrollWidth, elementRect.width, 794); // Ensure minimum A4 width
-      const actualHeight = Math.max(element.scrollHeight, elementRect.height);
+      
+      // For better height calculation, especially for modern-executive
+      const isModernExecutive = element.classList.contains('modern-executive') || 
+                               element.querySelector('.modern-executive') !== null;
+      
+      let actualHeight = Math.max(element.scrollHeight, elementRect.height);
+      
+      // For modern-executive, ensure we capture full content height
+      if (isModernExecutive) {
+        const container = element.querySelector('.container') as HTMLElement;
+        if (container) {
+          const containerHeight = Math.max(container.scrollHeight, container.getBoundingClientRect().height);
+          actualHeight = Math.max(actualHeight, containerHeight + 100); // Add padding
+        }
+        console.log('PDF Export - Modern Executive detected, using height:', actualHeight);
+      }
       
       // Check if this is navy-column-modern template for special handling
       const isNavyTemplate = isNavyColumnModernTemplate(element);
@@ -196,6 +213,11 @@ export const exportResumeAsPDF = async (
           // Additional optimization for navy-column-modern
           if (isNavyTemplate) {
             optimizeNavyColumnModernForPDF(clonedDoc, config.templateColor);
+          }
+          
+          // Additional optimization for modern-executive
+          if (isModernExecutive) {
+            optimizeModernExecutiveForPDF(clonedDoc, config.templateColor);
           }
         }
       });
@@ -344,8 +366,20 @@ const prepareElementForPDF = async (element: HTMLElement, config: Required<PDFEx
       content.style.display = 'flex';
       content.style.flexDirection = 'column';
     } else {
-      // Single column layout
+      // Single column layout (modern-executive, etc.)
       resumeContainer.style.padding = '20px';
+      // Ensure container can expand to full content height
+      resumeContainer.style.minHeight = 'auto';
+      resumeContainer.style.height = 'auto';
+      resumeContainer.style.overflow = 'visible';
+      
+      // For modern-executive template, ensure proper container setup
+      if (resumeContainer.closest('.modern-executive')) {
+        resumeContainer.style.maxWidth = '8.5in';
+        resumeContainer.style.width = '794px'; // A4 width
+        resumeContainer.style.margin = '0 auto';
+        resumeContainer.style.padding = '0.5in';
+      }
     }
   }
 

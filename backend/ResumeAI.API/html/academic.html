@@ -4,144 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{#if Name}}{{name}}{{else}}{{name}}{{/if}} - Academic CV</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: 'Bookman Old Style', 'Palatino Linotype', serif;
-    }
-    body {
-      background-color: #f9f9f9;
-      padding: 20px;
-    }
-    .resume-container {
-      max-width: 8.5in;
-      margin: 0 auto;
-      background-color: white;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      padding: 40px;
-    }
-    .header {
-      margin-bottom: 30px;
-    }
-    .header h1 {
-      font-size: 24px;
-      color: #333;
-      margin-bottom: 5px;
-      font-weight: bold;
-      text-align: center;
-    }
-    .header p {
-      font-size: 18px;
-      color: #555;
-      margin-bottom: 15px;
-      text-align: center;
-    }
-    .contact-info {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 20px;
-      font-size: 14px;
-      color: #555;
-      text-align: center;
-    }
-    .section {
-      margin-bottom: 30px;
-    }
-    .section-title {
-      font-size: 18px;
-      color: #333;
-      margin-bottom: 15px;
-      font-weight: bold;
-      border-bottom: 1px solid #333;
-      padding-bottom: 5px;
-    }
-    .experience-item, .education-item, .publication-item {
-      margin-bottom: 20px;
-    }
-    .item-header {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 8px;
-    }
-    .item-title {
-      font-weight: bold;
-      color: #333;
-      font-size: 16px;
-    }
-    .item-date {
-      color: #555;
-      font-size: 14px;
-    }
-    .item-subtitle {
-      margin-bottom: 8px;
-      color: #555;
-    }
-    .item-description {
-      font-size: 14px;
-      color: #333;
-      line-height: 1.6;
-    }
-    .skills-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-    .skill-item {
-      font-size: 14px;
-      color: #333;
-      margin-right: 15px;
-      margin-bottom: 5px;
-      display: inline-block;
-    }
-    .skill-item:not(:last-child)::after {
-      content: "•";
-      margin-left: 10px;
-      color: #555;
-    }
-    .publication-citation {
-      font-size: 14px;
-      color: #333;
-      line-height: 1.6;
-      margin-bottom: 10px;
-      padding-left: 20px;
-      text-indent: -20px;
-    }
-    .teaching-item {
-      margin-bottom: 15px;
-    }
-    .teaching-title {
-      font-weight: bold;
-      margin-bottom: 5px;
-    }
-    .teaching-details {
-      font-size: 14px;
-      color: #555;
-    }
-    .grants-item {
-      margin-bottom: 15px;
-    }
-    .grants-title {
-      font-weight: bold;
-      margin-bottom: 5px;
-    }
-    .grants-details {
-      font-size: 14px;
-      color: #555;
-    }
-    @media print {
-      body {
-        background-color: white;
-        padding: 0;
-      }
-      .resume-container {
-        box-shadow: none;
-        padding: 20px;
-      }
-    }
-  </style>
+  
 </head>
 <body>
   <div class="resume-container">
@@ -259,8 +122,8 @@
     <div class="section">
       <h2 class="section-title">Achievements</h2>
       {{#each achievements}}
-      <div class="achievement-item" style="margin-bottom: 8px; padding-left: 15px; position: relative;">
-        <div style="position: absolute; left: 0; top: 0; color: #2563eb; font-weight: bold;">•</div>
+      <div class="achievement-item">
+        <div>•</div>
         {{this}}
       </div>
       {{/each}}
@@ -271,10 +134,10 @@
     <div class="section">
       <h2 class="section-title">References</h2>
       {{#each references}}
-      <div class="reference-item" style="margin-bottom: 12px;">
-        <div style="font-weight: 600; color: #1f2937;">{{name}}</div>
-        {{#if title}}<div style="color: #4b5563; font-size: 0.9em;">{{title}}</div>{{/if}}
-        {{#if contact}}<div style="color: #6b7280; font-size: 0.9em;">{{contact}}</div>{{/if}}
+      <div class="reference-item">
+        <div>{{name}}</div>
+        {{#if title}}<div>{{title}}</div>{{/if}}
+        {{#if contact}}<div>{{contact}}</div>{{/if}}
       </div>
       {{/each}}
     </div>
@@ -282,7 +145,7 @@
 
     {{#unless references}}{{#unless achievements}}
     <div class="section">
-      <div style="text-align: center; color: #6b7280; font-style: italic;">
+      <div>
         References available upon request
       </div>
     </div>

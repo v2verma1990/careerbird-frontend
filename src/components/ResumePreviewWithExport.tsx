@@ -8,6 +8,8 @@ interface ResumePreviewWithExportProps {
   resumeData: any;
   templateHtml: string;
   candidateName?: string;
+  templateId?: string;
+  templateColor?: string;
   onPreviewModeChange?: (isPreviewMode: boolean) => void;
 }
 
@@ -15,6 +17,8 @@ export const ResumePreviewWithExport: React.FC<ResumePreviewWithExportProps> = (
   resumeData,
   templateHtml,
   candidateName = 'Resume',
+  templateId,
+  templateColor,
   onPreviewModeChange
 }) => {
   const previewRef = useRef<HTMLDivElement>(null);
@@ -126,6 +130,8 @@ export const ResumePreviewWithExport: React.FC<ResumePreviewWithExportProps> = (
               resumeElementId="resume-preview-container"
               candidateName={candidateName}
               resumeData={resumeData}
+              templateId={templateId}
+              templateColor={templateColor}
               variant="default"
               size="sm"
             />
@@ -134,6 +140,8 @@ export const ResumePreviewWithExport: React.FC<ResumePreviewWithExportProps> = (
               resumeElementId="resume-preview-container"
               candidateName={candidateName}
               resumeData={resumeData}
+              templateId={templateId}
+              templateColor={templateColor}
               variant="outline"
               size="sm"
               highQuality={true}

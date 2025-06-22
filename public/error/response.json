@@ -1,0 +1,80 @@
+{
+    "html": "\r\n<!DOCTYPE html>\r\n<html lang=\"en\">\r\n<head>\r\n    <meta charset=\"UTF-8\">\r\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\r\n    <title>Vishal Verma - Resume</title>\r\n    \r\n</head>\r\n<body class=\"modern-executive\">\r\n    <div class=\"container\">\r\n        <div class=\"header\">\r\n            <h1>Vishal Verma</h1>\r\n            <div class=\"title\">Cloud Architect</div>\r\n            <div class=\"contact-info\">\r\n                <span>v2verma1990@gmail.com</span>\r\n                <span>+917259577668 / +447880665787</span>\r\n                <span>London, United Kingdom</span>\r\n                \r\n                \r\n            </div>\r\n        </div>\r\n\r\n        <div class=\"section\">\r\n            <h2 class=\"section-title\">Executive Summary</h2>\r\n            <div class=\"summary\">Experienced Architect with over 14+ years of expertise in cloud architecture, specializing in Microsoft Azure services and solutions. Skilled in assessing and recommending public and hybrid Cloud solutions (IaaS, SaaS, PaaS) and advising customers on Cloud solution options. Adept at collaborating with cross-functional teams to define cloud strategies, roadmaps, and migration plans. Proven track record of architecture and implementing cloud-native solutions, microservices, serverless architectures, and containerized applications. Committed to continuous professional growth and driving innovation. Highly experienced in server/application migration to Azure Cloud.</div>\r\n        </div>\r\n\r\n        <div class=\"section\">\r\n            <h2 class=\"section-title\">Professional Experience</h2>\r\n            <div class=\"experience-item\">\r\n                <div class=\"experience-header\">\r\n                    <div>\r\n                        <div class=\"job-title\">Cloud Architect</div>\r\n                        <div class=\"company\">Cognizant</div>\r\n                    </div>\r\n                    <div class=\"date-location\">\r\n                        APRIL 2022 - PRESENT<br>\r\n                        London\r\n                    </div>\r\n                </div>\r\n                <div class=\"description\">\r\n                        As a Cloud Architect (SME) my responsibilities are: Advised customers on various Cloud solution options, discussed benefits and risks of each, and recommended solutions aligned with their business needs. Collaborated with cross-functional teams to define cloud strategies, roadmaps, and migration plans. Design and implemented cloud-native solutions, microservices, serverless architectures, and containerized applications. Worked with application teams and architects to map out their migration roadmaps and target architectures. Modernizing and migrating application to Azure Cloud. Implemented and managed Azure services like AppService, LogicApps, FunctionApps, RedisCache, Key Vault, Service Bus, Site Recovery, Blob Storage, and more.\r\n                </div>\r\n            </div>\r\n            <div class=\"experience-item\">\r\n                <div class=\"experience-header\">\r\n                    <div>\r\n                        <div class=\"job-title\">Cloud Migration Architect</div>\r\n                        <div class=\"company\">Wipro</div>\r\n                    </div>\r\n                    <div class=\"date-location\">\r\n                        OCTOBER 2018 - JULY 2020<br>\r\n                        \r\n                    </div>\r\n                </div>\r\n                <div class=\"description\">\r\n                        As an Cloud Migration Architect, my responsibilities were to understand the application architecture, Propose the To-Be architecture to migrate it to cloud (Azure Stack / IBM) based on the customer's requirement. Lead the design, planning and implementation of complex IT infrastructure solutions in Lloyds Banking Group account. Perform application portfolio analysis to prepare the check-list and identify candidate applications and workloads for migration to the Cloud. Create migration project plans, and execute against them. Develop pricing and cost models for complex engagements as part of the To-Be design. To design, develop, document, test, and debug new and existing configuration management (Terraform) infrastructure as code. Support CI/CD pipeline and identify potential problems. Leverage Azure DevOps and Jenkins subject matter expertise to support CI/CD environment.\r\n                </div>\r\n            </div>\r\n            <div class=\"experience-item\">\r\n                <div class=\"experience-header\">\r\n                    <div>\r\n                        <div class=\"job-title\">Lead Software Engineer</div>\r\n                        <div class=\"company\">Danske IT and Support Services India Private Limited</div>\r\n                    </div>\r\n                    <div class=\"date-location\">\r\n                        NOVEMBER 2016 - SEPTEMBER 2018<br>\r\n                        Bangalore, India\r\n                    </div>\r\n                </div>\r\n                <div class=\"description\">\r\n                        As a Lead Engineer, my responsibility include: Technical requirement gathering and estimation. Direct Interaction with business and customers following agile methodology. Designed and Developed the application in C#.Net 3.5, ASP.Net, Classic ASP, Pl/SQL, WebAPI, Angular. Check In, Versioning control, for code review, creating a Work item, build management, Continuous integration using TFS. Whole responsibility to create a module to submit data to third party System (Danske Raadgiver).\r\n                </div>\r\n            </div>\r\n            <div class=\"experience-item\">\r\n                <div class=\"experience-header\">\r\n                    <div>\r\n                        <div class=\"job-title\">Software Engineer</div>\r\n                        <div class=\"company\">Wells Fargo India Solutions Private Ltd.</div>\r\n                    </div>\r\n                    <div class=\"date-location\">\r\n                        DECEMBER 2013 - OCTOBER 2016<br>\r\n                        Bangalore, India\r\n                    </div>\r\n                </div>\r\n                <div class=\"description\">\r\n                        Responsibilities include: Working as a .Net Developer to enhance functionality of Bank Intranet website. Responsible for debugging the bugs in the existing application and development of new modules. Developed various modules for Bank to enhance the process flow including automated mailing system, document archiving system etc. Developed a Request/Response System (ADA tool) that provides a User Friendly GUI (using .Net, AJAX, JQuery) to user and enables them to submit their request (Indexes/pointers) to store data in database in xml form.\r\n                </div>\r\n            </div>\r\n            <div class=\"experience-item\">\r\n                <div class=\"experience-header\">\r\n                    <div>\r\n                        <div class=\"job-title\">Technical Analyst</div>\r\n                        <div class=\"company\">Dell International Services India Private Ltd</div>\r\n                    </div>\r\n                    <div class=\"date-location\">\r\n                        APRIL 2011 - OCTOBER 2013<br>\r\n                        Noida, India\r\n                    </div>\r\n                </div>\r\n                <div class=\"description\">\r\n                        Responsibilities include: Developed a Web Service (WCF) to expose the functionality of CORE module to other third party. Developed an alerting System (database alerts) using PL/SQL, MSMQ, C# that automatically alerts the support team for any error. Part of team that developed Authentication System for SHL application user (Window Service) that generates authentication token for users and passes it as an object to other interacting modules. Contributed in enhancement of RE Module in SHL (.Net 3.5 Platform). Developed tool for Data Extraction to cater regular demand of data extract from client. UI/front-end development, designed web pages using Ajax, Jscript, implement sitemap for primary/secondary page navigation, master pages.\r\n                </div>\r\n            </div>\r\n        </div>\r\n\r\n        <div class=\"section\">\r\n            <h2 class=\"section-title\">Core Competencies</h2>\r\n            <div class=\"skills-list\">\r\n                <span class=\"skill-tag\">Architectural Design</span>\r\n                <span class=\"skill-tag\">DevOps</span>\r\n                <span class=\"skill-tag\">Cloud Migration</span>\r\n                <span class=\"skill-tag\">Project Plan</span>\r\n                <span class=\"skill-tag\">C# / .Net</span>\r\n                <span class=\"skill-tag\">Cloud Architecture</span>\r\n                <span class=\"skill-tag\">Urban Code/Bamboo/Octopus</span>\r\n                <span class=\"skill-tag\">Engineering leadership</span>\r\n                <span class=\"skill-tag\">Pre Sales</span>\r\n                <span class=\"skill-tag\">Azure Data Factory</span>\r\n                <span class=\"skill-tag\">Python</span>\r\n                <span class=\"skill-tag\">Cloud Strategy and Roadmapping</span>\r\n            </div>\r\n        </div>\r\n\r\n        <div class=\"section\">\r\n            <h2 class=\"section-title\">Education</h2>\r\n            <div class=\"education-item\">\r\n                <div class=\"experience-header\">\r\n                    <div>\r\n                        <div class=\"job-title\">MBA</div>\r\n                        <div class=\"company\">Amity University</div>\r\n                    </div>\r\n                    <div class=\"date-location\">\r\n                         - <br>\r\n                        \r\n                    </div>\r\n                </div>\r\n                \r\n            </div>\r\n            <div class=\"education-item\">\r\n                <div class=\"experience-header\">\r\n                    <div>\r\n                        <div class=\"job-title\">B.Tech</div>\r\n                        <div class=\"company\">Uttar Pradesh Technical University</div>\r\n                    </div>\r\n                    <div class=\"date-location\">\r\n                        APRIL 2007 - MARCH 2011<br>\r\n                        Noida, India\r\n                    </div>\r\n                </div>\r\n                \r\n            </div>\r\n        </div>\r\n\r\n        <div class=\"section certifications\">\r\n            <h2 class=\"section-title\">Certifications</h2>\r\n            <ul>\r\n                <li><strong>Microsoft Certified: Azure Developer Associate</strong> - Microsoft</li>\r\n                <li><strong>AZ-300 Microsoft Azure Architect Technologies</strong> - Microsoft</li>\r\n                <li><strong>Microsoft Certified: Azure Security Engineer Associate</strong> - Microsoft</li>\r\n                <li><strong>AZ 900: Microsoft Certified Azure Fundamentals</strong> - Microsoft</li>\r\n                <li><strong>Professional Cloud Architect by Google</strong> - Google</li>\r\n            </ul>\r\n        </div>\r\n\r\n        <div class=\"section\">\r\n            <h2 class=\"section-title\">Key Achievements</h2>\r\n            <ul>\r\n                <li>I was one of the key contributors to migrate around 60+ applications to Azure Stack and IBM cloud.</li>\r\n                <li>Actively participated and delivered many PoCs to gain customers' confidence (Eg: Application Containerization using Docker, Hosting SQL SSRS with HA).</li>\r\n                <li>Managed the entire team in the absence of multiple members (due to COVID lockdown) with zero escalations and received appreciation from LBG Group CIO lead.</li>\r\n                <li>Reviewed around 75+ migration designs as part of the internal Triage team.</li>\r\n                <li>Received Achieving Excellence award for developing the ImageList module.</li>\r\n            </ul>\r\n        </div>\r\n\r\n\r\n        \r\n    </div>\r\n</body>\r\n</html>\r\n",
+    "data": {
+        "name": "Vishal Verma",
+        "title": "Cloud Architect",
+        "email": "v2verma1990@gmail.com",
+        "phone": "+917259577668 / +447880665787",
+        "location": "London, United Kingdom",
+        "linkedIn": "",
+        "website": "",
+        "summary": "Experienced Architect with over 14+ years of expertise in cloud architecture, specializing in Microsoft Azure services and solutions. Skilled in assessing and recommending public and hybrid Cloud solutions (IaaS, SaaS, PaaS) and advising customers on Cloud solution options. Adept at collaborating with cross-functional teams to define cloud strategies, roadmaps, and migration plans. Proven track record of architecture and implementing cloud-native solutions, microservices, serverless architectures, and containerized applications. Committed to continuous professional growth and driving innovation. Highly experienced in server/application migration to Azure Cloud.",
+        "photo": "",
+        "color": "#2196F3",
+        "skills": [
+            "Architectural Design",
+            "DevOps",
+            "Cloud Migration",
+            "Project Plan",
+            "C# / .Net",
+            "Cloud Architecture",
+            "Urban Code/Bamboo/Octopus",
+            "Engineering leadership",
+            "Pre Sales",
+            "Azure Data Factory",
+            "Python",
+            "Cloud Strategy and Roadmapping"
+        ],
+        "experience": [
+            {
+                "title": "Cloud Architect",
+                "company": "Cognizant",
+                "location": "London",
+                "startDate": "APRIL 2022",
+                "endDate": "PRESENT",
+                "description": "• As a Cloud Architect (SME) my responsibilities are: Advised customers on various Cloud solution options, discussed benefits and risks of each, and recommended solutions aligned with their business needs\n• Collaborated with cross-functional teams to define cloud strategies, roadmaps, and migration plans\n• Design and implemented cloud-native solutions, microservices, serverless architectures, and containerized applications\n• Worked with application teams and architects to map out their migration roadmaps and target architectures\n• Modernizing and migrating application to Azure Cloud\n• Implemented and managed Azure services like AppService, LogicApps, FunctionApps, RedisCache, Key Vault, Service Bus, Site Recovery, Blob Storage, and more",
+                "projects": []
+            }
+        ],
+        "education": [
+            {
+                "degree": "MBA",
+                "institution": "Amity University",
+                "location": "",
+                "startDate": "",
+                "endDate": "",
+                "gpa": ""
+            }
+        ],
+        "certifications": [
+            {
+                "name": "Microsoft Certified: Azure Developer Associate",
+                "issuer": "Microsoft",
+                "date": ""
+            },
+            {
+                "name": "AZ-300 Microsoft Azure Architect Technologies",
+                "issuer": "Microsoft",
+                "date": ""
+            },
+            {
+                "name": "Microsoft Certified: Azure Security Engineer Associate",
+                "issuer": "Microsoft",
+                "date": ""
+            },
+            {
+                "name": "AZ 900: Microsoft Certified Azure Fundamentals",
+                "issuer": "Microsoft",
+                "date": ""
+            },
+            {
+                "name": "Professional Cloud Architect by Google",
+                "issuer": "Google",
+                "date": ""
+            }
+        ],
+        "projects": [],
+        "references": [],
+        "achievements": []
+    }
+}

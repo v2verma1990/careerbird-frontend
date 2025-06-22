@@ -428,6 +428,7 @@ const ResumePreview = () => {
                   candidateName={resumeData?.PersonalInfo?.Name || resumeData?.personalInfo?.name || resumeData?.name || resumeData?.Name || 'resume'}
                   resumeData={resumeData}
                   templateColor={selectedColor}
+                  templateId={template}
                   className="w-full"
                   disabled={isLoading || isExporting}
                 >
@@ -440,6 +441,7 @@ const ResumePreview = () => {
                   candidateName={resumeData?.PersonalInfo?.Name || resumeData?.personalInfo?.name || resumeData?.name || resumeData?.Name || 'resume'}
                   resumeData={resumeData}
                   templateColor={selectedColor}
+                  templateId={template}
                   variant="outline"
                   className="w-full"
                   highQuality={true}

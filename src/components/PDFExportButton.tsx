@@ -9,6 +9,7 @@ interface PDFExportButtonProps {
   candidateName?: string;
   resumeData?: any;
   templateColor?: string;
+  templateId?: string;
   variant?: 'default' | 'outline' | 'ghost' | 'link' | 'destructive' | 'secondary';
   size?: 'default' | 'sm' | 'lg' | 'icon';
   className?: string;
@@ -25,6 +26,7 @@ export const PDFExportButton: React.FC<PDFExportButtonProps> = ({
   candidateName = 'resume',
   resumeData,
   templateColor,
+  templateId,
   variant = 'default',
   size = 'default',
   className,
@@ -42,9 +44,9 @@ export const PDFExportButton: React.FC<PDFExportButtonProps> = ({
       onExportStart?.();
       
       if (highQuality) {
-        await exportResumeHighQuality(resumeElementId, candidateName, resumeData, templateColor);
+        await exportResumeHighQuality(resumeElementId, candidateName, resumeData, templateColor, templateId);
       } else {
-        await exportResume(resumeElementId, candidateName, resumeData, templateColor);
+        await exportResume(resumeElementId, candidateName, resumeData, templateColor, templateId);
       }
       
       onExportComplete?.();
@@ -100,6 +102,7 @@ interface PDFExportDropdownProps {
   candidateName?: string;
   resumeData?: any;
   templateColor?: string;
+  templateId?: string;
   className?: string;
 }
 
@@ -108,6 +111,7 @@ export const PDFExportDropdown: React.FC<PDFExportDropdownProps> = ({
   candidateName,
   resumeData,
   templateColor,
+  templateId,
   className
 }) => {
   const { exportResume, exportResumeHighQuality, isExporting } = useResumeExport();
