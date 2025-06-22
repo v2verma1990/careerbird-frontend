@@ -441,6 +441,49 @@ namespace ResumeAI.API.Controllers
             var pdfBytes = await page.PdfDataAsync(new PdfOptions { Format = PuppeteerSharp.Media.PaperFormat.A4 });
             return File(pdfBytes, "application/pdf", "resume.pdf");
         }
+
+        [HttpPost("generate-pdf")]
+        public async Task<IActionResult> GeneratePDF([FromBody] GeneratePDFRequest request)
+        {
+            try
+            {
+                // Get user ID from token
+                string userId = _authService.ExtractUserIdFromAuthHeader(Request.Headers["Authorization"].ToString());
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized(new { error = "Invalid or missing authorization token" });
+                }
+
+                // Check usage limits
+                if (!await _userService.CanUseFeatureAsync(userId, "resume_builder"))
+                {
+                    return StatusCode(403, new { error = "Usage limit reached for PDF export feature" });
+                }
+
+                // Track feature usage
+                await _userService.TrackFeatureUsage(userId, "resume_builder");
+
+                // Log activity
+                await _activityLogService.LogActivity(userId, "resume_builder", $"Generated PDF for template: {request.TemplateId}");
+
+                // Generate PDF using Python microservice
+                var pdfBytes = await _resumeBuilderService.GeneratePDFFromHtmlAsync(request.Html, request.Css, request.Filename);
+
+                if (pdfBytes == null || pdfBytes.Length == 0)
+                {
+                    return StatusCode(500, new { error = "Failed to generate PDF file" });
+                }
+
+                // Return the PDF file
+                return File(pdfBytes, "application/pdf", $"{request.Filename}.pdf");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error generating PDF: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                return StatusCode(500, new { error = $"Failed to generate PDF: {ex.Message}" });
+            }
+        }
     }
 
     public class ResumeDownloadRequest
@@ -454,6 +497,15 @@ namespace ResumeAI.API.Controllers
             
         public IFormFile? ResumeFile { get; set; }
         public bool UseDefaultResume { get; set; } = false;
+    }
+
+    public class GeneratePDFRequest
+    {
+        public string Html { get; set; } = "";
+        public string Css { get; set; } = "";
+        public string Filename { get; set; } = "resume";
+        public string TemplateId { get; set; } = "";
+        public string Color { get; set; } = "";
     }
         
 }

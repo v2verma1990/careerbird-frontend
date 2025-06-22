@@ -779,6 +779,13 @@ class FrontendTemplateService {
   }
 
   /**
+   * Public method to get template CSS for PDF export
+   */
+  public getTemplateCSS(templateId: string): string {
+    return this.getFrontendCSS(templateId);
+  }
+
+  /**
    * Cleanup all template-related styles and classes
    */
   public cleanup(): void {

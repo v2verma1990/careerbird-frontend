@@ -109,7 +109,6 @@ export interface PDFExportOptions {
   optimizeForPrint?: boolean;
   templateColor?: string; // Selected color for the template
   templateId?: string; // Template identifier for proper styling
-  resumeData?: any; // Resume data for backend rendering
 }
 
 /**
@@ -134,8 +133,7 @@ export const exportResumeAsPDF = async (
     includeBackground: options.includeBackground !== false,
     optimizeForPrint: options.optimizeForPrint !== false,
     templateColor: options.templateColor || '#315389',
-    templateId: options.templateId || 'navy-column-modern',
-    resumeData: options.resumeData
+    templateId: options.templateId || 'navy-column-modern'
   };
 
   console.log('ExportUtils - Routing to new PDF export system with options:', newOptions);
@@ -144,48 +142,6 @@ export const exportResumeAsPDF = async (
     await exportResumeAsPDFNew(elementId, filename, newOptions);
   } catch (error) {
     console.error('PDF export failed:', error);
-    throw error;
-  }
-};
-
-/**
- * Export resume using backend API (fallback method)
- * @param resumeData The resume data to export
- * @param format The export format ('pdf' | 'docx')
- * @param filename The filename for the export
- */
-export const exportResumeViaAPI = async (
-  resumeData: any,
-  format: 'pdf' | 'docx' = 'pdf',
-  filename: string = 'resume'
-): Promise<void> => {
-  try {
-    const response = await api.resumeBuilder.downloadResume({
-      resumeText: JSON.stringify(resumeData),
-      format
-    });
-
-    if (response.ok) {
-      // Get the blob data from the response
-      const blob = await response.blob();
-
-      // Download the file
-      const url = URL.createObjectURL(blob);
-      const element = document.createElement('a');
-      element.href = url;
-      element.download = `${filename}.${format}`;
-      document.body.appendChild(element);
-      element.click();
-      document.body.removeChild(element);
-      URL.revokeObjectURL(url);
-
-      await logActivity('resume_export_api', `Exported resume via API: ${filename}.${format}`);
-    } else {
-      const errorText = await response.text();
-      throw new Error(`Failed to export resume via API: ${response.status} ${errorText}`);
-    }
-  } catch (error) {
-    console.error('API export failed:', error);
     throw error;
   }
 };

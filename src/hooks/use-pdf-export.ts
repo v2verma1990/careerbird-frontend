@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { exportResumeAsPDF, exportResumeViaAPI, PDFExportOptions } from '../utils/exportUtils';
+import { exportResumeAsPDF, PDFExportOptions } from '../utils/exportUtils';
 import { useToast } from './use-toast';
 
 export interface UsePDFExportOptions extends PDFExportOptions {
@@ -35,7 +35,7 @@ export const usePDFExport = () => {
         variant: "default"
       });
 
-      // Try frontend PDF generation first
+      // Try PDF generation
       await exportResumeAsPDF(elementId, filename, options);
 
       toast({
@@ -45,41 +45,19 @@ export const usePDFExport = () => {
       });
 
     } catch (frontendError) {
-      console.warn('Frontend PDF export failed:', frontendError);
-
-      // Fallback to API if enabled and data is provided
-      if (options.fallbackToAPI && options.apiResumeData) {
-        try {
-          toast({
-            title: "Trying alternative method",
-            description: "Generating PDF using server...",
-            variant: "default"
-          });
-
-          await exportResumeViaAPI(options.apiResumeData, 'pdf', filename);
-
-          toast({
-            title: "Success!",
-            description: "Your resume has been downloaded successfully.",
-            variant: "default"
-          });
-
-        } catch (apiError) {
-          console.error('API PDF export also failed:', apiError);
-          
-          toast({
-            title: "Export Failed",
-            description: "Unable to generate PDF. Please try again or contact support.",
-            variant: "destructive"
-          });
-        }
-      } else {
-        toast({
-          title: "Export Failed",
-          description: "Unable to generate PDF. Please try again.",
-          variant: "destructive"
-        });
-      }
+      console.error('PDF export failed:', frontendError);
+      
+      // Check if it's a usage limit error
+      const errorMessage = frontendError instanceof Error ? frontendError.message : String(frontendError);
+      const isUsageLimitError = errorMessage.includes('Usage limit reached');
+      
+      toast({
+        title: "Export Failed",
+        description: isUsageLimitError 
+          ? "You have reached your PDF export limit. Please upgrade your plan or try again later."
+          : "Unable to generate PDF. Please try again or contact support.",
+        variant: "destructive"
+      });
     } finally {
       setIsExporting(false);
     }
@@ -98,7 +76,7 @@ export const usePDFExport = () => {
       margin: { top: 15, right: 15, bottom: 15, left: 15 },
       includeBackground: true,
       optimizeForPrint: true,
-      fallbackToAPI: true
+      fallbackToAPI: false
     };
 
     const mergedOptions = { ...defaultOptions, ...customOptions };
@@ -141,10 +119,11 @@ export const useResumeExport = () => {
       margin: { top: 10, right: 10, bottom: 10, left: 10 },
       includeBackground: true,
       optimizeForPrint: true,
-      fallbackToAPI: true,
+      fallbackToAPI: false,
       apiResumeData: resumeData,
       templateColor: finalColor,
-      templateId: templateId || 'navy-column-modern'
+      templateId: templateId || 'navy-column-modern',
+      resumeData: resumeData
     };
     
     console.log('useResumeExport - Final options with color:', options.templateColor);
@@ -174,10 +153,11 @@ export const useResumeExport = () => {
       margin: { top: 10, right: 10, bottom: 10, left: 10 },
       includeBackground: true,
       optimizeForPrint: true,
-      fallbackToAPI: true,
+      fallbackToAPI: false,
       apiResumeData: resumeData,
       templateColor: finalColor,
-      templateId: templateId || 'navy-column-modern'
+      templateId: templateId || 'navy-column-modern',
+      resumeData: resumeData
     };
 
     await exportPDF(resumeElementId, filename, options);
