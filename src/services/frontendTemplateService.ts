@@ -342,6 +342,7 @@ class FrontendTemplateService {
         box-sizing: border-box;
         display: flex;
         flex-direction: column;
+        page-break-inside: auto;
       }
 
       .navy-column-modern .content h1 {
@@ -372,7 +373,9 @@ class FrontendTemplateService {
       .navy-column-modern .profile-section,
       .navy-column-modern .employment-section,
       .navy-column-modern .education-section {
-        margin-bottom: 22px;
+        margin-bottom: 32px;
+        page-break-inside: avoid;
+        break-inside: avoid;
       }
 
       .navy-column-modern .section-label {
@@ -387,6 +390,10 @@ class FrontendTemplateService {
         color: #232c47;
         margin-bottom: 7px;
         line-height: 1.6;
+        orphans: 3;
+        widows: 3;
+        page-break-inside: avoid;
+        break-inside: avoid;
       }
 
       .navy-column-modern .employment-history-role {
@@ -394,6 +401,8 @@ class FrontendTemplateService {
         font-size: 1.07rem;
         color: #193461;
         margin-bottom: 2px;
+        page-break-after: avoid;
+        break-after: avoid;
       }
 
       .navy-column-modern .employment-history-company {
@@ -413,12 +422,16 @@ class FrontendTemplateService {
         padding: 0 0 0 18px;
         font-size: 1.01rem;
         color: #242e45;
+        orphans: 3;
+        widows: 3;
       }
 
       .navy-column-modern .education-degree {
         font-weight: 700;
         font-size: 1.05rem;
         color: #22396e;
+        page-break-after: avoid;
+        break-after: avoid;
       }
 
       .navy-column-modern .education-institution {
@@ -455,11 +468,64 @@ class FrontendTemplateService {
           box-shadow: none;
           border-radius: 0;
           margin: 0;
+          max-width: none;
+          width: 100%;
+          min-height: auto;
+          page-break-inside: avoid;
         }
         
         .navy-column-modern .sidebar {
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
+          page-break-inside: avoid;
+        }
+        
+        .navy-column-modern .content {
+          page-break-inside: auto;
+          min-height: auto;
+        }
+        
+        /* Prevent page breaks inside important sections */
+        .navy-column-modern .sidebar-section {
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
+        
+        .navy-column-modern .employment-section,
+        .navy-column-modern .education-section,
+        .navy-column-modern .profile-section {
+          page-break-inside: avoid;
+          break-inside: avoid;
+          margin-bottom: 15px;
+        }
+        
+        /* Allow page breaks between major sections */
+        .navy-column-modern .content h2 {
+          page-break-before: auto;
+          page-break-after: avoid;
+          break-before: auto;
+          break-after: avoid;
+        }
+        
+        /* Prevent orphaned lines */
+        .navy-column-modern .employment-history-list,
+        .navy-column-modern .profile-summary {
+          orphans: 3;
+          widows: 3;
+        }
+        
+        /* Ensure proper spacing for print */
+        .navy-column-modern .employment-history-role,
+        .navy-column-modern .education-degree {
+          page-break-after: avoid;
+          break-after: avoid;
+        }
+        
+        /* Force exact color printing */
+        .navy-column-modern * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          color-adjust: exact !important;
         }
       }
     `;
@@ -728,10 +794,14 @@ class FrontendTemplateService {
       throw new Error('Invalid response format from backend');
     }
 
-    // Minimal CSS for color variable
+    // Convert hex color to RGB for CSS variables
+    const colorRgb = this.hexToRgb(color);
+    
+    // Minimal CSS for color variables
     const css = `
       :root {
         --template-color: ${color};
+        --template-color-rgb: ${colorRgb};
       }
     `;
 
@@ -748,6 +818,8 @@ class FrontendTemplateService {
       timestamp: Date.now()
     };
   }
+
+
 
   /**
    * Create complete HTML document with frontend CSS
@@ -795,6 +867,11 @@ class FrontendTemplateService {
     // Optionally remove forced inline styles if needed
   }
 
+  /**
+   * Helper function to convert hex color to RGB format
+   * @param hex - Hex color string (with or without #)
+   * @returns RGB values as comma-separated string (e.g., "255,0,0")
+   */
   private hexToRgb(hex: string): string {
     hex = hex.replace('#', '');
     if (hex.length === 3) {

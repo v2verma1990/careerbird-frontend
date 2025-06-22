@@ -3157,72 +3157,7 @@ namespace ResumeAI.API.Services
         /// <summary>
         /// Generate PDF from HTML and CSS using Python microservice
         /// </summary>
-        public async Task<byte[]> GeneratePDFFromHtmlAsync(string html, string css, string filename)
-        {
-            try
-            {
-                Console.WriteLine($"GeneratePDFFromHtmlAsync called with filename: {filename}");
-                Console.WriteLine($"HTML length: {html?.Length ?? 0} characters");
-                Console.WriteLine($"CSS length: {css?.Length ?? 0} characters");
 
-                // Combine HTML and CSS into a complete document
-                string completeHtml = $@"<!DOCTYPE html>
-<html lang=""en"">
-<head>
-    <meta charset=""UTF-8"">
-    <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
-    <title>{filename}</title>
-    <style>
-        {css}
-    </style>
-</head>
-<body>
-    {html}
-</body>
-</html>";
-
-                Console.WriteLine($"Complete HTML length: {completeHtml.Length} characters");
-
-                // Prepare the request to Python microservice
-                var requestData = new
-                {
-                    html_content = completeHtml,
-                    filename = filename
-                };
-
-                var jsonContent = JsonConvert.SerializeObject(requestData);
-                var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-
-                Console.WriteLine($"Sending request to Python microservice: {_pythonApiBaseUrl}/candidate/generate-pdf");
-
-                // Send request to Python microservice
-                var response = await _httpClient.PostAsync($"{_pythonApiBaseUrl}/candidate/generate-pdf", content);
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"Python microservice error: {response.StatusCode} - {errorContent}");
-                    throw new Exception($"Python microservice returned error: {response.StatusCode} - {errorContent}");
-                }
-
-                // Get the PDF bytes
-                var pdfBytes = await response.Content.ReadAsByteArrayAsync();
-                Console.WriteLine($"Received PDF bytes: {pdfBytes.Length} bytes");
-
-                if (pdfBytes.Length == 0)
-                {
-                    throw new Exception("Python microservice returned empty PDF");
-                }
-
-                return pdfBytes;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in GeneratePDFFromHtmlAsync: {ex.Message}");
-                Console.WriteLine($"Stack trace: {ex.StackTrace}");
-                throw new Exception($"Failed to generate PDF from HTML: {ex.Message}", ex);
-            }
-        }
 
         private class TemplatesData
         {

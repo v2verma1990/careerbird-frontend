@@ -48,6 +48,22 @@ class TemplateRenderingService {
   }
 
   /**
+   * Helper function to convert hex color to RGB
+   */
+  private hexToRgb(hex: string): string {
+    const cleanHex = hex.replace('#', '');
+    const expandedHex = cleanHex.length === 3 
+      ? cleanHex.split('').map(x => x + x).join('')
+      : cleanHex;
+    
+    const r = parseInt(expandedHex.substring(0, 2), 16);
+    const g = parseInt(expandedHex.substring(2, 4), 16);
+    const b = parseInt(expandedHex.substring(4, 6), 16);
+    
+    return `${r}, ${g}, ${b}`;
+  }
+
+  /**
    * Clear all caches - call this when color changes to force fresh rendering
    * This ensures preview and PDF use the SAME fresh data
    */
@@ -397,6 +413,7 @@ class TemplateRenderingService {
       colorStyleElement.textContent = `
         :root {
           --template-color: ${color} !important;
+          --template-color-rgb: ${this.hexToRgb(color)} !important;
         }
       `;
       document.head.appendChild(colorStyleElement);

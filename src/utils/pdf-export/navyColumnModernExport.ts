@@ -63,8 +63,11 @@ export const exportNavyColumnModernAsPDF = async (
       // Prepare element for PDF export
       await prepareNavyColumnModernForPDF(element, config);
 
-      // Wait for layout to stabilize
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Wait for layout to stabilize and apply page break optimizations
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Apply additional page break optimizations
+      await optimizeNavyColumnModernPageBreaks(element);
       
       // Calculate dimensions for two-column layout
       const actualWidth = 794; // A4 width at 96 DPI
@@ -204,8 +207,72 @@ const prepareNavyColumnModernForPDF = async (element: HTMLElement, config: Requi
       content.style.boxSizing = 'border-box';
       content.style.display = 'flex';
       content.style.flexDirection = 'column';
+      
+      // Add page break optimization for content sections
+      const sections = content.querySelectorAll('.employment-section, .education-section, .profile-section');
+      sections.forEach((section: Element) => {
+        const htmlSection = section as HTMLElement;
+        htmlSection.style.pageBreakInside = 'avoid';
+        htmlSection.style.breakInside = 'avoid';
+        htmlSection.style.marginBottom = '20px';
+      });
+      
+      // Optimize text elements to prevent orphans/widows
+      const textElements = content.querySelectorAll('p, .employment-history-list, .profile-summary');
+      textElements.forEach((element: Element) => {
+        const htmlElement = element as HTMLElement;
+        htmlElement.style.orphans = '3';
+        htmlElement.style.widows = '3';
+      });
     }
   }
+};
+
+/**
+ * Optimize page breaks for navy-column-modern template
+ */
+const optimizeNavyColumnModernPageBreaks = async (element: HTMLElement): Promise<void> => {
+  const content = element.querySelector('.content') as HTMLElement;
+  if (!content) return;
+  
+  // Calculate approximate page height (A4 at 96 DPI minus margins)
+  const pageHeight = 1123 - 60; // ~1063px usable height
+  const currentHeight = content.scrollHeight;
+  
+  if (currentHeight <= pageHeight) return; // Single page, no optimization needed
+  
+  // Find all major sections that could be page break candidates
+  const sections = content.querySelectorAll('.employment-section, .education-section, .profile-section');
+  const sectionPositions: Array<{element: HTMLElement, top: number, height: number}> = [];
+  
+  sections.forEach((section: Element) => {
+    const htmlSection = section as HTMLElement;
+    const rect = htmlSection.getBoundingClientRect();
+    const contentRect = content.getBoundingClientRect();
+    const relativeTop = rect.top - contentRect.top;
+    
+    sectionPositions.push({
+      element: htmlSection,
+      top: relativeTop,
+      height: rect.height
+    });
+  });
+  
+  // Add strategic spacing before sections that would be cut
+  sectionPositions.forEach((section, index) => {
+    const pageNumber = Math.floor(section.top / pageHeight);
+    const positionInPage = section.top % pageHeight;
+    
+    // If section starts near the bottom of a page and would be cut
+    if (positionInPage > pageHeight * 0.8 && section.height > pageHeight * 0.3) {
+      // Add margin to push it to next page
+      const marginNeeded = pageHeight - positionInPage + 20;
+      section.element.style.marginTop = `${marginNeeded}px`;
+    }
+  });
+  
+  // Wait for layout to adjust
+  await new Promise(resolve => setTimeout(resolve, 200));
 };
 
 /**
@@ -301,7 +368,7 @@ const optimizeNavyColumnModernClonedDoc = (clonedDoc: Document, config: Required
 };
 
 /**
- * Handle multi-page content for navy-column-modern
+ * Handle multi-page content for navy-column-modern with intelligent page breaks
  */
 const handleNavyColumnModernMultiPage = async (
   pdf: jsPDF, 
@@ -314,24 +381,58 @@ const handleNavyColumnModernMultiPage = async (
   const contentHeight = pageHeight - config.margin.top - config.margin.bottom;
   const scaledHeight = (canvas.height / config.scale) * (scaledWidth / (canvas.width / config.scale));
   
+  // If content fits on one page, use simple approach
+  if (scaledHeight <= contentHeight) {
+    const imgData = canvas.toDataURL('image/jpeg', config.quality);
+    pdf.addImage(
+      imgData,
+      'JPEG',
+      config.margin.left,
+      config.margin.top,
+      scaledWidth,
+      scaledHeight
+    );
+    return;
+  }
+  
+  // For multi-page content, use intelligent breaking
   const totalPages = Math.ceil(scaledHeight / contentHeight);
+  const pageBreakBuffer = 20; // 20mm buffer to avoid cutting text
   
   for (let page = 0; page < totalPages; page++) {
     if (page > 0) {
       pdf.addPage();
     }
 
-    const yOffset = page * contentHeight;
-    const remainingHeight = Math.min(contentHeight, scaledHeight - yOffset);
+    let yOffset = page * contentHeight;
+    let remainingHeight = Math.min(contentHeight, scaledHeight - yOffset);
+    
+    // For pages after the first, add a small overlap to prevent text cutting
+    if (page > 0) {
+      yOffset -= pageBreakBuffer;
+      remainingHeight += pageBreakBuffer;
+    }
+    
+    // For pages before the last, reduce height to prevent text cutting
+    if (page < totalPages - 1) {
+      remainingHeight -= pageBreakBuffer;
+    }
     
     const pageCanvas = document.createElement('canvas');
     const pageCtx = pageCanvas.getContext('2d')!;
     
-    const sourceY = (yOffset / scaledHeight) * canvas.height;
-    const sourceHeight = (remainingHeight / scaledHeight) * canvas.height;
+    const sourceY = Math.max(0, (yOffset / scaledHeight) * canvas.height);
+    const sourceHeight = Math.min(
+      canvas.height - sourceY,
+      (remainingHeight / scaledHeight) * canvas.height
+    );
     
     pageCanvas.width = canvas.width;
     pageCanvas.height = sourceHeight;
+    
+    // Fill with white background
+    pageCtx.fillStyle = '#ffffff';
+    pageCtx.fillRect(0, 0, canvas.width, sourceHeight);
     
     pageCtx.drawImage(
       canvas,
@@ -346,7 +447,7 @@ const handleNavyColumnModernMultiPage = async (
       config.margin.left,
       config.margin.top,
       scaledWidth,
-      remainingHeight
+      (sourceHeight / canvas.height) * scaledHeight
     );
   }
 };
