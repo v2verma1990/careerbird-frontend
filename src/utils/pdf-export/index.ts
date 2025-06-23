@@ -1,6 +1,7 @@
 import { exportResumeAsSimplePDF } from './simplePdfExport';
 import { exportModernExecutiveAsPDF, ModernExecutivePDFOptions } from './modernExecutiveExport';
 import { exportNavyColumnModernAsPDF, NavyColumnModernPDFOptions } from './navyColumnModernExport';
+import { exportGenericTemplateAsPDF, GenericTemplatePDFOptions } from './genericTemplateExport';
 
 export interface PDFExportOptions {
   format?: 'a4' | 'letter';
@@ -43,6 +44,94 @@ export const exportResumeAsPDF = async (
         await exportNavyColumnModernAsPDF(elementId, filename, options as NavyColumnModernPDFOptions);
         break;
         
+      case 'creative-designer':
+        await exportGenericTemplateAsPDF(elementId, filename, {
+          ...options,
+          templateId: 'creative-designer',
+          templateColor: options.templateColor || '#7c3aed'
+        } as GenericTemplatePDFOptions);
+        break;
+        
+      case 'tech-minimalist':
+        await exportGenericTemplateAsPDF(elementId, filename, {
+          ...options,
+          templateId: 'tech-minimalist',
+          templateColor: options.templateColor || '#18bc6b'
+        } as GenericTemplatePDFOptions);
+        break;
+        
+      case 'academic-scholar':
+        await exportGenericTemplateAsPDF(elementId, filename, {
+          ...options,
+          templateId: 'academic-scholar',
+          templateColor: options.templateColor || '#666666'
+        } as GenericTemplatePDFOptions);
+        break;
+        
+      case 'startup-founder':
+        await exportGenericTemplateAsPDF(elementId, filename, {
+          ...options,
+          templateId: 'startup-founder',
+          templateColor: options.templateColor || '#ff9800'
+        } as GenericTemplatePDFOptions);
+        break;
+        
+      case 'fresh-graduate':
+        await exportGenericTemplateAsPDF(elementId, filename, {
+          ...options,
+          templateId: 'fresh-graduate',
+          templateColor: options.templateColor || '#2196F3'
+        } as GenericTemplatePDFOptions);
+        break;
+        
+      case 'grey-classic-profile':
+        await exportGenericTemplateAsPDF(elementId, filename, {
+          ...options,
+          templateId: 'grey-classic-profile',
+          templateColor: options.templateColor || '#666666'
+        } as GenericTemplatePDFOptions);
+        break;
+        
+      case 'blue-sidebar-profile':
+        await exportGenericTemplateAsPDF(elementId, filename, {
+          ...options,
+          templateId: 'blue-sidebar-profile',
+          templateColor: options.templateColor || '#2196F3'
+        } as GenericTemplatePDFOptions);
+        break;
+        
+      case 'green-sidebar-receptionist':
+        await exportGenericTemplateAsPDF(elementId, filename, {
+          ...options,
+          templateId: 'green-sidebar-receptionist',
+          templateColor: options.templateColor || '#18bc6b'
+        } as GenericTemplatePDFOptions);
+        break;
+        
+      case 'classic-profile-orange':
+        await exportGenericTemplateAsPDF(elementId, filename, {
+          ...options,
+          templateId: 'classic-profile-orange',
+          templateColor: options.templateColor || '#ff9800'
+        } as GenericTemplatePDFOptions);
+        break;
+        
+      case 'classic-law-bw':
+        await exportGenericTemplateAsPDF(elementId, filename, {
+          ...options,
+          templateId: 'classic-law-bw',
+          templateColor: options.templateColor || '#000000'
+        } as GenericTemplatePDFOptions);
+        break;
+        
+      case 'green-sidebar-customer-service':
+        await exportGenericTemplateAsPDF(elementId, filename, {
+          ...options,
+          templateId: 'green-sidebar-customer-service',
+          templateColor: options.templateColor || '#18bc6b'
+        } as GenericTemplatePDFOptions);
+        break;
+        
       default:
         console.warn(`PDF Export - Unknown template: ${templateId}, falling back to simple PDF export`);
         await exportResumeAsSimplePDF(
@@ -61,5 +150,5 @@ export const exportResumeAsPDF = async (
 };
 
 // Re-export individual exporters for direct use
-export { exportModernExecutiveAsPDF, exportNavyColumnModernAsPDF };
-export type { ModernExecutivePDFOptions, NavyColumnModernPDFOptions };
+export { exportModernExecutiveAsPDF, exportNavyColumnModernAsPDF, exportGenericTemplateAsPDF };
+export type { ModernExecutivePDFOptions, NavyColumnModernPDFOptions, GenericTemplatePDFOptions };

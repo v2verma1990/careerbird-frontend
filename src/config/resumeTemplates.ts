@@ -64,7 +64,7 @@ export const RESUME_TEMPLATES: Template[] = [
     id: "academic-scholar",
     name: "Academic Scholar",
     description: "Traditional format for researchers",
-    thumbnail: "/resume-templates/thumbnails/academic.PNG",
+    thumbnail: "/lovable-uploads/academic-scholar.PNG",
     category: "academic",
     color: "gray",
     isRecommended: true,

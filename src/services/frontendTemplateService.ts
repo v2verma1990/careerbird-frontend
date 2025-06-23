@@ -30,7 +30,17 @@ class FrontendTemplateService {
     'creative',
     'executive',
     'tech',
-    'elegant'
+    'elegant',
+    'creative-designer',
+    'tech-minimalist',
+    'academic-scholar',
+    'fresh-graduate',
+    'grey-classic-profile',
+    'blue-sidebar-profile',
+    'green-sidebar-receptionist',
+    'classic-profile-orange',
+    'classic-law-bw',
+    'green-sidebar-customer-service'
   ];
 
   // Template CSS mapping - contains the CSS for each template
@@ -220,7 +230,17 @@ class FrontendTemplateService {
       'creative': baseCss + this.getCreativeCss(),
       'executive': baseCss + this.getExecutiveCss(),
       'tech': baseCss + this.getTechCss(),
-      'elegant': baseCss + this.getElegantCss()
+      'elegant': baseCss + this.getElegantCss(),
+      'creative-designer': baseCss + this.getCreativeDesignerCss(),
+      'tech-minimalist': baseCss + this.getTechMinimalistCss(),
+      'academic-scholar': baseCss + this.getAcademicScholarCss(),
+      'fresh-graduate': baseCss + this.getFreshGraduateCss(),
+      'grey-classic-profile': baseCss + this.getGreyClassicProfileCss(),
+      'blue-sidebar-profile': baseCss + this.getBlueSidebarProfileCss(),
+      'green-sidebar-receptionist': baseCss + this.getGreenSidebarReceptionistCss(),
+      'classic-profile-orange': baseCss + this.getClassicProfileOrangeCss(),
+      'classic-law-bw': baseCss + this.getClassicLawBwCss(),
+      'green-sidebar-customer-service': baseCss + this.getGreenSidebarCustomerServiceCss()
     };
   }
 
@@ -742,10 +762,15 @@ class FrontendTemplateService {
    * Apply template styles: set color variable and body class
    */
   public applyTemplateStyles(templateId: string, color: string): void {
+    console.log(`Applying template styles for ${templateId} with color ${color}`);
     document.documentElement.style.setProperty('--template-color', color, 'important');
     document.documentElement.style.setProperty('--template-color-rgb', this.hexToRgb(color), 'important');
     this.ensureTemplateClass(templateId);
     this.cleanupOverrideStyles();
+    
+    // Verify the styles were applied
+    const appliedColor = getComputedStyle(document.documentElement).getPropertyValue('--template-color');
+    console.log(`Template color applied: ${appliedColor}, Body classes: ${document.body.className}`);
   }
 
   /**
@@ -846,8 +871,12 @@ class FrontendTemplateService {
    * Get the frontend CSS content for a template
    */
   private getFrontendCSS(templateId: string): string {
-    console.log('Injected CSS:', this.templateCssMap[templateId]);
-    return this.templateCssMap[templateId] || '';
+    const css = this.templateCssMap[templateId] || '';
+    console.log(`Getting CSS for template ${templateId}:`, css ? 'Found' : 'Not found');
+    if (css && templateId === 'creative-designer') {
+      console.log('Creative Designer CSS preview:', css.substring(0, 500) + '...');
+    }
+    return css;
   }
 
   /**
@@ -855,6 +884,1364 @@ class FrontendTemplateService {
    */
   public getTemplateCSS(templateId: string): string {
     return this.getFrontendCSS(templateId);
+  }
+
+  /**
+   * Get Creative Designer template CSS
+   */
+  private getCreativeDesignerCss(): string {
+    return `
+      /* ===== CREATIVE DESIGNER TEMPLATE ===== */
+      .creative-designer * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
+      .creative-designer body {
+        font-family: 'Helvetica Neue', Arial, sans-serif;
+        line-height: 1.5;
+        color: #2d3748;
+        background: #fff;
+      }
+      
+      .creative-designer .container {
+        max-width: 8.5in;
+        margin: 0 auto;
+        min-height: 11in;
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 0;
+        background: #fff;
+      }
+      
+      .creative-designer .sidebar {
+        background: linear-gradient(135deg, var(--template-color, #7c3aed), #a855f7);
+        color: white;
+        padding: 2rem;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      
+      .creative-designer .main-content {
+        padding: 2rem;
+        background: #fff;
+      }
+      
+      .creative-designer .profile-section {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+      
+      .creative-designer .profile-image {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.2);
+        margin: 0 auto 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        color: white;
+        object-fit: cover;
+      }
+      
+      .creative-designer .name {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        color: white;
+      }
+      
+      .creative-designer .title {
+        font-size: 1.1rem;
+        opacity: 0.9;
+        margin-bottom: 1.5rem;
+        color: white;
+      }
+      
+      .creative-designer .contact-item {
+        margin-bottom: 0.8rem;
+        font-size: 0.9rem;
+        color: white;
+      }
+      
+      .creative-designer .sidebar-section {
+        margin-bottom: 2rem;
+      }
+      
+      .creative-designer .sidebar-title {
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin-bottom: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: white;
+      }
+      
+      .creative-designer .skill-item {
+        background: rgba(255,255,255,0.2);
+        padding: 0.4rem 0.8rem;
+        margin: 0.3rem 0;
+        border-radius: 20px;
+        display: inline-block;
+        font-size: 0.85rem;
+        margin-right: 0.5rem;
+        color: white;
+      }
+      
+      .creative-designer .section {
+        margin-bottom: 2.5rem;
+      }
+      
+      .creative-designer .section-title {
+        font-size: 1.8rem;
+        color: var(--template-color, #7c3aed);
+        margin-bottom: 0.5rem;
+        position: relative;
+        font-weight: bold;
+      }
+      
+      .creative-designer .section-underline {
+        width: 50px;
+        height: 3px;
+        background: var(--template-color, #7c3aed);
+        margin-bottom: 1.5rem;
+      }
+      
+      .creative-designer .summary-text {
+        font-size: 1rem;
+        line-height: 1.7;
+        color: #2d3748;
+        text-align: justify;
+      }
+      
+      .creative-designer .experience-item,
+      .creative-designer .education-item,
+      .creative-designer .project-item {
+        margin-bottom: 2rem;
+        position: relative;
+        padding-left: 2rem;
+      }
+      
+      .creative-designer .experience-item:before,
+      .creative-designer .education-item:before,
+      .creative-designer .project-item:before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0.3rem;
+        width: 10px;
+        height: 10px;
+        background: var(--template-color, #7c3aed);
+        border-radius: 50%;
+      }
+      
+      .creative-designer .item-header {
+        margin-bottom: 0.8rem;
+      }
+      
+      .creative-designer .item-title {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #2d3748;
+        margin-bottom: 0.3rem;
+      }
+      
+      .creative-designer .item-subtitle {
+        font-weight: 600;
+        color: var(--template-color, #7c3aed);
+        margin-bottom: 0.3rem;
+      }
+      
+      .creative-designer .item-meta {
+        color: #666;
+        font-style: italic;
+        font-size: 0.9rem;
+      }
+      
+      .creative-designer .item-description {
+        line-height: 1.6;
+        color: #2d3748;
+        margin-top: 0.5rem;
+      }
+      
+      .creative-designer .item-description ul {
+        margin-left: 1.5rem;
+        margin-top: 0.5rem;
+      }
+      
+      .creative-designer .item-description li {
+        margin-bottom: 0.3rem;
+      }
+      
+      /* Print optimizations */
+      @media print {
+        .creative-designer .container {
+          box-shadow: none;
+          margin: 0;
+          max-width: none;
+          width: 100%;
+        }
+        
+        .creative-designer .sidebar {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+      }
+    `;
+  }
+
+  /**
+   * Get Tech Minimalist template CSS
+   */
+  private getTechMinimalistCss(): string {
+    return `
+      /* ===== TECH MINIMALIST TEMPLATE ===== */
+      
+      /* Base styles for terminal theme */
+      .tech-minimalist * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
+      .tech-minimalist body {
+        font-family: 'Fira Code', 'Monaco', 'Consolas', 'Ubuntu Mono', monospace;
+        line-height: 1.6;
+        color: #e0e0e0;
+        background: #1a1a1a;
+      }
+      
+      .tech-minimalist .container {
+        max-width: 8.5in;
+        margin: 0 auto;
+        min-height: 11in;
+        padding: 2rem;
+        background: #1a1a1a;
+        color: #e0e0e0;
+        font-family: 'Fira Code', 'Monaco', 'Consolas', 'Ubuntu Mono', monospace;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+      
+      /* Terminal header styling */
+      .tech-minimalist .terminal-header {
+        background: #2d2d2d;
+        padding: 0.8rem 1rem;
+        border-radius: 6px 6px 0 0;
+        border-left: 4px solid var(--template-color, #00ff41);
+        margin-bottom: 0;
+        font-weight: bold;
+      }
+      
+      .tech-minimalist .terminal-header .prompt {
+        color: var(--template-color, #00ff41);
+        font-weight: bold;
+      }
+      
+      /* Terminal content */
+      .tech-minimalist .terminal-content {
+        background: #2d2d2d;
+        padding: 1rem;
+        border-radius: 0 0 6px 6px;
+        margin-bottom: 2rem;
+      }
+      
+      .tech-minimalist .terminal-line {
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: flex-start;
+        flex-wrap: wrap;
+      }
+      
+      .tech-minimalist .terminal-line .prompt {
+        color: var(--template-color, #00ff41);
+        font-weight: bold;
+        margin-right: 0.5rem;
+        min-width: 80px;
+      }
+      
+      .tech-minimalist .name-display {
+        color: #ffffff;
+        font-weight: bold;
+        font-size: 1.2rem;
+      }
+      
+      .tech-minimalist .title-display {
+        color: #ffd700;
+        font-weight: 600;
+      }
+      
+      .tech-minimalist .contact-display {
+        color: #87ceeb;
+      }
+      
+      /* Section styling */
+      .tech-minimalist .section {
+        margin-bottom: 2.5rem;
+      }
+      
+      .tech-minimalist .section-header {
+        color: var(--template-color, #00ff41);
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid var(--template-color, #00ff41);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      
+      /* Code block styling */
+      .tech-minimalist .code-block {
+        background: #2d2d2d;
+        padding: 1rem;
+        border-radius: 6px;
+        border-left: 4px solid var(--template-color, #00ff41);
+        margin-bottom: 1rem;
+        font-family: 'Fira Code', 'Monaco', 'Consolas', 'Ubuntu Mono', monospace;
+        line-height: 1.6;
+        color: #e0e0e0;
+      }
+      
+      /* Experience items */
+      .tech-minimalist .experience-item {
+        background: #2d2d2d;
+        padding: 1.5rem;
+        border-radius: 6px;
+        border-left: 4px solid var(--template-color, #00ff41);
+        margin-bottom: 1.5rem;
+      }
+      
+      .tech-minimalist .function-signature {
+        color: #ff6b6b;
+        font-weight: bold;
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+      }
+      
+      .tech-minimalist .item-meta {
+        margin-bottom: 1rem;
+      }
+      
+      .tech-minimalist .comment {
+        color: #6a9955;
+        font-style: italic;
+      }
+      
+      .tech-minimalist .experience-item > div:not(.function-signature):not(.item-meta):last-child {
+        color: #ff6b6b;
+        font-weight: bold;
+        margin-top: 1rem;
+      }
+      
+      /* Education items */
+      .tech-minimalist .education-item {
+        background: #2d2d2d;
+        padding: 1rem;
+        border-radius: 6px;
+        border-left: 4px solid var(--template-color, #00ff41);
+        margin-bottom: 1rem;
+      }
+      
+      .tech-minimalist .education-item .item-title {
+        color: #ffd700;
+        font-weight: bold;
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
+      }
+      
+      .tech-minimalist .education-item .item-meta {
+        color: #87ceeb;
+        font-size: 0.9rem;
+      }
+      
+      /* Certification items */
+      .tech-minimalist .certification-item {
+        background: #2d2d2d;
+        padding: 1rem;
+        border-radius: 6px;
+        border-left: 4px solid var(--template-color, #00ff41);
+        margin-bottom: 1rem;
+      }
+      
+      .tech-minimalist .certification-item .item-title {
+        color: #ffd700;
+        font-weight: bold;
+        margin-bottom: 0.3rem;
+      }
+      
+      .tech-minimalist .certification-item .item-meta {
+        color: #87ceeb;
+        font-size: 0.9rem;
+      }
+      
+      /* Code syntax highlighting */
+      .tech-minimalist .keyword {
+        color: #569cd6;
+        font-weight: bold;
+      }
+      
+      .tech-minimalist .variable {
+        color: #9cdcfe;
+      }
+      
+      .tech-minimalist .string {
+        color: #ce9178;
+      }
+      
+      /* Print optimizations */
+      @media print {
+        @page {
+          size: A4;
+          margin: 0.4in;
+        }
+        
+        /* Global print settings */
+        html, body {
+          height: auto !important;
+          overflow: visible !important;
+        }
+        
+        /* Force specific elements to avoid breaking */
+        .tech-minimalist .terminal-header,
+        .tech-minimalist .terminal-content,
+        .tech-minimalist .terminal-line,
+        .tech-minimalist .code-block,
+        .tech-minimalist .experience-item,
+        .tech-minimalist .education-item,
+        .tech-minimalist .certification-item,
+        .tech-minimalist .section {
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+        }
+        
+        .tech-minimalist .container {
+          background: #ffffff !important;
+          color: #000000 !important;
+          box-shadow: none;
+          margin: 0;
+          max-width: none;
+          width: 100%;
+          padding: 0.3rem;
+          page-break-inside: auto;
+          break-inside: auto;
+        }
+        
+        .tech-minimalist body {
+          background: #ffffff !important;
+          color: #000000 !important;
+          font-size: 11px;
+          line-height: 1.3;
+        }
+        
+        /* Terminal styling for print - Keep header and content together */
+        .tech-minimalist .terminal-header {
+          background: #f8f8f8 !important;
+          color: #000000 !important;
+          border-left-color: var(--template-color, #00ff41) !important;
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+          page-break-after: avoid !important;
+          break-after: avoid !important;
+          margin-bottom: 0 !important;
+        }
+        
+        .tech-minimalist .terminal-content {
+          background: #f8f8f8 !important;
+          color: #000000 !important;
+          border-left-color: var(--template-color, #00ff41) !important;
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+          page-break-before: avoid !important;
+          break-before: avoid !important;
+          margin-top: 0 !important;
+        }
+        
+        /* Keep terminal header + content as one unit */
+        .tech-minimalist .terminal-header + .tech-minimalist .terminal-content {
+          page-break-before: avoid !important;
+          break-before: avoid !important;
+        }
+        
+        /* Personal info section - keep everything together */
+        .tech-minimalist .container > *:first-child,
+        .tech-minimalist .container > *:nth-child(2) {
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+          page-break-after: avoid !important;
+          break-after: avoid !important;
+        }
+        
+        /* First section should not break */
+        .tech-minimalist .section:first-of-type {
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+        }
+        
+        /* Ensure minimum content on first page */
+        .tech-minimalist .container > *:first-child {
+          min-height: 200px;
+        }
+        
+        /* Terminal lines should stay together */
+        .tech-minimalist .terminal-line {
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+          display: block !important;
+        }
+        
+        /* Prevent any breaking in the first 3 elements */
+        .tech-minimalist .container > *:nth-child(-n+3) {
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+          page-break-after: avoid !important;
+          break-after: avoid !important;
+        }
+        
+        /* Create a first page wrapper effect */
+        .tech-minimalist .container > *:first-child,
+        .tech-minimalist .container > *:first-child + *,
+        .tech-minimalist .container > *:first-child + * + * {
+          display: block !important;
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+        }
+        
+        /* Reduce spacing to fit more content on first page */
+        .tech-minimalist .terminal-header {
+          padding: 0.5rem 0.8rem !important;
+          margin-bottom: 0 !important;
+        }
+        
+        .tech-minimalist .terminal-content {
+          padding: 0.8rem !important;
+          margin-bottom: 1rem !important;
+        }
+        
+        .tech-minimalist .section {
+          margin-bottom: 1rem !important;
+        }
+        
+        .tech-minimalist .section-header {
+          margin-bottom: 0.5rem !important;
+          padding-bottom: 0.3rem !important;
+          font-size: 0.95rem !important;
+        }
+        
+        .tech-minimalist .code-block {
+          background: #f8f8f8 !important;
+          color: #000000 !important;
+          border-left-color: var(--template-color, #00ff41) !important;
+          page-break-inside: avoid;
+          break-inside: avoid;
+          margin-bottom: 0.5rem;
+        }
+        
+        /* Section breaks */
+        .tech-minimalist .section {
+          page-break-inside: auto;
+          break-inside: auto;
+          margin-bottom: 1.5rem !important;
+          padding-bottom: 0.5rem;
+        }
+        
+        .tech-minimalist .section-header {
+          color: var(--template-color, #00ff41) !important;
+          page-break-after: avoid !important;
+          break-after: avoid !important;
+          page-break-before: auto;
+          break-before: auto;
+          margin-bottom: 0.8rem !important;
+          margin-top: 0.5rem !important;
+          font-size: 1rem;
+          padding-bottom: 0.3rem;
+          border-bottom: 1px solid var(--template-color, #00ff41) !important;
+        }
+        
+        /* Keep section header with its first content item */
+        .tech-minimalist .section-header + .experience-item,
+        .tech-minimalist .section-header + .education-item,
+        .tech-minimalist .section-header + .code-block {
+          page-break-before: avoid !important;
+          break-before: avoid !important;
+        }
+        
+        /* Experience items */
+        .tech-minimalist .experience-item {
+          background: #f8f8f8 !important;
+          color: #000000 !important;
+          border-left-color: var(--template-color, #00ff41) !important;
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+          page-break-before: auto;
+          break-before: auto;
+          margin-bottom: 1.2rem !important;
+          padding: 0.8rem;
+          min-height: 80px;
+          display: block !important;
+        }
+        
+        /* Ensure experience items have proper spacing and don't break */
+        .tech-minimalist .experience-item:first-of-type {
+          page-break-before: avoid !important;
+          break-before: avoid !important;
+        }
+        
+        /* Add buffer space around experience items */
+        .tech-minimalist .experience-item::before {
+          content: '';
+          display: block;
+          height: 5px;
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+        }
+        
+        .tech-minimalist .experience-item::after {
+          content: '';
+          display: block;
+          height: 5px;
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+        }
+        
+        .tech-minimalist .function-signature {
+          color: #000000 !important;
+          font-weight: bold !important;
+          page-break-after: avoid !important;
+          break-after: avoid !important;
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+          margin-bottom: 0.5rem !important;
+          font-size: 0.95rem;
+          display: block !important;
+        }
+        
+        /* Keep function signature with its content */
+        .tech-minimalist .function-signature + div,
+        .tech-minimalist .function-signature + .item-meta {
+          page-break-before: avoid !important;
+          break-before: avoid !important;
+        }
+        
+        /* Education and certification items */
+        .tech-minimalist .education-item,
+        .tech-minimalist .certification-item {
+          background: #f8f8f8 !important;
+          color: #000000 !important;
+          border-left-color: var(--template-color, #00ff41) !important;
+          page-break-inside: avoid;
+          break-inside: avoid;
+          margin-bottom: 0.8rem;
+          padding: 0.6rem;
+        }
+        
+        .tech-minimalist .education-item .item-title,
+        .tech-minimalist .certification-item .item-title {
+          color: #000000 !important;
+          font-weight: bold !important;
+          page-break-after: avoid;
+          break-after: avoid;
+          font-size: 0.9rem;
+        }
+        
+        /* Terminal elements */
+        .tech-minimalist .terminal-header .prompt,
+        .tech-minimalist .terminal-line .prompt {
+          color: var(--template-color, #00ff41) !important;
+        }
+        
+        .tech-minimalist .terminal-line {
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+          margin-bottom: 0.3rem !important;
+          display: block !important;
+        }
+        
+        /* Ensure terminal content blocks stay together */
+        .tech-minimalist .terminal-content {
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+          margin-bottom: 1rem !important;
+        }
+        
+        /* Keep related terminal lines together */
+        .tech-minimalist .terminal-line + .tech-minimalist .terminal-line {
+          page-break-before: avoid !important;
+          break-before: avoid !important;
+        }
+        
+        .tech-minimalist .name-display {
+          color: #000000 !important;
+          font-weight: bold !important;
+          font-size: 1.1rem;
+        }
+        
+        .tech-minimalist .title-display {
+          color: #666666 !important;
+          font-size: 0.9rem;
+        }
+        
+        .tech-minimalist .contact-display {
+          color: #333333 !important;
+          font-size: 0.8rem;
+        }
+        
+        .tech-minimalist .comment {
+          color: #666666 !important;
+          font-size: 0.8rem;
+        }
+        
+        .tech-minimalist .item-meta {
+          color: #666666 !important;
+          font-size: 0.8rem;
+          page-break-after: avoid;
+          break-after: avoid;
+        }
+        
+        /* Code syntax highlighting for print */
+        .tech-minimalist .keyword {
+          color: #0066cc !important;
+          font-weight: bold;
+        }
+        
+        .tech-minimalist .variable {
+          color: #333333 !important;
+        }
+        
+        .tech-minimalist .string {
+          color: #008800 !important;
+        }
+        
+        /* Prevent orphans and widows */
+        .tech-minimalist p,
+        .tech-minimalist div {
+          orphans: 2;
+          widows: 2;
+        }
+        
+        /* Ensure colors print correctly */
+        * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        
+        /* Force page breaks before major sections if needed */
+        .tech-minimalist .section:nth-child(n+3) {
+          page-break-before: auto;
+        }
+        
+        /* Avoid breaking terminal blocks */
+        .tech-minimalist .terminal-header + .tech-minimalist .terminal-content {
+          page-break-before: avoid !important;
+          break-before: avoid !important;
+        }
+        
+        /* Special handling for tech-minimalist template */
+        .tech-minimalist {
+          font-size: 11px !important;
+        }
+        
+        /* Compact layout for better page fitting */
+        .tech-minimalist .container {
+          padding: 0.2rem !important;
+        }
+        
+        /* Ensure the entire personal info section stays together */
+        .tech-minimalist .container > div:first-child {
+          page-break-after: avoid !important;
+          break-after: avoid !important;
+          min-height: 120px;
+          max-height: 250px;
+        }
+        
+        /* Keep first few elements together on first page */
+        .tech-minimalist .container > *:nth-child(-n+2) {
+          page-break-after: avoid !important;
+          break-after: avoid !important;
+        }
+        
+        /* Allow natural page breaks after the first major section */
+        .tech-minimalist .section:nth-of-type(2) {
+          page-break-before: auto;
+          break-before: auto;
+        }
+        
+        /* Prevent very short pages */
+        .tech-minimalist .section:not(:first-of-type) {
+          min-height: 100px;
+        }
+        
+        /* Ensure adequate spacing between major sections */
+        .tech-minimalist .section + .section {
+          margin-top: 1rem !important;
+          padding-top: 0.5rem;
+        }
+        
+        /* --- PDF PAGE BREAK & FIT MORE CONTENT: Reduce font size and spacing for print (REINFORCED) --- */
+        @media print {
+          .tech-minimalist .container,
+          .tech-minimalist .experience-item,
+          .tech-minimalist .project-item,
+          .tech-minimalist .education-item,
+          .tech-minimalist .section-header,
+          .tech-minimalist .function-signature,
+          .tech-minimalist .item-meta,
+          .tech-minimalist .code-block {
+            font-size: 10px !important;
+            line-height: 1.1 !important;
+          }
+          .tech-minimalist .container {
+            padding: 0.02in !important;
+          }
+          .tech-minimalist .experience-item,
+          .tech-minimalist .project-item,
+          .tech-minimalist .education-item {
+            padding: 0.1rem !important;
+            margin-bottom: 0.1rem !important;
+          }
+          .tech-minimalist .section-header {
+            margin-bottom: 0.1rem !important;
+            padding-bottom: 0.05rem !important;
+          }
+          .tech-minimalist .function-signature {
+            margin-bottom: 0.1rem !important;
+          }
+          .tech-minimalist .item-meta {
+            margin-bottom: 0.05rem !important;
+          }
+          .tech-minimalist .code-block {
+            padding: 0.1rem !important;
+            margin-bottom: 0.1rem !important;
+          }
+        }
+    `;
+  }
+
+  /**
+   * Get Academic Scholar template CSS
+   */
+  private getAcademicScholarCss(): string {
+    return `
+      /* ===== ACADEMIC SCHOLAR TEMPLATE ===== */
+      .academic-scholar .container {
+        max-width: 8.5in;
+        margin: 0 auto;
+        min-height: 11in;
+        background: #fff;
+        font-family: 'Times New Roman', serif;
+        line-height: 1.6;
+        display: flex;
+        flex-direction: column;
+      }
+      
+      /* Top color bar header */
+      .academic-scholar .header {
+        background: var(--template-color, #2c5aa0);
+        color: white;
+        padding: 2rem;
+        text-align: center;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        margin: 0;
+      }
+      
+      .academic-scholar .name {
+        font-size: 2.2rem;
+        font-weight: bold;
+        color: white;
+        margin-bottom: 0.5rem;
+        font-family: 'Times New Roman', serif;
+      }
+      
+      .academic-scholar .title {
+        font-size: 1.1rem;
+        color: rgba(255, 255, 255, 0.9);
+        font-style: italic;
+        margin-bottom: 0.5rem;
+      }
+      
+      .academic-scholar .contact-info {
+        font-size: 0.95rem;
+        color: rgba(255, 255, 255, 0.85);
+        margin-top: 1rem;
+      }
+      
+      .academic-scholar .contact-info a {
+        color: rgba(255, 255, 255, 0.9);
+        text-decoration: none;
+      }
+      
+      /* Main content area */
+      .academic-scholar .content {
+        padding: 2rem;
+        flex: 1;
+        background: #fff;
+      }
+      
+      .academic-scholar .section {
+        margin-bottom: 2rem;
+      }
+      
+      .academic-scholar .section-title {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: var(--template-color, #2c5aa0);
+        margin-bottom: 1rem;
+        text-transform: uppercase;
+        border-bottom: 2px solid var(--template-color, #2c5aa0);
+        padding-bottom: 0.25rem;
+        letter-spacing: 0.5px;
+      }
+      
+      .academic-scholar .section-content {
+        font-size: 1rem;
+        line-height: 1.6;
+        color: #333;
+      }
+      
+      .academic-scholar .experience-item,
+      .academic-scholar .education-item {
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #eee;
+      }
+      
+      .academic-scholar .experience-item:last-child,
+      .academic-scholar .education-item:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+      }
+      
+      .academic-scholar .item-title {
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 0.3rem;
+      }
+      
+      .academic-scholar .item-subtitle {
+        font-size: 1rem;
+        color: var(--template-color, #2c5aa0);
+        font-weight: 600;
+        margin-bottom: 0.3rem;
+      }
+      
+      .academic-scholar .item-meta {
+        font-size: 0.9rem;
+        color: #666;
+        font-style: italic;
+        margin-bottom: 0.5rem;
+      }
+      
+      .academic-scholar .item-description {
+        font-size: 0.95rem;
+        line-height: 1.6;
+        color: #444;
+      }
+      
+      .academic-scholar .item-description ul {
+        margin-left: 1.5rem;
+        margin-top: 0.5rem;
+      }
+      
+      .academic-scholar .item-description li {
+        margin-bottom: 0.3rem;
+      }
+      
+      /* Skills section */
+      .academic-scholar .skills-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+      }
+      
+      .academic-scholar .skill-item {
+        background: var(--template-color, #2c5aa0);
+        color: white;
+        padding: 0.3rem 0.8rem;
+        border-radius: 15px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      
+      /* Print optimizations */
+      @media print {
+        .academic-scholar .container {
+          margin: 0;
+          max-width: none;
+          width: 100%;
+        }
+        
+        .academic-scholar .header {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        
+        .academic-scholar .skill-item {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+      }
+    `;
+  }
+
+  /**
+   * Get Fresh Graduate template CSS
+   */
+  private getFreshGraduateCss(): string {
+    return `
+      /* ===== FRESH GRADUATE TEMPLATE ===== */
+      .fresh-graduate .container {
+        max-width: 8.5in;
+        margin: 0 auto;
+        min-height: 11in;
+        background: #fff;
+        display: flex;
+        flex-direction: column;
+      }
+      
+      .fresh-graduate .header {
+        background: linear-gradient(135deg, var(--template-color, #2196F3), #64b5f6);
+        color: white;
+        padding: 2rem;
+        text-align: center;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      
+      .fresh-graduate .name {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+      }
+      
+      .fresh-graduate .title {
+        font-size: 1.2rem;
+        opacity: 0.9;
+      }
+      
+      .fresh-graduate .content {
+        padding: 2rem;
+        flex: 1;
+      }
+      
+      .fresh-graduate .section {
+        margin-bottom: 2rem;
+      }
+      
+      .fresh-graduate .section-title {
+        font-size: 1.3rem;
+        font-weight: bold;
+        color: var(--template-color, #2196F3);
+        margin-bottom: 1rem;
+        position: relative;
+      }
+      
+      .fresh-graduate .section-title::after {
+        content: '';
+        position: absolute;
+        bottom: -5px;
+        left: 0;
+        width: 50px;
+        height: 3px;
+        background: var(--template-color, #2196F3);
+      }
+    `;
+  }
+
+  /**
+   * Get Grey Classic Profile template CSS
+   */
+  private getGreyClassicProfileCss(): string {
+    return `
+      /* ===== GREY CLASSIC PROFILE TEMPLATE ===== */
+      .grey-classic-profile .container {
+        max-width: 8.5in;
+        margin: 0 auto;
+        min-height: 11in;
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 0;
+        background: #fff;
+      }
+      
+      .grey-classic-profile .sidebar {
+        background: #f8f9fa;
+        padding: 2rem;
+        border-right: 1px solid #e9ecef;
+      }
+      
+      .grey-classic-profile .main-content {
+        padding: 2rem;
+        background: #fff;
+      }
+      
+      .grey-classic-profile .profile-section {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+      
+      .grey-classic-profile .section {
+        margin-bottom: 2rem;
+      }
+      
+      .grey-classic-profile .section-title {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: var(--template-color, #666);
+        margin-bottom: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+    `;
+  }
+
+  /**
+   * Get Blue Sidebar Profile template CSS
+   */
+  private getBlueSidebarProfileCss(): string {
+    return `
+      /* ===== BLUE SIDEBAR PROFILE TEMPLATE ===== */
+      .blue-sidebar-profile .container {
+        max-width: 8.5in;
+        margin: 0 auto;
+        min-height: 11in;
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 0;
+        background: #fff;
+      }
+      
+      .blue-sidebar-profile .sidebar {
+        background: var(--template-color, #2196F3);
+        color: white;
+        padding: 2rem;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      
+      .blue-sidebar-profile .main-content {
+        padding: 2rem;
+        background: #fff;
+      }
+      
+      .blue-sidebar-profile .profile-section {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+      
+      .blue-sidebar-profile .section {
+        margin-bottom: 2rem;
+      }
+      
+      .blue-sidebar-profile .section-title {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: var(--template-color, #2196F3);
+        margin-bottom: 1rem;
+        border-bottom: 2px solid var(--template-color, #2196F3);
+        padding-bottom: 0.5rem;
+      }
+    `;
+  }
+
+  /**
+   * Get Green Sidebar Receptionist template CSS
+   */
+  private getGreenSidebarReceptionistCss(): string {
+    return `
+      /* ===== GREEN SIDEBAR RECEPTIONIST TEMPLATE ===== */
+      .green-sidebar-receptionist .container {
+        max-width: 8.5in;
+        margin: 0 auto;
+        min-height: 11in;
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 0;
+        background: #fff;
+      }
+      
+      .green-sidebar-receptionist .sidebar {
+        background: var(--template-color, #18bc6b);
+        color: white;
+        padding: 2rem;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      
+      .green-sidebar-receptionist .main-content {
+        padding: 2rem;
+        background: #fff;
+      }
+      
+      .green-sidebar-receptionist .profile-section {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+      
+      .green-sidebar-receptionist .section {
+        margin-bottom: 2rem;
+      }
+      
+      .green-sidebar-receptionist .section-title {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: var(--template-color, #18bc6b);
+        margin-bottom: 1rem;
+        border-bottom: 2px solid var(--template-color, #18bc6b);
+        padding-bottom: 0.5rem;
+      }
+    `;
+  }
+
+  /**
+   * Get Classic Profile Orange template CSS
+   */
+  private getClassicProfileOrangeCss(): string {
+    return `
+      /* ===== CLASSIC PROFILE ORANGE TEMPLATE ===== */
+      .classic-profile-orange .container {
+        max-width: 8.5in;
+        margin: 0 auto;
+        min-height: 11in;
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 0;
+        background: #fff;
+      }
+      
+      .classic-profile-orange .sidebar {
+        background: #f8f9fa;
+        padding: 2rem;
+        border-right: 1px solid #e9ecef;
+      }
+      
+      .classic-profile-orange .main-content {
+        padding: 2rem;
+        background: #fff;
+      }
+      
+      .classic-profile-orange .name {
+        color: var(--template-color, #ff9800);
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 1rem;
+      }
+      
+      .classic-profile-orange .section {
+        margin-bottom: 2rem;
+      }
+      
+      .classic-profile-orange .section-title {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: var(--template-color, #ff9800);
+        margin-bottom: 1rem;
+        border-bottom: 2px solid var(--template-color, #ff9800);
+        padding-bottom: 0.5rem;
+      }
+    `;
+  }
+
+  /**
+   * Get Classic Law BW template CSS
+   */
+  private getClassicLawBwCss(): string {
+    return `
+      /* ===== CLASSIC LAW BW TEMPLATE ===== */
+      .classic-law-bw .container {
+        max-width: 8.5in;
+        margin: 0 auto;
+        min-height: 11in;
+        padding: 2rem;
+        background: #fff;
+        font-family: 'Times New Roman', serif;
+      }
+      
+      .classic-law-bw .header {
+        text-align: center;
+        border-bottom: 3px solid var(--template-color, #000);
+        padding-bottom: 1rem;
+        margin-bottom: 2rem;
+      }
+      
+      .classic-law-bw .name {
+        font-size: 2.2rem;
+        font-weight: bold;
+        color: var(--template-color, #000);
+        margin-bottom: 0.5rem;
+      }
+      
+      .classic-law-bw .section {
+        margin-bottom: 2rem;
+      }
+      
+      .classic-law-bw .section-title {
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: var(--template-color, #000);
+        margin-bottom: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        border-bottom: 1px solid var(--template-color, #000);
+        padding-bottom: 0.25rem;
+      }
+    `;
+  }
+
+  /**
+   * Get Green Sidebar Customer Service template CSS
+   */
+  private getGreenSidebarCustomerServiceCss(): string {
+    return `
+      /* ===== GREEN SIDEBAR CUSTOMER SERVICE TEMPLATE ===== */
+      .green-sidebar-customer-service .container {
+        max-width: 8.5in;
+        margin: 0 auto;
+        min-height: 11in;
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 0;
+        background: #fff;
+      }
+      
+      .green-sidebar-customer-service .sidebar {
+        background: var(--template-color, #18bc6b);
+        color: white;
+        padding: 2rem;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      
+      .green-sidebar-customer-service .main-content {
+        padding: 2rem;
+        background: #fff;
+      }
+      
+      .green-sidebar-customer-service .profile-section {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+      
+      .green-sidebar-customer-service .section {
+        margin-bottom: 2rem;
+      }
+      
+      .green-sidebar-customer-service .section-title {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: var(--template-color, #18bc6b);
+        margin-bottom: 1rem;
+        border-bottom: 2px solid var(--template-color, #18bc6b);
+        padding-bottom: 0.5rem;
+      }
+    `;
   }
 
   /**
@@ -872,7 +2259,7 @@ class FrontendTemplateService {
    * @param hex - Hex color string (with or without #)
    * @returns RGB values as comma-separated string (e.g., "255,0,0")
    */
-  private hexToRgb(hex: string): string {
+  public hexToRgb(hex: string): string {
     hex = hex.replace('#', '');
     if (hex.length === 3) {
       hex = hex.split('').map(x => x + x).join('');

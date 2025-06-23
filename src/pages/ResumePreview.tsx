@@ -25,10 +25,10 @@ const ResumePreview = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   
-  const template = searchParams.get('template') || 'navy-column-modern';
+  const template = searchParams.get('template') ;
   const encodedData = searchParams.get('data');
   const encodedHtml = searchParams.get('html');
-  const selectedColor = searchParams.get('color') ? decodeURIComponent(searchParams.get('color')!) : '#315389';
+  const selectedColor = searchParams.get('color') ? decodeURIComponent(searchParams.get('color')) : '#315389';
 
   // IMMEDIATELY apply color on component initialization to prevent any flash
   useLayoutEffect(() => {
@@ -197,6 +197,37 @@ const ResumePreview = () => {
       regenerateTemplateWithCorrectColor(resumeData, selectedColor);
     }
   }, [selectedColor]); // Only watch for color changes
+
+  // Inject CSS directly into preview container after render
+  useEffect(() => {
+    if (renderedTemplate && template) {
+      const previewContainer = document.getElementById('resume-preview-container');
+      if (previewContainer) {
+        // Remove any existing style tags
+        const existingStyles = previewContainer.querySelectorAll('style[data-template-css]');
+        existingStyles.forEach(style => style.remove());
+        
+        // Get the template CSS
+        const templateCSS = frontendTemplateService.getTemplateCSS(template);
+        
+        if (templateCSS) {
+          // Create and inject style tag
+          const styleTag = document.createElement('style');
+          styleTag.setAttribute('data-template-css', template);
+          styleTag.textContent = `
+            :root {
+              --template-color: ${selectedColor} !important;
+              --template-color-rgb: ${frontendTemplateService.hexToRgb(selectedColor)} !important;
+            }
+            ${templateCSS}
+          `;
+          
+          previewContainer.appendChild(styleTag);
+          console.log(`Injected CSS for ${template} into preview container`);
+        }
+      }
+    }
+  }, [renderedTemplate, template, selectedColor]);
 
   const downloadAsHTML = async () => {
     if (!renderedTemplate || !resumeData) return;
@@ -394,7 +425,7 @@ const ResumePreview = () => {
                     <div
                       key={previewKey}
                       id="resume-preview-container"
-                      className="resume-preview-container template-transition"
+                      className={`resume-preview-container template-transition ${template}`}
                       dangerouslySetInnerHTML={{ __html: renderedTemplate.html }}
                     />
                   </div>
