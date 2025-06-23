@@ -95,6 +95,37 @@
             {{/each}}
         </div>
         {{/if}}
+        {{#if achievements}}
+        <div class="section">
+            <h2 class="section-title">Key Achievements</h2>
+            <ul>
+                {{#each achievements}}
+                <li>{{this}}</li>
+                {{/each}}
+            </ul>
+        </div>
+        {{/if}}
+
+        {{#if references}}
+        <div class="section">
+            <h2 class="section-title">References</h2>
+            {{#each references}}
+            <div class="reference-item">
+                <div class="job-title">{{name}}</div>
+                {{#if title}}<div class="company">{{title}}</div>{{/if}}
+                {{#if contact}}<div>{{contact}}</div>{{/if}}
+            </div>
+            {{/each}}
+        </div>
+        {{/if}}
+
+        {{#unless references}}{{#unless achievements}}
+        <div class="section">
+            <div>
+                References available upon request
+            </div>
+        </div>
+        {{/unless}}{{/unless}}
     </div>
 </body>
 </html>

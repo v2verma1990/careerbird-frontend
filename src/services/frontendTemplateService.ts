@@ -742,7 +742,302 @@ class FrontendTemplateService {
   /**
    * Placeholder methods for other templates - implement as needed
    */
-  private getStartupFounderCss(): string { return '/* Startup Founder template styles */'; }
+  private getStartupFounderCss(): string {
+    return `
+      /* ===== STARTUP FOUNDER TEMPLATE ===== */
+      .startup-founder .container {
+        max-width: 8.5in;
+        margin: 0 auto;
+        min-height: 11in;
+        background: #fff;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        display: flex;
+        flex-direction: column;
+      }
+      
+      /* Header section with bold design */
+      .startup-founder .header {
+        background: var(--template-color, #2563eb);
+        color: white;
+        padding: 3rem 2rem;
+        text-align: center;
+        position: relative;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        margin: 0;
+      }
+      
+      .startup-founder .header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, var(--template-color, #2563eb) 0%, rgba(37, 99, 235, 0.8) 100%);
+        z-index: 1;
+      }
+      
+      .startup-founder .header > * {
+        position: relative;
+        z-index: 2;
+      }
+      
+      .startup-founder .name {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: white;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      }
+      
+      .startup-founder .title {
+        font-size: 1.3rem;
+        color: rgba(255, 255, 255, 0.95);
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        font-style: italic;
+      }
+      
+      .startup-founder .contact-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 0.5rem;
+        font-size: 0.95rem;
+        color: rgba(255, 255, 255, 0.9);
+        margin-top: 1rem;
+      }
+      
+      .startup-founder .contact-item {
+        padding: 0.25rem;
+        font-weight: 500;
+      }
+      
+      .startup-founder .contact-item a {
+        color: rgba(255, 255, 255, 0.95);
+        text-decoration: none;
+      }
+      
+      /* Main content area */
+      .startup-founder .section {
+        padding: 2rem;
+        margin-bottom: 1rem;
+        border-left: 4px solid var(--template-color, #2563eb);
+        background: linear-gradient(to right, rgba(37, 99, 235, 0.02) 0%, transparent 100%);
+      }
+      
+      .startup-founder .section-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--template-color, #2563eb);
+        margin-bottom: 1.5rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        position: relative;
+        padding-bottom: 0.5rem;
+      }
+      
+      .startup-founder .section-title::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 60px;
+        height: 3px;
+        background: var(--template-color, #2563eb);
+      }
+      
+      /* Vision Statement / Summary */
+      .startup-founder .summary {
+        font-size: 1.1rem;
+        line-height: 1.7;
+        color: #374151;
+        font-weight: 500;
+        font-style: italic;
+        padding: 1rem;
+        background: rgba(37, 99, 235, 0.05);
+        border-radius: 8px;
+        border-left: 4px solid var(--template-color, #2563eb);
+      }
+      
+      /* Experience items */
+      .startup-founder .experience-item,
+      .startup-founder .education-item {
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border-left: 4px solid var(--template-color, #2563eb);
+      }
+      
+      .startup-founder .item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+      }
+      
+      .startup-founder .item-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 0.25rem;
+      }
+      
+      .startup-founder .item-company {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--template-color, #2563eb);
+      }
+      
+      .startup-founder .item-meta {
+        font-size: 0.9rem;
+        color: #6b7280;
+        text-align: right;
+        font-weight: 500;
+        line-height: 1.4;
+      }
+      
+      .startup-founder .item-description {
+        font-size: 1rem;
+        line-height: 1.6;
+        color: #374151;
+      }
+      
+      /* Projects grid */
+      .startup-founder .projects-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+      }
+      
+      .startup-founder .project-card {
+        background: #fff;
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border-top: 4px solid var(--template-color, #2563eb);
+        transition: transform 0.2s ease;
+      }
+      
+      .startup-founder .project-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+      }
+      
+      .startup-founder .project-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 0.5rem;
+      }
+      
+      .startup-founder .project-tech {
+        font-size: 0.85rem;
+        color: var(--template-color, #2563eb);
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      .startup-founder .project-description {
+        font-size: 0.95rem;
+        line-height: 1.5;
+        color: #374151;
+      }
+      
+      /* Skills section */
+      .startup-founder .skills-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      }
+      
+      .startup-founder .skill-tag {
+        background: var(--template-color, #2563eb);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 25px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      
+      /* Print styles */
+      @media print {
+        .startup-founder .container {
+          margin: 0;
+          max-width: none;
+        }
+        .startup-founder .section,
+        .startup-founder .experience-item,
+        .startup-founder .education-item,
+        .startup-founder .project-card {
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+        }
+        .startup-founder .section {
+          page-break-after: auto !important;
+          break-after: auto !important;
+        }
+        .startup-founder .experience-item,
+        .startup-founder .education-item,
+        .startup-founder .project-card {
+          page-break-after: avoid !important;
+          break-after: avoid !important;
+        }
+        .startup-founder .header {
+          page-break-after: avoid !important;
+          break-after: avoid !important;
+        }
+        /* Ensure colors print correctly */
+        .startup-founder .header,
+        .startup-founder .skill-tag {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+      }
+      
+      /* Responsive design */
+      @media (max-width: 768px) {
+        .startup-founder .header {
+          padding: 2rem 1rem;
+        }
+        
+        .startup-founder .name {
+          font-size: 2rem;
+        }
+        
+        .startup-founder .section {
+          padding: 1.5rem;
+        }
+        
+        .startup-founder .item-header {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        
+        .startup-founder .item-meta {
+          text-align: left;
+        }
+        
+        .startup-founder .projects-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    `;
+  }
   private getModernCleanCss(): string { return '/* Modern Clean template styles */'; }
   private getProfessionalCss(): string { return '/* Professional template styles */'; }
   private getMinimalCss(): string { return '/* Minimal template styles */'; }

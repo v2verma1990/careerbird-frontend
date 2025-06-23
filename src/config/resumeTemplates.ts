@@ -74,7 +74,7 @@ export const RESUME_TEMPLATES: Template[] = [
     id: "startup-founder",
     name: "Startup Founder",
     description: "Dynamic layout for entrepreneurs",
-    thumbnail: "/resume-templates/thumbnails/professional.png",
+    thumbnail: "/lovable-uploads/startup-founder.PNG",
     category: "professional",
     color: "orange",
     isPremium: true,

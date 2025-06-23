@@ -1,5 +1,4 @@
-
-        * {
+* {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
@@ -224,5 +223,21 @@
                 max-width: none;
                 padding: 0.5in;
             }
+            .section,
+            .experience-item,
+            .education-item,
+            .project-card {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+            .section {
+                page-break-after: auto !important;
+                break-after: auto !important;
+            }
+            .experience-item,
+            .education-item,
+            .project-card {
+                page-break-after: avoid !important;
+                break-after: avoid !important;
+            }
         }
-    
