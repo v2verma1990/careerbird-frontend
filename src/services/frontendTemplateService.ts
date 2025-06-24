@@ -398,6 +398,22 @@ class FrontendTemplateService {
         break-inside: avoid;
       }
 
+      /* Remove spacing between profile and employment sections */
+      .navy-column-modern .content .profile-section {
+        margin-bottom: 0 !important;
+        padding-bottom: 0 !important;
+      }
+
+      .navy-column-modern .content .profile-summary {
+        margin-bottom: 0 !important;
+        padding-bottom: 0 !important;
+      }
+
+      .navy-column-modern .content .employment-section:first-of-type {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+      }
+
       .navy-column-modern .section-label {
         font-weight: 700;
         color: var(--template-color, #315389) !important;

@@ -338,7 +338,8 @@ export const resumeBuilderApi = {
   },
 
   /**
-   * Generate PDF from complete HTML + CSS (SIMPLE APPROACH)
+   * Generate PDF from complete HTML + CSS 
+   * Calls backend /resumebuilder/generate-pdf endpoint
    */
   generatePDF: async (params: { 
     html: string, 
@@ -348,8 +349,10 @@ export const resumeBuilderApi = {
     color: string 
   }) => {
     try {
+      // Get auth token
       const { data: { session } } = await supabase.auth.getSession();
       
+      // Set headers
       const headers: Record<string, string> = {
         'Content-Type': 'application/json'
       };
@@ -358,6 +361,7 @@ export const resumeBuilderApi = {
         headers["Authorization"] = `Bearer ${session.access_token}`;
       }
       
+      // Make the request using dynamic API base URL
       const response = await fetch(`${API_BASE_URL}/resumebuilder/generate-pdf`, {
         method: 'POST',
         headers,
@@ -367,17 +371,13 @@ export const resumeBuilderApi = {
       
       if (!response.ok) {
         const errorText = await response.text();
-        return { data: null, error: errorText };
+        return { data: null, error: errorText || `HTTP ${response.status}` };
       }
       
-      // Return the PDF blob
       const blob = await response.blob();
       return { data: blob, error: null };
     } catch (error) {
-      return { 
-        data: null, 
-        error: error instanceof Error ? error.message : String(error)
-      };
+      return { data: null, error: error instanceof Error ? error.message : String(error) };
     }
   },
 
@@ -415,9 +415,31 @@ export const resumeBuilderApi = {
       let css = '';
       
       if (typeof buildResult.data === 'string') {
-        // If the response is HTML string, use it directly
+        // If the response is HTML string, extract CSS from it
         html = buildResult.data;
-        css = ''; // CSS might be embedded in HTML
+        
+        // Extract CSS from <style> tags in the HTML
+        const styleRegex = /<style[^>]*>([\s\S]*?)<\/style>/gi;
+        const cssMatches = [];
+        let match;
+        
+        while ((match = styleRegex.exec(html)) !== null) {
+          cssMatches.push(match[1]);
+        }
+        
+        css = cssMatches.join('\n');
+        
+        console.log('generatePDFFromData - Extracted CSS from HTML:', {
+          htmlLength: html.length,
+          cssLength: css.length,
+          cssPreview: css.substring(0, 200) + '...'
+        });
+        
+        // If no CSS was found in style tags, the HTML might have embedded styles
+        if (!css.trim()) {
+          console.log('generatePDFFromData - No CSS found in <style> tags, HTML might have inline styles');
+          // In this case, we'll send the HTML as-is and let the backend handle it
+        }
       } else if (buildResult.data.html) {
         // If the response has html property
         html = buildResult.data.html;

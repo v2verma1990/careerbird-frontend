@@ -21,6 +21,19 @@ namespace ResumeAI.API.Models
         public string TemplateId { get; set; } = string.Empty;
     }
 
+    public class GeneratePdfRequestModel
+    {
+        [Required]
+        public string Html { get; set; } = string.Empty;
+        public string Css { get; set; } = string.Empty;
+        [Required]
+        public string Filename { get; set; } = string.Empty;
+        [Required]
+        public string TemplateId { get; set; } = string.Empty;
+        [Required]
+        public string Color { get; set; } = string.Empty;
+    }
+
     public class ResumeTemplateModel
     {
         public string Id { get; set; } = string.Empty;

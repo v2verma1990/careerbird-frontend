@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Download, ArrowLeft, FileText, Globe, AlertCircle, Eye, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/utils/apiClient';
-import { PDFExportButton, PDFExportDropdown } from '@/components/PDFExportButton';
+import { PDFExportButton, PDFExportDropdown, GeneratePDFOnMachineButton } from '@/components/PDFExportButton';
 import { useResumeExport } from '@/hooks/use-pdf-export';
 import { frontendTemplateService } from '@/services/frontendTemplateService';
 import { useResumeColors } from '@/contexts/resume/ResumeColorContext';
@@ -197,37 +197,6 @@ const ResumePreview = () => {
       regenerateTemplateWithCorrectColor(resumeData, selectedColor);
     }
   }, [selectedColor]); // Only watch for color changes
-
-  // Inject CSS directly into preview container after render
-  useEffect(() => {
-    if (renderedTemplate && template) {
-      const previewContainer = document.getElementById('resume-preview-container');
-      if (previewContainer) {
-        // Remove any existing style tags
-        const existingStyles = previewContainer.querySelectorAll('style[data-template-css]');
-        existingStyles.forEach(style => style.remove());
-        
-        // Get the template CSS
-        const templateCSS = frontendTemplateService.getTemplateCSS(template);
-        
-        if (templateCSS) {
-          // Create and inject style tag
-          const styleTag = document.createElement('style');
-          styleTag.setAttribute('data-template-css', template);
-          styleTag.textContent = `
-            :root {
-              --template-color: ${selectedColor} !important;
-              --template-color-rgb: ${frontendTemplateService.hexToRgb(selectedColor)} !important;
-            }
-            ${templateCSS}
-          `;
-          
-          previewContainer.appendChild(styleTag);
-          console.log(`Injected CSS for ${template} into preview container`);
-        }
-      }
-    }
-  }, [renderedTemplate, template, selectedColor]);
 
   const downloadAsHTML = async () => {
     if (!renderedTemplate || !resumeData) return;
@@ -481,6 +450,17 @@ const ResumePreview = () => {
                   <Download className="h-4 w-4 mr-2" />
                   {isExporting ? 'Generating...' : 'High Quality PDF'}
                 </PDFExportButton>
+                
+                <GeneratePDFOnMachineButton
+                  resumeElementId="resume-preview-container"
+                  candidateName={resumeData?.PersonalInfo?.Name || resumeData?.personalInfo?.name || resumeData?.name || resumeData?.Name || 'resume'}
+                  resumeData={resumeData}
+                  templateColor={selectedColor}
+                  templateId={template}
+                  variant="outline"
+                  className="w-full"
+                  disabled={isLoading || isExporting}
+                />
                 
                 <Button 
                   variant="outline" 

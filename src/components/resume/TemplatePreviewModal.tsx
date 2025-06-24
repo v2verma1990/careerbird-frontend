@@ -200,6 +200,26 @@ const TemplatePreviewModal: React.FC<TemplatePreviewModalProps> = ({
     }
   }, [isOpen, template, sampleData, selectedColor]);
 
+  // Inject templates.css into the preview modal for single source of truth
+  useEffect(() => {
+    if (!isOpen) return;
+    // Check if already injected
+    let styleId = 'templates-css-preview-modal';
+    if (!document.getElementById(styleId)) {
+      const link = document.createElement('link');
+      link.id = styleId;
+      link.rel = 'stylesheet';
+      link.type = 'text/css';
+      link.href = '/src/styles/templates.css';
+      document.head.appendChild(link);
+    }
+    return () => {
+      // Optionally remove on close
+      // const el = document.getElementById(styleId);
+      // if (el) el.remove();
+    };
+  }, [isOpen]);
+
   const handleSelectTemplate = () => {
     onSelectTemplate(template.id, selectedColor);
     onClose();

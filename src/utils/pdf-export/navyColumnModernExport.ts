@@ -63,8 +63,8 @@ export const exportNavyColumnModernAsPDF = async (
       // Prepare element for PDF export
       await prepareNavyColumnModernForPDF(element, config);
 
-      // Wait for layout to stabilize and apply page break optimizations
-      await new Promise(resolve => setTimeout(resolve, 800));
+      // Wait for layout to stabilize and CSS to be fully applied
+      await new Promise(resolve => setTimeout(resolve, 1200));
       
       // Apply additional page break optimizations
       await optimizeNavyColumnModernPageBreaks(element);
@@ -214,7 +214,9 @@ const prepareNavyColumnModernForPDF = async (element: HTMLElement, config: Requi
         const htmlSection = section as HTMLElement;
         htmlSection.style.pageBreakInside = 'avoid';
         htmlSection.style.breakInside = 'avoid';
-        htmlSection.style.marginBottom = '20px';
+        
+        // Don't apply inline margin/padding styles - let CSS handle spacing
+        // The CSS rules in optimizeNavyColumnModernClonedDoc will handle proper spacing
       });
       
       // Optimize text elements to prevent orphans/widows
@@ -350,6 +352,22 @@ const optimizeNavyColumnModernClonedDoc = (clonedDoc: Document, config: Required
     .sidebar {
       page-break-inside: avoid !important;
       break-inside: avoid !important;
+    }
+    
+    /* Remove spacing between profile and employment sections for PDF */
+    .content .profile-section {
+      margin-bottom: 0 !important;
+      padding-bottom: 0 !important;
+    }
+
+    .content .profile-summary {
+      margin-bottom: 0 !important;
+      padding-bottom: 0 !important;
+    }
+
+    .content .employment-section:first-of-type {
+      margin-top: 0 !important;
+      padding-top: 0 !important;
     }
   `;
   

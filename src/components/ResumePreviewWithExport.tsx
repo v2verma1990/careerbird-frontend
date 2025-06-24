@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
-import { PDFExportButton, PDFExportDropdown } from './PDFExportButton';
+import { PDFExportButton, PDFExportDropdown, GeneratePDFOnMachineButton } from './PDFExportButton';
 import { Eye, Download, Settings } from 'lucide-react';
 
 interface ResumePreviewWithExportProps {
@@ -23,6 +23,21 @@ export const ResumePreviewWithExport: React.FC<ResumePreviewWithExportProps> = (
 }) => {
   const previewRef = useRef<HTMLDivElement>(null);
   const [isPreviewMode, setIsPreviewMode] = React.useState(false);
+
+  // Inject templates.css for preview (single source of truth)
+  useEffect(() => {
+    // Only inject once
+    let styleId = 'templates-css-preview';
+    if (!document.getElementById(styleId)) {
+      const link = document.createElement('link');
+      link.id = styleId;
+      link.rel = 'stylesheet';
+      link.type = 'text/css';
+      link.href = '/src/styles/templates.css';
+      document.head.appendChild(link);
+    }
+    // No cleanup to avoid flicker
+  }, []);
 
   // Prepare the resume for PDF export by ensuring proper styling
   useEffect(() => {
@@ -150,14 +165,15 @@ export const ResumePreviewWithExport: React.FC<ResumePreviewWithExportProps> = (
               High Quality PDF
             </PDFExportButton>
             
-            <Button
+            <GeneratePDFOnMachineButton
+              resumeElementId="resume-preview-container"
+              candidateName={candidateName}
+              resumeData={resumeData}
+              templateId={templateId}
+              templateColor={templateColor}
               variant="ghost"
               size="sm"
-              onClick={() => window.print()}
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              Print
-            </Button>
+            />
           </div>
           <p className="text-sm text-muted-foreground mt-2">
             The PDF will be generated exactly as shown in the preview below.<br/>

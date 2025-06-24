@@ -306,6 +306,24 @@
   flex-direction: column;
 }
 
+/* Remove bottom margin from profile-section and profile-summary */
+.navy-column-modern .content .profile-section,
+.navy-column-modern .content .profile-summary {
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* Remove gap between flex children in .content */
+.navy-column-modern .content {
+  gap: 0 !important;
+}
+
+/* Remove top margin from employment-section */
+.navy-column-modern .content .employment-section {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
 .navy-column-modern .content h1 {
   font-size: 2.04rem;
   font-weight: 700;
@@ -522,6 +540,35 @@
   .navy-column-modern .sidebar {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+  }
+  
+  /* Print-specific: collapse space between profile and employment */
+  .navy-column-modern .content .profile-section,
+  .navy-column-modern .content .profile-summary,
+  .navy-column-modern .content .employment-section {
+    margin-bottom: 0 !important;
+    margin-top: 0 !important;
+    padding-bottom: 0 !important;
+    padding-top: 0 !important;
+  }
+  
+  .navy-column-modern .resume-container,
+  .navy-column-modern .sidebar,
+  .navy-column-modern .content {
+    min-height: 0 !important;
+    height: auto !important;
+    box-sizing: border-box !important;
+  }
+  .navy-column-modern .content {
+    padding-bottom: 0 !important;
+    /* Remove any forced flex stretching */
+    flex: unset !important;
+    display: block !important;
+  }
+  .navy-column-modern .resume-container {
+    /* Remove any forced min-height for print */
+    min-height: 0 !important;
+    height: auto !important;
   }
 }
 
