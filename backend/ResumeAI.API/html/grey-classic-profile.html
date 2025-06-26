@@ -108,14 +108,16 @@
       flex-direction: column;
     }
     .main-header {
-      text-align: center;
-      margin-bottom: 8px;
+      text-align: left; /* Align header to left */
+      margin-bottom: 20px; /* Increased margin */
+      padding-bottom: 20px; /* Added padding-bottom */
+      border-bottom: 1px solid #ddd; /* Added border-bottom */
     }
     .main-header .name {
       font-size: 2.35rem;
       font-weight: bold;
       color: #282828;
-      letter-spacing: 0.025em;
+      letter-spacing: 0.025em; 
       margin-bottom: 2px;
     }
     .main-header .job-title {
@@ -123,14 +125,15 @@
       font-weight: 500;
       color: #6a6c72;
       margin-bottom: 14px;
-      margin-top: 0px;
+      margin-bottom: 0px; /* Reduced margin */
+      margin-top: 0px; 
     }
     .main-header .contacts {
       margin-top: 0.6em;
       color: #515567;
       font-size: 1.01em;
-      display: flex;
-      justify-content: center;
+      display: none; /* Hide horizontal contacts */
+      justify-content: center; 
       gap: 24px;
       flex-wrap: wrap;
     }
@@ -143,14 +146,27 @@
       letter-spacing: 0.13em;
       font-size: 1.08rem;
       color: #444;
-      border-bottom: 2px solid #ddd;
+      border-bottom: none; /* Remove bottom border */
       margin-bottom: 7px;
       padding-bottom: 2.5px;
+      padding-bottom: 0px; /* Remove padding */
+    }
+     .section {
+      margin-bottom: 32px;
+      display: flex; /* Use flexbox for icon and title */
+      align-items: flex-start; /* Align items to the top */
+      border-left: 2px solid #ddd; /* Vertical separator */
+      padding-left: 20px; /* Space between separator and content */
+    }
+    .section-icon {
+      font-size: 1.5rem; /* Adjust icon size */
+      margin-right: 15px; /* Space between icon and title */
+      color: #7c8591; /* Icon color */
     }
     .section-content {
       font-size: 1em;
       color: #232323;
-      margin-bottom: 7px;
+      margin-bottom: 7px; 
     }
     .employment-entry, .education-entry {
       margin-bottom: 14px;
@@ -161,6 +177,7 @@
       justify-content: space-between;
       gap: 10px;
       font-size: 1.03em;
+      margin-bottom: 4px; /* Added margin */
     }
     .employment-job-title {
       font-weight: 600;
@@ -177,6 +194,7 @@
     .employment-subinfo {
       color: #666;
       font-size: 0.97em;
+      margin-bottom: 4px; /* Added margin */
       font-style: italic;
     }
     .employment-bullets {
@@ -194,6 +212,7 @@
       justify-content: space-between;
       font-size: 1.04em;
       gap: 10px;
+       margin-bottom: 4px; /* Added margin */
     }
     .education-degree {
       font-weight: 600;
