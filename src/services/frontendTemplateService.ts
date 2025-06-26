@@ -1079,6 +1079,9 @@ class FrontendTemplateService {
     this.ensureTemplateClass(templateId);
     this.cleanupOverrideStyles();
     
+    // Inject template-specific CSS into the page
+    this.injectTemplateCSS(templateId);
+    
     // Verify the styles were applied
     const appliedColor = getComputedStyle(document.documentElement).getPropertyValue('--template-color');
     console.log(`Template color applied: ${appliedColor}, Body classes: ${document.body.className}`);
@@ -1098,6 +1101,34 @@ class FrontendTemplateService {
   private cleanupOverrideStyles(): void {
     const existing = document.querySelector('style[data-color-override]');
     if (existing) existing.remove();
+    
+    // Also remove any old template-specific styles
+    const existingTemplateStyles = document.querySelector('style[data-template-styles]');
+    if (existingTemplateStyles) existingTemplateStyles.remove();
+  }
+
+  /**
+   * Inject template-specific CSS into the page
+   */
+  private injectTemplateCSS(templateId: string): void {
+    // Remove any existing template styles first
+    const existing = document.querySelector('style[data-template-styles]');
+    if (existing) existing.remove();
+    
+    // Get the CSS for this template
+    const css = this.getFrontendCSS(templateId);
+    
+    if (css) {
+      // Create and inject the style element
+      const styleElement = document.createElement('style');
+      styleElement.setAttribute('data-template-styles', templateId);
+      styleElement.textContent = css;
+      document.head.appendChild(styleElement);
+      
+      console.log(`Injected CSS for template: ${templateId}`);
+    } else {
+      console.warn(`No CSS found for template: ${templateId}`);
+    }
   }
 
   /**
@@ -2272,43 +2303,341 @@ class FrontendTemplateService {
   private getGreyClassicProfileCss(): string {
     return `
       /* ===== GREY CLASSIC PROFILE TEMPLATE ===== */
-      .grey-classic-profile .container {
-        max-width: 8.5in;
-        margin: 0 auto;
-        min-height: 11in;
-        display: grid;
-        grid-template-columns: 1fr 2fr;
-        gap: 0;
+      .grey-classic-profile body {
+        background: #e7eaf1;
+        font-family: 'Arial', sans-serif;
+        color: #232323;
+        margin: 0;
+        padding: 0;
+        font-size: 16px;
+      }
+      
+      .grey-classic-profile .resume-wrap {
         background: #fff;
+        max-width: 880px;
+        margin: 32px auto;
+        border-radius: 16px;
+        box-shadow: 0 3px 24px rgba(36,46,79,.10);
+        display: table;
+        table-layout: fixed;
+        width: 100%;
+        overflow: hidden;
+        min-height: 1050px;
       }
       
       .grey-classic-profile .sidebar {
-        background: #f8f9fa;
-        padding: 2rem;
-        border-right: 1px solid #e9ecef;
+        background: #f7f8fa;
+        width: 275px;
+        min-width: 260px;
+        padding: 35px 28px 35px 28px;
+        border-right: 2.5px solid #eee;
+        display: table-cell;
+        vertical-align: top;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
       }
       
-      .grey-classic-profile .main-content {
-        padding: 2rem;
-        background: #fff;
+      .grey-classic-profile .avatar {
+        width: 94px;
+        height: 94px;
+        border-radius: 50%;
+        object-fit: cover;
+        object-position: center;
+        margin: 0 auto 28px auto;
+        box-shadow: 0 1.5px 10px rgba(60,68,98,0.08);
+        border: 2.5px solid #ddd;
+        background: #ced4db;
+        display: block;
       }
       
-      .grey-classic-profile .profile-section {
+      .grey-classic-profile .details-block, 
+      .grey-classic-profile .skills-block {
+        margin-bottom: 32px;
+        width: 100%;
+      }
+      
+      .grey-classic-profile .details-label {
+        font-size: 1rem;
+        font-weight: bold;
+        letter-spacing: 1px;
+        color: var(--template-color, #7c8591);
+        margin-bottom: 7px;
+        display: block;
+        text-transform: uppercase;
+        letter-spacing: 0.10em;
+      }
+      
+      .grey-classic-profile .details-content {
+        font-size: 0.99rem;
+        color: #444;
+        margin-bottom: 1em;
+        line-height: 1.53;
+        word-break: break-word;
+      }
+      
+      .grey-classic-profile .sidebar .details-content a {
+        color: #3366cc;
+        word-break: break-all;
+        text-decoration: underline;
+        font-size: 1em;
+      }
+      
+      .grey-classic-profile .skills-label {
+        font-size: 1rem;
+        font-weight: bold;
+        letter-spacing: 1px;
+        color: var(--template-color, #7c8591);
+        margin-bottom: 8px;
+        display: block;
+        text-transform: uppercase;
+        letter-spacing: 0.10em;
+      }
+      
+      .grey-classic-profile .skills-list {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      
+      .grey-classic-profile .skills-list .skill {
+        background: #eceff2;
+        color: #34495e;
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-size: 0.98em;
+        font-weight: 500;
+        width: fit-content;
+        margin: 0 0 0 0;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      
+      .grey-classic-profile .content {
+        display: table-cell;
+        vertical-align: top;
+        padding: 52px 55px 48px 55px;
+        width: auto;
+      }
+      
+      .grey-classic-profile .main-header {
         text-align: center;
-        margin-bottom: 2rem;
+        margin-bottom: 8px;
+      }
+      
+      .grey-classic-profile .main-header .name {
+        font-size: 2.35rem;
+        font-weight: bold;
+        color: #282828;
+        letter-spacing: 0.025em;
+        margin-bottom: 2px;
+      }
+      
+      .grey-classic-profile .main-header .job-title {
+        font-size: 1.09rem;
+        font-weight: 500;
+        color: var(--template-color, #6a6c72);
+        margin-bottom: 14px;
+        margin-top: 0px;
+      }
+      
+      .grey-classic-profile .main-header .contacts {
+        margin-top: 0.6em;
+        color: #515567;
+        font-size: 1.01em;
+        display: flex;
+        justify-content: center;
+        gap: 24px;
+        flex-wrap: wrap;
       }
       
       .grey-classic-profile .section {
-        margin-bottom: 2rem;
+        margin-bottom: 32px;
       }
       
       .grey-classic-profile .section-title {
-        font-size: 1.2rem;
         font-weight: bold;
-        color: var(--template-color, #666);
-        margin-bottom: 1rem;
         text-transform: uppercase;
-        letter-spacing: 1px;
+        letter-spacing: 0.13em;
+        font-size: 1.08rem;
+        color: #444;
+        border-bottom: 2px solid var(--template-color, #ddd);
+        margin-bottom: 7px;
+        padding-bottom: 2.5px;
+      }
+      
+      .grey-classic-profile .section-content {
+        font-size: 1em;
+        color: #232323;
+        margin-bottom: 7px;
+      }
+      
+      .grey-classic-profile .employment-entry, 
+      .grey-classic-profile .education-entry {
+        margin-bottom: 14px;
+      }
+      
+      .grey-classic-profile .employment-title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        font-size: 1.03em;
+      }
+      
+      .grey-classic-profile .employment-job-title {
+        font-weight: 600;
+        color: #34495e;
+      }
+      
+      .grey-classic-profile .employment-job-date {
+        color: var(--template-color, #958352);
+        font-size: 0.95em;
+        font-weight: 400;
+        margin-left: 12px;
+        min-width: 130px;
+        text-align: right;
+      }
+      
+      .grey-classic-profile .employment-subinfo {
+        color: #666;
+        font-size: 0.97em;
+        font-style: italic;
+      }
+      
+      .grey-classic-profile .employment-bullets {
+        margin: 5px 0 2px 18px;
+        padding: 0;
+      }
+      
+      .grey-classic-profile .employment-bullets li {
+        margin-bottom: 3.5px;
+        line-height: 1.6;
+        font-size: 0.98em;
+      }
+      
+      .grey-classic-profile .edu-title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 1.04em;
+        gap: 10px;
+      }
+      
+      .grey-classic-profile .education-degree {
+        font-weight: 600;
+      }
+      
+      .grey-classic-profile .education-dates {
+        color: var(--template-color, #958352);
+        font-size: 0.95em;
+        font-weight: 400;
+        margin-left: 12px;
+        min-width: 120px;
+        text-align: right;
+      }
+      
+      .grey-classic-profile .education-meta {
+        color: #646464;
+        font-size: 0.97em;
+        font-style: italic;
+        margin-left: 7px;
+      }
+      
+      /* Responsive Design */
+      @media (max-width: 950px) {
+        .grey-classic-profile .resume-wrap { 
+          display: block; 
+        }
+        .grey-classic-profile .sidebar { 
+          display: block;
+          width: 100%; 
+          border-right: 0; 
+          border-bottom: 2.5px solid #eee; 
+        }
+        .grey-classic-profile .content { 
+          display: block;
+          padding: 28px 7vw 32px 7vw; 
+        }
+      }
+      
+      @media (max-width: 600px) {
+        .grey-classic-profile .resume-wrap { 
+          min-height: unset; 
+        }
+        .grey-classic-profile .avatar { 
+          width: 76px; 
+          height: 76px;
+        }
+        .grey-classic-profile .sidebar { 
+          padding: 18px 5vw 18px 5vw;
+        }
+        .grey-classic-profile .content { 
+          padding: 20px 4vw 20px 4vw;
+        }
+      }
+      
+      /* Print Styles */
+      @media print {
+        .grey-classic-profile .resume-wrap {
+          box-shadow: none;
+          margin: 0;
+          max-width: none;
+          width: 100%;
+          display: table !important;
+          table-layout: fixed !important;
+        }
+        
+        .grey-classic-profile .sidebar {
+          display: table-cell !important;
+          vertical-align: top !important;
+          width: 275px !important;
+        }
+        
+        .grey-classic-profile .content {
+          display: table-cell !important;
+          vertical-align: top !important;
+        }
+        
+        .grey-classic-profile .sidebar {
+          background: #f7f8fa !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        
+        .grey-classic-profile .skills-list .skill {
+          background: #eceff2 !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        
+        .grey-classic-profile .section-title {
+          border-bottom-color: var(--template-color, #ddd) !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        
+        .grey-classic-profile .details-label,
+        .grey-classic-profile .skills-label {
+          color: var(--template-color, #7c8591) !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        
+        .grey-classic-profile .main-header .job-title {
+          color: var(--template-color, #6a6c72) !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        
+        .grey-classic-profile .employment-job-date,
+        .grey-classic-profile .education-dates {
+          color: var(--template-color, #958352) !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
       }
     `;
   }
@@ -2560,9 +2889,13 @@ class FrontendTemplateService {
    */
   public cleanup(): void {
     document.documentElement.style.removeProperty('--template-color');
+    document.documentElement.style.removeProperty('--template-color-rgb');
     this.cleanupOverrideStyles();
     this.supportedTemplates.forEach(tid => document.body.classList.remove(tid));
-    // Optionally remove forced inline styles if needed
+    
+    // Remove injected template styles
+    const templateStyles = document.querySelector('style[data-template-styles]');
+    if (templateStyles) templateStyles.remove();
   }
 
   /**

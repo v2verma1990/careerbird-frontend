@@ -29,7 +29,7 @@ import ResumeOptimizer from '@/pages/ResumeOptimizer';
 import ResumeCustomizer from '@/pages/ResumeCustomizer';
 import ResumeBuilderApp from '@/pages/ResumeBuilderApp';
 import ResumePreview from '@/pages/ResumePreview';
-import ResumeTemplateDemo from '@/pages/ResumeTemplateDemo';
+//import ResumeTemplateDemo from '@/pages/ResumeTemplateDemo';
 import AtsScanner from '@/pages/AtsScanner';
 import SalaryInsights from '@/pages/SalaryInsights';
 import CoverLetterGenerator from '@/pages/CoverLetterGenerator';
@@ -168,7 +168,6 @@ const App = () => {
                   </CandidateProtectedRoute>
                 } 
               />
-              <Route path="/resume-templates" element={<ResumeTemplateDemo />} />
               <Route 
                 path="/ats-scanner" 
                 element={
