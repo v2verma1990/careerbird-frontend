@@ -40,37 +40,8 @@ import {
   Unlock
 } from "lucide-react";
 
-const allFeatures = [
-  { 
-    key: "resume_customization", 
-    title: "Resume Customization", 
-    icon: "📝", 
-    description: "Tailor your resume for each job application with AI-powered suggestions.", 
-    route: "/resume-customizer",
-    category: "optimization",
-    premium: false,
-    gradient: "from-blue-500 to-cyan-500"
-  },
-  { 
-    key: "resume_optimization", 
-    title: "Resume Optimization", 
-    icon: "🚀", 
-    description: "Optimize your resume for ATS systems and better results.", 
-    route: "/resume-optimizer",
-    category: "optimization", 
-    premium: false,
-    gradient: "from-green-500 to-emerald-500"
-  },
-  { 
-    key: "resume_builder", 
-    title: "Resume Builder", 
-    icon: "📄", 
-    description: "Create professional resumes with our template library.", 
-    route: "/resume-builder-app",
-    category: "creation",
-    premium: false,
-    gradient: "from-purple-500 to-pink-500"
-  },
+// Available features for free users (very limited)
+const availableFeatures = [
   { 
     key: "ats_scan", 
     title: "ATS Scanner", 
@@ -80,6 +51,40 @@ const allFeatures = [
     category: "analysis",
     premium: false,
     gradient: "from-orange-500 to-red-500"
+  }
+];
+
+// Features that require upgrade
+const upgradeFeatures = [
+  { 
+    key: "resume_customization", 
+    title: "Resume Customization", 
+    icon: "📝", 
+    description: "Tailor your resume for each job application with AI-powered suggestions.", 
+    route: "/resume-customizer",
+    category: "optimization",
+    premium: true,
+    gradient: "from-blue-500 to-cyan-500"
+  },
+  { 
+    key: "resume_optimization", 
+    title: "Resume Optimization", 
+    icon: "🚀", 
+    description: "Optimize your resume for ATS systems and better results.", 
+    route: "/resume-optimizer",
+    category: "optimization", 
+    premium: true,
+    gradient: "from-green-500 to-emerald-500"
+  },
+  { 
+    key: "resume_builder", 
+    title: "Resume Builder", 
+    icon: "📄", 
+    description: "Create professional resumes with our template library.", 
+    route: "/resume-builder-app",
+    category: "creation",
+    premium: true,
+    gradient: "from-purple-500 to-pink-500"
   },
   { 
     key: "cover_letter", 
@@ -88,7 +93,7 @@ const allFeatures = [
     description: "Generate personalized cover letters for your job applications.", 
     route: "/cover-letter-generator",
     category: "creation",
-    premium: false,
+    premium: true,
     gradient: "from-indigo-500 to-purple-500"
   },
   { 
@@ -98,7 +103,7 @@ const allFeatures = [
     description: "Practice with AI-generated interview questions for your field.", 
     route: "/interview-questions",
     category: "preparation",
-    premium: true, // Changed to premium only
+    premium: true,
     gradient: "from-cyan-500 to-blue-500"
   },
   { 
@@ -108,7 +113,7 @@ const allFeatures = [
     description: "Get market salary data and negotiation insights.", 
     route: "/salary-insights",
     category: "insights",
-    premium: false,
+    premium: true,
     gradient: "from-pink-500 to-rose-500"
   }
 ];
@@ -146,8 +151,7 @@ const FreePlanDashboard = () => {
         
         // Default limits for free plan features only - THE LIMIT OF 3 IS SET HERE
         const defaultUsage: Record<string, { usageCount: number; usageLimit: number }> = {};
-        allFeatures.forEach(feature => {
-          // Only add non-premium features for free plan
+        availableFeatures.forEach(feature => {
           if (!feature.premium) {
             defaultUsage[feature.key] = { usageCount: 0, usageLimit: 3 }; // This is where the limit of 3 is set
           }
@@ -171,7 +175,7 @@ const FreePlanDashboard = () => {
             
             // Provide fallback data for free plan only
             const defaultUsage: Record<string, { usageCount: number; usageLimit: number }> = {};
-            allFeatures.forEach(feature => {
+            availableFeatures.forEach(feature => {
               if (!feature.premium) {
                 defaultUsage[feature.key] = { usageCount: 0, usageLimit: 3 }; // Fallback limit of 3
               }
@@ -182,7 +186,7 @@ const FreePlanDashboard = () => {
             const filteredData: Record<string, { usageCount: number; usageLimit: number }> = {};
             if (data) {
               Object.keys(data).forEach(key => {
-                const feature = allFeatures.find(f => f.key === key);
+                const feature = availableFeatures.find(f => f.key === key);
                 if (feature && !feature.premium) {
                   filteredData[key] = data[key];
                 }
@@ -210,15 +214,9 @@ const FreePlanDashboard = () => {
     };
   }, [user, subscriptionStatus, subscriptionLoading, featureUsage]);
 
-  // Handler for feature button click  
-  const handleFeatureClick = async (feature: any) => {
+  // Handler for available feature button click  
+  const handleAvailableFeatureClick = async (feature: any) => {
     if (!user) return;
-    
-    // Check if feature is premium and user is on free plan
-    if (feature.premium) {
-      setUpgradePrompt(`${feature.title} is only available on Basic and Premium plans. Please upgrade to access this feature.`);
-      return;
-    }
     
     const usage = featureUsage[feature.key] || { usageCount: 0, usageLimit: 0 };
     if (usage.usageCount >= usage.usageLimit) {
@@ -240,7 +238,12 @@ const FreePlanDashboard = () => {
     navigate(feature.route);
   };
 
-  // Calculate overall usage percentage (only for non-premium features)
+  // Handler for upgrade feature button click
+  const handleUpgradeFeatureClick = (feature: any) => {
+    setUpgradePrompt(`${feature.title} is only available on Basic and Premium plans. Please upgrade to access this feature.`);
+  };
+
+  // Calculate overall usage percentage (only for available features)
   const calculateOverallUsage = () => {
     const totalUsed = Object.values(featureUsage).reduce((sum, usage) => sum + usage.usageCount, 0);
     const totalLimit = Object.values(featureUsage).reduce((sum, usage) => sum + usage.usageLimit, 0);
@@ -282,72 +285,70 @@ const FreePlanDashboard = () => {
       
       <div className="container mx-auto py-8 px-4 max-w-7xl">
         {/* Header Section */}
-        <div className="mb-8">
-          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-6">
-            {/* Welcome Section */}
-            <div className="flex-1">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
-                  <User className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-4xl font-bold text-slate-900 mb-1">Welcome Back!</h1>
-                  <p className="text-slate-600 text-lg">{user?.email}</p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Badge className="bg-gradient-to-r from-gray-500 to-gray-600 text-white border-0">
-                      <Unlock className="w-3 h-3 mr-1" />
-                      Free Plan
-                    </Badge>
-                    <Badge variant="outline" className="border-green-300 text-green-700">
-                      <CheckCircle2 className="w-3 h-3 mr-1" />
-                      Active
-                    </Badge>
-                  </div>
+        <div className="mb-8 flex flex-col lg:flex-row lg:justify-between lg:items-start gap-6">
+          {/* Welcome Section */}
+          <div className="flex-1">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
+                <User className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold text-slate-900 mb-1">Welcome Back!</h1>
+                <p className="text-slate-600 text-lg">{user?.email}</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <Badge className="bg-gradient-to-r from-gray-500 to-gray-600 text-white border-0">
+                    <Unlock className="w-3 h-3 mr-1" />
+                    Free Plan
+                  </Badge>
+                  <Badge variant="outline" className="border-green-300 text-green-700">
+                    <CheckCircle2 className="w-3 h-3 mr-1" />
+                    Active
+                  </Badge>
                 </div>
               </div>
-              
-              {/* Usage Overview */}
-              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-sm">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-slate-700">Overall Usage</span>
-                    <span className="text-sm text-slate-500">{Math.round(calculateOverallUsage())}% used</span>
-                  </div>
-                  <Progress value={calculateOverallUsage()} className="h-2" />
-                  <p className="text-xs text-slate-500 mt-1">Upgrade to unlock unlimited access</p>
-                </CardContent>
-              </Card>
             </div>
-
-            {/* Upgrade CTA */}
-            <Card className="w-full lg:w-80 shadow-xl border-0 bg-gradient-to-br from-orange-50 to-amber-50 overflow-hidden">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-orange-200 to-amber-200 rounded-full -translate-y-12 translate-x-12 opacity-20"></div>
-              <CardHeader className="pb-3 relative">
-                <CardTitle className="text-xl flex items-center gap-2">
-                  <Crown className="w-6 h-6 text-orange-600" />
-                  Upgrade to Premium
-                </CardTitle>
-                <p className="text-orange-800 text-sm">Unlock unlimited access to all features</p>
-              </CardHeader>
-              <CardContent className="space-y-4 relative">
-                <div className="flex items-center gap-2 text-sm text-orange-700">
-                  <Star className="w-4 h-4" />
-                  <span>Unlimited usage across all tools</span>
+            
+            {/* Usage Overview */}
+            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-slate-700">Overall Usage</span>
+                  <span className="text-sm text-slate-500">{Math.round(calculateOverallUsage())}% used</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-orange-700">
-                  <Globe className="w-4 h-4" />
-                  <span>Priority support & advanced features</span>
-                </div>
-                <Button 
-                  className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 shadow-lg"
-                  onClick={() => navigate("/upgrade")}
-                >
-                  <TrendingUp className="w-4 h-4 mr-2" />
-                  Upgrade Now
-                </Button>
+                <Progress value={calculateOverallUsage()} className="h-2" />
+                <p className="text-xs text-slate-500 mt-1">Upgrade to unlock unlimited access</p>
               </CardContent>
             </Card>
           </div>
+
+          {/* Upgrade CTA */}
+          <Card className="w-full lg:w-80 shadow-xl border-0 bg-gradient-to-br from-orange-50 to-amber-50 overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-orange-200 to-amber-200 rounded-full -translate-y-12 translate-x-12 opacity-20"></div>
+            <CardHeader className="pb-3 relative">
+              <CardTitle className="text-xl flex items-center gap-2">
+                <Crown className="w-6 h-6 text-orange-600" />
+                Upgrade to Premium
+              </CardTitle>
+              <p className="text-orange-800 text-sm">Unlock unlimited access to all features</p>
+            </CardHeader>
+            <CardContent className="space-y-4 relative">
+              <div className="flex items-center gap-2 text-sm text-orange-700">
+                <Star className="w-4 h-4" />
+                <span>Unlimited usage across all tools</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-orange-700">
+                <Globe className="w-4 h-4" />
+                <span>Priority support & advanced features</span>
+              </div>
+              <Button 
+                className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 shadow-lg"
+                onClick={() => navigate("/upgrade")}
+              >
+                <TrendingUp className="w-4 h-4 mr-2" />
+                Upgrade Now
+              </Button>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Quick Actions */}
@@ -395,108 +396,134 @@ const FreePlanDashboard = () => {
           </Card>
         )}
 
-        {/* Features Grid */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-slate-900 mb-6 flex items-center gap-2">
-            <Sparkles className="w-5 h-5" />
-            Available Features
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {allFeatures.map((feature, index) => {
-              const isPremiumFeature = feature.premium;
-              const usage = featureUsage[feature.key] || { usageCount: 0, usageLimit: 0 };
-              const isBlocked = isPremiumFeature || usage.usageCount >= usage.usageLimit;
-              const usagePercentage = usage.usageLimit > 0 ? (usage.usageCount / usage.usageLimit) * 100 : 0;
-              
-              return (
-                <Card key={index} className="group hover:shadow-2xl transition-all duration-300 border-0 bg-white/90 backdrop-blur-sm hover:bg-white overflow-hidden relative">
-                  <div className={`h-1 bg-gradient-to-r ${feature.gradient}`}></div>
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* Left Side - Available Features */}
+          <div>
+            <h2 className="text-xl font-semibold text-slate-900 mb-6 flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-green-600" />
+              Available Features
+            </h2>
+            <div className="space-y-4">
+              {availableFeatures.map((feature, index) => {
+                const usage = featureUsage[feature.key] || { usageCount: 0, usageLimit: 0 };
+                const isBlocked = usage.usageCount >= usage.usageLimit;
+                const usagePercentage = usage.usageLimit > 0 ? (usage.usageCount / usage.usageLimit) * 100 : 0;
+                
+                return (
+                  <Card key={index} className="group hover:shadow-2xl transition-all duration-300 border-0 bg-white/90 backdrop-blur-sm hover:bg-white overflow-hidden relative">
+                    <div className={`h-1 bg-gradient-to-r ${feature.gradient}`}></div>
+                    
+                    {isBlocked && (
+                      <div className="absolute top-2 right-2 z-10">
+                        <Badge className="bg-orange-500 text-white text-xs">
+                          <Lock className="w-3 h-3 mr-1" />
+                          Upgrade
+                        </Badge>
+                      </div>
+                    )}
+                    
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="text-3xl">{feature.icon}</div>
+                          <div className="flex-1">
+                            <CardTitle className="text-lg text-slate-900 group-hover:text-blue-600 transition-colors">
+                              {feature.title}
+                            </CardTitle>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-sm text-slate-600 mt-2 leading-relaxed">{feature.description}</p>
+                    </CardHeader>
+                    
+                    <CardContent className="py-0">
+                      <div className="flex items-center justify-between text-sm mb-2">
+                        <span className="text-slate-500">Usage</span>
+                        <span className={`font-medium ${isBlocked ? 'text-red-600' : 'text-slate-700'}`}>
+                          {usage.usageCount}/{usage.usageLimit}
+                        </span>
+                      </div>
+                      
+                      <Progress 
+                        value={usagePercentage} 
+                        className={`h-2 ${isBlocked ? '[&>div]:bg-red-500' : `[&>div]:bg-gradient-to-r [&>div]:${feature.gradient}`}`}
+                      />
+                    </CardContent>
+                    
+                    <CardFooter className="pt-4">
+                      <Button 
+                        className={`w-full transition-all duration-200 ${
+                          isBlocked 
+                            ? 'bg-gradient-to-r from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600' 
+                            : `bg-gradient-to-r ${feature.gradient} hover:shadow-lg group-hover:scale-105`
+                        }`}
+                        onClick={() => handleAvailableFeatureClick(feature)} 
+                        disabled={loadingUsage}
+                      >
+                        {isBlocked ? (
+                          <>
+                            <Lock className="w-4 h-4 mr-2" />
+                            Upgrade to Use
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-4 h-4 mr-2" />
+                            {feature.title}
+                          </>
+                        )}
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Right Side - Upgrade Features */}
+          <div>
+            <h2 className="text-xl font-semibold text-slate-900 mb-6 flex items-center gap-2">
+              <Crown className="w-5 h-5 text-orange-600" />
+              Available Features on Upgrade
+            </h2>
+            <div className="grid gap-4">
+              {upgradeFeatures.map((feature, index) => (
+                <Card key={index} className="group hover:shadow-lg transition-all duration-300 border border-orange-200 bg-gradient-to-r from-orange-50/50 to-amber-50/50 hover:from-orange-50 hover:to-amber-50 overflow-hidden relative opacity-90">
+                  <div className={`h-1 bg-gradient-to-r ${feature.gradient} opacity-50`}></div>
                   
-                  {/* Premium badge for premium features */}
-                  {isPremiumFeature && (
-                    <div className="absolute top-2 right-2 z-10">
-                      <Badge className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-xs">
-                        <Crown className="w-3 h-3 mr-1" />
-                        Premium
-                      </Badge>
-                    </div>
-                  )}
-                  
-                  {/* Blocked badge for usage limit reached */}
-                  {!isPremiumFeature && isBlocked && (
-                    <div className="absolute top-2 right-2 z-10">
-                      <Badge className="bg-orange-500 text-white text-xs">
-                        <Lock className="w-3 h-3 mr-1" />
-                        Upgrade
-                      </Badge>
-                    </div>
-                  )}
+                  <div className="absolute top-2 right-2 z-10">
+                    <Badge className="bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs">
+                      <Crown className="w-3 h-3 mr-1" />
+                      Premium
+                    </Badge>
+                  </div>
                   
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="text-3xl">{feature.icon}</div>
+                        <div className="text-2xl opacity-70">{feature.icon}</div>
                         <div className="flex-1">
-                          <CardTitle className="text-lg text-slate-900 group-hover:text-blue-600 transition-colors">
+                          <CardTitle className="text-base text-slate-800 group-hover:text-orange-700 transition-colors">
                             {feature.title}
                           </CardTitle>
                         </div>
                       </div>
                     </div>
-                    <p className="text-sm text-slate-600 mt-2 leading-relaxed">{feature.description}</p>
+                    <p className="text-sm text-slate-600 mt-2 leading-relaxed opacity-80">{feature.description}</p>
                   </CardHeader>
                   
-                  <CardContent className="py-0">
-                    {!isPremiumFeature && (
-                      <>
-                        <div className="flex items-center justify-between text-sm mb-2">
-                          <span className="text-slate-500">Usage</span>
-                          <span className={`font-medium ${isBlocked ? 'text-red-600' : 'text-slate-700'}`}>
-                            {usage.usageCount}/{usage.usageLimit}
-                          </span>
-                        </div>
-                        
-                        <Progress 
-                          value={usagePercentage} 
-                          className={`h-2 ${isBlocked ? '[&>div]:bg-red-500' : `[&>div]:bg-gradient-to-r [&>div]:${feature.gradient}`}`}
-                        />
-                      </>
-                    )}
-                    
-                    {isPremiumFeature && (
-                      <div className="text-center py-2">
-                        <p className="text-sm text-purple-600 font-medium">Premium Feature</p>
-                        <p className="text-xs text-slate-500">Available on Basic & Premium plans</p>
-                      </div>
-                    )}
-                  </CardContent>
-                  
-                  <CardFooter className="pt-4">
+                  <CardFooter className="pt-2">
                     <Button 
-                      className={`w-full transition-all duration-200 ${
-                        isBlocked 
-                          ? 'bg-gradient-to-r from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600' 
-                          : `bg-gradient-to-r ${feature.gradient} hover:shadow-lg group-hover:scale-105`
-                      }`}
-                      onClick={() => handleFeatureClick(feature)} 
-                      disabled={loadingUsage}
+                      className="w-full bg-gradient-to-r from-orange-400 to-amber-400 hover:from-orange-500 hover:to-amber-500 text-white transition-all duration-200"
+                      onClick={() => handleUpgradeFeatureClick(feature)}
                     >
-                      {isBlocked ? (
-                        <>
-                          <Lock className="w-4 h-4 mr-2" />
-                          {isPremiumFeature ? 'Upgrade to Use' : 'Upgrade to Use'}
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="w-4 h-4 mr-2" />
-                          {feature.title}
-                        </>
-                      )}
+                      <Lock className="w-4 h-4 mr-2" />
+                      Upgrade to Unlock
                     </Button>
                   </CardFooter>
                 </Card>
-              );
-            })}
+              ))}
+            </div>
           </div>
         </div>
 
