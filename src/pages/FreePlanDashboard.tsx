@@ -243,13 +243,6 @@ const FreePlanDashboard = () => {
     setUpgradePrompt(`${feature.title} is only available on Basic and Premium plans. Please upgrade to access this feature.`);
   };
 
-  // Calculate overall usage percentage (only for available features)
-  const calculateOverallUsage = () => {
-    const totalUsed = Object.values(featureUsage).reduce((sum, usage) => sum + usage.usageCount, 0);
-    const totalLimit = Object.values(featureUsage).reduce((sum, usage) => sum + usage.usageLimit, 0);
-    return totalLimit > 0 ? (totalUsed / totalLimit) * 100 : 0;
-  };
-
   // Loading and error states
   if (subscriptionLoading || loadingUsage) {
     return (
@@ -307,18 +300,6 @@ const FreePlanDashboard = () => {
                 </div>
               </div>
             </div>
-            
-            {/* Usage Overview */}
-            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-sm">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-slate-700">Overall Usage</span>
-                  <span className="text-sm text-slate-500">{Math.round(calculateOverallUsage())}% used</span>
-                </div>
-                <Progress value={calculateOverallUsage()} className="h-2" />
-                <p className="text-xs text-slate-500 mt-1">Upgrade to unlock unlimited access</p>
-              </CardContent>
-            </Card>
           </div>
 
           {/* Upgrade CTA */}
@@ -351,33 +332,6 @@ const FreePlanDashboard = () => {
           </Card>
         </div>
 
-        {/* Quick Actions */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-slate-900 mb-4 flex items-center gap-2">
-            <Activity className="w-5 h-5" />
-            Quick Actions
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {quickActions.map((action, index) => (
-              <Card 
-                key={index} 
-                className="cursor-pointer hover:shadow-lg transition-all duration-200 bg-white/80 backdrop-blur-sm border-0 group"
-                onClick={() => navigate(action.route)}
-              >
-                <CardContent className="p-4 text-center">
-                  <action.icon className={`w-6 h-6 mx-auto mb-2 ${action.color} group-hover:scale-110 transition-transform`} />
-                  <p className="text-sm font-medium text-slate-700">{action.title}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-        
-        {/* Default Resume Uploader */}
-        <div className="mb-8">
-          <DefaultResumeUploader />
-        </div>
-
         {/* Upgrade Prompt */}
         {upgradePrompt && (
           <Card className="mb-8 border-orange-200 bg-gradient-to-r from-orange-50 to-amber-50 shadow-lg">
@@ -396,95 +350,95 @@ const FreePlanDashboard = () => {
           </Card>
         )}
 
-        {/* Main Content Grid */}
+        {/* Main Features Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Left Side - Available Features */}
+          {/* Free Feature - ATS Scanner */}
           <div>
-            <h2 className="text-xl font-semibold text-slate-900 mb-6 flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-green-600" />
-              Available Features
+            <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+              <CheckCircle2 className="w-6 h-6 text-green-600" />
+              Your Free Feature
             </h2>
-            <div className="space-y-4">
-              {availableFeatures.map((feature, index) => {
-                const usage = featureUsage[feature.key] || { usageCount: 0, usageLimit: 0 };
-                const isBlocked = usage.usageCount >= usage.usageLimit;
-                const usagePercentage = usage.usageLimit > 0 ? (usage.usageCount / usage.usageLimit) * 100 : 0;
-                
-                return (
-                  <Card key={index} className="group hover:shadow-2xl transition-all duration-300 border-0 bg-white/90 backdrop-blur-sm hover:bg-white overflow-hidden relative">
-                    <div className={`h-1 bg-gradient-to-r ${feature.gradient}`}></div>
-                    
-                    {isBlocked && (
-                      <div className="absolute top-2 right-2 z-10">
-                        <Badge className="bg-orange-500 text-white text-xs">
-                          <Lock className="w-3 h-3 mr-1" />
-                          Upgrade
-                        </Badge>
-                      </div>
-                    )}
-                    
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="text-3xl">{feature.icon}</div>
-                          <div className="flex-1">
-                            <CardTitle className="text-lg text-slate-900 group-hover:text-blue-600 transition-colors">
-                              {feature.title}
-                            </CardTitle>
-                          </div>
+            
+            {availableFeatures.map((feature, index) => {
+              const usage = featureUsage[feature.key] || { usageCount: 0, usageLimit: 0 };
+              const isBlocked = usage.usageCount >= usage.usageLimit;
+              const usagePercentage = usage.usageLimit > 0 ? (usage.usageCount / usage.usageLimit) * 100 : 0;
+              
+              return (
+                <Card key={index} className="group hover:shadow-2xl transition-all duration-300 border-0 bg-white/90 backdrop-blur-sm hover:bg-white overflow-hidden relative">
+                  <div className={`h-2 bg-gradient-to-r ${feature.gradient}`}></div>
+                  
+                  {isBlocked && (
+                    <div className="absolute top-4 right-4 z-10">
+                      <Badge className="bg-orange-500 text-white text-xs">
+                        <Lock className="w-3 h-3 mr-1" />
+                        Upgrade
+                      </Badge>
+                    </div>
+                  )}
+                  
+                  <CardHeader className="pb-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="text-4xl">{feature.icon}</div>
+                        <div className="flex-1">
+                          <CardTitle className="text-xl text-slate-900 group-hover:text-blue-600 transition-colors">
+                            {feature.title}
+                          </CardTitle>
                         </div>
                       </div>
-                      <p className="text-sm text-slate-600 mt-2 leading-relaxed">{feature.description}</p>
-                    </CardHeader>
+                    </div>
+                    <p className="text-slate-600 mt-3 leading-relaxed">{feature.description}</p>
+                  </CardHeader>
+                  
+                  <CardContent className="py-0">
+                    <div className="flex items-center justify-between text-sm mb-3">
+                      <span className="text-slate-500 font-medium">Usage This Month</span>
+                      <span className={`font-bold ${isBlocked ? 'text-red-600' : 'text-slate-700'}`}>
+                        {usage.usageCount}/{usage.usageLimit}
+                      </span>
+                    </div>
                     
-                    <CardContent className="py-0">
-                      <div className="flex items-center justify-between text-sm mb-2">
-                        <span className="text-slate-500">Usage</span>
-                        <span className={`font-medium ${isBlocked ? 'text-red-600' : 'text-slate-700'}`}>
-                          {usage.usageCount}/{usage.usageLimit}
-                        </span>
-                      </div>
-                      
-                      <Progress 
-                        value={usagePercentage} 
-                        className={`h-2 ${isBlocked ? '[&>div]:bg-red-500' : `[&>div]:bg-gradient-to-r [&>div]:${feature.gradient}`}`}
-                      />
-                    </CardContent>
-                    
-                    <CardFooter className="pt-4">
-                      <Button 
-                        className={`w-full transition-all duration-200 ${
-                          isBlocked 
-                            ? 'bg-gradient-to-r from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600' 
-                            : `bg-gradient-to-r ${feature.gradient} hover:shadow-lg group-hover:scale-105`
-                        }`}
-                        onClick={() => handleAvailableFeatureClick(feature)} 
-                        disabled={loadingUsage}
-                      >
-                        {isBlocked ? (
-                          <>
-                            <Lock className="w-4 h-4 mr-2" />
-                            Upgrade to Use
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="w-4 h-4 mr-2" />
-                            {feature.title}
-                          </>
-                        )}
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                );
-              })}
-            </div>
+                    <Progress 
+                      value={usagePercentage} 
+                      className={`h-3 ${isBlocked ? '[&>div]:bg-red-500' : `[&>div]:bg-gradient-to-r [&>div]:${feature.gradient}`}`}
+                    />
+                  </CardContent>
+                  
+                  <CardFooter className="pt-6">
+                    <Button 
+                      className={`w-full transition-all duration-200 ${
+                        isBlocked 
+                          ? 'bg-gradient-to-r from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600' 
+                          : `bg-gradient-to-r ${feature.gradient} hover:shadow-lg group-hover:scale-105`
+                      }`}
+                      onClick={() => handleAvailableFeatureClick(feature)} 
+                      disabled={loadingUsage}
+                      size="lg"
+                    >
+                      {isBlocked ? (
+                        <>
+                          <Lock className="w-4 h-4 mr-2" />
+                          Upgrade to Use
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-4 h-4 mr-2" />
+                          Use {feature.title}
+                        </>
+                      )}
+                    </Button>
+                  </CardFooter>
+                </Card>
+              );
+            })}
           </div>
 
-          {/* Right Side - Upgrade Features */}
+          {/* Premium Features */}
           <div>
-            <h2 className="text-xl font-semibold text-slate-900 mb-6 flex items-center gap-2">
-              <Crown className="w-5 h-5 text-orange-600" />
-              Available Features on Upgrade
+            <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+              <Crown className="w-6 h-6 text-orange-600" />
+              Premium Features
             </h2>
             <div className="grid gap-4">
               {upgradeFeatures.map((feature, index) => (
@@ -516,6 +470,7 @@ const FreePlanDashboard = () => {
                     <Button 
                       className="w-full bg-gradient-to-r from-orange-400 to-amber-400 hover:from-orange-500 hover:to-amber-500 text-white transition-all duration-200"
                       onClick={() => handleUpgradeFeatureClick(feature)}
+                      size="sm"
                     >
                       <Lock className="w-4 h-4 mr-2" />
                       Upgrade to Unlock
@@ -524,6 +479,37 @@ const FreePlanDashboard = () => {
                 </Card>
               ))}
             </div>
+          </div>
+        </div>
+
+        {/* Compact sections at bottom */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* Quick Actions - Compact */}
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+              <Activity className="w-5 h-5" />
+              Quick Actions
+            </h3>
+            <div className="grid grid-cols-2 gap-3">
+              {quickActions.map((action, index) => (
+                <Card 
+                  key={index} 
+                  className="cursor-pointer hover:shadow-md transition-all duration-200 bg-white/80 backdrop-blur-sm border-0 group"
+                  onClick={() => navigate(action.route)}
+                >
+                  <CardContent className="p-3 text-center">
+                    <action.icon className={`w-5 h-5 mx-auto mb-1 ${action.color} group-hover:scale-110 transition-transform`} />
+                    <p className="text-xs font-medium text-slate-700">{action.title}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+          
+          {/* Resume Upload - Compact */}
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900 mb-4">Upload Resume</h3>
+            <DefaultResumeUploader />
           </div>
         </div>
 
