@@ -15,7 +15,6 @@ import {
   User, 
   Settings, 
   CreditCard, 
-  Calendar, 
   BarChart3, 
   Shield,
   AlertTriangle,
@@ -24,20 +23,19 @@ import {
   Clock,
   CheckCircle2,
   Crown,
-  Zap,
   FileText,
-  Search,
   MessageSquare,
-  DollarSign,
   HelpCircle,
-  Target,
   Award,
-  Brain,
   Globe,
   Activity,
   Star,
   Lock,
-  Unlock
+  Unlock,
+  Zap,
+  Upload,
+  ArrowRight,
+  Rocket
 } from "lucide-react";
 
 // Available features for free users (very limited)
@@ -97,16 +95,6 @@ const upgradeFeatures = [
     gradient: "from-indigo-500 to-purple-500"
   },
   { 
-    key: "interview_prep", 
-    title: "Interview Questions", 
-    icon: "🎯", 
-    description: "Practice with AI-generated interview questions for your field.", 
-    route: "/interview-questions",
-    category: "preparation",
-    premium: true,
-    gradient: "from-cyan-500 to-blue-500"
-  },
-  { 
     key: "salary_insights", 
     title: "Salary Insights", 
     icon: "💰", 
@@ -119,10 +107,10 @@ const upgradeFeatures = [
 ];
 
 const quickActions = [
-  { title: "Account Settings", icon: Settings, route: "/settings", color: "text-slate-600" },
-  { title: "Profile & Resume", icon: User, route: "/account", color: "text-blue-600" },
-  { title: "Billing", icon: CreditCard, route: "/upgrade", color: "text-green-600" },
-  { title: "Help Center", icon: HelpCircle, route: "/help", color: "text-purple-600" }
+  { title: "Account Settings", icon: Settings, route: "/settings", color: "text-slate-600", description: "Manage your profile" },
+  { title: "Profile & Resume", icon: User, route: "/account", color: "text-blue-600", description: "Update your information" },
+  { title: "Billing & Plans", icon: CreditCard, route: "/upgrade", color: "text-green-600", description: "Upgrade your plan" },
+  { title: "Help Center", icon: HelpCircle, route: "/help", color: "text-purple-600", description: "Get support" }
 ];
 
 const FreePlanDashboard = () => {
@@ -276,58 +264,98 @@ const FreePlanDashboard = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       <TopNavigation />
       
-      <div className="container mx-auto py-8 px-4 max-w-7xl">
-        {/* Header Section */}
-        <div className="mb-8 flex flex-col lg:flex-row lg:justify-between lg:items-start gap-6">
-          {/* Welcome Section */}
-          <div className="flex-1">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
-                <User className="w-8 h-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-4xl font-bold text-slate-900 mb-1">Welcome Back!</h1>
-                <p className="text-slate-600 text-lg">{user?.email}</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <Badge className="bg-gradient-to-r from-gray-500 to-gray-600 text-white border-0">
-                    <Unlock className="w-3 h-3 mr-1" />
-                    Free Plan
-                  </Badge>
-                  <Badge variant="outline" className="border-green-300 text-green-700">
-                    <CheckCircle2 className="w-3 h-3 mr-1" />
-                    Active
-                  </Badge>
+      <div className="container mx-auto py-6 px-4 max-w-7xl">
+        {/* Enhanced Hero Section */}
+        <div className="mb-12">
+          <Card className="border-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-2xl overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-20 translate-x-20"></div>
+            <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-16 -translate-x-16"></div>
+            
+            <CardContent className="p-8 relative z-10">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
+                <div className="flex-1">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg">
+                      <User className="w-10 h-10 text-white" />
+                    </div>
+                    <div>
+                      <h1 className="text-4xl font-bold mb-2">Welcome Back!</h1>
+                      <p className="text-blue-100 text-lg">{user?.email}</p>
+                      <div className="flex items-center gap-3 mt-3">
+                        <Badge className="bg-white/20 text-white border-white/30 backdrop-blur-sm">
+                          <Unlock className="w-3 h-3 mr-1" />
+                          Free Plan
+                        </Badge>
+                        <Badge className="bg-green-500/20 text-green-100 border-green-300/30 backdrop-blur-sm">
+                          <CheckCircle2 className="w-3 h-3 mr-1" />
+                          Active
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <FileText className="w-5 h-5" />
+                        <span className="font-medium">Resume Scans</span>
+                      </div>
+                      <div className="text-2xl font-bold">
+                        {featureUsage.ats_scan ? `${featureUsage.ats_scan.usageCount}/${featureUsage.ats_scan.usageLimit}` : "0/3"}
+                      </div>
+                    </div>
+                    <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Star className="w-5 h-5" />
+                        <span className="font-medium">Premium Features</span>
+                      </div>
+                      <div className="text-2xl font-bold">5 Locked</div>
+                    </div>
+                    <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <TrendingUp className="w-5 h-5" />
+                        <span className="font-medium">Upgrade Savings</span>
+                      </div>
+                      <div className="text-2xl font-bold">50% Off</div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="lg:w-80">
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+                    <div className="flex items-center gap-3 mb-4">
+                      <Crown className="w-8 h-8 text-yellow-300" />
+                      <div>
+                        <h3 className="text-xl font-bold">Upgrade to Premium</h3>
+                        <p className="text-blue-100 text-sm">Unlock your career potential</p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-3 mb-6">
+                      <div className="flex items-center gap-2 text-sm">
+                        <CheckCircle2 className="w-4 h-4 text-green-300" />
+                        <span>Unlimited resume scans</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <CheckCircle2 className="w-4 h-4 text-green-300" />
+                        <span>AI-powered optimization</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <CheckCircle2 className="w-4 h-4 text-green-300" />
+                        <span>Premium templates</span>
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      className="w-full bg-white text-blue-600 hover:bg-blue-50 shadow-lg font-medium"
+                      onClick={() => navigate("/upgrade")}
+                    >
+                      <Rocket className="w-4 h-4 mr-2" />
+                      Upgrade Now - 50% Off
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Upgrade CTA */}
-          <Card className="w-full lg:w-80 shadow-xl border-0 bg-gradient-to-br from-orange-50 to-amber-50 overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-orange-200 to-amber-200 rounded-full -translate-y-12 translate-x-12 opacity-20"></div>
-            <CardHeader className="pb-3 relative">
-              <CardTitle className="text-xl flex items-center gap-2">
-                <Crown className="w-6 h-6 text-orange-600" />
-                Upgrade to Premium
-              </CardTitle>
-              <p className="text-orange-800 text-sm">Unlock unlimited access to all features</p>
-            </CardHeader>
-            <CardContent className="space-y-4 relative">
-              <div className="flex items-center gap-2 text-sm text-orange-700">
-                <Star className="w-4 h-4" />
-                <span>Unlimited usage across all tools</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-orange-700">
-                <Globe className="w-4 h-4" />
-                <span>Priority support & advanced features</span>
-              </div>
-              <Button 
-                className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 shadow-lg"
-                onClick={() => navigate("/upgrade")}
-              >
-                <TrendingUp className="w-4 h-4 mr-2" />
-                Upgrade Now
-              </Button>
             </CardContent>
           </Card>
         </div>
@@ -350,14 +378,20 @@ const FreePlanDashboard = () => {
           </Card>
         )}
 
-        {/* Main Features Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Free Feature - ATS Scanner */}
+        {/* Main Features Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+          {/* Your Free Feature */}
           <div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-              <CheckCircle2 className="w-6 h-6 text-green-600" />
-              Your Free Feature
-            </h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+                <CheckCircle2 className="w-6 h-6 text-green-600" />
+                Your Free Feature
+              </h2>
+              <Badge className="bg-green-100 text-green-700 border-green-200">
+                <Unlock className="w-3 h-3 mr-1" />
+                Available Now
+              </Badge>
+            </div>
             
             {availableFeatures.map((feature, index) => {
               const usage = featureUsage[feature.key] || { usageCount: 0, usageLimit: 0 };
@@ -365,7 +399,7 @@ const FreePlanDashboard = () => {
               const usagePercentage = usage.usageLimit > 0 ? (usage.usageCount / usage.usageLimit) * 100 : 0;
               
               return (
-                <Card key={index} className="group hover:shadow-2xl transition-all duration-300 border-0 bg-white/90 backdrop-blur-sm hover:bg-white overflow-hidden relative">
+                <Card key={index} className="group hover:shadow-2xl transition-all duration-300 border-0 bg-white shadow-lg hover:bg-white overflow-hidden relative h-full">
                   <div className={`h-2 bg-gradient-to-r ${feature.gradient}`}></div>
                   
                   {isBlocked && (
@@ -380,32 +414,40 @@ const FreePlanDashboard = () => {
                   <CardHeader className="pb-4">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-4">
-                        <div className="text-4xl">{feature.icon}</div>
+                        <div className="text-5xl">{feature.icon}</div>
                         <div className="flex-1">
-                          <CardTitle className="text-xl text-slate-900 group-hover:text-blue-600 transition-colors">
+                          <CardTitle className="text-2xl text-slate-900 group-hover:text-blue-600 transition-colors mb-2">
                             {feature.title}
                           </CardTitle>
+                          <p className="text-slate-600 leading-relaxed">{feature.description}</p>
                         </div>
                       </div>
                     </div>
-                    <p className="text-slate-600 mt-3 leading-relaxed">{feature.description}</p>
                   </CardHeader>
                   
                   <CardContent className="py-0">
-                    <div className="flex items-center justify-between text-sm mb-3">
-                      <span className="text-slate-500 font-medium">Usage This Month</span>
-                      <span className={`font-bold ${isBlocked ? 'text-red-600' : 'text-slate-700'}`}>
-                        {usage.usageCount}/{usage.usageLimit}
-                      </span>
+                    <div className="bg-slate-50 rounded-lg p-4 mb-4">
+                      <div className="flex items-center justify-between text-sm mb-3">
+                        <span className="text-slate-600 font-medium">Monthly Usage</span>
+                        <span className={`font-bold text-lg ${isBlocked ? 'text-red-600' : 'text-slate-700'}`}>
+                          {usage.usageCount}/{usage.usageLimit}
+                        </span>
+                      </div>
+                      
+                      <Progress 
+                        value={usagePercentage} 
+                        className={`h-3 ${isBlocked ? '[&>div]:bg-red-500' : `[&>div]:bg-gradient-to-r [&>div]:${feature.gradient}`}`}
+                      />
+                      
+                      {!isBlocked && (
+                        <p className="text-xs text-slate-500 mt-2">
+                          {usage.usageLimit - usage.usageCount} scans remaining this month
+                        </p>
+                      )}
                     </div>
-                    
-                    <Progress 
-                      value={usagePercentage} 
-                      className={`h-3 ${isBlocked ? '[&>div]:bg-red-500' : `[&>div]:bg-gradient-to-r [&>div]:${feature.gradient}`}`}
-                    />
                   </CardContent>
                   
-                  <CardFooter className="pt-6">
+                  <CardFooter className="pt-4">
                     <Button 
                       className={`w-full transition-all duration-200 ${
                         isBlocked 
@@ -419,12 +461,13 @@ const FreePlanDashboard = () => {
                       {isBlocked ? (
                         <>
                           <Lock className="w-4 h-4 mr-2" />
-                          Upgrade to Use
+                          Upgrade to Continue
                         </>
                       ) : (
                         <>
                           <Sparkles className="w-4 h-4 mr-2" />
-                          Use {feature.title}
+                          Start {feature.title}
+                          <ArrowRight className="w-4 h-4 ml-2" />
                         </>
                       )}
                     </Button>
@@ -436,13 +479,20 @@ const FreePlanDashboard = () => {
 
           {/* Premium Features */}
           <div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-              <Crown className="w-6 h-6 text-orange-600" />
-              Premium Features
-            </h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+                <Crown className="w-6 h-6 text-orange-600" />
+                Premium Features
+              </h2>
+              <Badge className="bg-orange-100 text-orange-700 border-orange-200">
+                <Lock className="w-3 h-3 mr-1" />
+                Upgrade Required
+              </Badge>
+            </div>
+            
             <div className="grid gap-4">
               {upgradeFeatures.map((feature, index) => (
-                <Card key={index} className="group hover:shadow-lg transition-all duration-300 border border-orange-200 bg-gradient-to-r from-orange-50/50 to-amber-50/50 hover:from-orange-50 hover:to-amber-50 overflow-hidden relative opacity-90">
+                <Card key={index} className="group hover:shadow-lg transition-all duration-300 border border-orange-200 bg-gradient-to-r from-orange-50/30 to-amber-50/30 hover:from-orange-50 hover:to-amber-50 overflow-hidden relative">
                   <div className={`h-1 bg-gradient-to-r ${feature.gradient} opacity-50`}></div>
                   
                   <div className="absolute top-2 right-2 z-10">
@@ -452,64 +502,82 @@ const FreePlanDashboard = () => {
                     </Badge>
                   </div>
                   
-                  <CardHeader className="pb-3">
+                  <CardContent className="p-4">
                     <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 flex-1">
                         <div className="text-2xl opacity-70">{feature.icon}</div>
                         <div className="flex-1">
-                          <CardTitle className="text-base text-slate-800 group-hover:text-orange-700 transition-colors">
+                          <h3 className="font-semibold text-slate-800 group-hover:text-orange-700 transition-colors mb-1">
                             {feature.title}
-                          </CardTitle>
+                          </h3>
+                          <p className="text-sm text-slate-600 opacity-80 leading-relaxed">{feature.description}</p>
                         </div>
                       </div>
                     </div>
-                    <p className="text-sm text-slate-600 mt-2 leading-relaxed opacity-80">{feature.description}</p>
-                  </CardHeader>
-                  
-                  <CardFooter className="pt-2">
+                    
                     <Button 
-                      className="w-full bg-gradient-to-r from-orange-400 to-amber-400 hover:from-orange-500 hover:to-amber-500 text-white transition-all duration-200"
+                      className="w-full mt-3 bg-gradient-to-r from-orange-400 to-amber-400 hover:from-orange-500 hover:to-amber-500 text-white transition-all duration-200"
                       onClick={() => handleUpgradeFeatureClick(feature)}
                       size="sm"
                     >
                       <Lock className="w-4 h-4 mr-2" />
                       Upgrade to Unlock
                     </Button>
-                  </CardFooter>
+                  </CardContent>
                 </Card>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Compact sections at bottom */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Quick Actions - Compact */}
-          <div>
-            <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-              <Activity className="w-5 h-5" />
+        {/* Enhanced Bottom Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+          {/* Quick Actions */}
+          <div className="lg:col-span-2">
+            <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+              <Activity className="w-5 h-5 text-blue-600" />
               Quick Actions
             </h3>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {quickActions.map((action, index) => (
                 <Card 
                   key={index} 
-                  className="cursor-pointer hover:shadow-md transition-all duration-200 bg-white/80 backdrop-blur-sm border-0 group"
+                  className="cursor-pointer hover:shadow-lg transition-all duration-200 bg-white border-0 shadow-md group hover:-translate-y-1"
                   onClick={() => navigate(action.route)}
                 >
-                  <CardContent className="p-3 text-center">
-                    <action.icon className={`w-5 h-5 mx-auto mb-1 ${action.color} group-hover:scale-110 transition-transform`} />
-                    <p className="text-xs font-medium text-slate-700">{action.title}</p>
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-4">
+                      <div className={`p-3 rounded-lg bg-slate-50 group-hover:scale-110 transition-transform`}>
+                        <action.icon className={`w-6 h-6 ${action.color}`} />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-slate-900 mb-1">{action.title}</h4>
+                        <p className="text-sm text-slate-600">{action.description}</p>
+                      </div>
+                      <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-colors" />
+                    </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
           </div>
           
-          {/* Resume Upload - Compact */}
+          {/* Resume Upload */}
           <div>
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">Upload Resume</h3>
-            <DefaultResumeUploader />
+            <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+              <Upload className="w-5 h-5 text-green-600" />
+              Upload Resume
+            </h3>
+            <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 shadow-md">
+              <CardContent className="p-6">
+                <div className="text-center mb-4">
+                  <Upload className="w-12 h-12 text-green-600 mx-auto mb-3" />
+                  <h4 className="font-semibold text-slate-900 mb-2">Upload Your Resume</h4>
+                  <p className="text-sm text-slate-600">Get started with our ATS scanner</p>
+                </div>
+                <DefaultResumeUploader />
+              </CardContent>
+            </Card>
           </div>
         </div>
 
