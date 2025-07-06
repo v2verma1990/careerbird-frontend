@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useResumeColors } from '@/contexts/resume/ResumeColorContext';
 import ResumeColorCustomizer from '@/components/resume/ResumeColorCustomizer';
@@ -20,12 +21,27 @@ const resumeTemplates = [
 ];
 
 const ResumeTemplateDemo: React.FC = () => {
-  const { colors, setColors } = useResumeColors();
-  const [selectedTemplate, setSelectedTemplate] = useState(resumeTemplates[0]);
+  const { getTemplateColor, setTemplateColor, selectedTemplate, setSelectedTemplate } = useResumeColors();
+  const [localSelectedTemplate, setLocalSelectedTemplate] = useState(resumeTemplates[0]);
+  
+  // Get colors for the current template
+  const currentColors = {
+    primary: '#ffffff',
+    secondary: '#f8f9fa',
+    accent: getTemplateColor(localSelectedTemplate.id),
+    text: '#000000'
+  };
+
+  // Handle color changes
+  const handleColorChange = (colors: any) => {
+    setTemplateColor(localSelectedTemplate.id, colors.accent || colors.primary || '#315389');
+  };
   
   // Function to render the resume template based on the selected template and colors
   const renderResumeTemplate = () => {
-    switch (selectedTemplate.id) {
+    const colors = currentColors;
+    
+    switch (localSelectedTemplate.id) {
       case 'minimal':
         return (
           <div className="h-full p-6" style={{ backgroundColor: colors.primary, color: colors.text }}>
@@ -246,8 +262,8 @@ const ResumeTemplateDemo: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1">
             <ResumeColorCustomizer 
-              initialColors={colors}
-              onChange={setColors}
+              initialColors={currentColors}
+              onChange={handleColorChange}
             />
             
             <Card className="mt-6">
@@ -257,9 +273,9 @@ const ResumeTemplateDemo: React.FC = () => {
                   {resumeTemplates.map(template => (
                     <Button
                       key={template.id}
-                      variant={selectedTemplate.id === template.id ? "default" : "outline"}
+                      variant={localSelectedTemplate.id === template.id ? "default" : "outline"}
                       className="justify-start"
-                      onClick={() => setSelectedTemplate(template)}
+                      onClick={() => setLocalSelectedTemplate(template)}
                     >
                       {template.name}
                     </Button>
@@ -298,20 +314,20 @@ const ResumeTemplateDemo: React.FC = () => {
                     <Card 
                       key={template.id}
                       className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
-                      onClick={() => setSelectedTemplate(template)}
+                      onClick={() => setLocalSelectedTemplate(template)}
                     >
-                      <div className="aspect-[3/4] border-b" style={{ backgroundColor: colors.primary }}>
-                        <div className="h-1/6" style={{ backgroundColor: colors.accent }}></div>
+                      <div className="aspect-[3/4] border-b" style={{ backgroundColor: currentColors.primary }}>
+                        <div className="h-1/6" style={{ backgroundColor: currentColors.accent }}></div>
                         <div className="p-2">
-                          <div className="h-2 w-3/4 mb-1" style={{ backgroundColor: colors.secondary }}></div>
-                          <div className="h-2 w-1/2 mb-3" style={{ backgroundColor: colors.secondary }}></div>
-                          <div className="h-1 w-full mb-2" style={{ backgroundColor: colors.accent }}></div>
-                          <div className="h-2 w-full mb-1" style={{ backgroundColor: colors.secondary }}></div>
-                          <div className="h-2 w-full mb-1" style={{ backgroundColor: colors.secondary }}></div>
-                          <div className="h-2 w-3/4 mb-3" style={{ backgroundColor: colors.secondary }}></div>
-                          <div className="h-1 w-full mb-2" style={{ backgroundColor: colors.accent }}></div>
-                          <div className="h-2 w-full mb-1" style={{ backgroundColor: colors.secondary }}></div>
-                          <div className="h-2 w-full mb-1" style={{ backgroundColor: colors.secondary }}></div>
+                          <div className="h-2 w-3/4 mb-1" style={{ backgroundColor: currentColors.secondary }}></div>
+                          <div className="h-2 w-1/2 mb-3" style={{ backgroundColor: currentColors.secondary }}></div>
+                          <div className="h-1 w-full mb-2" style={{ backgroundColor: currentColors.accent }}></div>
+                          <div className="h-2 w-full mb-1" style={{ backgroundColor: currentColors.secondary }}></div>
+                          <div className="h-2 w-full mb-1" style={{ backgroundColor: currentColors.secondary }}></div>
+                          <div className="h-2 w-3/4 mb-3" style={{ backgroundColor: currentColors.secondary }}></div>
+                          <div className="h-1 w-full mb-2" style={{ backgroundColor: currentColors.accent }}></div>
+                          <div className="h-2 w-full mb-1" style={{ backgroundColor: currentColors.secondary }}></div>
+                          <div className="h-2 w-full mb-1" style={{ backgroundColor: currentColors.secondary }}></div>
                         </div>
                       </div>
                       <CardContent className="p-3">
