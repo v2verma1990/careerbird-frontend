@@ -98,7 +98,7 @@ const allFeatures = [
     description: "Practice with AI-generated interview questions for your field.", 
     route: "/interview-questions",
     category: "preparation",
-    premium: false,
+    premium: true, // Changed to premium only
     gradient: "from-cyan-500 to-blue-500"
   },
   { 
@@ -144,10 +144,13 @@ const FreePlanDashboard = () => {
         console.log("Backend is not available, using fallback data");
         setError("Backend server is currently unavailable. Using offline mode with default limits.");
         
-        // Default limits for all features
+        // Default limits for free plan features only - THE LIMIT OF 3 IS SET HERE
         const defaultUsage: Record<string, { usageCount: number; usageLimit: number }> = {};
         allFeatures.forEach(feature => {
-          defaultUsage[feature.key] = { usageCount: 0, usageLimit: 5 };
+          // Only add non-premium features for free plan
+          if (!feature.premium) {
+            defaultUsage[feature.key] = { usageCount: 0, usageLimit: 3 }; // This is where the limit of 3 is set
+          }
         });
         
         setFeatureUsage(defaultUsage);
@@ -166,14 +169,26 @@ const FreePlanDashboard = () => {
             console.warn("Error fetching usage data:", error);
             setError("Unable to fetch your usage data. Using default limits for now.");
             
-            // Provide fallback data
+            // Provide fallback data for free plan only
             const defaultUsage: Record<string, { usageCount: number; usageLimit: number }> = {};
             allFeatures.forEach(feature => {
-              defaultUsage[feature.key] = { usageCount: 0, usageLimit: 5 };
+              if (!feature.premium) {
+                defaultUsage[feature.key] = { usageCount: 0, usageLimit: 3 }; // Fallback limit of 3
+              }
             });
             setFeatureUsage(defaultUsage);
           } else {
-            setFeatureUsage(data || {});
+            // Filter out premium features for free users
+            const filteredData: Record<string, { usageCount: number; usageLimit: number }> = {};
+            if (data) {
+              Object.keys(data).forEach(key => {
+                const feature = allFeatures.find(f => f.key === key);
+                if (feature && !feature.premium) {
+                  filteredData[key] = data[key];
+                }
+              });
+            }
+            setFeatureUsage(filteredData || {});
           }
           setLoadingUsage(false);
         })
@@ -198,6 +213,13 @@ const FreePlanDashboard = () => {
   // Handler for feature button click  
   const handleFeatureClick = async (feature: any) => {
     if (!user) return;
+    
+    // Check if feature is premium and user is on free plan
+    if (feature.premium) {
+      setUpgradePrompt(`${feature.title} is only available on Basic and Premium plans. Please upgrade to access this feature.`);
+      return;
+    }
+    
     const usage = featureUsage[feature.key] || { usageCount: 0, usageLimit: 0 };
     if (usage.usageCount >= usage.usageLimit) {
       setUpgradePrompt("You have reached your free usage limit. Please upgrade to access more features.");
@@ -218,7 +240,7 @@ const FreePlanDashboard = () => {
     navigate(feature.route);
   };
 
-  // Calculate overall usage percentage
+  // Calculate overall usage percentage (only for non-premium features)
   const calculateOverallUsage = () => {
     const totalUsed = Object.values(featureUsage).reduce((sum, usage) => sum + usage.usageCount, 0);
     const totalLimit = Object.values(featureUsage).reduce((sum, usage) => sum + usage.usageLimit, 0);
@@ -381,16 +403,27 @@ const FreePlanDashboard = () => {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {allFeatures.map((feature, index) => {
-              const usage = featureUsage[feature.key] || { usageCount: 0, usageLimit: 5 };
-              const isBlocked = usage.usageCount >= usage.usageLimit;
+              const isPremiumFeature = feature.premium;
+              const usage = featureUsage[feature.key] || { usageCount: 0, usageLimit: 0 };
+              const isBlocked = isPremiumFeature || usage.usageCount >= usage.usageLimit;
               const usagePercentage = usage.usageLimit > 0 ? (usage.usageCount / usage.usageLimit) * 100 : 0;
               
               return (
                 <Card key={index} className="group hover:shadow-2xl transition-all duration-300 border-0 bg-white/90 backdrop-blur-sm hover:bg-white overflow-hidden relative">
                   <div className={`h-1 bg-gradient-to-r ${feature.gradient}`}></div>
                   
-                  {/* Premium badge for blocked features */}
-                  {isBlocked && (
+                  {/* Premium badge for premium features */}
+                  {isPremiumFeature && (
+                    <div className="absolute top-2 right-2 z-10">
+                      <Badge className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-xs">
+                        <Crown className="w-3 h-3 mr-1" />
+                        Premium
+                      </Badge>
+                    </div>
+                  )}
+                  
+                  {/* Blocked badge for usage limit reached */}
+                  {!isPremiumFeature && isBlocked && (
                     <div className="absolute top-2 right-2 z-10">
                       <Badge className="bg-orange-500 text-white text-xs">
                         <Lock className="w-3 h-3 mr-1" />
@@ -414,17 +447,28 @@ const FreePlanDashboard = () => {
                   </CardHeader>
                   
                   <CardContent className="py-0">
-                    <div className="flex items-center justify-between text-sm mb-2">
-                      <span className="text-slate-500">Usage</span>
-                      <span className={`font-medium ${isBlocked ? 'text-red-600' : 'text-slate-700'}`}>
-                        {usage.usageCount}/{usage.usageLimit}
-                      </span>
-                    </div>
+                    {!isPremiumFeature && (
+                      <>
+                        <div className="flex items-center justify-between text-sm mb-2">
+                          <span className="text-slate-500">Usage</span>
+                          <span className={`font-medium ${isBlocked ? 'text-red-600' : 'text-slate-700'}`}>
+                            {usage.usageCount}/{usage.usageLimit}
+                          </span>
+                        </div>
+                        
+                        <Progress 
+                          value={usagePercentage} 
+                          className={`h-2 ${isBlocked ? '[&>div]:bg-red-500' : `[&>div]:bg-gradient-to-r [&>div]:${feature.gradient}`}`}
+                        />
+                      </>
+                    )}
                     
-                    <Progress 
-                      value={usagePercentage} 
-                      className={`h-2 ${isBlocked ? '[&>div]:bg-red-500' : `[&>div]:bg-gradient-to-r [&>div]:${feature.gradient}`}`}
-                    />
+                    {isPremiumFeature && (
+                      <div className="text-center py-2">
+                        <p className="text-sm text-purple-600 font-medium">Premium Feature</p>
+                        <p className="text-xs text-slate-500">Available on Basic & Premium plans</p>
+                      </div>
+                    )}
                   </CardContent>
                   
                   <CardFooter className="pt-4">
@@ -440,7 +484,7 @@ const FreePlanDashboard = () => {
                       {isBlocked ? (
                         <>
                           <Lock className="w-4 h-4 mr-2" />
-                          Upgrade to Use
+                          {isPremiumFeature ? 'Upgrade to Use' : 'Upgrade to Use'}
                         </>
                       ) : (
                         <>
