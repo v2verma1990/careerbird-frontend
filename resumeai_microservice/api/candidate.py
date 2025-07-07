@@ -3,11 +3,16 @@ from typing import Optional
 from services.candidate_service import (
     analyze_resume_service, optimize_resume_service, customize_resume_service, benchmark_resume_service, 
     ats_scan_service, generate_cover_letter_service, extract_resume_text, salary_insights_service,
-    extract_resume_data_service, download_resume_service, enhance_resume_ats100_service
+    extract_resume_data_service, download_resume_service, enhance_resume_ats100_service, generate_pdf_from_html_service
 )
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 
 router = APIRouter()
+
+class GeneratePDFRequest(BaseModel):
+    html_content: str
+    filename: str = "resume"
 
 @router.post("/analyze")
 async def analyze(resume: UploadFile = File(...), job_description: str = Form(...), plan: str = Form("free")):
@@ -104,5 +109,12 @@ async def enhance_ats100(
 ):
     result = await enhance_resume_ats100_service(resume, plan, feature_type, download_format)
     return result
+
+@router.post("/generate-pdf")
+async def generate_pdf(request: GeneratePDFRequest):
+    """
+    Generate PDF from HTML content using WeasyPrint
+    """
+    return await generate_pdf_from_html_service(request.html_content, request.filename)
 
 

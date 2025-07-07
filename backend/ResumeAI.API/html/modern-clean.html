@@ -4,144 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{#if Name}}{{name}}{{else}}{{name}}{{/if}} - Resume</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    body {
-      background-color: #f5f5f5;
-      padding: 20px;
-    }
-    .resume-container {
-      max-width: 7.7in;
-      width: 100%;
-      margin: 0 auto;
-      background-color: white;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      padding: 40px;
-    }
-    .header {
-      text-align: center;
-      margin-bottom: 30px;
-      border-bottom: 2px solid {{#if Color}}{{Color}}{{else}}#3498db{{/if}};
-      padding-bottom: 20px;
-    }
-    .header h1 {
-      font-size: 28px;
-      color: #2c3e50;
-      margin-bottom: 5px;
-    }
-    .header p {
-      font-size: 16px;
-      color: #7f8c8d;
-    }
-    .contact-info {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 15px;
-      margin-top: 10px;
-    }
-    .contact-info span {
-      display: flex;
-      align-items: center;
-      font-size: 14px;
-    }
-    .section {
-      margin-bottom: 25px;
-    }
-    .section-title {
-      font-size: 18px;
-      color: {{#if Color}}{{Color}}{{else}}#3498db{{/if}};
-      margin-bottom: 15px;
-      border-bottom: 1px solid #ecf0f1;
-      padding-bottom: 5px;
-    }
-    .experience-item, .education-item {
-      margin-bottom: 20px;
-    }
-    .item-header {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 5px;
-    }
-    .item-title {
-      font-weight: bold;
-      color: #2c3e50;
-    }
-    .item-date {
-      color: #7f8c8d;
-      font-size: 14px;
-    }
-    .item-subtitle {
-      font-style: italic;
-      margin-bottom: 5px;
-      color: #34495e;
-    }
-    .item-description {
-      font-size: 14px;
-      color: #555;
-      line-height: 1.5;
-    }
-    .skills-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-    .skill-item {
-      background-color: #ecf0f1;
-      padding: 5px 10px;
-      border-radius: 3px;
-      font-size: 14px;
-      color: #2c3e50;
-      margin-right: 8px;
-      margin-bottom: 8px;
-      display: inline-block;
-    }
-    .reference-item {
-      margin-bottom: 15px;
-    }
-    .reference-name {
-      font-weight: bold;
-      color: #2c3e50;
-      font-size: 16px;
-      margin-bottom: 4px;
-    }
-    .reference-title {
-      color: #34495e;
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-    .reference-contact {
-      color: #7f8c8d;
-      font-size: 14px;
-    }
-    .achievement-item {
-      margin-bottom: 8px;
-      font-size: 14px;
-      color: #555;
-      line-height: 1.5;
-    }
-    .achievement-item::before {
-      content: "•";
-      color: {{#if color}}{{color}}{{else}}#3498db{{/if}};
-      font-weight: bold;
-      margin-right: 8px;
-    }
-    @media print {
-      body {
-        background-color: white;
-        padding: 0;
-      }
-      .resume-container {
-        box-shadow: none;
-        padding: 20px;
-      }
-    }
-  </style>
+  
 </head>
 <body>
   <div class="resume-container">
@@ -182,16 +45,16 @@
         <p class="item-description">{{#if this.Description}}{{this.Description}}{{else}}{{this.description}}{{/if}}</p>
         
         {{#if this.projects.length}}
-        <div class="projects-subsection" style="margin-top: 10px; padding-left: 15px; border-left: 2px solid #ecf0f1;">
-          <h4 style="font-size: 14px; color: {{#if ../Color}}{{../Color}}{{else}}#3498db{{/if}}; margin-bottom: 8px;">Projects:</h4>
+        <div class="projects-subsection">
+          <h4>Projects:</h4>
           {{#each this.projects}}
-          <div style="margin-bottom: 8px;">
-            <div style="font-weight: 600; font-size: 13px; color: #2c3e50;">{{#if this.Name}}{{this.Name}}{{else}}{{this.name}}{{/if}}</div>
+          <div>
+            <div>{{#if this.Name}}{{this.Name}}{{else}}{{this.name}}{{/if}}</div>
             {{#if this.Technologies}}{{#if this.technologies}}
-            <div style="font-size: 12px; color: #7f8c8d; font-style: italic;">Technologies: {{#if this.Technologies}}{{this.Technologies}}{{else}}{{this.technologies}}{{/if}}</div>
+            <div>Technologies: {{#if this.Technologies}}{{this.Technologies}}{{else}}{{this.technologies}}{{/if}}</div>
             {{/if}}{{/if}}
             {{#if this.Description}}{{#if this.description}}
-            <div style="font-size: 12px; color: #555; margin-top: 3px;">{{#if this.Description}}{{this.Description}}{{else}}{{this.description}}{{/if}}</div>
+            <div>{{#if this.Description}}{{this.Description}}{{else}}{{this.description}}{{/if}}</div>
             {{/if}}{{/if}}
           </div>
           {{/each}}

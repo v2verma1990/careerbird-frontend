@@ -5,179 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{name}} - Resume</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Arial', sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background: #fff;
-        }
-        
-        .container {
-            max-width: 8.5in;
-            margin: 0 auto;
-            padding: 0.5in;
-            min-height: 11in;
-        }
-        
-        .header {
-            background: linear-gradient(135deg, {{color}}, {{color}}dd);
-            color: white;
-            padding: 2.5rem 2rem;
-            text-align: center;
-            margin-bottom: 2rem;
-            border-radius: 8px;
-        }
-        
-        .header h1 {
-            font-size: 2.8rem;
-            font-weight: bold;
-            margin-bottom: 0.5rem;
-            letter-spacing: 1px;
-        }
-        
-        .header .title {
-            font-size: 1.3rem;
-            opacity: 0.9;
-            margin-bottom: 1.5rem;
-            font-weight: 300;
-        }
-        
-        .contact-info {
-            display: flex;
-            justify-content: center;
-            gap: 2rem;
-            flex-wrap: wrap;
-            font-size: 0.95rem;
-        }
-        
-        .contact-info span {
-            opacity: 0.95;
-        }
-        
-        .section {
-            margin-bottom: 2.5rem;
-        }
-        
-        .section-title {
-            font-size: 1.5rem;
-            color: {{color}};
-            border-bottom: 3px solid {{color}};
-            padding-bottom: 0.5rem;
-            margin-bottom: 1.5rem;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .summary {
-            font-size: 1rem;
-            line-height: 1.8;
-            text-align: justify;
-            color: #374151;
-            padding: 0.5rem 0;
-        }
-        
-        .experience-item, .education-item {
-            margin-bottom: 2rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        
-        .experience-item:last-child, .education-item:last-child {
-            border-bottom: none;
-        }
-        
-        .experience-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 1rem;
-        }
-        
-        .job-title {
-            font-weight: bold;
-            font-size: 1.2rem;
-            color: {{color}};
-            margin-bottom: 0.3rem;
-        }
-        
-        .company {
-            font-weight: 600;
-            color: #374151;
-            font-size: 1rem;
-        }
-        
-        .date-location {
-            color: #6b7280;
-            font-style: italic;
-            text-align: right;
-            font-size: 0.9rem;
-        }
-        
-        .description {
-            margin-top: 1rem;
-            line-height: 1.7;
-            color: #374151;
-        }
-        
-        .description ul {
-            margin-left: 1.5rem;
-            margin-top: 0.5rem;
-        }
-        
-        .description li {
-            margin-bottom: 0.5rem;
-        }
-        
-        .skills-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.7rem;
-        }
-        
-        .skill-tag {
-            background: {{color}}33;
-            color: {{color}};
-            padding: 0.4rem 1rem;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: 500;
-            border: 1px solid {{color}}88;
-        }
-        
-        .certifications ul {
-            list-style: none;
-            padding: 0;
-        }
-        
-        .certifications li {
-            background: #f8fafc;
-            padding: 0.8rem 1rem;
-            margin-bottom: 0.5rem;
-            border-left: 4px solid {{color}};
-            border-radius: 4px;
-        }
-        
-        @media print {
-            .container {
-                max-width: none;
-                padding: 0;
-            }
-            
-            .header {
-                border-radius: 0;
-            }
-        }
-    </style>
+    
 </head>
-<body>
+<body class="modern-executive">
     <div class="container">
         <div class="header">
             <h1>{{name}}</h1>
@@ -255,7 +85,7 @@
                         {{location}}
                     </div>
                 </div>
-                {{#if gpa}}<div style="margin-top: 0.5rem; color: #6b7280;">GPA: {{gpa}}</div>{{/if}}
+                {{#if gpa}}<div>GPA: {{gpa}}</div>{{/if}}
             </div>
             {{/each}}
         </div>
@@ -287,10 +117,10 @@
         <div class="section">
             <h2 class="section-title">References</h2>
             {{#each references}}
-            <div class="reference-item" style="margin-bottom: 1rem;">
+            <div class="reference-item">
                 <div class="job-title">{{name}}</div>
                 {{#if title}}<div class="company">{{title}}</div>{{/if}}
-                {{#if contact}}<div style="color: #6b7280; font-size: 0.9rem;">{{contact}}</div>{{/if}}
+                {{#if contact}}<div>{{contact}}</div>{{/if}}
             </div>
             {{/each}}
         </div>
@@ -298,7 +128,7 @@
 
         {{#unless references}}{{#unless achievements}}
         <div class="section">
-            <div style="text-align: center; color: #6b7280; font-style: italic;">
+            <div>
                 References available upon request
             </div>
         </div>

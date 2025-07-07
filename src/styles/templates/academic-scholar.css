@@ -1,0 +1,210 @@
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            line-height: 1.6;
+            color: #2c3e50;
+            background: #fff;
+            font-size: 12pt;
+        }
+        
+        .container {
+            max-width: 8.5in;
+            margin: 0 auto;
+            padding: 1in;
+            min-height: 11in;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #1f2937;
+        }
+        
+        .name {
+            font-size: 24pt;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
+        }
+        
+        .title {
+            font-size: 14pt;
+            color: #4b5563;
+            font-style: italic;
+            margin-bottom: 1rem;
+        }
+        
+        .contact-info {
+            font-size: 11pt;
+            color: #6b7280;
+            line-height: 1.4;
+        }
+        
+        .section {
+            margin-bottom: 2rem;
+        }
+        
+        .section-title {
+            font-size: 14pt;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #d1d5db;
+            padding-bottom: 0.3rem;
+        }
+        
+        .subsection {
+            margin-bottom: 1.5rem;
+        }
+        
+        .subsection-title {
+            font-size: 12pt;
+            font-weight: bold;
+            color: #374151;
+            margin-bottom: 0.8rem;
+            font-variant: small-caps;
+        }
+        
+        .cv-item {
+            margin-bottom: 1.2rem;
+            page-break-inside: avoid;
+        }
+        
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 0.3rem;
+        }
+        
+        .item-title {
+            font-weight: bold;
+            font-size: 11pt;
+            color: #1f2937;
+        }
+        
+        .item-date {
+            font-size: 10pt;
+            color: #6b7280;
+            font-style: italic;
+        }
+        
+        .item-subtitle {
+            font-size: 11pt;
+            color: #4b5563;
+            margin-bottom: 0.2rem;
+        }
+        
+        .item-location {
+            font-size: 10pt;
+            color: #6b7280;
+            font-style: italic;
+        }
+        
+        .item-description {
+            font-size: 11pt;
+            color: #374151;
+            margin-top: 0.5rem;
+            text-align: justify;
+        }
+        
+        .summary-text {
+            font-size: 11pt;
+            color: #374151;
+            text-align: justify;
+            line-height: 1.7;
+        }
+        
+        .skills-categories {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        
+        .skill-category {
+            margin-bottom: 1rem;
+        }
+        
+        .skill-category h4 {
+            font-size: 11pt;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+            font-variant: small-caps;
+        }
+        
+        .skill-list {
+            font-size: 10pt;
+            color: #4b5563;
+            line-height: 1.5;
+        }
+        
+        .publication-item {
+            margin-bottom: 1rem;
+            font-size: 11pt;
+            line-height: 1.5;
+            text-align: justify;
+            padding-left: 1rem;
+            text-indent: -1rem;
+        }
+        
+        .publication-authors {
+            font-weight: bold;
+        }
+        
+        .publication-title {
+            font-style: italic;
+        }
+        
+        .publication-venue {
+            color: #4b5563;
+        }
+        
+        .certification-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.8rem;
+            font-size: 11pt;
+        }
+        
+        .certification-name {
+            font-weight: bold;
+            color: #1f2937;
+        }
+        
+        .certification-issuer {
+            color: #4b5563;
+        }
+        
+        .certification-date {
+            color: #6b7280;
+            font-style: italic;
+            font-size: 10pt;
+        }
+        
+        @media print {
+            .container {
+                max-width: none;
+                padding: 0.5in;
+            }
+            
+            body {
+                font-size: 11pt;
+            }
+        }
+        
+        @page {
+            margin: 0.5in;
+        }
+    

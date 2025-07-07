@@ -3154,6 +3154,11 @@ namespace ResumeAI.API.Services
             return (fileBytes, fileName, contentType);
         }
 
+        /// <summary>
+        /// Generate PDF from HTML and CSS using Python microservice
+        /// </summary>
+
+
         private class TemplatesData
         {
             [JsonProperty("templates")]

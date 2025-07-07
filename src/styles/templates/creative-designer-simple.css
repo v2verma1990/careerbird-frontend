@@ -1,0 +1,167 @@
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.5;
+            color: #2d3748;
+            background: #fff;
+        }
+        
+        .container {
+            max-width: 8.5in;
+            margin: 0 auto;
+            min-height: 11in;
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 0;
+        }
+        
+        .sidebar {
+            background: linear-gradient(135deg, #7c3aed, #a855f7);
+            color: white;
+            padding: 2rem;
+        }
+        
+        .main-content {
+            padding: 2rem;
+        }
+        
+        .profile-section {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .profile-image {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            margin: 0 auto 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+        }
+        
+        .name {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .title {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 1.5rem;
+        }
+        
+        .contact-item {
+            margin-bottom: 0.8rem;
+            font-size: 0.9rem;
+        }
+        
+        .sidebar-section {
+            margin-bottom: 2rem;
+        }
+        
+        .sidebar-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .skill-item {
+            background: rgba(255,255,255,0.2);
+            padding: 0.4rem 0.8rem;
+            margin: 0.3rem 0;
+            border-radius: 20px;
+            display: inline-block;
+            font-size: 0.85rem;
+        }
+        
+        .section {
+            margin-bottom: 2.5rem;
+        }
+        
+        .section-title {
+            font-size: 1.8rem;
+            color: #7c3aed;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+        
+        .section-title:after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background: #a855f7;
+        }
+        
+        .experience-item, .education-item, .project-item {
+            margin-bottom: 2rem;
+            position: relative;
+            padding-left: 2rem;
+        }
+        
+        .experience-item:before, .education-item:before, .project-item:before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0.3rem;
+            width: 10px;
+            height: 10px;
+            background: #7c3aed;
+            border-radius: 50%;
+        }
+        
+        .item-header {
+            margin-bottom: 0.8rem;
+        }
+        
+        .item-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 0.2rem;
+        }
+        
+        .item-subtitle {
+            font-weight: 600;
+            color: #7c3aed;
+            margin-bottom: 0.2rem;
+        }
+        
+        .item-meta {
+            color: #718096;
+            font-size: 0.9rem;
+            font-style: italic;
+        }
+        
+        .item-description {
+            color: #4a5568;
+            line-height: 1.6;
+        }
+        
+        .summary-text {
+            font-size: 1rem;
+            line-height: 1.7;
+            color: #4a5568;
+            text-align: justify;
+        }
+        
+        @media print {
+            .container {
+                max-width: none;
+            }
+        }
+    

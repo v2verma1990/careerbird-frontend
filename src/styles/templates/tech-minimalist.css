@@ -1,0 +1,173 @@
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            line-height: 1.6;
+            color: #1a202c;
+            background: #fff;
+            font-size: 13px;
+        }
+        
+        .container {
+            max-width: 8.5in;
+            margin: 0 auto;
+            padding: 1in;
+            min-height: 11in;
+        }
+        
+        .terminal-header {
+            background: #2d3748;
+            color: #68d391;
+            padding: 1rem;
+            border-radius: 8px 8px 0 0;
+            font-family: monospace;
+            position: relative;
+        }
+        
+        .terminal-header:before {
+            content: "● ● ●";
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            color: #e53e3e;
+        }
+        
+        .terminal-content {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 0 0 8px 8px;
+            margin-bottom: 2rem;
+        }
+        
+        .terminal-line {
+            margin-bottom: 0.5rem;
+        }
+        
+        .prompt {
+            color: #68d391;
+        }
+        
+        .name-display {
+            color: #fbb6ce;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .title-display {
+            color: #90cdf4;
+            font-size: 1.1rem;
+        }
+        
+        .contact-display {
+            color: #faf089;
+        }
+        
+        .section {
+            margin-bottom: 2rem;
+            border-left: 3px solid #059669;
+            padding-left: 1rem;
+        }
+        
+        .section-header {
+            background: #f7fafc;
+            margin-left: -1rem;
+            padding: 0.5rem 1rem;
+            margin-bottom: 1rem;
+            font-family: monospace;
+            font-weight: bold;
+            color: #059669;
+            border-radius: 4px;
+        }
+        
+        .code-block {
+            background: #f7fafc;
+            padding: 1rem;
+            border-radius: 4px;
+            border-left: 4px solid #059669;
+            font-family: monospace;
+            white-space: pre-wrap;
+            margin-bottom: 1rem;
+        }
+        
+        .function-signature {
+            color: #805ad5;
+            font-weight: bold;
+        }
+        
+        .comment {
+            color: #718096;
+            font-style: italic;
+        }
+        
+        .variable {
+            color: #d69e2e;
+        }
+        
+        .string {
+            color: #38a169;
+        }
+        
+        .keyword {
+            color: #3182ce;
+            font-weight: bold;
+        }
+        
+        .experience-item, .education-item, .project-item {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border-left: 4px solid #e2e8f0;
+        }
+        
+        .item-title {
+            font-weight: bold;
+            color: #2d3748;
+            font-size: 1.1rem;
+        }
+        
+        .item-meta {
+            color: #718096;
+            font-size: 0.9rem;
+            margin: 0.2rem 0 0.5rem 0;
+        }
+        
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 0.5rem;
+        }
+        
+        .skill-category {
+            background: #edf2f7;
+            padding: 0.8rem;
+            border-radius: 4px;
+            border-left: 3px solid #059669;
+        }
+        
+        .skill-category h4 {
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .skill-list {
+            font-size: 0.85rem;
+            color: #4a5568;
+        }
+        
+        @media print {
+            .container {
+                max-width: none;
+                padding: 0.5in;
+            }
+        }
+    

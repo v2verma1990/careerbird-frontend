@@ -1,0 +1,197 @@
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Arial', sans-serif;
+    }
+    body {
+      background-color: #f9f9f9;
+      padding: 20px;
+    }
+    .resume-container {
+      max-width: 7.7in;
+      width: 100%;
+      margin: 0 auto;
+      background-color: white;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      padding: 40px;
+    }
+    .header {
+      margin-bottom: 30px;
+      text-align: center;
+      border-bottom: 3px solid #3498db;
+      padding-bottom: 20px;
+    }
+    .header h1 {
+      font-size: 28px;
+      color: #2c3e50;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+    .header p {
+      font-size: 18px;
+      color: #3498db;
+      margin-bottom: 15px;
+      font-weight: 500;
+    }
+    .contact-info {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 20px;
+      font-size: 14px;
+      color: #7f8c8d;
+    }
+    .section {
+      margin-bottom: 30px;
+    }
+    .section-title {
+      font-size: 18px;
+      color: #3498db;
+      margin-bottom: 15px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-bottom: 2px solid #3498db;
+      padding-bottom: 5px;
+    }
+    .education-item, .experience-item {
+      margin-bottom: 20px;
+      padding: 15px;
+      background-color: #f8f9fa;
+      border-left: 4px solid #3498db;
+      border-radius: 5px;
+    }
+    .item-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      align-items: flex-start;
+    }
+    .item-title {
+      font-weight: bold;
+      color: #2c3e50;
+      font-size: 16px;
+    }
+    .item-date {
+      color: #7f8c8d;
+      font-size: 14px;
+      font-style: italic;
+    }
+    .item-subtitle {
+      margin-bottom: 8px;
+      color: #3498db;
+      font-size: 15px;
+      font-weight: 600;
+    }
+    .item-description {
+      font-size: 14px;
+      color: #34495e;
+      line-height: 1.6;
+    }
+    .skills-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .skills-category {
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      border-left: 4px solid #3498db;
+    }
+    .skills-category h4 {
+      color: #2c3e50;
+      margin-bottom: 10px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .skills-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .skill-item {
+      background-color: #3498db;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 15px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .objective-section {
+      background-color: #ecf0f1;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 25px;
+      border-left: 4px solid #3498db;
+    }
+    .objective-title {
+      font-size: 16px;
+      color: #3498db;
+      margin-bottom: 10px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+    .objective-text {
+      font-size: 15px;
+      color: #2c3e50;
+      line-height: 1.6;
+      font-style: italic;
+    }
+    .projects-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 15px;
+    }
+    .project-item {
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      border-left: 4px solid #3498db;
+    }
+    .project-title {
+      font-weight: bold;
+      color: #2c3e50;
+      font-size: 16px;
+      margin-bottom: 5px;
+    }
+    .project-tech {
+      color: #3498db;
+      font-size: 13px;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    .achievements-list {
+      list-style: none;
+      padding: 0;
+    }
+    .achievement-item {
+      margin-bottom: 12px;
+      position: relative;
+      padding-left: 25px;
+      font-size: 14px;
+      color: #34495e;
+      line-height: 1.5;
+    }
+    .achievement-item:before {
+      content: "★";
+      position: absolute;
+      left: 0;
+      color: #3498db;
+      font-weight: bold;
+      font-size: 16px;
+    }
+    @media print {
+      body {
+        background-color: white;
+        padding: 0;
+      }
+      .resume-container {
+        box-shadow: none;
+        padding: 20px;
+      }
+    }
+  

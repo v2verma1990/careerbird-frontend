@@ -112,22 +112,44 @@ const Dashboard = () => {
     if (!user || !subscriptionStatus) return;
     setLoadingUsage(true);
     setError(null);
+    
     api.usage.getAllFeatureUsage(user.id)
       .then(({ data, error }) => {
         if (error) {
-          setError('Failed to fetch usage data.');
-          setFeatureUsage({});
+          console.warn('Usage data fetch failed, but continuing with default limits:', error);
+          // Don't set error state - just use default limits
+          setFeatureUsage({
+            limits: {
+              resumeOptimize: { limit: 10, used: 0 },
+              coverLetterGenerate: { limit: 10, used: 0 },
+              jobDescriptionAnalyze: { limit: 10, used: 0 }
+            }
+          });
         } else if (data) {
           setFeatureUsage(data);
         } else {
-          setFeatureUsage({});
+          setFeatureUsage({
+            limits: {
+              resumeOptimize: { limit: 10, used: 0 },
+              coverLetterGenerate: { limit: 10, used: 0 },
+              jobDescriptionAnalyze: { limit: 10, used: 0 }
+            }
+          });
         }
         setLoadingUsage(false);
       })
-      .catch(() => {
-        setError('An unexpected error occurred while loading usage data.');
-        setFeatureUsage({});
+      .catch((catchError) => {
+        console.warn('Usage API call completely failed, using default limits:', catchError);
+        // Don't block the UI - provide default limits
+        setFeatureUsage({
+          limits: {
+            resumeOptimize: { limit: 10, used: 0 },
+            coverLetterGenerate: { limit: 10, used: 0 },
+            jobDescriptionAnalyze: { limit: 10, used: 0 }
+          }
+        });
         setLoadingUsage(false);
+        // Don't set error state to avoid blocking the UI
       });
   }, [user, subscriptionStatus]);
 

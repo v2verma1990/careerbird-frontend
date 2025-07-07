@@ -1,0 +1,127 @@
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Courier New', monospace;
+    }
+    body {
+      background-color: #f0f0f0;
+      padding: 20px;
+    }
+    .resume-container {
+      max-width: 8.5in;
+      margin: 0 auto;
+      background-color: #1e1e1e;
+      color: #f0f0f0;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      padding: 40px;
+    }
+    .header {
+      margin-bottom: 30px;
+      border-bottom: 1px solid #4CAF50;
+      padding-bottom: 20px;
+    }
+    .header h1 {
+      font-size: 28px;
+      color: #4CAF50;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    .header p {
+      font-size: 16px;
+      color: #8BC34A;
+      margin-bottom: 15px;
+    }
+    .contact-info {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      font-size: 14px;
+      color: #BBBBBB;
+    }
+    .section {
+      margin-bottom: 30px;
+    }
+    .section-title {
+      font-size: 18px;
+      color: #4CAF50;
+      margin-bottom: 15px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: bold;
+      border-bottom: 1px solid #4CAF50;
+      padding-bottom: 5px;
+    }
+    .experience-item, .education-item {
+      margin-bottom: 25px;
+      padding-left: 15px;
+      border-left: 2px solid #8BC34A;
+    }
+    .item-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .item-title {
+      font-weight: bold;
+      color: #FFFFFF;
+      font-size: 16px;
+    }
+    .item-date {
+      color: #BBBBBB;
+      font-size: 14px;
+    }
+    .item-subtitle {
+      margin-bottom: 8px;
+      color: #8BC34A;
+    }
+    .item-description {
+      font-size: 14px;
+      color: #DDDDDD;
+      line-height: 1.6;
+    }
+    .skills-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .skill-item {
+      background-color: #333333;
+      color: #4CAF50;
+      padding: 5px 10px;
+      border-radius: 3px;
+      font-size: 13px;
+      margin-bottom: 8px;
+      border: 1px solid #4CAF50;
+    }
+    .code-block {
+      background-color: #2d2d2d;
+      padding: 15px;
+      border-radius: 5px;
+      margin-top: 15px;
+      font-family: 'Courier New', monospace;
+      color: #DDDDDD;
+      line-height: 1.4;
+      overflow-x: auto;
+    }
+    .code-comment {
+      color: #6A9955;
+    }
+    .code-keyword {
+      color: #569CD6;
+    }
+    .code-string {
+      color: #CE9178;
+    }
+    @media print {
+      body {
+        background-color: #1e1e1e;
+        padding: 0;
+      }
+      .resume-container {
+        box-shadow: none;
+        padding: 20px;
+      }
+    }
+  

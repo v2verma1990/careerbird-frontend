@@ -335,6 +335,137 @@ export const resumeBuilderApi = {
         error: error instanceof Error ? error.message : String(error)
       };
     }
+  },
+
+  /**
+   * Generate PDF from complete HTML + CSS 
+   * Calls backend /resumebuilder/generate-pdf endpoint
+   */
+  generatePDF: async (params: { 
+    html: string, 
+    css: string, 
+    filename: string,
+    templateId: string,
+    color: string 
+  }) => {
+    try {
+      // Get auth token
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      // Set headers
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      
+      if (session?.access_token) {
+        headers["Authorization"] = `Bearer ${session.access_token}`;
+      }
+      
+      // Make the request using dynamic API base URL
+      const response = await fetch(`${API_BASE_URL}/resumebuilder/generate-pdf`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(params),
+        credentials: "include"
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        return { data: null, error: errorText || `HTTP ${response.status}` };
+      }
+      
+      const blob = await response.blob();
+      return { data: blob, error: null };
+    } catch (error) {
+      return { data: null, error: error instanceof Error ? error.message : String(error) };
+    }
+  },
+
+  /**
+   * Generate PDF directly from resume data (TWO-STEP PROCESS)
+   * 1. First build the resume to get HTML/CSS
+   * 2. Then generate PDF from the HTML/CSS
+   */
+  generatePDFFromData: async function(params: { 
+    resumeData: any, 
+    templateId: string,
+    color: string,
+    filename: string 
+  }) {
+    try {
+      console.log('generatePDFFromData - Starting two-step process');
+      
+      // Step 1: Build the resume to get HTML/CSS
+      const buildResult = await this.buildResume({
+        resumeData: typeof params.resumeData === 'string' ? params.resumeData : JSON.stringify(params.resumeData),
+        templateId: params.templateId,
+        color: params.color
+      });
+      
+      if (buildResult.error) {
+        return { data: null, error: `Failed to build resume: ${buildResult.error}` };
+      }
+      
+      if (!buildResult.data) {
+        return { data: null, error: 'No data received from resume build' };
+      }
+      
+      // Extract HTML and CSS from the build result
+      let html = '';
+      let css = '';
+      
+      if (typeof buildResult.data === 'string') {
+        // If the response is HTML string, extract CSS from it
+        html = buildResult.data;
+        
+        // Extract CSS from <style> tags in the HTML
+        const styleRegex = /<style[^>]*>([\s\S]*?)<\/style>/gi;
+        const cssMatches = [];
+        let match;
+        
+        while ((match = styleRegex.exec(html)) !== null) {
+          cssMatches.push(match[1]);
+        }
+        
+        css = cssMatches.join('\n');
+        
+        console.log('generatePDFFromData - Extracted CSS from HTML:', {
+          htmlLength: html.length,
+          cssLength: css.length,
+          cssPreview: css.substring(0, 200) + '...'
+        });
+        
+        // If no CSS was found in style tags, the HTML might have embedded styles
+        if (!css.trim()) {
+          console.log('generatePDFFromData - No CSS found in <style> tags, HTML might have inline styles');
+          // In this case, we'll send the HTML as-is and let the backend handle it
+        }
+      } else if (buildResult.data.html) {
+        // If the response has html property
+        html = buildResult.data.html;
+        css = buildResult.data.css || '';
+      } else {
+        return { data: null, error: 'Invalid response format from resume build' };
+      }
+      
+      console.log('generatePDFFromData - Got HTML/CSS, generating PDF');
+      
+      // Step 2: Generate PDF from HTML/CSS
+      const pdfResult = await this.generatePDF({
+        html: html,
+        css: css,
+        filename: params.filename,
+        templateId: params.templateId,
+        color: params.color
+      });
+      
+      return pdfResult;
+    } catch (error) {
+      return { 
+        data: null, 
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
   }
 };
 

@@ -1,0 +1,136 @@
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Arial', sans-serif;
+    }
+    body {
+      background-color: #f9f9f9;
+      padding: 20px;
+    }
+    .resume-container {
+      max-width: 7.7in;
+      width: 100%;
+      margin: 0 auto;
+      background-color: white;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.05);
+      padding: 40px;
+    }
+    .header {
+      margin-bottom: 30px;
+    }
+    .header h1 {
+      font-size: 24px;
+      color: #333;
+      margin-bottom: 5px;
+      font-weight: normal;
+      letter-spacing: 1px;
+    }
+    .header p {
+      font-size: 16px;
+      color: #666;
+      margin-bottom: 15px;
+    }
+    .contact-info {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      font-size: 14px;
+      color: #666;
+    }
+    .section {
+      margin-bottom: 25px;
+    }
+    .section-title {
+      font-size: 16px;
+      color: #333;
+      margin-bottom: 15px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: normal;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 5px;
+    }
+    .experience-item, .education-item {
+      margin-bottom: 20px;
+    }
+    .item-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+    }
+    .item-title {
+      font-weight: bold;
+      color: #333;
+    }
+    .item-date {
+      color: #999;
+      font-size: 14px;
+    }
+    .item-subtitle {
+      margin-bottom: 5px;
+      color: #666;
+    }
+    .item-description {
+      font-size: 14px;
+      color: #666;
+      line-height: 1.5;
+    }
+    .skills-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .skill-item {
+      font-size: 14px;
+      color: #666;
+      margin-right: 15px;
+      margin-bottom: 5px;
+      display: inline-block;
+    }
+    .skill-item:not(:last-child)::after {
+      content: "•";
+      margin-left: 10px;
+    }
+    .reference-item {
+      margin-bottom: 15px;
+    }
+    .reference-name {
+      font-weight: bold;
+      color: #333;
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+    .reference-title {
+      color: #666;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .reference-contact {
+      color: #999;
+      font-size: 14px;
+    }
+    .achievement-item {
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: #666;
+      line-height: 1.5;
+    }
+    .achievement-item::before {
+      content: "•";
+      color: #333;
+      font-weight: bold;
+      margin-right: 8px;
+    }
+    @media print {
+      body {
+        background-color: white;
+        padding: 0;
+      }
+      .resume-container {
+        box-shadow: none;
+        padding: 20px;
+      }
+    }
+  

@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Download, ArrowLeft, FileText, Globe, AlertCircle, Eye, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/utils/apiClient';
-import { PDFExportButton, PDFExportDropdown } from '@/components/PDFExportButton';
+import { PDFExportButton, PDFExportDropdown, GeneratePDFOnMachineButton } from '@/components/PDFExportButton';
 import { useResumeExport } from '@/hooks/use-pdf-export';
 import { frontendTemplateService } from '@/services/frontendTemplateService';
 import { useResumeColors } from '@/contexts/resume/ResumeColorContext';
@@ -25,10 +25,10 @@ const ResumePreview = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   
-  const template = searchParams.get('template') || 'navy-column-modern';
+  const template = searchParams.get('template') ;
   const encodedData = searchParams.get('data');
   const encodedHtml = searchParams.get('html');
-  const selectedColor = searchParams.get('color') ? decodeURIComponent(searchParams.get('color')!) : '#315389';
+  const selectedColor = searchParams.get('color') ? decodeURIComponent(searchParams.get('color')) : '#315389';
 
   // IMMEDIATELY apply color on component initialization to prevent any flash
   useLayoutEffect(() => {
@@ -394,7 +394,7 @@ const ResumePreview = () => {
                     <div
                       key={previewKey}
                       id="resume-preview-container"
-                      className="resume-preview-container template-transition"
+                      className={`resume-preview-container template-transition ${template}`}
                       dangerouslySetInnerHTML={{ __html: renderedTemplate.html }}
                     />
                   </div>
@@ -428,6 +428,7 @@ const ResumePreview = () => {
                   candidateName={resumeData?.PersonalInfo?.Name || resumeData?.personalInfo?.name || resumeData?.name || resumeData?.Name || 'resume'}
                   resumeData={resumeData}
                   templateColor={selectedColor}
+                  templateId={template}
                   className="w-full"
                   disabled={isLoading || isExporting}
                 >
@@ -440,6 +441,7 @@ const ResumePreview = () => {
                   candidateName={resumeData?.PersonalInfo?.Name || resumeData?.personalInfo?.name || resumeData?.name || resumeData?.Name || 'resume'}
                   resumeData={resumeData}
                   templateColor={selectedColor}
+                  templateId={template}
                   variant="outline"
                   className="w-full"
                   highQuality={true}
@@ -448,6 +450,17 @@ const ResumePreview = () => {
                   <Download className="h-4 w-4 mr-2" />
                   {isExporting ? 'Generating...' : 'High Quality PDF'}
                 </PDFExportButton>
+                
+                <GeneratePDFOnMachineButton
+                  resumeElementId="resume-preview-container"
+                  candidateName={resumeData?.PersonalInfo?.Name || resumeData?.personalInfo?.name || resumeData?.name || resumeData?.Name || 'resume'}
+                  resumeData={resumeData}
+                  templateColor={selectedColor}
+                  templateId={template}
+                  variant="outline"
+                  className="w-full"
+                  disabled={isLoading || isExporting}
+                />
                 
                 <Button 
                   variant="outline" 

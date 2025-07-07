@@ -1445,3 +1445,30 @@ async def enhance_resume_ats100_service(
                     logger.error(f"Final guarantee failed: {convert_error}")
                     result["optimizedContent"] = str(result["optimizedContent"])
 
+async def generate_pdf_from_html_service(html_content: str, filename: str = "resume"):
+    """
+    Generate PDF from HTML content using WeasyPrint
+    """
+    try:
+        logger.info(f"Generating PDF from HTML content, filename: {filename}")
+        logger.info(f"HTML content length: {len(html_content)} characters")
+        
+        # Use the existing create_pdf_from_text function
+        pdf_path = create_pdf_from_text(html_content, f"{filename}.pdf")
+        
+        if not os.path.exists(pdf_path):
+            raise HTTPException(status_code=500, detail="Failed to generate PDF file")
+        
+        logger.info(f"PDF generated successfully at: {pdf_path}")
+        
+        # Return the PDF file as a response
+        return FileResponse(
+            path=pdf_path,
+            media_type="application/pdf",
+            filename=f"{filename}.pdf"
+        )
+        
+    except Exception as e:
+        logger.error(f"Error generating PDF from HTML: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate PDF: {str(e)}")
+

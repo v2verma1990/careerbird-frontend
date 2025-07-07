@@ -1,3 +1,5 @@
+import { api } from "@/utils/apiClient";
+
 /**
  * Resume Styles Utilities - Backend Integration
  * This file provides utilities to apply backend-generated CSS as the single source of truth
@@ -29,32 +31,43 @@ export const getDarkerShade = (color: string): string => {
 
 
 /**
- * Apply styles to a document (for PDF export)
- * Uses centralized backend template service as SINGLE SOURCE OF TRUTH
+ * Fetch backend CSS for a template and color.
  */
-export const applyStylesToDocument = async (doc: Document, templateColor: string, templateId: string = 'navy-column-modern'): Promise<void> => {
-  // Remove any existing style elements with our identifier
-  const existingStyles = doc.querySelectorAll('style[data-resume-styles]');
-  existingStyles.forEach(style => style.remove());
-  
+const fetchBackendCss = async (templateId: string, templateColor: string): Promise<string> => {
+  const { data, error } = await api.template.getCss(templateId, templateColor);
+  if (error) throw new Error(`Failed to fetch backend CSS: ${error}`);
+  if (!data) throw new Error('No CSS data received from API');
+  return data;
+};
+
+/**
+ * Apply styles to the given document (for download or preview).
+ * Always uses backend CSS as single source of truth.
+ */
+export const applyStylesToDocument = async (
+  doc: Document,
+  templateColor: string,
+  templateId: string = 'navy-column-modern'
+): Promise<void> => {
   try {
-    // Import template service dynamically to avoid circular dependencies
-    const { templateService } = await import('../services/templateService');
-    console.log('applyStylesToDocument - Fetching CSS from backend with color:', templateColor);
-    const css = await templateService.getTemplateCss(templateId, templateColor);
-    
+    const css = await fetchBackendCss(templateId, templateColor);
+
+    // Remove any existing style elements with our identifier
+    const existingStyles = doc.querySelectorAll('style[data-resume-styles]');
+    existingStyles.forEach(style => style.remove());
+
     // Create and inject the unified styles
     const styleElement = doc.createElement('style');
     styleElement.setAttribute('data-resume-styles', 'true');
     styleElement.textContent = css;
-    
+
     // Insert at the beginning of head for maximum priority
     if (doc.head.firstChild) {
       doc.head.insertBefore(styleElement, doc.head.firstChild);
     } else {
       doc.head.appendChild(styleElement);
     }
-    
+
     console.log('applyStylesToDocument - Successfully applied backend CSS');
   } catch (error) {
     console.error('applyStylesToDocument - Failed to fetch backend CSS:', error);
@@ -66,37 +79,30 @@ export const applyStylesToDocument = async (doc: Document, templateColor: string
  * Apply styles to the current document (for preview)
  * Uses centralized backend template service as SINGLE SOURCE OF TRUTH
  */
-export const applyStylesToCurrentDocument = async (templateColor: string, templateId: string = 'navy-column-modern'): Promise<() => void> => {
+export const applyStylesToCurrentDocument = async (
+  templateColor: string,
+  templateId: string = 'navy-column-modern'
+): Promise<() => void> => {
   // Remove any existing style elements with our identifier
   const existingStyles = document.querySelectorAll('style[data-resume-styles]');
   existingStyles.forEach(style => style.remove());
-  
+
   try {
-    // Import template service dynamically to avoid circular dependencies
-    const { templateService } = await import('../services/templateService');
-    console.log('applyStylesToCurrentDocument - Fetching CSS from backend with color:', templateColor);
-    const css = await templateService.getTemplateCss(templateId, templateColor);
-    
-    // Create and inject the unified styles
+    const css = await fetchBackendCss(templateId, templateColor);
+
+    // Inject CSS into <head>
     const styleElement = document.createElement('style');
     styleElement.setAttribute('data-resume-styles', 'true');
     styleElement.textContent = css;
-    
-    // Insert at the beginning of head for maximum priority
     if (document.head.firstChild) {
       document.head.insertBefore(styleElement, document.head.firstChild);
     } else {
       document.head.appendChild(styleElement);
     }
-    
-    console.log('applyStylesToCurrentDocument - Successfully applied backend CSS');
-    
+
     // Return cleanup function
     return () => {
-      const styleToRemove = document.querySelector('style[data-resume-styles]');
-      if (styleToRemove) {
-        styleToRemove.remove();
-      }
+      styleElement.remove();
     };
   } catch (error) {
     console.error('applyStylesToCurrentDocument - Failed to fetch backend CSS:', error);

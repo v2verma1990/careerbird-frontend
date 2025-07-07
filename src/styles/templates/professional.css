@@ -1,0 +1,144 @@
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Georgia', 'Times New Roman', serif;
+    }
+    body {
+      background-color: #f9f9f9;
+      padding: 20px;
+    }
+    .resume-container {
+      max-width: 8.5in;
+      margin: 0 auto;
+      background-color: white;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      padding: 40px;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+      border-bottom: 2px solid #1a5276;
+      padding-bottom: 20px;
+    }
+    .header h1 {
+      font-size: 28px;
+      color: #1a5276;
+      margin-bottom: 5px;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    .header p {
+      font-size: 18px;
+      color: #34495e;
+      margin-bottom: 15px;
+      font-style: italic;
+    }
+    .contact-info {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 20px;
+      font-size: 14px;
+      color: #34495e;
+    }
+    .section {
+      margin-bottom: 30px;
+    }
+    .section-title {
+      font-size: 18px;
+      color: #1a5276;
+      margin-bottom: 15px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: bold;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 5px;
+    }
+    .experience-item, .education-item {
+      margin-bottom: 25px;
+    }
+    .item-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .item-title {
+      font-weight: bold;
+      color: #2c3e50;
+      font-size: 16px;
+    }
+    .item-date {
+      color: #7f8c8d;
+      font-size: 14px;
+      font-style: italic;
+    }
+    .item-subtitle {
+      margin-bottom: 8px;
+      color: #34495e;
+      font-weight: 600;
+    }
+    .item-description {
+      font-size: 14px;
+      color: #34495e;
+      line-height: 1.6;
+    }
+    .skills-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .skill-item {
+      font-size: 14px;
+      color: #34495e;
+      margin-right: 15px;
+      margin-bottom: 5px;
+      display: inline-block;
+    }
+    .skill-item:not(:last-child)::after {
+      content: "•";
+      margin-left: 10px;
+      color: #1a5276;
+    }
+    .reference-item {
+      margin-bottom: 15px;
+    }
+    .reference-name {
+      font-weight: bold;
+      color: #2c3e50;
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+    .reference-title {
+      color: #34495e;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .reference-contact {
+      color: #7f8c8d;
+      font-size: 14px;
+    }
+    .achievement-item {
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: #34495e;
+      line-height: 1.6;
+    }
+    .achievement-item::before {
+      content: "•";
+      color: #1a5276;
+      font-weight: bold;
+      margin-right: 8px;
+    }
+    @media print {
+      body {
+        background-color: white;
+        padding: 0;
+      }
+      .resume-container {
+        box-shadow: none;
+        padding: 20px;
+      }
+    }
+  

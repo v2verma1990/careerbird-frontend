@@ -4,150 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{#if Name}}{{name}}{{else}}{{name}}{{/if}} - Product Manager Resume</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: 'Helvetica Neue', Arial, sans-serif;
-    }
-    body {
-      background-color: #f5f5f5;
-      padding: 20px;
-    }
-    .resume-container {
-      max-width: 8.5in;
-      margin: 0 auto;
-      background-color: white;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
-    .header {
-      background-color: #0891b2;
-      color: white;
-      padding: 40px;
-    }
-    .header-content {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-    }
-    .header-left {
-      flex: 2;
-    }
-    .header-right {
-      flex: 1;
-      text-align: right;
-    }
-    .header h1 {
-      font-size: 32px;
-      margin-bottom: 5px;
-      font-weight: 600;
-    }
-    .header p {
-      font-size: 18px;
-      opacity: 0.9;
-      margin-bottom: 15px;
-    }
-    .contact-info {
-      font-size: 14px;
-      line-height: 1.6;
-    }
-    .main-content {
-      padding: 40px;
-    }
-    .section {
-      margin-bottom: 30px;
-    }
-    .section-title {
-      font-size: 20px;
-      color: #0891b2;
-      margin-bottom: 15px;
-      font-weight: 600;
-      border-bottom: 2px solid #e5e7eb;
-      padding-bottom: 5px;
-    }
-    .experience-item, .education-item {
-      margin-bottom: 25px;
-    }
-    .item-header {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 8px;
-    }
-    .item-title {
-      font-weight: bold;
-      color: #0891b2;
-      font-size: 16px;
-    }
-    .item-date {
-      color: #6b7280;
-      font-size: 14px;
-    }
-    .item-subtitle {
-      margin-bottom: 8px;
-      color: #4b5563;
-      font-weight: 600;
-    }
-    .item-description {
-      font-size: 14px;
-      color: #4b5563;
-      line-height: 1.6;
-    }
-    .skills-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-    .skill-item {
-      background-color: #e5e7eb;
-      padding: 5px 12px;
-      border-radius: 4px;
-      font-size: 14px;
-      color: #0891b2;
-      font-weight: 500;
-    }
-    .summary {
-      background-color: #f3f4f6;
-      padding: 20px;
-      border-left: 4px solid #0891b2;
-      margin-bottom: 30px;
-      line-height: 1.6;
-    }
-    .metrics {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 15px;
-      margin-top: 10px;
-    }
-    .metric-item {
-      background-color: #f0fdfa;
-      border: 1px solid #ccfbf1;
-      padding: 10px 15px;
-      border-radius: 4px;
-      flex: 1;
-      min-width: 150px;
-      text-align: center;
-    }
-    .metric-value {
-      font-size: 24px;
-      font-weight: bold;
-      color: #0891b2;
-      margin-bottom: 5px;
-    }
-    .metric-label {
-      font-size: 12px;
-      color: #6b7280;
-    }
-    @media print {
-      body {
-        background-color: white;
-        padding: 0;
-      }
-      .resume-container {
-        box-shadow: none;
-      }
-    }
-  </style>
+  
 </head>
 <body>
   <div class="resume-container">
@@ -261,8 +118,8 @@
       <div class="section">
         <h2 class="section-title">Key Achievements</h2>
         {{#each achievements}}
-        <div class="achievement-item" style="margin-bottom: 8px; padding-left: 15px; position: relative;">
-          <div style="position: absolute; left: 0; top: 0; color: #2196F3; font-weight: bold;">•</div>
+        <div class="achievement-item">
+          <div>•</div>
           {{this}}
         </div>
         {{/each}}
@@ -278,7 +135,7 @@
             <span class="item-title">{{name}}</span>
           </div>
           {{#if title}}<div class="item-subtitle">{{title}}</div>{{/if}}
-          {{#if contact}}<div style="color: #666; font-size: 0.9em; margin-top: 4px;">{{contact}}</div>{{/if}}
+          {{#if contact}}<div>{{contact}}</div>{{/if}}
         </div>
         {{/each}}
       </div>
@@ -286,7 +143,7 @@
 
       {{#unless references}}{{#unless achievements}}
       <div class="section">
-        <div style="text-align: center; color: #6b7280; font-style: italic;">
+        <div>
           References available upon request
         </div>
       </div>
