@@ -38,4 +38,12 @@ namespace ResumeAI.API.Models
         public bool is_cancelled { get; set; } = false;
         public bool is_active { get; set; } = true;
     }
+
+    public class SubscriptionDowngradeInfo
+    {
+        public bool WasRecentlyDowngraded { get; set; } = false;
+        public string? PreviousSubscriptionType { get; set; }
+        public DateTime? DowngradeDate { get; set; }
+        public string? CurrentSubscriptionType { get; set; }
+    }
 }

@@ -59,7 +59,13 @@ namespace ResumeAI.API.Services
                     {
                         _logger.LogInformation("Processing expired subscription for user: {userId}", subscription.user_id);
                         
-                        // Create a new free subscription
+                        // Step 1: Set the expired subscription to inactive
+                        subscription.is_active = false;
+                        subscription.updated_at = DateTime.UtcNow;
+                        await userService.AddOrUpdateSubscriptionAsync(subscription);
+                        _logger.LogInformation("Set expired subscription to inactive for user: {userId}", subscription.user_id);
+                        
+                        // Step 2: Create a new free subscription
                         var newSubscription = new Subscription
                         {
                             id = Guid.NewGuid().ToString(),
@@ -75,19 +81,20 @@ namespace ResumeAI.API.Services
                         
                         // Add the new free subscription
                         await userService.AddOrUpdateSubscriptionAsync(newSubscription);
+                        _logger.LogInformation("Created new free subscription for user: {userId}", subscription.user_id);
                         
-                        // Reset usage for free plan
+                        // Step 3: Reset usage for free plan
                         await userService.ResetUsageOnUpgradeAsync(subscription.user_id, "free");
                         _logger.LogInformation("Reset usage for free plan for user: {userId}", subscription.user_id);
                         
-                        // Log activity
+                        // Step 4: Log activity
                         await activityLogService.LogActivity(
                             subscription.user_id, 
                             "subscription_expired", 
-                            $"Subscription expired and downgraded to free plan with usage reset"
+                            $"Subscription '{subscription.subscription_type}' expired and downgraded to free plan with usage reset"
                         );
                         
-                        _logger.LogInformation("Successfully downgraded expired subscription for user: {userId}", subscription.user_id);
+                        _logger.LogInformation("Successfully processed expired subscription for user: {userId} - old subscription deactivated, new free subscription created", subscription.user_id);
                     }
                     catch (Exception ex)
                     {

@@ -984,6 +984,18 @@ export const api = {
           console.error("Error in subscription cancellation API:", error);
           return { data: null, error: error.message || "API call failed" };
         });
+    },
+    getDowngradeStatus: () => {
+      console.log("Fetching subscription downgrade status");
+      return apiCall<any>("GET", "/subscription/downgrade-status")
+        .then(result => {
+          console.log("Downgrade status data:", result);
+          return result;
+        })
+        .catch(error => {
+          console.error("Error fetching downgrade status:", error);
+          return { data: null, error: error.message || "Failed to fetch downgrade status" };
+        });
     }
   },
   usage: {

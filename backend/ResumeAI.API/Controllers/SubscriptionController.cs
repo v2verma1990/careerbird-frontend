@@ -142,6 +142,30 @@ namespace ResumeAI.API.Controllers
                 return StatusCode(500, new { error = ex.Message });
             }
         }
+
+        [HttpGet("downgrade-status")]
+        public async Task<IActionResult> GetDowngradeStatus()
+        {
+            try
+            {
+                string userId = _authService.ExtractUserIdFromAuthHeader(Request.Headers["Authorization"].ToString());
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized(new { error = "Invalid or missing authorization token" });
+                }
+
+                var downgradeInfo = await _userService.CheckRecentDowngrade(userId);
+                return Ok(downgradeInfo);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
     }
 
     public class UpgradeSubscriptionRequest

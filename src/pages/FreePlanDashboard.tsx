@@ -11,6 +11,7 @@ import api, { checkBackendStatus } from "@/utils/apiClient";
 import DefaultResumeUploader from "@/components/DefaultResumeUploader";
 import TopNavigation from "@/components/TopNavigation";
 import "@/styles/FreePlanDashboard.css";
+import { SubscriptionDowngradeInfo } from "@/types/subscription";
 import { 
   User, 
   Settings, 
@@ -120,6 +121,26 @@ const FreePlanDashboard = () => {
   const [loadingUsage, setLoadingUsage] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [upgradePrompt, setUpgradePrompt] = useState<string | null>(null);
+  const [downgradeInfo, setDowngradeInfo] = useState<SubscriptionDowngradeInfo | null>(null);
+  const [showDowngradeBanner, setShowDowngradeBanner] = useState(true);
+
+  // Fetch downgrade status
+  useEffect(() => {
+    if (!user || subscriptionLoading) return;
+    
+    const fetchDowngradeStatus = async () => {
+      try {
+        const { data, error } = await api.subscription.getDowngradeStatus();
+        if (!error && data) {
+          setDowngradeInfo(data);
+        }
+      } catch (error) {
+        console.error("Error fetching downgrade status:", error);
+      }
+    };
+    
+    fetchDowngradeStatus();
+  }, [user, subscriptionLoading]);
 
   // Fetch feature usage
   useEffect(() => {

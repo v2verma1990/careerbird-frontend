@@ -44,6 +44,9 @@ namespace ResumeAI.API.Services
                 throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
             }
             
+            // Check for expired subscriptions in real-time during login
+            await CheckAndProcessExpiredSubscriptionForUser(userId);
+            
             return await GetUserSubscriptionAsync(userId);
         }
 
@@ -931,7 +934,8 @@ namespace ResumeAI.API.Services
         }
         
         /// <summary>
-        /// Gets all subscriptions that are cancelled and have an end date in the past.
+        /// Gets all subscriptions that have expired and need to be processed.
+        /// This includes both cancelled subscriptions past their end date AND non-cancelled subscriptions past their end date.
         /// </summary>
         /// <returns>A list of expired subscriptions</returns>
         public async Task<List<Subscription>> GetExpiredSubscriptions()
@@ -943,8 +947,11 @@ namespace ResumeAI.API.Services
                 // Current date in UTC for comparison
                 var currentDate = DateTime.UtcNow;
                 
-                // Query for subscriptions that are cancelled and have an end date in the past
-                var url = $"{_supabaseHttpClientService.Url}/rest/v1/subscriptions?is_cancelled=eq.true&end_date=lt.{Uri.EscapeDataString(currentDate.ToString("o"))}&is_active=eq.true&select=*";
+                // Query for ALL subscriptions that:
+                // 1. Are currently active (is_active=true)
+                // 2. Have an end_date that is in the past
+                // 3. Are not free subscriptions (free subscriptions don't expire)
+                var url = $"{_supabaseHttpClientService.Url}/rest/v1/subscriptions?is_active=eq.true&end_date=lt.{Uri.EscapeDataString(currentDate.ToString("o"))}&subscription_type=neq.free&select=*";
                 Console.WriteLine($"Expired subscriptions URL: {url}");
                 
                 var response = await _supabaseHttpClientService.Client.GetAsync(url);
@@ -968,6 +975,133 @@ namespace ResumeAI.API.Services
             {
                 Console.WriteLine($"Exception in GetExpiredSubscriptions: {ex.Message}");
                 return new List<Subscription>();
+            }
+        }
+
+        /// <summary>
+        /// Checks if a specific user has expired subscriptions and processes them in real-time.
+        /// This is called during login to ensure immediate handling of expired subscriptions.
+        /// </summary>
+        /// <param name="userId">The user ID to check</param>
+        public async Task CheckAndProcessExpiredSubscriptionForUser(string userId)
+        {
+            try
+            {
+                Console.WriteLine($"CheckAndProcessExpiredSubscriptionForUser: Checking user {userId}");
+                
+                // Get all active subscriptions for this user
+                var allSubscriptions = await GetAllUserSubscriptionsAsync(userId);
+                var currentDate = DateTime.UtcNow;
+                
+                // Find expired subscriptions for this user
+                var expiredSubscriptions = allSubscriptions
+                    .Where(s => s.is_active && 
+                               s.end_date.HasValue && 
+                               s.end_date.Value < currentDate && 
+                               s.subscription_type != "free")
+                    .ToList();
+                
+                if (expiredSubscriptions.Count == 0)
+                {
+                    Console.WriteLine($"No expired subscriptions found for user {userId}");
+                    return;
+                }
+                
+                Console.WriteLine($"Found {expiredSubscriptions.Count} expired subscriptions for user {userId}");
+                
+                foreach (var expiredSubscription in expiredSubscriptions)
+                {
+                    Console.WriteLine($"Processing expired subscription: {expiredSubscription.id} for user {userId}");
+                    
+                    // Set the expired subscription to inactive
+                    expiredSubscription.is_active = false;
+                    expiredSubscription.updated_at = DateTime.UtcNow;
+                    await AddOrUpdateSubscriptionAsync(expiredSubscription);
+                    
+                    // Check if user already has a free subscription
+                    var existingFreeSubscription = allSubscriptions
+                        .FirstOrDefault(s => s.subscription_type == "free" && s.is_active);
+                    
+                    if (existingFreeSubscription == null)
+                    {
+                        // Create a new free subscription
+                        var newFreeSubscription = new Subscription
+                        {
+                            id = Guid.NewGuid().ToString(),
+                            user_id = userId,
+                            subscription_type = "free",
+                            start_date = DateTime.UtcNow,
+                            end_date = null,
+                            created_at = DateTime.UtcNow,
+                            updated_at = DateTime.UtcNow,
+                            is_cancelled = false,
+                            is_active = true
+                        };
+                        
+                        await AddOrUpdateSubscriptionAsync(newFreeSubscription);
+                        Console.WriteLine($"Created new free subscription for user {userId}");
+                    }
+                    
+                    // Reset usage for free plan
+                    await ResetUsageOnUpgradeAsync(userId, "free");
+                    Console.WriteLine($"Reset usage for free plan for user {userId}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception in CheckAndProcessExpiredSubscriptionForUser: {ex.Message}");
+                // Don't throw - this is a background check that shouldn't break login
+            }
+        }
+
+        /// <summary>
+        /// Checks if a user was recently downgraded from a paid subscription to free.
+        /// This is used to show appropriate messaging on the dashboard.
+        /// </summary>
+        /// <param name="userId">The user ID to check</param>
+        /// <returns>Information about recent downgrade</returns>
+        public async Task<SubscriptionDowngradeInfo> CheckRecentDowngrade(string userId)
+        {
+            try
+            {
+                Console.WriteLine($"CheckRecentDowngrade: Checking user {userId}");
+                
+                var allSubscriptions = await GetAllUserSubscriptionsAsync(userId);
+                var currentDate = DateTime.UtcNow;
+                var recentThreshold = currentDate.AddDays(-7); // Check last 7 days
+                
+                // Find recently deactivated paid subscriptions
+                var recentlyDeactivated = allSubscriptions
+                    .Where(s => !s.is_active && 
+                               s.subscription_type != "free" &&
+                               s.updated_at >= recentThreshold)
+                    .OrderByDescending(s => s.updated_at)
+                    .FirstOrDefault();
+                
+                // Check if user currently has an active free subscription
+                var currentFreeSubscription = allSubscriptions
+                    .FirstOrDefault(s => s.is_active && s.subscription_type == "free");
+                
+                if (recentlyDeactivated != null && currentFreeSubscription != null)
+                {
+                    return new SubscriptionDowngradeInfo
+                    {
+                        WasRecentlyDowngraded = true,
+                        PreviousSubscriptionType = recentlyDeactivated.subscription_type,
+                        DowngradeDate = recentlyDeactivated.updated_at,
+                        CurrentSubscriptionType = currentFreeSubscription.subscription_type
+                    };
+                }
+                
+                return new SubscriptionDowngradeInfo
+                {
+                    WasRecentlyDowngraded = false
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception in CheckRecentDowngrade: {ex.Message}");
+                return new SubscriptionDowngradeInfo { WasRecentlyDowngraded = false };
             }
         }
     }

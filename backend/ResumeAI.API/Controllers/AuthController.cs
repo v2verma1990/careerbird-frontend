@@ -24,7 +24,7 @@ namespace ResumeAI.API.Controllers
         }
 
         [HttpPost("login")]
-        [AllowAnonymous] // Allow anonymous access for login
+       // [AllowAnonymous] // Allow anonymous access for login
         public async Task<IActionResult> Login([FromBody] AuthRequest request)
         {
             try
