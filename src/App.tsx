@@ -51,6 +51,7 @@ import UpcomingFeatures from '@/pages/UpcomingFeatures';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import CandidateProtectedRoute from '@/components/CandidateProtectedRoute';
 import RecruiterProtectedRoute from '@/components/RecruiterProtectedRoute';
+import FreePlanProtectedRoute from '@/components/FreePlanProtectedRoute';
 
 // Navigation
 import Navbar from '@/components/Navbar';
@@ -103,9 +104,9 @@ const App = () => {
               <Route 
                 path="/free-plan-dashboard" 
                 element={
-                  <CandidateProtectedRoute>
+                  <FreePlanProtectedRoute>
                     <FreePlanDashboard />
-                  </CandidateProtectedRoute>
+                  </FreePlanProtectedRoute>
                 } 
               />
               
