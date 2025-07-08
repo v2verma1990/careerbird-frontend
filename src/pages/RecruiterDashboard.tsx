@@ -1,16 +1,19 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/auth/AuthContext";
-import { UserPlus, FileText, FileSearch, Upload, MessageSquare, PieChart, Settings, User, Crown, Zap, TrendingUp, Award, Star } from "lucide-react";
+import { 
+  UserPlus, FileText, FileSearch, Upload, MessageSquare, PieChart, 
+  Settings, User, Crown, Zap, TrendingUp, Award, Star, Users, 
+  BarChart3, Filter, Target, Brain, FileSpreadsheet 
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import api from "@/utils/apiClient";
 import ProgressBar from "@/components/ProgressBar";
 import "@/styles/Dashboard.css";
 
-const Dashboard = () => {
+const RecruiterDashboard = () => {
   const navigate = useNavigate();
   const { user, userType, subscriptionStatus, incrementUsageCount, subscriptionLoading, restoringSession, cancelSubscription } = useAuth();
   const [cancelLoading, setCancelLoading] = useState(false);
@@ -53,17 +56,12 @@ const Dashboard = () => {
   const [error, setError] = useState<string | null>(null);
 
   const handleFindCandidates = async () => {
-    // Increment usage and navigate
     try {
       setIsLoading(true);
-      // Always use per-feature usage/limit from featureUsage
       const usage = featureUsage['find_candidates'] || { usageCount: 0, usageLimit: 0 };
       const newCount = await incrementUsageCount("find_candidates");
-      // Check if user has reached usage limit
-      if (
-        (subscriptionStatus?.type === 'free' && newCount > usage.usageLimit) ||
-        (subscriptionStatus?.type === 'basic' && newCount > usage.usageLimit)
-      ) {
+      
+      if (newCount > usage.usageLimit && usage.usageLimit > 0) {
         alert("You've reached your usage limit. Please upgrade your subscription to continue.");
         return;
       }
@@ -75,35 +73,115 @@ const Dashboard = () => {
     }
   };
 
-  // Features specific to recruiters
+  const handleMultiResumeAnalysis = async () => {
+    try {
+      const usage = featureUsage['multi_resume_analysis'] || { usageCount: 0, usageLimit: 0 };
+      const newCount = await incrementUsageCount("multi_resume_analysis");
+      
+      if (newCount > usage.usageLimit && usage.usageLimit > 0) {
+        alert("You've reached your usage limit. Please upgrade your subscription to continue.");
+        return;
+      }
+      // Navigate to multi-resume analysis page (to be created)
+      navigate('/multi-resume-analysis');
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
+
+  const handleAIMatching = async () => {
+    try {
+      const usage = featureUsage['ai_matching'] || { usageCount: 0, usageLimit: 0 };
+      const newCount = await incrementUsageCount("ai_matching");
+      
+      if (newCount > usage.usageLimit && usage.usageLimit > 0) {
+        alert("You've reached your usage limit. Please upgrade your subscription to continue.");
+        return;
+      }
+      // Navigate to AI matching page (to be created)
+      navigate('/ai-matching');
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
+
+  // Comprehensive recruiter features
   const recruiterFeatures = [
     {
       key: "find_candidates",
       title: "Find Best Candidates",
       description: "Use AI to find the best candidates based on job description",
-      icon: <UserPlus className="w-10 h-10 text-blue-500" />,
+      icon: <UserPlus className="w-10 h-10 text-white" />,
       action: handleFindCandidates,
       buttonText: isLoading ? "Loading..." : "Find Candidates",
       gradient: "from-blue-500 to-cyan-500"
     },
     {
-      key: "optimize_job",
-      title: "Optimize Job Description",
-      description: "Create an optimized job description using AI",
-      icon: <FileText className="w-10 h-10 text-purple-500" />,
-      route: "/optimize-job",
-      buttonText: "Create Job Description",
+      key: "multi_resume_analysis",
+      title: "Multi-Resume Analysis",
+      description: "Upload and analyze multiple resumes simultaneously for bulk screening",
+      icon: <Users className="w-10 h-10 text-white" />,
+      action: handleMultiResumeAnalysis,
+      buttonText: "Analyze Resumes",
       gradient: "from-purple-500 to-pink-500"
     },
     {
-      key: "candidate_analysis",
-      title: "Candidate Analysis",
-      description: "Analyze candidate applications and generate reports",
-      icon: <PieChart className="w-10 h-10 text-green-500" />,
-      route: "/candidate-analysis",
-      buttonText: "View Analysis",
-      comingSoon: true,
+      key: "ai_matching",
+      title: "AI-Powered Matching",
+      description: "Intelligent candidate-to-job matching using advanced algorithms",
+      icon: <Brain className="w-10 h-10 text-white" />,
+      action: handleAIMatching,
+      buttonText: "Start Matching",
       gradient: "from-green-500 to-emerald-500"
+    },
+    {
+      key: "skill_gap_analysis",
+      title: "Skill Gap Analysis",
+      description: "Identify missing skills and competencies in candidate profiles",
+      icon: <Target className="w-10 h-10 text-white" />,
+      route: "/skill-gap-analysis",
+      buttonText: "Analyze Skills",
+      comingSoon: true,
+      gradient: "from-orange-500 to-red-500"
+    },
+    {
+      key: "automated_feedback",
+      title: "Automated Feedback",
+      description: "Generate detailed candidate assessments and feedback reports",
+      icon: <MessageSquare className="w-10 h-10 text-white" />,
+      route: "/automated-feedback",
+      buttonText: "Generate Feedback",
+      comingSoon: true,
+      gradient: "from-indigo-500 to-purple-500"
+    },
+    {
+      key: "detailed_reports",
+      title: "Detailed Reports",
+      description: "Export comprehensive evaluation reports and analytics",
+      icon: <FileSpreadsheet className="w-10 h-10 text-white" />,
+      route: "/detailed-reports",
+      buttonText: "View Reports",
+      comingSoon: true,
+      gradient: "from-teal-500 to-cyan-500"
+    },
+    {
+      key: "candidate_comparison",
+      title: "Candidate Comparison",
+      description: "Side-by-side candidate comparison tools for better decisions",
+      icon: <BarChart3 className="w-10 h-10 text-white" />,
+      route: "/candidate-comparison",
+      buttonText: "Compare Candidates",
+      comingSoon: true,
+      gradient: "from-pink-500 to-rose-500"
+    },
+    {
+      key: "optimize_job",
+      title: "Optimize Job Description",
+      description: "Create an optimized job description using AI",
+      icon: <FileText className="w-10 h-10 text-white" />,
+      route: "/optimize-job",
+      buttonText: "Create Job Description",
+      gradient: "from-amber-500 to-orange-500"
     }
   ];
 
@@ -116,34 +194,49 @@ const Dashboard = () => {
     api.usage.getAllFeatureUsage(user.id)
       .then(({ data, error }) => {
         if (error) {
-          console.warn('Usage data fetch failed, but continuing with default limits:', error);
-          // Don't set error state - just use default limits
+          console.warn('Usage data fetch failed, using default limits:', error);
+          // Set default limits for recruiter features
           setFeatureUsage({
-            find_candidates: { usageCount: 0, usageLimit: 10 },
-            optimize_job: { usageCount: 0, usageLimit: 10 },
-            candidate_analysis: { usageCount: 0, usageLimit: 10 }
+            find_candidates: { usageCount: 0, usageLimit: subscriptionStatus?.type === 'free' ? 3 : 50 },
+            multi_resume_analysis: { usageCount: 0, usageLimit: subscriptionStatus?.type === 'free' ? 1 : 20 },
+            ai_matching: { usageCount: 0, usageLimit: subscriptionStatus?.type === 'free' ? 2 : 100 },
+            skill_gap_analysis: { usageCount: 0, usageLimit: subscriptionStatus?.type === 'free' ? 1 : 30 },
+            automated_feedback: { usageCount: 0, usageLimit: subscriptionStatus?.type === 'free' ? 1 : 25 },
+            detailed_reports: { usageCount: 0, usageLimit: subscriptionStatus?.type === 'free' ? 1 : 15 },
+            candidate_comparison: { usageCount: 0, usageLimit: subscriptionStatus?.type === 'free' ? 2 : 40 },
+            optimize_job: { usageCount: 0, usageLimit: subscriptionStatus?.type === 'free' ? 2 : 30 }
           });
         } else if (data) {
           setFeatureUsage(data);
         } else {
+          // Fallback to default limits
           setFeatureUsage({
-            find_candidates: { usageCount: 0, usageLimit: 10 },
-            optimize_job: { usageCount: 0, usageLimit: 10 },
-            candidate_analysis: { usageCount: 0, usageLimit: 10 }
+            find_candidates: { usageCount: 0, usageLimit: subscriptionStatus?.type === 'free' ? 3 : 50 },
+            multi_resume_analysis: { usageCount: 0, usageLimit: subscriptionStatus?.type === 'free' ? 1 : 20 },
+            ai_matching: { usageCount: 0, usageLimit: subscriptionStatus?.type === 'free' ? 2 : 100 },
+            skill_gap_analysis: { usageCount: 0, usageLimit: subscriptionStatus?.type === 'free' ? 1 : 30 },
+            automated_feedback: { usageCount: 0, usageLimit: subscriptionStatus?.type === 'free' ? 1 : 25 },
+            detailed_reports: { usageCount: 0, usageLimit: subscriptionStatus?.type === 'free' ? 1 : 15 },
+            candidate_comparison: { usageCount: 0, usageLimit: subscriptionStatus?.type === 'free' ? 2 : 40 },
+            optimize_job: { usageCount: 0, usageLimit: subscriptionStatus?.type === 'free' ? 2 : 30 }
           });
         }
         setLoadingUsage(false);
       })
       .catch((catchError) => {
         console.warn('Usage API call completely failed, using default limits:', catchError);
-        // Don't block the UI - provide default limits
+        // Provide default limits
         setFeatureUsage({
-          find_candidates: { usageCount: 0, usageLimit: 10 },
-          optimize_job: { usageCount: 0, usageLimit: 10 },
-          candidate_analysis: { usageCount: 0, usageLimit: 10 }
+          find_candidates: { usageCount: 0, usageLimit: subscriptionStatus?.type === 'free' ? 3 : 50 },
+          multi_resume_analysis: { usageCount: 0, usageLimit: subscriptionStatus?.type === 'free' ? 1 : 20 },
+          ai_matching: { usageCount: 0, usageLimit: subscriptionStatus?.type === 'free' ? 2 : 100 },
+          skill_gap_analysis: { usageCount: 0, usageLimit: subscriptionStatus?.type === 'free' ? 1 : 30 },
+          automated_feedback: { usageCount: 0, usageLimit: subscriptionStatus?.type === 'free' ? 1 : 25 },
+          detailed_reports: { usageCount: 0, usageLimit: subscriptionStatus?.type === 'free' ? 1 : 15 },
+          candidate_comparison: { usageCount: 0, usageLimit: subscriptionStatus?.type === 'free' ? 2 : 40 },
+          optimize_job: { usageCount: 0, usageLimit: subscriptionStatus?.type === 'free' ? 2 : 30 }
         });
         setLoadingUsage(false);
-        // Don't set error state to avoid blocking the UI
       });
   }, [user, subscriptionStatus]);
 
@@ -151,7 +244,6 @@ const Dashboard = () => {
   const handleCancelSubscription = async () => {
     if (!user) return;
     
-    // Confirm cancellation
     if (!window.confirm("Are you sure you want to cancel your subscription? You will be downgraded to the free plan at the end of your billing period.")) {
       return;
     }
@@ -170,17 +262,16 @@ const Dashboard = () => {
   const handleFeatureClick = async (feature: any) => {
     if (!user) return;
     const usage = featureUsage[feature.key] || { usageCount: 0, usageLimit: 0 };
-    if (
-      (subscriptionStatus?.type === "free" && usage.usageCount >= usage.usageLimit) ||
-      (subscriptionStatus?.type === "basic" && usage.usageCount >= usage.usageLimit)
-    ) {
+    
+    if (usage.usageLimit > 0 && usage.usageCount >= usage.usageLimit) {
       alert(
-        subscriptionStatus.type === "free"
+        subscriptionStatus?.type === "free"
           ? "You have reached your free usage limit. Please upgrade to access more features."
           : "You have reached your monthly usage limit. Upgrade to premium for unlimited access."
       );
       return;
     }
+    
     if (feature.route) {
       navigate(feature.route);
     } else if (feature.action) {
@@ -193,7 +284,7 @@ const Dashboard = () => {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex justify-center items-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 text-lg">Loading your dashboard...</p>
+          <p className="text-gray-600 text-lg">Loading your recruiter dashboard...</p>
         </div>
       </div>
     );
@@ -240,7 +331,7 @@ const Dashboard = () => {
                   Recruiter Dashboard
                   <Zap className="w-6 h-6 text-yellow-500" />
                 </h1>
-                <p className="text-gray-600 mt-1">Welcome back, {user.email}! Ready to find your next hire?</p>
+                <p className="text-gray-600 mt-1">Welcome back! Ready to find your next hire?</p>
               </div>
             </div>
             
@@ -318,7 +409,7 @@ const Dashboard = () => {
                       <Star className="w-4 h-4 mr-2" />
                       {subscriptionStatus.cancelled ? 
                         (subscriptionStatus.type === "recruiter" ? "Renew Recruiter" : "Renew Subscription") : 
-                        "Upgrade"}
+                        "Upgrade to Recruiter Pro"}
                     </Button>
                   )}
                   
@@ -340,11 +431,11 @@ const Dashboard = () => {
         )}
 
         {/* Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {recruiterFeatures.map((feature, index) => {
             const usage = featureUsage[feature.key] || { usageCount: 0, usageLimit: 0 };
-            const isBlocked = (subscriptionStatus.type === "free" && usage.usageCount >= usage.usageLimit) || (subscriptionStatus.type === "basic" && usage.usageCount >= usage.usageLimit);
-            const progressPercentage = Math.min(100, (usage.usageCount / (usage.usageLimit || 1)) * 100);
+            const isBlocked = usage.usageLimit > 0 && usage.usageCount >= usage.usageLimit;
+            const progressPercentage = usage.usageLimit > 0 ? Math.min(100, (usage.usageCount / usage.usageLimit) * 100) : 0;
             
             return (
               <Card key={index} className="group overflow-hidden border-0 shadow-2xl bg-white/90 backdrop-blur-sm transition-all duration-300 hover:shadow-3xl hover:scale-105">
@@ -355,19 +446,20 @@ const Dashboard = () => {
                       {feature.icon}
                     </div>
                   </div>
-                  <CardTitle className="text-center text-xl font-bold text-gray-900">{feature.title}</CardTitle>
+                  <CardTitle className="text-center text-lg font-bold text-gray-900">{feature.title}</CardTitle>
                   <p className="text-center text-gray-600 text-sm">{feature.description}</p>
                 </CardHeader>
                 
                 <CardContent className="space-y-4">
-                  <ProgressBar 
-                    percentage={progressPercentage} 
-                    gradientClasses={feature.gradient} 
-                  />
+                  {usage.usageLimit > 0 && (
+                    <ProgressBar 
+                      percentage={progressPercentage} 
+                      gradientClasses={feature.gradient} 
+                    />
+                  )}
                   
                   <div className="text-center">
                     <div className="text-sm font-medium text-gray-900">
-                      {/* Show actual usage limit for all plans */}
                       {usage.usageLimit > 0 ? (
                         `${usage.usageCount}/${usage.usageLimit} uses this month`
                       ) : (
@@ -402,13 +494,13 @@ const Dashboard = () => {
                         <Award className="w-4 h-4 mr-2" />
                         Coming Soon
                       </>
-                    ) : (
+                    ) : isBlocked ? (
                       <>
-                        {feature.action === handleFindCandidates && isLoading ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        ) : null}
-                        {feature.buttonText}
+                        <Crown className="w-4 h-4 mr-2" />
+                        Upgrade Required
                       </>
+                    ) : (
+                      feature.buttonText
                     )}
                   </Button>
                 </CardFooter>
@@ -416,29 +508,9 @@ const Dashboard = () => {
             );
           })}
         </div>
-
-        {/* Stats Card */}
-        <Card className="mt-8 shadow-2xl border-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
-          <CardContent className="p-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-              <div className="space-y-2">
-                <div className="text-3xl font-bold">50K+</div>
-                <p className="text-blue-100">Candidates Found</p>
-              </div>
-              <div className="space-y-2">
-                <div className="text-3xl font-bold">95%</div>
-                <p className="text-blue-100">Success Rate</p>
-              </div>
-              <div className="space-y-2">
-                <div className="text-3xl font-bold">24/7</div>
-                <p className="text-blue-100">AI Support</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
 };
 
-export default Dashboard;
+export default RecruiterDashboard;

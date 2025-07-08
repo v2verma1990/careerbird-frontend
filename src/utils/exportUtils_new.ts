@@ -125,13 +125,6 @@ export const exportResumeAsPDF = async (
 ): Promise<void> => {
   // Use the new template-specific PDF export system
   const newOptions: NewPDFExportOptions = {
-    format: options.format || 'a4',
-    orientation: options.orientation || 'portrait',
-    quality: options.quality || 0.92,
-    scale: options.scale || 1.5,
-    margin: options.margin || { top: 15, right: 15, bottom: 15, left: 15 },
-    includeBackground: options.includeBackground !== false,
-    optimizeForPrint: options.optimizeForPrint !== false,
     templateColor: options.templateColor || '#315389',
     templateId: options.templateId || 'navy-column-modern'
   };

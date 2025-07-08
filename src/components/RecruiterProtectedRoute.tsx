@@ -28,14 +28,20 @@ export default function RecruiterProtectedRoute({ children }: { children: JSX.El
       onRetry={() => fetchSubscriptionStatus && fetchSubscriptionStatus()}
     >
       {(() => {
-        // If subscription is free, inactive, or cancelled and expired, redirect to free plan dashboard
-        if (subscriptionStatus?.type === 'free' || 
-            !subscriptionStatus?.active || 
-            (subscriptionStatus?.cancelled && subscriptionStatus?.endDate && new Date() >= subscriptionStatus.endDate)) {
-          console.log(`Redirecting recruiter to free-plan-dashboard (subscription: ${subscriptionStatus?.type}, active: ${subscriptionStatus?.active}, cancelled: ${subscriptionStatus?.cancelled}, endDate: ${subscriptionStatus?.endDate})`);
+        // Free plan recruiters should go to free plan dashboard
+        if (subscriptionStatus?.type === 'free') {
+          console.log(`Redirecting free plan recruiter to free-plan-dashboard`);
           return <Navigate to="/free-plan-dashboard" replace />;
         }
         
+        // Paid plan recruiters with inactive/cancelled subscriptions
+        if (!subscriptionStatus?.active || 
+            (subscriptionStatus?.cancelled && subscriptionStatus?.endDate && new Date() >= subscriptionStatus.endDate)) {
+          console.log(`Redirecting recruiter with inactive subscription to free-plan-dashboard`);
+          return <Navigate to="/free-plan-dashboard" replace />;
+        }
+        
+        // Active paid subscription recruiters can access recruiter dashboard
         return children;
       })()}
     </SubscriptionErrorBoundary>
