@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Linq;
 using ResumeAI.API.Models;
 using System.Net.Http.Headers;
 
@@ -88,7 +89,9 @@ namespace ResumeAI.API.Services
                 start_date = DateTime.UtcNow,
                 end_date = subscriptionType == "free" ? null : DateTime.UtcNow.AddYears(1),
                 created_at = DateTime.UtcNow,
-                updated_at = DateTime.UtcNow
+                updated_at = DateTime.UtcNow,
+                is_active = true,
+                is_cancelled = false
             };
             var url = $"{_supabaseHttpClientService.Url}/rest/v1/subscriptions";
             var json = JsonSerializer.Serialize(subscription, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
@@ -96,8 +99,10 @@ namespace ResumeAI.API.Services
             var response = await _supabaseHttpClientService.Client.PostAsync(url, content);
             if (!response.IsSuccessStatusCode)
             {
+                var errorContent = await response.Content.ReadAsStringAsync();
                 Console.WriteLine($"Error inserting subscription: {response.StatusCode}");
-                Console.WriteLine($"Response: {await response.Content.ReadAsStringAsync()}");
+                Console.WriteLine($"Response: {errorContent}");
+                throw new Exception($"Failed to create subscription: {response.StatusCode} - {errorContent}");
             }
             else
             {
@@ -138,37 +143,92 @@ namespace ResumeAI.API.Services
         {
             Console.WriteLine($"GetUserByEmailAsync: {email}");
             
+            var serviceKey = _supabaseHttpClientService.GetServiceKey();
+            if (!string.IsNullOrEmpty(serviceKey)) {
+                Console.WriteLine("Using service key for activity logging");
+                _supabaseHttpClientService.SetServiceKey();
+            } else {
+                Console.WriteLine("Warning: No service key available for activity logging");
+            }
 
-                var serviceKey = _supabaseHttpClientService.GetServiceKey();
-                if (!string.IsNullOrEmpty(serviceKey)) {
-                    Console.WriteLine("Using service key for activity logging");
-                    _supabaseHttpClientService.SetServiceKey();
-                } else {
-                    Console.WriteLine("Warning: No service key available for activity logging");
-                }
-
+            // First try to get user from profiles table
             var url = $"{_supabaseHttpClientService.Url}/rest/v1/profiles?email=eq.{Uri.EscapeDataString(email)}&select=*";
-            Console.WriteLine($"Fetching user by email: {url}");
+            Console.WriteLine($"Fetching user by email from profiles: {url}");
             var response = await _supabaseHttpClientService.Client.GetAsync(url);
             
-            if (!response.IsSuccessStatusCode)
+            if (response.IsSuccessStatusCode)
             {
-                Console.WriteLine($"Error fetching user by email: {response.StatusCode}");
-                Console.WriteLine($"Response: {await response.Content.ReadAsStringAsync()}");
-                throw new UnauthorizedAccessException("User not found");
+                var content = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"GetUserByEmailAsync profiles response: {content}");
+                
+                if (!string.IsNullOrEmpty(content) && content != "[]")
+                {
+                    var users = JsonSerializer.Deserialize<List<User>>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<User>();
+                    var foundUser = users.FirstOrDefault();
+                    if (foundUser != null)
+                    {
+                        Console.WriteLine($"Found user in profiles table: {foundUser.Id}");
+                        return foundUser;
+                    }
+                }
             }
             
-            var content = await response.Content.ReadAsStringAsync();
-            if (string.IsNullOrEmpty(content)|| content == "[]")
+            // If not found in profiles, try to get from auth.users table using admin API
+            Console.WriteLine("User not found in profiles table, checking auth.users table");
+            try
             {
-                Console.WriteLine("No user found with the provided email.");
-                throw new UnauthorizedAccessException("User not found");
+                var authUrl = $"{_supabaseHttpClientService.Url}/auth/v1/admin/users";
+                Console.WriteLine($"Fetching users from auth table: {authUrl}");
+                
+                var authResponse = await _supabaseHttpClientService.Client.GetAsync(authUrl);
+                if (authResponse.IsSuccessStatusCode)
+                {
+                    var authContent = await authResponse.Content.ReadAsStringAsync();
+                    Console.WriteLine($"Auth users response: {authContent}");
+                    
+                    // Parse the auth response to find user by email
+                    var authData = JsonSerializer.Deserialize<JsonElement>(authContent);
+                    if (authData.TryGetProperty("users", out var usersArray))
+                    {
+                        foreach (var userElement in usersArray.EnumerateArray())
+                        {
+                            if (userElement.TryGetProperty("email", out var emailProp) && 
+                                emailProp.GetString()?.Equals(email, StringComparison.OrdinalIgnoreCase) == true)
+                            {
+                                var userId = userElement.GetProperty("id").GetString();
+                                var userType = "candidate"; // default
+                                
+                                // Try to get user_type from user_metadata or app_metadata
+                                if (userElement.TryGetProperty("user_metadata", out var userMeta) &&
+                                    userMeta.TryGetProperty("user_type", out var userTypeProp))
+                                {
+                                    userType = userTypeProp.GetString() ?? "candidate";
+                                }
+                                else if (userElement.TryGetProperty("app_metadata", out var appMeta) &&
+                                         appMeta.TryGetProperty("user_type", out var appUserTypeProp))
+                                {
+                                    userType = appUserTypeProp.GetString() ?? "candidate";
+                                }
+                                
+                                Console.WriteLine($"Found user in auth.users: {userId}, email: {email}, type: {userType}");
+                                return new User 
+                                { 
+                                    Id = userId ?? string.Empty, 
+                                    Email = email, 
+                                    UserType = userType 
+                                };
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error checking auth.users table: {ex.Message}");
             }
             
-            Console.WriteLine($"GetUserByEmailAsync response content: {content}");
-            
-            var users = JsonSerializer.Deserialize<List<User>>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<User>();
-            return users.FirstOrDefault() ??throw new UnauthorizedAccessException("User not found");
+            Console.WriteLine("User not found in either profiles or auth.users table");
+            throw new UnauthorizedAccessException("User not found");
         }
         
         public async Task<User> AddUserAsync(User user)

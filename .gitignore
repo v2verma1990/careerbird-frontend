@@ -116,3 +116,6 @@ coverage/
 *~
 
 # End of file
+supabase/migrations/
+
+supabase/migrations/

@@ -4,8 +4,12 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using System.Linq;
+using System.IO;
+using System.Collections.Generic;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Http;
 
 namespace ResumeAI.API.Services
 {
@@ -44,24 +48,86 @@ namespace ResumeAI.API.Services
 
             // Get user profile
             var userProfile = await _userService.GetUserProfileAsync(user.Id);
-            Console.WriteLine($"Found profile: {userProfile.Id}, type: {userProfile.UserType}, subscription: {userProfile.SubscriptionType}");
+            Console.WriteLine($"Found profile: {userProfile.Id}, email: '{userProfile.Email}', type: {userProfile.UserType}, subscription: {userProfile.SubscriptionType}");
             
-            // Update profile if it's missing data
+            // Check if this is a new user (profile doesn't exist or has minimal data)
+            bool isNewUser = string.IsNullOrEmpty(userProfile.UserType) || userProfile.UserType == "undefined";
             bool needsUpdate = false;
-            if (string.IsNullOrEmpty(userProfile.UserType) || userProfile.UserType == "undefined")
+            
+            // Also check if email is missing (common issue with trigger)
+            bool emailMissing = string.IsNullOrEmpty(userProfile.Email);
+            
+            if (isNewUser)
             {
+                Console.WriteLine("New user detected - creating default profile");
+                
+                // Set default values for new user
+                userProfile.Id = user.Id;
+                userProfile.Email = !string.IsNullOrEmpty(user.Email) ? user.Email : request.Email;
+                userProfile.UserType = user.UserType ?? request.UserType ?? "candidate";
+                userProfile.SubscriptionType = "free"; // Default subscription type
+                userProfile.CreatedAt = DateTime.UtcNow;
+                userProfile.UpdatedAt = DateTime.UtcNow;
+                needsUpdate = true;
+                
+                // Create a default free subscription for new users
+                try
+                {
+                    Console.WriteLine($"Creating default free subscription for new user: {user.Id}");
+                    await _userService.CreateOrUpdateSubscription(user.Id, "free");
+                    Console.WriteLine("Default subscription created successfully");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Warning: Failed to create default subscription: {ex.Message}");
+                    // Don't fail authentication if subscription creation fails
+                }
+            }
+            else if (emailMissing)
+            {
+                Console.WriteLine("Existing user with missing email - updating profile");
+                
+                // Fix missing email for existing user
+                userProfile.Email = !string.IsNullOrEmpty(user.Email) ? user.Email : request.Email;
+                userProfile.UpdatedAt = DateTime.UtcNow;
+                needsUpdate = true;
+            }
+            else if (string.IsNullOrEmpty(userProfile.UserType) || userProfile.UserType == "undefined")
+            {
+                // Update existing profile with missing user type
                 userProfile.UserType = user.UserType ?? request.UserType ?? "candidate";
                 needsUpdate = true;
             }
             
             if (needsUpdate)
             {
-                Console.WriteLine($"Updating profile with userId: {user.Id}, userType: {userProfile.UserType}");
+                Console.WriteLine($"Updating profile with userId: {user.Id}, userType: {userProfile.UserType}, subscriptionType: {userProfile.SubscriptionType}");
                 await _userService.AddOrUpdateUserProfileAsync(userProfile);
             }
 
-            // Get active subscription
-           // var activeSubscription = await _userService.GetUserSubscriptionAsync(user.Id);
+            // Ensure user has a subscription - check and create if missing
+            try
+            {
+                Console.WriteLine($"Checking subscription for user: {user.Id}");
+                var activeSubscription = await _userService.GetUserSubscriptionAsync(user.Id);
+                Console.WriteLine($"Found subscription: {activeSubscription.subscription_type}, active: {activeSubscription.is_active}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"No subscription found for user {user.Id}: {ex.Message}");
+                Console.WriteLine("Creating default free subscription for user without subscription");
+                
+                try
+                {
+                    await _userService.CreateOrUpdateSubscription(user.Id, "free");
+                    Console.WriteLine("Default subscription created successfully for existing user");
+                }
+                catch (Exception createEx)
+                {
+                    Console.WriteLine($"Failed to create subscription for existing user: {createEx.Message}");
+                    // Continue with authentication even if subscription creation fails
+                }
+            }
 
             // Use the token from the request if available
             string accessToken = !string.IsNullOrEmpty(request.Token) ? request.Token : "";
@@ -70,7 +136,7 @@ namespace ResumeAI.API.Services
             {
                 UserId = user.Id,
                 Email = user.Email,
-                UserType = user.UserType,
+                UserType = userProfile.UserType, // Use profile's UserType which is now properly set
                 SubscriptionType = userProfile.SubscriptionType,
                 Profile = userProfile,
                 AccessToken = accessToken
