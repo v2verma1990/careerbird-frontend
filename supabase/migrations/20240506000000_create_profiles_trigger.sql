@@ -3,9 +3,10 @@
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.profiles (id, user_type, subscription_type, created_at, updated_at)
+  INSERT INTO public.profiles (id, email, user_type, subscription_type, created_at, updated_at)
   VALUES (
     NEW.id, 
+    NEW.email,
     COALESCE(NEW.raw_user_meta_data->>'user_type', 'candidate'),
     'free',
     NOW(),

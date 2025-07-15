@@ -4,7 +4,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/auth/AuthContext";
-import { UserPlus, FileText, FileSearch, Upload, MessageSquare, PieChart, Settings, User, Crown, Zap, TrendingUp, Award, Star } from "lucide-react";
+import { UserPlus, FileText, FileSearch, Upload, MessageSquare, PieChart, Settings, User, Crown, Zap, TrendingUp, Award, Star, LogOut } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import api from "@/utils/apiClient";
 import ProgressBar from "@/components/ProgressBar";
@@ -12,7 +12,7 @@ import "@/styles/Dashboard.css";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user, userType, subscriptionStatus, incrementUsageCount, subscriptionLoading, restoringSession, cancelSubscription } = useAuth();
+  const { user, userType, subscriptionStatus, incrementUsageCount, subscriptionLoading, restoringSession, cancelSubscription, signOut } = useAuth();
   const [cancelLoading, setCancelLoading] = useState(false);
   const [showAccount, setShowAccount] = useState(false);
   
@@ -165,6 +165,20 @@ const Dashboard = () => {
       setCancelLoading(false);
     }
   };
+
+  // Handler for logout
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      // After signOut, explicitly navigate to home page and force a page reload
+      // This ensures all React state is cleared and prevents stale auth state
+      window.location.href = '/';
+    } catch (error) {
+      console.error("Error during logout:", error);
+      // If there's an error during logout, still try to navigate home with a reload
+      window.location.href = '/';
+    }
+  };
   
   // Handler for feature button click
   const handleFeatureClick = async (feature: any) => {
@@ -253,6 +267,15 @@ const Dashboard = () => {
               >
                 <Settings className="w-4 h-4 mr-2" />
                 My Account
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleLogout}
+                className="border-red-300 hover:border-red-500 hover:text-red-600 transition-colors"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Logout
               </Button>
             </div>
           </div>
