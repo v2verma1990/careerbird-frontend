@@ -1708,6 +1708,194 @@ export const api = {
       link.click();
       document.body.removeChild(link);
     }
+  },
+  
+  // Recruiter-specific API methods
+  recruiter: {
+    // Job Description Management
+    createJobDescription: (jobData: any) => 
+      apiCall<any>("POST", "/recruiter/job-descriptions", jobData),
+    
+    getJobDescriptions: (userId: string) => 
+      apiCall<any>("GET", `/recruiter/job-descriptions/${userId}`),
+    
+    getJobDescription: (jobId: string) => 
+      apiCall<any>("GET", `/recruiter/job-descriptions/single/${jobId}`),
+    
+    updateJobDescription: (jobId: string, jobData: any) => 
+      apiCall<any>("PUT", `/recruiter/job-descriptions/${jobId}`, jobData),
+    
+    deleteJobDescription: (jobId: string) => 
+      apiCall<any>("DELETE", `/recruiter/job-descriptions/${jobId}`),
+
+    // Resume Upload and Management
+    uploadResumes: async (files: File[], jobDescriptionId?: string) => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const formData = new FormData();
+        
+        files.forEach((file, index) => {
+          formData.append(`resumes`, file);
+        });
+        
+        if (jobDescriptionId) {
+          formData.append('jobDescriptionId', jobDescriptionId);
+        }
+        
+        const headers: Record<string, string> = {};
+        if (session?.access_token) {
+          headers["Authorization"] = `Bearer ${session.access_token}`;
+        }
+        
+        const response = await fetch(`${API_BASE_URL}/recruiter/resumes/upload`, {
+          method: 'POST',
+          headers,
+          body: formData,
+          credentials: "include"
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          return { data: null, error: errorText };
+        }
+        
+        const data = await response.json();
+        return { data, error: null };
+      } catch (error) {
+        console.error("Resume upload error:", error);
+        return { 
+          data: null, 
+          error: error instanceof Error ? error.message : "Failed to upload resumes" 
+        };
+      }
+    },
+
+    getResumes: (userId: string, jobDescriptionId?: string) => {
+      const endpoint = jobDescriptionId 
+        ? `/recruiter/resumes/${userId}?jobDescriptionId=${jobDescriptionId}`
+        : `/recruiter/resumes/${userId}`;
+      return apiCall<any>("GET", endpoint);
+    },
+
+    deleteResume: (resumeId: string) => 
+      apiCall<any>("DELETE", `/recruiter/resumes/${resumeId}`),
+
+    // Resume Analysis
+    analyzeResume: (resumeId: string, jobDescriptionId: string) => 
+      apiCall<any>("POST", "/recruiter/analyze", { resumeId, jobDescriptionId }),
+
+    bulkAnalyzeResumes: (resumeIds: string[], jobDescriptionId: string) => 
+      apiCall<any>("POST", "/recruiter/analyze/bulk", { resumeIds, jobDescriptionId }),
+
+    getAnalysis: (analysisId: string) => 
+      apiCall<any>("GET", `/recruiter/analysis/${analysisId}`),
+
+    getAnalysesByJob: (jobDescriptionId: string) => 
+      apiCall<any>("GET", `/recruiter/analysis/job/${jobDescriptionId}`),
+
+    // Candidate Comparison
+    compareCandidates: (resumeIds: string[], jobDescriptionId: string) => 
+      apiCall<any>("POST", "/recruiter/compare", { resumeIds, jobDescriptionId }),
+
+    getComparison: (comparisonId: string) => 
+      apiCall<any>("GET", `/recruiter/comparison/${comparisonId}`),
+
+    getComparisonsByJob: (jobDescriptionId: string) => 
+      apiCall<any>("GET", `/recruiter/comparison/job/${jobDescriptionId}`),
+
+    // Skill Gap Analysis
+    analyzeSkillGaps: (resumeId: string, jobDescriptionId: string) => 
+      apiCall<any>("POST", "/recruiter/skill-gaps", { resumeId, jobDescriptionId }),
+
+    getSkillGapAnalysis: (analysisId: string) => 
+      apiCall<any>("GET", `/recruiter/skill-gaps/${analysisId}`),
+
+    // Report Generation
+    generateReport: (reportData: any) => 
+      apiCall<any>("POST", "/recruiter/reports/generate", reportData),
+
+    getReport: (reportId: string) => 
+      apiCall<any>("GET", `/recruiter/reports/${reportId}`),
+
+    downloadReport: async (reportId: string) => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        const headers: Record<string, string> = {};
+        if (session?.access_token) {
+          headers["Authorization"] = `Bearer ${session.access_token}`;
+        }
+        
+        const response = await fetch(`${API_BASE_URL}/recruiter/reports/${reportId}/download`, {
+          method: 'GET',
+          headers,
+          credentials: "include"
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to download report: ${response.statusText}`);
+        }
+        
+        return response;
+      } catch (error) {
+        console.error("Report download error:", error);
+        throw error;
+      }
+    },
+
+    getUserReports: (userId: string) => 
+      apiCall<any>("GET", `/recruiter/reports/user/${userId}`),
+
+    // Processing Queue Management
+    getQueueStatus: (userId: string) => 
+      apiCall<any>("GET", `/recruiter/queue/status/${userId}`),
+
+    cancelQueueJob: (jobId: string) => 
+      apiCall<any>("POST", `/recruiter/queue/cancel/${jobId}`),
+
+    // Dashboard Analytics
+    getDashboardStats: (userId: string) => 
+      apiCall<any>("GET", `/recruiter/dashboard/stats/${userId}`),
+
+    getRecentActivity: (userId: string, limit: number = 10) => 
+      apiCall<any>("GET", `/recruiter/dashboard/activity/${userId}?limit=${limit}`),
+
+    // Plan Limits (database-driven like candidate dashboard)
+    getPlanLimits: (planType: string) => 
+      apiCall<any>("GET", `/recruiter/plan-limits/${planType}`),
+
+    // Advanced Features (Premium)
+    getAdvancedAnalytics: (userId: string, dateRange?: { start: string; end: string }) => {
+      const params = dateRange ? `?start=${dateRange.start}&end=${dateRange.end}` : '';
+      return apiCall<any>("GET", `/recruiter/analytics/advanced/${userId}${params}`);
+    },
+
+    exportAnalysisData: (jobDescriptionId: string, format: 'csv' | 'excel' = 'csv') => 
+      apiCall<any>("GET", `/recruiter/export/${jobDescriptionId}?format=${format}`),
+
+    // AI-powered features (using OpenAI like candidate dashboard)
+    generateJobDescription: (jobTitle: string, companyInfo: any) => 
+      apiCall<any>("POST", "/recruiter/ai/generate-job", { jobTitle, companyInfo }),
+
+    optimizeJobDescription: (jobDescription: string) => 
+      apiCall<any>("POST", "/recruiter/ai/optimize-job", { jobDescription }),
+
+    generateInterviewQuestions: (jobDescriptionId: string, resumeId?: string) => 
+      apiCall<any>("POST", "/recruiter/ai/interview-questions", { jobDescriptionId, resumeId }),
+
+    // Batch operations
+    batchDeleteResumes: (resumeIds: string[]) => 
+      apiCall<any>("POST", "/recruiter/resumes/batch-delete", { resumeIds }),
+
+    batchUpdateResumeStatus: (resumeIds: string[], status: string) => 
+      apiCall<any>("POST", "/recruiter/resumes/batch-update-status", { resumeIds, status }),
+
+    // Search and filtering
+    searchResumes: (query: string, filters?: any) => 
+      apiCall<any>("POST", "/recruiter/resumes/search", { query, filters }),
+
+    filterAnalyses: (jobDescriptionId: string, filters: any) => 
+      apiCall<any>("POST", `/recruiter/analysis/filter/${jobDescriptionId}`, filters),
   }
 };
 

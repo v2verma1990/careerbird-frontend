@@ -185,7 +185,10 @@ namespace ResumeAI.API.Controllers
                     {
                         // List of all feature keys (should match frontend)
                         var featureKeys = new List<string> {
-                            "resume_customization", "resume_optimization", "ats_scan", "resume_benchmarking", "cover_letter", "interview_questions", "salary_insights", "resume_builder"
+                            // Candidate features
+                            "resume_customization", "resume_optimization", "ats_scan", "resume_benchmarking", "cover_letter", "interview_questions", "salary_insights", "resume_builder",
+                            // Recruiter features
+                            "resume_analysis", "bulk_resume_processing", "candidate_comparison", "skill_gap_analysis", "ai_report_generation", "find_candidates", "optimize_job", "candidate_analysis"
                         };
                         var subscription = await _userService.GetActiveSubscription(userId);
                         var usageDict = new Dictionary<string, object>();

@@ -16,6 +16,10 @@ import Index from '@/pages/Index';
 import Dashboard from '@/pages/Dashboard';
 import CandidateDashboard from '@/pages/CandidateDashboard';
 import FreePlanDashboard from '@/pages/FreePlanDashboard';
+import RecruiterDashboardNew from '@/pages/RecruiterDashboardNew';
+import ResumeAnalysis from '@/pages/recruiter/ResumeAnalysis';
+import BulkProcessing from '@/pages/recruiter/BulkProcessing';
+import CandidateComparison from '@/pages/recruiter/CandidateComparison';
 import Profile from '@/pages/Profile';
 import Settings from '@/pages/Settings';
 import Upgrade from '@/pages/Upgrade';
@@ -90,6 +94,14 @@ const App = () => {
                 element={
                   <RecruiterProtectedRoute>
                     <Dashboard />
+                  </RecruiterProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/recruiter-dashboard-new" 
+                element={
+                  <RecruiterProtectedRoute>
+                    <RecruiterDashboardNew />
                   </RecruiterProtectedRoute>
                 } 
               />
@@ -224,6 +236,32 @@ const App = () => {
                 element={
                   <RecruiterProtectedRoute>
                     <OptimizeJob />
+                  </RecruiterProtectedRoute>
+                } 
+              />
+              
+              {/* Recruiter feature routes */}
+              <Route 
+                path="/recruiter/resume-analysis" 
+                element={
+                  <RecruiterProtectedRoute>
+                    <ResumeAnalysis />
+                  </RecruiterProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/recruiter/bulk-processing" 
+                element={
+                  <RecruiterProtectedRoute>
+                    <BulkProcessing />
+                  </RecruiterProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/recruiter/candidate-comparison" 
+                element={
+                  <RecruiterProtectedRoute>
+                    <CandidateComparison />
                   </RecruiterProtectedRoute>
                 } 
               />

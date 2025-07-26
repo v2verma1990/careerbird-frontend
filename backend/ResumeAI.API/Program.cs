@@ -6,6 +6,8 @@ using System.Text;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using StackExchange.Redis;
+using Microsoft.AspNetCore.SignalR;
 
 var builder = WebApplication.CreateBuilder(args);
 // Log the current working directory
@@ -69,9 +71,32 @@ builder.Services.AddAuthentication(options =>
 // Register app settings
 var appSettings = new AppSettings
 {
-    PythonApiBaseUrl = builder.Configuration["PythonApi:BaseUrl"] ?? "http://localhost:8000"
+    PythonApiBaseUrl = builder.Configuration["PythonApi:BaseUrl"] ?? "http://localhost:8001"
 };
 builder.Services.AddSingleton(appSettings);
+
+// Configure Redis connection
+var redisConnectionString = builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379";
+builder.Services.AddSingleton<IConnectionMultiplexer>(provider =>
+{
+    var configuration = ConfigurationOptions.Parse(redisConnectionString);
+    configuration.AbortOnConnectFail = false;
+    return ConnectionMultiplexer.Connect(configuration);
+});
+
+// Configure queue settings
+builder.Services.Configure<QueueConfiguration>(builder.Configuration.GetSection("Queue"));
+builder.Services.Configure<RedisConfiguration>(builder.Configuration.GetSection("Redis"));
+
+// Register queue services
+builder.Services.AddSingleton<IQueueService, RedisQueueService>();
+builder.Services.AddSingleton<IJobProgressService, JobProgressService>();
+
+// Add SignalR for real-time updates
+builder.Services.AddSignalR();
+
+// Add background services
+builder.Services.AddHostedService<QueueWorkerService>();
 
 // Register services
 builder.Services.AddHttpClient();
@@ -159,7 +184,11 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+// Map SignalR hub
+app.MapHub<JobProgressHub>("/jobProgressHub");
+
 // Log startup
 Console.WriteLine("ResumeAI API starting up...");
+Console.WriteLine($"Redis connection: {redisConnectionString}");
 
 app.Run();

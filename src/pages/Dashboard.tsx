@@ -30,20 +30,21 @@ const Dashboard = () => {
     return diffDays > 0 ? diffDays : 0;
   };
   
-  // Only allow recruiters to view this dashboard
+  // Redirect to appropriate dashboard based on user type
   useEffect(() => {
-    if (userType !== 'recruiter') {
+    if (userType === 'recruiter') {
+      // Redirect recruiters to the new enhanced dashboard
+      navigate('/recruiter-dashboard-new', { replace: true });
+    } else if (userType === 'candidate') {
       // Redirect candidates to their dashboard
-      if (userType === 'candidate') {
-        if (subscriptionStatus?.type === 'free') {
-          navigate('/free-plan-dashboard', { replace: true });
-        } else {
-          navigate('/candidate-dashboard', { replace: true });
-        }
+      if (subscriptionStatus?.type === 'free') {
+        navigate('/free-plan-dashboard', { replace: true });
       } else {
-        // Unknown userType, go to home
-        navigate('/', { replace: true });
+        navigate('/candidate-dashboard', { replace: true });
       }
+    } else if (userType) {
+      // Unknown userType, go to home
+      navigate('/', { replace: true });
     }
   }, [userType, subscriptionStatus, navigate]);
   
